@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import Editor from "@monaco-editor/react";
 
@@ -9,6 +10,9 @@ type EngineResult = { exitCode: number | null; stdout: string; stderr: string; m
 type ApiResponse = { ok: boolean; results?: Record<string, EngineResult>; meta?: { ms: number }; error?: string };
 type VersionInfo = { ok: boolean; short?: string; raw?: string; exitCode?: number | null; error?: string };
 type VersionsResp = { ok: boolean; engines: Record<EngineKey, VersionInfo> };
+
+const MIN_SPLIT = 0.25;
+const MAX_SPLIT = 0.75;
 
 const logShim = [
   "const log = typeof globalThis.print === 'function'",
@@ -88,7 +92,7 @@ const v8NativeIntrinsics = [
 
 export default function Page() {
   const [code, setCode] = useState(samples.add);
-  const [engines, setEngines] = useState<Record<EngineKey, boolean>>({ v8: true, sm: false, hermes: false });
+  const [engines, setEngines] = useState<Record<EngineKey, boolean>>({ v8: true, sm: true, hermes: true });
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [out, setOut] = useState<Record<EngineKey, EngineResult>>({
     v8: { exitCode: null, stdout: "", stderr: "" },
@@ -100,12 +104,15 @@ export default function Page() {
   const [versions, setVersions] = useState<Record<EngineKey, string>>({ v8: "", sm: "", hermes: "" });
   const [onlyErr, setOnlyErr] = useState<boolean>(true);
   const [activeSample, setActiveSample] = useState<SampleKey | null>("add");
+  const [panelSplit, setPanelSplit] = useState(0.55);
 
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationsRef = useRef<string[]>([]);
   const completionRef = useRef<any>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const sampleApplyRef = useRef<SampleKey | null>("add");
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
   const activeSampleMeta = useMemo(
     () => sampleCatalog.find((item) => item.key === activeSample) || null,
     [activeSample]
@@ -188,6 +195,78 @@ export default function Page() {
   );
 
   const selectedEngines = useMemo(() => (Object.keys(engines) as EngineKey[]).filter((k) => engines[k]), [engines]);
+
+  const clampSplit = useCallback((value: number) => Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, value)), []);
+
+  const adjustSplit = useCallback(
+    (delta: number) => {
+      setPanelSplit((prev) => clampSplit(prev + delta));
+    },
+    [clampSplit]
+  );
+
+  const handleSplitterPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const grid = gridRef.current;
+      if (!grid) return;
+
+      resizeCleanupRef.current?.();
+
+      const handleMove = (e: PointerEvent) => {
+        const rect = grid.getBoundingClientRect();
+        if (rect.width <= 0) return;
+        const ratio = (e.clientX - rect.left) / rect.width;
+        if (!Number.isFinite(ratio)) return;
+        setPanelSplit(clampSplit(ratio));
+      };
+
+      const handleUp = () => {
+        resizeCleanupRef.current?.();
+      };
+
+      const cleanup = () => {
+        window.removeEventListener("pointermove", handleMove);
+        window.removeEventListener("pointerup", handleUp);
+        window.removeEventListener("pointercancel", handleUp);
+        document.body.classList.remove("resizing-cursor");
+        resizeCleanupRef.current = null;
+      };
+
+      resizeCleanupRef.current = cleanup;
+
+      window.addEventListener("pointermove", handleMove);
+      window.addEventListener("pointerup", handleUp, { once: true });
+      window.addEventListener("pointercancel", handleUp, { once: true });
+      document.body.classList.add("resizing-cursor");
+    },
+    [clampSplit]
+  );
+
+  const handleSplitterKey = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        adjustSplit(-0.03);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        adjustSplit(0.03);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        setPanelSplit(MIN_SPLIT);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        setPanelSplit(MAX_SPLIT);
+      }
+    },
+    [adjustSplit]
+  );
+
+  const handleSplitterDoubleClick = useCallback(() => {
+    setPanelSplit(0.5);
+  }, []);
+
+  useEffect(() => () => resizeCleanupRef.current?.(), []);
 
   // fetch versions once
   useEffect(() => {
@@ -394,7 +473,11 @@ export default function Page() {
         </div>
       </header>
 
-      <main className="grid">
+      <main
+        className="grid"
+        ref={gridRef}
+        style={{ gridTemplateColumns: `${panelSplit}fr 10px ${Math.max(0.1, 1 - panelSplit)}fr` }}
+      >
         <section className="panel">
           <div className="panelHead">
             <strong>Editor</strong>
@@ -431,6 +514,21 @@ export default function Page() {
             />
           </div>
         </section>
+
+        <div
+          className="splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-valuenow={Math.round(panelSplit * 100)}
+          aria-valuemin={MIN_SPLIT * 100}
+          aria-valuemax={MAX_SPLIT * 100}
+          tabIndex={0}
+          onPointerDown={handleSplitterPointerDown}
+          onDoubleClick={handleSplitterDoubleClick}
+          onKeyDown={handleSplitterKey}
+        >
+          <span className="splitterGrip" aria-hidden />
+        </div>
 
         <section className="panel">
           <div className="panelHead">
@@ -517,7 +615,7 @@ export default function Page() {
         .brandName {
           font-size: 16px;
           font-weight: 600;
-          color: #ffffff;
+          color: #0f172a;
         }
         .brandLogo {
           border-radius: 8px;
@@ -586,6 +684,34 @@ export default function Page() {
           border-color: #0f172a;
           box-shadow: 0 0 0 1px #0f172a;
         }
+        .splitter {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #e2e8f0;
+          border-radius: 999px;
+          cursor: col-resize;
+          touch-action: none;
+          min-height: 120px;
+        }
+        .splitter:hover {
+          background: #cbd5f5;
+        }
+        .splitter:focus-visible {
+          outline: 2px solid #0f172a;
+          outline-offset: 2px;
+        }
+        .splitterGrip {
+          width: 4px;
+          height: 32px;
+          border-radius: 999px;
+          background: rgba(15, 23, 42, 0.45);
+        }
+        .resizing-cursor,
+        .resizing-cursor * {
+          cursor: col-resize !important;
+        }
         .page {
           min-height: 100vh;
           display: flex;
@@ -639,7 +765,7 @@ export default function Page() {
         .grid {
           flex: 1;
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 10px 1fr;
           gap: 12px;
           padding: 12px;
         }
