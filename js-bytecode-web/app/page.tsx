@@ -10,13 +10,37 @@ type ApiResponse = { ok: boolean; results?: Record<string, EngineResult>; meta?:
 type VersionInfo = { ok: boolean; short?: string; raw?: string; exitCode?: number | null; error?: string };
 type VersionsResp = { ok: boolean; engines: Record<EngineKey, VersionInfo> };
 
+const logShim = [
+  "const log = typeof globalThis.print === 'function'",
+  "  ? globalThis.print",
+  "  : (globalThis.console && typeof globalThis.console.log === 'function'",
+  "      ? globalThis.console.log.bind(globalThis.console)",
+  "      : function(){});",
+].join("\n");
+
 const samples: Record<string, string> = {
   add: `function f(x){ return x + 1 }\nf(41);`,
   closure: `function f(a){ function g(b){ return a + b } return g(1) }\nf(41);`,
   loop: `function f(n){ let s=0; for(let i=0;i<n;i++) s+=i; return s }\nf(10);`,
   try: `function f(){ try { throw 1 } catch(e){ return e + 1 } }\nf();`,
-  d8Native: `function hot(x){ return x + 1; }\nfor (let i = 0; i < 5000; i++) hot(i);\nif (typeof globalThis.d8 !== "undefined") {\n  eval('%OptimizeFunctionOnNextCall(hot);');\n}\nvar log = typeof globalThis.print === 'function'\n  ? globalThis.print\n  : (globalThis.console && typeof globalThis.console.log === 'function'\n      ? globalThis.console.log.bind(globalThis.console)\n      : function(){});\nlog('hot(41)=', hot(41));`,
+  d8Native: `${logShim}\nfunction hot(x){ return x + 1; }\nfor (let i = 0; i < 5000; i++) hot(i);\nif (typeof globalThis.d8 !== "undefined") {\n  eval('%OptimizeFunctionOnNextCall(hot);');\n}\nlog('hot(41)=', hot(41));`,
+  typedarray: `${logShim}\nconst buffer = new ArrayBuffer(16);\nconst view = new DataView(buffer);\nview.setUint32(0, 0xdeadbeef, true);\nview.setFloat64(8, Math.PI, true);\nconst bytes = Array.from(new Uint8Array(buffer)).map((b) => b.toString(16).padStart(2, '0'));\nlog('buffer bytes:', bytes.join(' '));\nlog('float64:', view.getFloat64(8, true).toFixed(6));`,
+  asyncFlow: `${logShim}\nasync function loadUser(id){\n  return { id, name: 'user-' + id };\n}\nasync function main(){\n  const users = await Promise.all([1, 2, 3].map((id) => loadUser(id)));\n  const names = users.map((u) => u.name).join(', ');\n  log('async users:', names);\n}\nmain();`,
+  generator: `${logShim}\nfunction* fibonacci(limit){\n  let a = 0, b = 1;\n  while (limit-- > 0) {\n    yield a;\n    [a, b] = [b, a + b];\n  }\n}\nlog('fib:', [...fibonacci(8)].join(', '));`,
 };
+
+type SampleKey = keyof typeof samples;
+
+const sampleCatalog: { key: SampleKey; label: string; description: string }[] = [
+  { key: "add", label: "Add", description: "Minimal function call returning 42." },
+  { key: "closure", label: "Closure", description: "Capturing outer scope and invoking inner function." },
+  { key: "loop", label: "Loop", description: "Simple for-loop summing integer range." },
+  { key: "try", label: "Try/catch", description: "Exception handling flow returning a computed value." },
+  { key: "d8Native", label: "d8 native", description: "Uses V8 % intrinsics to optimise a hot function." },
+  { key: "typedarray", label: "Typed arrays", description: "Manipulates ArrayBuffer via DataView, prints bytes." },
+  { key: "asyncFlow", label: "Async flow", description: "Async/await fetching mock users in parallel." },
+  { key: "generator", label: "Generator", description: "Generates Fibonacci numbers via iterator." },
+];
 
 const tabs: { key: EngineKey; label: string }[] = [
   { key: "v8", label: "V8" },
@@ -75,11 +99,17 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<EngineKey>("v8");
   const [versions, setVersions] = useState<Record<EngineKey, string>>({ v8: "", sm: "", hermes: "" });
   const [onlyErr, setOnlyErr] = useState<boolean>(true);
+  const [activeSample, setActiveSample] = useState<SampleKey | null>("add");
 
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationsRef = useRef<string[]>([]);
   const completionRef = useRef<any>(null);
+  const sampleApplyRef = useRef<SampleKey | null>("add");
+  const activeSampleMeta = useMemo(
+    () => sampleCatalog.find((item) => item.key === activeSample) || null,
+    [activeSample]
+  );
   const onMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -143,6 +173,19 @@ export default function Page() {
       }
     };
   }, []);
+
+  const handleEditorChange = useCallback(
+    (value?: string) => {
+      const next = value ?? "";
+      setCode(next);
+      if (sampleApplyRef.current) {
+        sampleApplyRef.current = null;
+      } else if (activeSample !== null) {
+        setActiveSample(null);
+      }
+    },
+    [activeSample]
+  );
 
   const selectedEngines = useMemo(() => (Object.keys(engines) as EngineKey[]).filter((k) => engines[k]), [engines]);
 
@@ -211,7 +254,15 @@ export default function Page() {
     }
   }, [code, selectedEngines]);
 
-  const setSample = (key: keyof typeof samples) => setCode(samples[key]);
+  const setSample = (key: SampleKey) => {
+    sampleApplyRef.current = key;
+    setActiveSample(key);
+    setCode(samples[key]);
+    setMeta(`Loaded sample: ${sampleCatalog.find((item) => item.key === key)?.label ?? key}`);
+    requestAnimationFrame(() => {
+      editorRef.current?.focus?.();
+    });
+  };
 
   const copyWithFallback = (text: string) => {
     try {
@@ -347,23 +398,26 @@ export default function Page() {
         <section className="panel">
           <div className="panelHead">
             <strong>Editor</strong>
-            <div className="gap">
-              <span>Samples:</span>
-              <button className="btn" onClick={() => setSample("add")}>
-                add
-              </button>
-              <button className="btn" onClick={() => setSample("closure")}>
-                closure
-              </button>
-              <button className="btn" onClick={() => setSample("loop")}>
-                loop
-              </button>
-              <button className="btn" onClick={() => setSample("try")}>
-                try/catch
-              </button>
-              <button className="btn" onClick={() => setSample("d8Native")}>
-                d8 native
-              </button>
+            <div className="samplesWrap">
+              <div className="samplesHeader">
+                <span className="samplesTitle">Samples</span>
+                {activeSampleMeta && <span className="samplesDescription">{activeSampleMeta.description}</span>}
+              </div>
+              <div className="sampleScroller" role="list">
+                {sampleCatalog.map(({ key, label, description }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`btn sampleChip ${activeSample === key ? "active" : ""}`}
+                    onClick={() => setSample(key)}
+                    aria-pressed={activeSample === key}
+                    title={description}
+                    role="listitem"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="editorWrap">
@@ -371,7 +425,7 @@ export default function Page() {
               height="100%"
               defaultLanguage="javascript"
               value={code}
-              onChange={(v) => setCode(v ?? "")}
+              onChange={handleEditorChange}
               onMount={onMount}
               options={{ minimap: { enabled: false }, fontSize: 14 }}
             />
@@ -468,6 +522,69 @@ export default function Page() {
         .brandLogo {
           border-radius: 8px;
           box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+        }
+        .samplesWrap {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+          min-width: 0;
+        }
+        .samplesHeader {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+          flex-wrap: wrap;
+          max-width: 420px;
+        }
+        .samplesTitle {
+          font-size: 13px;
+          font-weight: 600;
+          color: #0f172a;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .samplesDescription {
+          font-size: 12px;
+          color: #475569;
+          line-height: 1.4;
+        }
+        .sampleScroller {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+          max-width: 100%;
+        }
+        .sampleScroller::-webkit-scrollbar {
+          height: 6px;
+        }
+        .sampleScroller::-webkit-scrollbar-thumb {
+          background: rgba(15, 23, 42, 0.3);
+          border-radius: 999px;
+        }
+        .btn.sampleChip {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 12px;
+          font-size: 13px;
+          font-weight: 500;
+          border-radius: 999px;
+          border-color: #cbd5f5;
+          background: #f8fafc;
+          color: #0f172a;
+          white-space: nowrap;
+          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .btn.sampleChip:hover {
+          background: #e2e8f0;
+        }
+        .btn.sampleChip.active {
+          background: #0f172a;
+          color: #fff;
+          border-color: #0f172a;
+          box-shadow: 0 0 0 1px #0f172a;
         }
         .page {
           min-height: 100vh;
