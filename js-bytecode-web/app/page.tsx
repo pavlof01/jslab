@@ -15,6 +15,7 @@ const samples: Record<string, string> = {
   closure: `function f(a){ function g(b){ return a + b } return g(1) }\nf(41);`,
   loop: `function f(n){ let s=0; for(let i=0;i<n;i++) s+=i; return s }\nf(10);`,
   try: `function f(){ try { throw 1 } catch(e){ return e + 1 } }\nf();`,
+  d8Native: `function hot(x){ return x + 1; }\nfor (let i = 0; i < 5000; i++) hot(i);\nif (typeof globalThis.d8 !== "undefined") {\n  eval('%OptimizeFunctionOnNextCall(hot);');\n}\nvar log = typeof globalThis.print === 'function'\n  ? globalThis.print\n  : (globalThis.console && typeof globalThis.console.log === 'function'\n      ? globalThis.console.log.bind(globalThis.console)\n      : function(){});\nlog('hot(41)=', hot(41));`,
 };
 
 const tabs: { key: EngineKey; label: string }[] = [
@@ -111,9 +112,43 @@ export default function Page() {
 
   const setSample = (key: keyof typeof samples) => setCode(samples[key]);
 
+  const copyWithFallback = (text: string) => {
+    try {
+      const el = document.createElement("textarea");
+      el.value = text;
+      el.setAttribute("readonly", "");
+      el.style.position = "fixed";
+      el.style.top = "-9999px";
+      document.body.appendChild(el);
+      el.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(el);
+      return ok;
+    } catch {
+      return false;
+    }
+  };
+
   const copyActive = async (stream: "stdout" | "stderr") => {
     const txt = out[activeTab]?.[stream] || "";
-    await navigator.clipboard.writeText(txt);
+    if (!txt) {
+      setMeta(`Nothing to copy from ${stream}`);
+      return;
+    }
+
+    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+    if (clipboard?.writeText) {
+      try {
+        await clipboard.writeText(txt);
+        setMeta(`Copied ${stream} to clipboard`);
+        return;
+      } catch {
+        /* fall back */
+      }
+    }
+
+    const ok = copyWithFallback(txt);
+    setMeta(ok ? `Copied ${stream} to clipboard` : `Copy ${stream} failed`);
   };
 
   const tabTitle = (label: string, ver?: string, ms?: number) =>
@@ -224,6 +259,9 @@ export default function Page() {
               </button>
               <button className="btn" onClick={() => setSample("try")}>
                 try/catch
+              </button>
+              <button className="btn" onClick={() => setSample("d8Native")}>
+                d8 native
               </button>
             </div>
           </div>
