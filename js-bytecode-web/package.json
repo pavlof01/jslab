@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "glob": "^11.0.3",
     "next": "15.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0"
