@@ -5,7 +5,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerE
 import Image from "next/image";
 import Editor from "@monaco-editor/react";
 
-type EngineKey = "v8" | "sm" | "hermes";
+type EngineKey = "v8" | "sm" | "hermes" | "jsc";
 type EngineResult = { exitCode: number | null; stdout: string; stderr: string; ms?: number };
 type ApiResponse = { ok: boolean; results?: Record<string, EngineResult>; meta?: { ms: number }; error?: string };
 type VersionInfo = { ok: boolean; short?: string; raw?: string; exitCode?: number | null; error?: string };
@@ -50,6 +50,7 @@ const tabs: { key: EngineKey; label: string }[] = [
   { key: "v8", label: "V8" },
   { key: "sm", label: "SpiderMonkey" },
   { key: "hermes", label: "Hermes" },
+  { key: "jsc", label: "JSC" },
 ];
 
 const v8NativeIntrinsics = [
@@ -92,16 +93,17 @@ const v8NativeIntrinsics = [
 
 export default function Page() {
   const [code, setCode] = useState(samples.add);
-  const [engines, setEngines] = useState<Record<EngineKey, boolean>>({ v8: true, sm: true, hermes: true });
+  const [engines, setEngines] = useState<Record<EngineKey, boolean>>({ v8: true, sm: true, hermes: true, jsc: true });
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [out, setOut] = useState<Record<EngineKey, EngineResult>>({
     v8: { exitCode: null, stdout: "", stderr: "" },
     sm: { exitCode: null, stdout: "", stderr: "" },
     hermes: { exitCode: null, stdout: "", stderr: "" },
+    jsc: { exitCode: null, stdout: "", stderr: "" },
   });
   const [meta, setMeta] = useState<string>("");
   const [activeTab, setActiveTab] = useState<EngineKey>("v8");
-  const [versions, setVersions] = useState<Record<EngineKey, string>>({ v8: "", sm: "", hermes: "" });
+  const [versions, setVersions] = useState<Record<EngineKey, string>>({ v8: "", sm: "", hermes: "", jsc: "" });
   const [onlyErr, setOnlyErr] = useState<boolean>(true);
   const [activeSample, setActiveSample] = useState<SampleKey | null>("add");
   const [panelSplit, setPanelSplit] = useState(0.55);
@@ -274,14 +276,14 @@ export default function Page() {
       try {
         const r = await fetch("/api/versions", { cache: "no-store" });
         const data: VersionsResp = await r.json();
-        const v: Record<EngineKey, string> = { v8: "", sm: "", hermes: "" };
-        (["v8", "sm", "hermes"] as EngineKey[]).forEach((k) => {
+        const v: Record<EngineKey, string> = { v8: "", sm: "", hermes: "", jsc: "" };
+        (["v8", "sm", "hermes", "jsc"] as EngineKey[]).forEach((k) => {
           const s = data?.engines?.[k];
           v[k] = s?.ok ? s.short || "ok" : "unavailable";
         });
         setVersions(v);
       } catch {
-        setVersions({ v8: "n/a", sm: "n/a", hermes: "n/a" });
+        setVersions({ v8: "n/a", sm: "n/a", hermes: "n/a", jsc: "n/a" });
       }
     })();
   }, []);
@@ -292,6 +294,7 @@ export default function Page() {
       v8: { exitCode: null, stdout: "", stderr: "" },
       sm: { exitCode: null, stdout: "", stderr: "" },
       hermes: { exitCode: null, stdout: "", stderr: "" },
+      jsc: { exitCode: null, stdout: "", stderr: "" },
     });
     setMeta("");
 
@@ -323,6 +326,12 @@ export default function Page() {
           stdout: (results.hermes?.stdout ?? "").trim(),
           stderr: (results.hermes?.stderr ?? "").trim(),
           ms: results.hermes?.ms,
+        },
+        jsc: {
+          exitCode: results.jsc?.exitCode ?? null,
+          stdout: (results.jsc?.stdout ?? "").trim(),
+          stderr: (results.jsc?.stderr ?? "").trim(),
+          ms: results.jsc?.ms,
         },
       });
       if (data.meta) setMeta(`Duration: ${data.meta.ms} ms`);
@@ -390,6 +399,7 @@ export default function Page() {
       v8: { stdout: "v8.bytecode.txt", stderr: "v8.stderr.txt" },
       sm: { stdout: "spidermonkey.bytecode.txt", stderr: "spidermonkey.stderr.txt" },
       hermes: { stdout: "hermes.dis.txt", stderr: "hermes.stderr.txt" },
+      jsc: { stdout: "jsc.bytecode.txt", stderr: "jsc.stderr.txt" },
     } as const;
     const fileName = nameMap[activeTab][stream];
     const blob = new Blob([out[activeTab]?.[stream] || ""], { type: "text/plain;charset=utf-8" });
@@ -451,6 +461,14 @@ export default function Page() {
             />{" "}
             Hermes
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={engines.jsc}
+              onChange={(e) => setEngines((v) => ({ ...v, jsc: e.target.checked }))}
+            />{" "}
+            JSC
+          </label>
           <label title="Показывать только stderr, если у движка есть ошибки или ненулевой exit code">
             <input type="checkbox" checked={onlyErr} onChange={(e) => setOnlyErr(e.target.checked)} /> Only stderr on
             error
@@ -468,6 +486,9 @@ export default function Page() {
             </span>
             <span className="chip" title={versions.hermes}>
               {versions.hermes || "hermes"}
+            </span>
+            <span className="chip" title={versions.jsc}>
+              {versions.jsc || "jsc"}
             </span>
           </div>
         </div>
@@ -556,23 +577,26 @@ export default function Page() {
                   );
                 })}
             </div>
-            <div className="gap">
-              <div className="dual">
-                <button className="btn" onClick={() => copyActive("stdout")}>
-                  Copy stdout
-                </button>
-                <button className="btn" onClick={() => copyActive("stderr")}>
-                  Copy stderr
-                </button>
-              </div>
-              <div className="dual">
-                <button className="btn" onClick={() => downloadActive("stdout")}>
-                  Download stdout
-                </button>
-                <button className="btn" onClick={() => downloadActive("stderr")}>
-                  Download stderr
-                </button>
-              </div>
+          </div>
+
+          <div className="outputControls">
+            <div className="controlGroup">
+              <span className="controlLabel">Copy</span>
+              <button className="btn" onClick={() => copyActive("stdout")}>
+                stdout
+              </button>
+              <button className="btn" onClick={() => copyActive("stderr")}>
+                stderr
+              </button>
+            </div>
+            <div className="controlGroup">
+              <span className="controlLabel">Download</span>
+              <button className="btn" onClick={() => downloadActive("stdout")}>
+                stdout
+              </button>
+              <button className="btn" onClick={() => downloadActive("stderr")}>
+                stderr
+              </button>
             </div>
           </div>
 
@@ -815,6 +839,28 @@ export default function Page() {
           flex: 1;
           overflow: auto;
         }
+        .outputControls {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 8px 12px;
+          border-bottom: 1px solid #f1f5f9;
+          background: #f8fafc;
+        }
+        .controlGroup {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .controlLabel {
+          font-size: 12px;
+          font-weight: 600;
+          color: #475569;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
         .output {
           padding: 8px 12px;
         }
@@ -852,15 +898,6 @@ export default function Page() {
         .btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
-        }
-        .gap {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .dual {
-          display: flex;
-          gap: 6px;
         }
         .badge {
           padding: 4px 8px;
