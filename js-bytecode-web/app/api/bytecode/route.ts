@@ -2,71 +2,38 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 import fs from "fs/promises";
-import fsSync from "fs";
 import path from "path";
 import os from "os";
-import { glob } from "glob";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Engine = "v8" | "sm" | "hermes";
+type Engine = "v8" | "sm" | "hermes" | "jsc";
 type RunResult = { stdout: string; stderr: string; exitCode: number | null; ms: number };
 
-// ------------------- candidate paths -------------------
-
-const V8_CANDIDATES = [
-  process.env.V8_D8,
-  "engines/v8/out.gn/x64.debug/d8",
-  "engines/v8/out.gn/arm64.debug/d8",
-  "engines/v8/out.gn/x64.release/d8",
-  "engines/v8/out.gn/arm64.release/d8",
-].filter(Boolean) as string[];
-
-const SM_CANDIDATES = [
-  process.env.SM_JS,
-  "engines/spidermonkey/bin/js",
-  "engines/spidermonkey/obj-*/dist/bin/js",
-  "engines/sm/obj-*/dist/bin/js",
-  "engines/sm/dist/bin/js",
-].filter(Boolean) as string[];
-
-const HERMESC_CANDIDATES = [process.env.HERMESC, "engines/hermes/build_release/bin/hermesc"].filter(
-  Boolean
-) as string[];
-
-const HERMES_CANDIDATES = [process.env.HERMES, "engines/hermes/build_release/bin/hermes"].filter(Boolean) as string[];
-
-const HBCDUMP_CANDIDATES = [process.env.HBCDUMP, "engines/hermes/build_release/bin/hbcdump"].filter(
-  Boolean
-) as string[];
-
-// ------------------- helpers -------------------
-
-async function firstExecutable(paths: string[]): Promise<string | null> {
-  for (const pattern of paths) {
-    const matches = pattern.includes("*") ? await glob(pattern) : [pattern];
-    for (const p of matches) {
-      try {
-        await fs.access(p, fsSync.constants.X_OK);
-        return p;
-      } catch {}
-    }
+function binOrHint(err: unknown, hintPath: string) {
+  const s = String(err || "");
+  if (s.includes("ENOENT")) {
+    return `ENOENT: binary not found. Set correct path via env. Tried: ${hintPath}`;
   }
-  return null;
+  return s;
 }
 
-async function resolveCmd(name: string, candidates: string[]): Promise<string> {
-  const p = await firstExecutable(candidates);
-  if (p) return p;
-  throw new Error(
-    `${name} not found. Tried:\n${candidates.map((c) => "  - " + c).join("\n")}\n` +
-      `Tip: set ${name} via ENV (e.g. ${name}=/abs/path/to/bin)`
-  );
-}
+// === ПУТИ (дефолты под linux x64; переопредели через .env.local) ===
+const V8_D8 = process.env.V8_D8 || "engines/v8/out.gn/x64.release/d8";
+const SM_JS = process.env.SM_JS || "engines/spidermonkey/dist/bin/js"; // поправь под свою сборку
+const HERMESC = process.env.HERMESC || "engines/hermes/build_release/bin/hermesc";
+const HERMES = process.env.HERMES || "engines/hermes/build_release/bin/hermes";
+const HBCDUMP = process.env.HBCDUMP || "engines/hermes/build_release/bin/hbcdump";
+// рекомендуем вызывать обёртку (она на mac ставит DYLD_* и добавляет --dumpBytecode)
+const JSC_BIN = process.env.JSC || "scripts/jsc.sh";
 
-function runProc(cmd: string, args: string[], opts?: { stdin?: string; timeoutMs?: number }): Promise<RunResult> {
-  const { stdin = "", timeoutMs = 15000 } = opts || {};
+function runProc(
+  cmd: string,
+  args: string[],
+  opts?: { stdin?: string; timeoutMs?: number; enoentHint?: string }
+): Promise<RunResult> {
+  const { stdin = "", timeoutMs = 15000, enoentHint = cmd } = opts || {};
   return new Promise((resolve) => {
     const t0 = Date.now();
     const p = spawn(cmd, args, { stdio: ["pipe", "pipe", "pipe"] });
@@ -85,11 +52,10 @@ function runProc(cmd: string, args: string[], opts?: { stdin?: string; timeoutMs
       clearTimeout(killer);
       resolve({ stdout: out, stderr: err, exitCode: code ?? null, ms: Date.now() - t0 });
     });
-
     p.on("error", (e) => {
       done = true;
       clearTimeout(killer);
-      resolve({ stdout: "", stderr: String(e), exitCode: -1, ms: Date.now() - t0 });
+      resolve({ stdout: "", stderr: binOrHint(e, enoentHint), exitCode: -1, ms: Date.now() - t0 });
     });
 
     if (stdin) p.stdin.write(stdin);
@@ -97,41 +63,58 @@ function runProc(cmd: string, args: string[], opts?: { stdin?: string; timeoutMs
   });
 }
 
-// ------------------- per-engine runners -------------------
+// ---- per-engine runners ----
 
 async function runV8(tmpJs: string): Promise<RunResult> {
-  const d8 = await resolveCmd("V8_D8", V8_CANDIDATES);
-  return runProc(d8, ["--allow-natives-syntax", "--print-bytecode", tmpJs]);
+  return runProc(V8_D8, ["--allow-natives-syntax", "--print-bytecode", tmpJs], { enoentHint: V8_D8 });
 }
 
 async function runSpiderMonkey(tmpJs: string): Promise<RunResult> {
-  const js = await resolveCmd("SM_JS", SM_CANDIDATES);
-  const snippet =
-    `load('${tmpJs.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}');` +
-    `try{ print(dis(f)); }catch(e){ print(dis(this)); }`;
-  return runProc(js, ["-e", snippet]);
+  const snippet = `
+    load('${tmpJs.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}');
+    try {
+      if (typeof f === 'function') {
+        print(dis(f));
+      } else {
+        let dumped = false;
+        for (let k in this) {
+          if (typeof this[k] === 'function') {
+            print("// disassembly of global function " + k);
+            print(dis(this[k]));
+            dumped = true;
+            break;
+          }
+        }
+        if (!dumped) print("SpiderMonkey: no function to disassemble");
+      }
+    } catch (e) {
+      print("SpiderMonkey disassembly error: " + e);
+    }
+  `;
+  return runProc(SM_JS, ["-e", snippet], { enoentHint: SM_JS });
 }
 
 async function runHermes(tmpJs: string, tmpDir: string): Promise<RunResult> {
-  const hermesc = await resolveCmd("HERMESC", HERMESC_CANDIDATES);
-  const hbcdump = await resolveCmd("HBCDUMP", HBCDUMP_CANDIDATES);
   const hbc = path.join(tmpDir, "program.hbc");
-
-  const comp = await runProc(hermesc, ["-emit-binary", "-out", hbc, tmpJs]);
+  const comp = await runProc(HERMESC, ["-emit-binary", "-out", hbc, tmpJs], { enoentHint: HERMESC });
   if (comp.exitCode !== 0) return comp;
-
-  return runProc(hbcdump, [hbc], { stdin: "disassemble\n" });
+  return runProc(HBCDUMP, [hbc], { stdin: "disassemble\n", enoentHint: HBCDUMP });
 }
 
-// ------------------- route handler -------------------
+async function runJSC(tmpJs: string): Promise<RunResult> {
+  const args = [tmpJs];
+  const r = await runProc(JSC_BIN, args, { enoentHint: JSC_BIN });
+  return r;
+}
+
+// ---- route handler ----
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const code: string = body?.code ?? "";
-    const engines: Engine[] = (body?.engines ?? ["v8", "sm", "hermes"]).filter((e: string) =>
-      ["v8", "sm", "hermes"].includes(e)
-    );
+    const enginesReq: string[] = body?.engines ?? ["v8", "sm", "hermes", "jsc"];
+    const engines = enginesReq.filter((e): e is Engine => ["v8", "sm", "hermes", "jsc"].includes(e));
 
     if (!code || engines.length === 0) {
       return NextResponse.json({ ok: false, error: "code or engines missing" }, { status: 400 });
@@ -145,9 +128,11 @@ export async function POST(req: Request) {
       v8: runV8(tmpJs),
       sm: runSpiderMonkey(tmpJs),
       hermes: runHermes(tmpJs, tmpDir),
+      jsc: runJSC(tmpJs),
     };
 
-    const settled = await Promise.all(engines.map((k) => tasks[k].then((r) => [k, r] as const)));
+    const pending = engines.map((k) => tasks[k].then((r) => [k, r] as const));
+    const settled = await Promise.all(pending);
 
     try {
       await fs.rm(tmpDir, { recursive: true, force: true });
