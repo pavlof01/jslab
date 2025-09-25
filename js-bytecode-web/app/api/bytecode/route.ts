@@ -65,8 +65,28 @@ function runProc(
 
 // ---- per-engine runners ----
 
-async function runV8(tmpJs: string): Promise<RunResult> {
-  return runProc(V8_D8, ["--allow-natives-syntax", "--print-bytecode", tmpJs], { enoentHint: V8_D8 });
+const DEFAULT_V8_FLAG = "--print-bytecode";
+
+function sanitizeV8Flags(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [DEFAULT_V8_FLAG];
+  }
+
+  const flags = value
+    .map((flag) => (typeof flag === "string" ? flag.trim() : ""))
+    .filter((flag) => flag.startsWith("--"));
+
+  if (flags.length === 0) {
+    return [DEFAULT_V8_FLAG];
+  }
+
+  // Preserve ordering but drop duplicates, only keep first flag.
+  const first = Array.from(new Set(flags))[0];
+  return first ? [first] : [DEFAULT_V8_FLAG];
+}
+
+async function runV8(tmpJs: string, flags: string[]): Promise<RunResult> {
+  return runProc(V8_D8, [...flags, tmpJs], { enoentHint: V8_D8 });
 }
 
 async function runSpiderMonkey(tmpJs: string): Promise<RunResult> {
@@ -114,6 +134,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const code: string = body?.code ?? "";
     const enginesReq: string[] = body?.engines ?? ["v8", "sm", "hermes", "jsc"];
+    const v8Flags = sanitizeV8Flags(body?.v8Flags);
     const engines = enginesReq.filter((e): e is Engine => ["v8", "sm", "hermes", "jsc"].includes(e));
 
     if (!code || engines.length === 0) {
@@ -125,7 +146,7 @@ export async function POST(req: Request) {
     await fs.writeFile(tmpJs, code, "utf8");
 
     const tasks: Record<Engine, Promise<RunResult>> = {
-      v8: runV8(tmpJs),
+      v8: runV8(tmpJs, v8Flags),
       sm: runSpiderMonkey(tmpJs),
       hermes: runHermes(tmpJs, tmpDir),
       jsc: runJSC(tmpJs),
