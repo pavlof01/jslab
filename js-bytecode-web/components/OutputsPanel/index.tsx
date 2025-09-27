@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, CodeBlock, createShikiAdapter, For, IconButton, Stack, Tabs, Text } from "@chakra-ui/react";
+import { Box, CodeBlock, createShikiAdapter, For, IconButton, Stack, Tabs } from "@chakra-ui/react";
 import type { EngineKey, EngineResult } from "../../lib/types";
 import { useColorModeValue } from "../ui/color-mode";
 import { HighlighterGeneric } from "shiki";
@@ -23,14 +23,14 @@ interface OutputsPanelProps {
   versions?: Record<EngineKey, string>;
 }
 
-export function OutputsPanel({ enabledTabs, activeTabIndex, out }: OutputsPanelProps) {
+export function OutputsPanel({ enabledTabs, activeTabIndex, out, versions }: OutputsPanelProps) {
   const subTextColor = useColorModeValue("#64748b", "#cbd5f5");
   const outputPreBg = useColorModeValue("#f1f5f9", "#111827");
   const borderColor = useColorModeValue("#e2e8f0", "#334155");
 
   return (
     <CodeBlock.AdapterProvider value={shikiAdapter}>
-      <Box flex="1" minH={0} p={0} display="flex" flexDirection="column">
+      <Box flex="1" minH={0} py={4} px={2} display="flex" flexDirection="column">
         <Tabs.Root defaultValue={enabledTabs[activeTabIndex].key} fitted variant="plain">
           <Tabs.List>
             <For each={enabledTabs}>
