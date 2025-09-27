@@ -20,5 +20,4 @@ export type V8FlagOption = {
   flag: string;
   label: string;
   description: string;
-  defaultSelected: boolean;
 };
