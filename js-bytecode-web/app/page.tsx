@@ -2,14 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
-import Image from "next/image";
-import Editor from "@monaco-editor/react";
-
-type EngineKey = "v8" | "sm" | "hermes" | "jsc";
-type EngineResult = { exitCode: number | null; stdout: string; stderr: string; ms?: number };
-type ApiResponse = { ok: boolean; results?: Record<string, EngineResult>; meta?: { ms: number }; error?: string };
-type VersionInfo = { ok: boolean; short?: string; raw?: string; exitCode?: number | null; error?: string };
-type VersionsResp = { ok: boolean; engines: Record<EngineKey, VersionInfo> };
+import { Box, Flex, Text } from "@chakra-ui/react";
+import { Global } from "@emotion/react";
+import { HeaderBar } from "../components/HeaderBar";
+import { EditorPanel } from "../components/EditorPanel";
+import { OutputsPanel } from "../components/OutputsPanel";
+import type {
+  ApiResponse,
+  EngineKey,
+  EngineResult,
+  RunStatus,
+  SampleDescriptor,
+  V8FlagOption,
+  VersionsResp,
+} from "../lib/types";
+import { useColorModeValue } from "@/components/ui/color-mode";
 
 const MIN_SPLIT = 0.25;
 const MAX_SPLIT = 0.75;
@@ -35,7 +42,7 @@ const samples: Record<string, string> = {
 
 type SampleKey = keyof typeof samples;
 
-const sampleCatalog: { key: SampleKey; label: string; description: string }[] = [
+const sampleCatalog: SampleDescriptor[] = [
   { key: "add", label: "Add", description: "Minimal function call returning 42." },
   { key: "closure", label: "Closure", description: "Capturing outer scope and invoking inner function." },
   { key: "loop", label: "Loop", description: "Simple for-loop summing integer range." },
@@ -90,8 +97,6 @@ const v8NativeIntrinsics = [
     detail: "V8 native · Runs garbage collector for provided space",
   },
 ];
-
-type V8FlagOption = { flag: string; label: string; description: string; defaultSelected: boolean };
 
 const v8FlagOptions: V8FlagOption[] = [
   {
@@ -165,7 +170,7 @@ const v8FlagOptions: V8FlagOption[] = [
 export default function Page() {
   const [code, setCode] = useState(samples.add);
   const [engines, setEngines] = useState<Record<EngineKey, boolean>>({ v8: true, sm: true, hermes: true, jsc: true });
-  const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [status, setStatus] = useState<RunStatus>("idle");
   const [out, setOut] = useState<Record<EngineKey, EngineResult>>({
     v8: { exitCode: null, stdout: "", stderr: "" },
     sm: { exitCode: null, stdout: "", stderr: "" },
@@ -192,15 +197,61 @@ export default function Page() {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const sampleApplyRef = useRef<SampleKey | null>("add");
   const resizeCleanupRef = useRef<(() => void) | null>(null);
+
+  const pageBg = useColorModeValue("#f8fafc", "#0f172a");
+  const panelBg = useColorModeValue("#ffffff", "#1e293b");
+  const borderColor = useColorModeValue("#e2e8f0", "#334155");
+  const splitterBg = useColorModeValue("#e2e8f0", "#475569");
+  const splitterGripBg = useColorModeValue("#94a3b8", "#94a3b8");
+  const textPrimary = useColorModeValue("#0f172a", "#e2e8f0");
+
   const activeSampleMeta = useMemo(
     () => sampleCatalog.find((item) => item.key === activeSample) || null,
     [activeSample]
   );
   const selectedV8Flags = useMemo(() => (selectedV8Flag ? [selectedV8Flag] : []), [selectedV8Flag]);
-  const setV8Flag = useCallback((flag: string, checked: boolean) => {
-    if (!checked) return;
-    setSelectedV8Flag(flag);
+
+  const handleV8FlagGroupChange = useCallback((values: string[]) => {
+    if (values.length === 0) {
+      setSelectedV8Flag(null);
+    } else {
+      const last = values[values.length - 1];
+      setSelectedV8Flag(last);
+    }
   }, []);
+
+  const selectedEngines = useMemo(() => (Object.keys(engines) as EngineKey[]).filter((key) => engines[key]), [engines]);
+
+  const handleEnginesChange = useCallback((values: string[]) => {
+    setEngines((prev) => {
+      const base: Record<EngineKey, boolean> = { v8: false, sm: false, hermes: false, jsc: false };
+      if (values.length === 0) {
+        const fallback = (Object.keys(prev) as EngineKey[]).find((key) => prev[key]) ?? "v8";
+        base[fallback] = true;
+        return base;
+      }
+      values.forEach((value) => {
+        if ((["v8", "sm", "hermes", "jsc"] as EngineKey[]).includes(value as EngineKey)) {
+          base[value as EngineKey] = true;
+        }
+      });
+      return base;
+    });
+  }, []);
+
+  const enabledTabs = useMemo(() => tabs.filter((tab) => engines[tab.key]), [engines]);
+  const activeTabIndex = useMemo(() => {
+    const idx = enabledTabs.findIndex((tab) => tab.key === activeTab);
+    return idx >= 0 ? idx : 0;
+  }, [enabledTabs, activeTab]);
+
+  useEffect(() => {
+    if (enabledTabs.length === 0) return;
+    if (!enabledTabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab(enabledTabs[0].key);
+    }
+  }, [enabledTabs, activeTab]);
+
   const onMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -249,8 +300,8 @@ export default function Page() {
     if (!model) return;
 
     const matches = model.findMatches("%[A-Za-z_][A-Za-z0-9_]*", false, true, false, null, true);
-    const decorations = matches.map((m: { range: any }) => ({
-      range: m.range,
+    const decorations = matches.map((match: { range: any }) => ({
+      range: match.range,
       options: { inlineClassName: "token-native-intrinsic" },
     }));
     decorationsRef.current = editor.deltaDecorations(decorationsRef.current, decorations);
@@ -278,8 +329,6 @@ export default function Page() {
     [activeSample]
   );
 
-  const selectedEngines = useMemo(() => (Object.keys(engines) as EngineKey[]).filter((k) => engines[k]), [engines]);
-
   const clampSplit = useCallback((value: number) => Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, value)), []);
 
   const adjustSplit = useCallback(
@@ -297,10 +346,10 @@ export default function Page() {
 
       resizeCleanupRef.current?.();
 
-      const handleMove = (e: PointerEvent) => {
+      const handleMove = (pointerEvent: PointerEvent) => {
         const rect = grid.getBoundingClientRect();
         if (rect.width <= 0) return;
-        const ratio = (e.clientX - rect.left) / rect.width;
+        const ratio = (pointerEvent.clientX - rect.left) / rect.width;
         if (!Number.isFinite(ratio)) return;
         setPanelSplit(clampSplit(ratio));
       };
@@ -352,18 +401,17 @@ export default function Page() {
 
   useEffect(() => () => resizeCleanupRef.current?.(), []);
 
-  // fetch versions once
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("/api/versions", { cache: "no-store" });
-        const data: VersionsResp = await r.json();
-        const v: Record<EngineKey, string> = { v8: "", sm: "", hermes: "", jsc: "" };
-        (["v8", "sm", "hermes", "jsc"] as EngineKey[]).forEach((k) => {
-          const s = data?.engines?.[k];
-          v[k] = s?.ok ? s.short || "ok" : "unavailable";
+        const response = await fetch("/api/versions", { cache: "no-store" });
+        const data: VersionsResp = await response.json();
+        const collected: Record<EngineKey, string> = { v8: "", sm: "", hermes: "", jsc: "" };
+        (Object.keys(collected) as EngineKey[]).forEach((key) => {
+          const info = data?.engines?.[key];
+          collected[key] = info?.ok ? info.short || "ok" : "unavailable";
         });
-        setVersions(v);
+        setVersions(collected);
       } catch {
         setVersions({ v8: "n/a", sm: "n/a", hermes: "n/a", jsc: "n/a" });
       }
@@ -381,12 +429,12 @@ export default function Page() {
     setMeta("");
 
     try {
-      const resp = await fetch("/api/bytecode", {
+      const response = await fetch("/api/bytecode", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ code, engines: selectedEngines, v8Flags: selectedV8Flags }),
       });
-      const data: ApiResponse = await resp.json();
+      const data: ApiResponse = await response.json();
       if (!data.ok) throw new Error(data.error || "Request failed");
 
       const results = data.results || {};
@@ -418,9 +466,9 @@ export default function Page() {
       });
       if (data.meta) setMeta(`Duration: ${data.meta.ms} ms`);
       setStatus("done");
-    } catch (e: any) {
+    } catch (error: any) {
       setStatus("error");
-      setMeta(e?.message || "Error");
+      setMeta(error?.message || "Error");
     }
   }, [code, selectedEngines, selectedV8Flags]);
 
@@ -434,748 +482,108 @@ export default function Page() {
     });
   };
 
-  const copyWithFallback = (text: string) => {
-    try {
-      const el = document.createElement("textarea");
-      el.value = text;
-      el.setAttribute("readonly", "");
-      el.style.position = "fixed";
-      el.style.top = "-9999px";
-      document.body.appendChild(el);
-      el.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(el);
-      return ok;
-    } catch {
-      return false;
-    }
-  };
-
-  const copyActive = async (stream: "stdout" | "stderr") => {
-    const txt = out[activeTab]?.[stream] || "";
-    if (!txt) {
-      setMeta(`Nothing to copy from ${stream}`);
-      return;
-    }
-
-    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
-    if (clipboard?.writeText) {
-      try {
-        await clipboard.writeText(txt);
-        setMeta(`Copied ${stream} to clipboard`);
-        return;
-      } catch {
-        /* fall back */
-      }
-    }
-
-    const ok = copyWithFallback(txt);
-    setMeta(ok ? `Copied ${stream} to clipboard` : `Copy ${stream} failed`);
-  };
-
-  const tabTitle = (label: string, ver?: string, ms?: number) =>
-    `${ver ? `${label} · ${ver}` : label}${typeof ms === "number" ? ` · ${ms}ms` : ""}`;
-
-  const downloadActive = (stream: "stdout" | "stderr") => {
-    const nameMap = {
-      v8: { stdout: "v8.bytecode.txt", stderr: "v8.stderr.txt" },
-      sm: { stdout: "spidermonkey.bytecode.txt", stderr: "spidermonkey.stderr.txt" },
-      hermes: { stdout: "hermes.dis.txt", stderr: "hermes.stderr.txt" },
-      jsc: { stdout: "jsc.bytecode.txt", stderr: "jsc.stderr.txt" },
-    } as const;
-    const fileName = nameMap[activeTab][stream];
-    const blob = new Blob([out[activeTab]?.[stream] || ""], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const labelWithVersion = (label: string, ver?: string) => (ver ? `${label} · ${ver}` : label);
-
-  const showOnlyErrFor = (k: EngineKey) => {
-    if (!onlyErr) return false;
-    const r = out[k];
-    return !!(r.stderr && r.stderr.length > 0) || (typeof r.exitCode === "number" && r.exitCode !== 0);
-  };
-
   return (
-    <div className="page">
-      <header className="bar">
-        <div className="left">
-          <div className="brand">
-            <Image
-              src="/logo.png"
-              alt="JSLab Bytecode Explorer logo"
-              width={40}
-              height={40}
-              className="brandLogo"
-              priority
+    <>
+      <Global
+        styles={`
+          .token-native-intrinsic { color: #f59e0b; font-weight: 600; }
+          body.resizing-cursor, body.resizing-cursor * { cursor: col-resize !important; }
+        `}
+      />
+      <Flex direction="column" minH="100vh" bg={pageBg} color={textPrimary}>
+        <Box as="header" px={6} py={4} borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
+          <HeaderBar
+            onRun={run}
+            status={status}
+            meta={meta}
+            selectedEngines={selectedEngines}
+            onEnginesChange={handleEnginesChange}
+            onlyErrors={onlyErr}
+            onOnlyErrorsChange={setOnlyErr}
+            versions={versions}
+            tabs={tabs}
+          />
+        </Box>
+
+        <Flex ref={gridRef} gap={4} flex="1" px={6} py={4} align="stretch">
+          <Box
+            bg={panelBg}
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="lg"
+            display="flex"
+            flexDirection="column"
+            overflow="hidden"
+            minH={0}
+            flexGrow={panelSplit}
+            flexShrink={1}
+            flexBasis="0%"
+          >
+            <Box px={5} py={4} borderBottom="1px solid" borderColor={borderColor}>
+              <Text fontWeight="semibold">Editor</Text>
+            </Box>
+            <EditorPanel
+              code={code}
+              onCodeChange={handleEditorChange}
+              onEditorMount={onMount}
+              samples={sampleCatalog}
+              activeSampleKey={activeSample}
+              activeSampleDescription={activeSampleMeta?.description ?? null}
+              onSelectSample={(key) => setSample(key as SampleKey)}
+              samplesOpen={samplesOpen}
+              onToggleSamples={() => setSamplesOpen((open) => !open)}
+              v8FlagOptions={v8FlagOptions}
+              selectedV8Flags={selectedV8Flags}
+              onV8FlagsChange={handleV8FlagGroupChange}
+              v8FlagsOpen={v8FlagsOpen}
+              onToggleV8Flags={() => setV8FlagsOpen((open) => !open)}
+              showV8Flags={engines.v8}
             />
-            <span className="brandName">JSLab Bytecode Explorer</span>
-          </div>
-          <button className="btn primary" onClick={run} disabled={status === "running"}>
-            Run
-          </button>
-          <label>
-            <input
-              type="checkbox"
-              checked={engines.v8}
-              onChange={(e) => setEngines((v) => ({ ...v, v8: e.target.checked }))}
-            />{" "}
-            V8
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={engines.sm}
-              onChange={(e) => setEngines((v) => ({ ...v, sm: e.target.checked }))}
-            />{" "}
-            SpiderMonkey
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={engines.hermes}
-              onChange={(e) => setEngines((v) => ({ ...v, hermes: e.target.checked }))}
-            />{" "}
-            Hermes
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={engines.jsc}
-              onChange={(e) => setEngines((v) => ({ ...v, jsc: e.target.checked }))}
-            />{" "}
-            JSC
-          </label>
-          <label title="Показывать только stderr, если у движка есть ошибки или ненулевой exit code">
-            <input type="checkbox" checked={onlyErr} onChange={(e) => setOnlyErr(e.target.checked)} /> Only stderr on
-            error
-          </label>
-        </div>
-        <div className="right">
-          <span className={`badge ${status}`}>{status}</span>
-          {meta && <span className="meta">{meta}</span>}
-          <div className="versions">
-            <span className="chip" title={versions.v8}>
-              {versions.v8 || "v8"}
-            </span>
-            <span className="chip" title={versions.sm}>
-              {versions.sm || "sm"}
-            </span>
-            <span className="chip" title={versions.hermes}>
-              {versions.hermes || "hermes"}
-            </span>
-            <span className="chip" title={versions.jsc}>
-              {versions.jsc || "jsc"}
-            </span>
-          </div>
-        </div>
-      </header>
+          </Box>
 
-      <main
-        className="grid"
-        ref={gridRef}
-        style={{ gridTemplateColumns: `${panelSplit}fr 10px ${Math.max(0.1, 1 - panelSplit)}fr` }}
-      >
-        <section className="panel">
-          <div className="panelHead">
-            <strong>Editor</strong>
-            <div className="samplesWrap">
-              <div className="samplesHeader">
-                <button
-                  type="button"
-                  className="sectionToggle"
-                  onClick={() => setSamplesOpen((open) => !open)}
-                  aria-expanded={samplesOpen}
-                  aria-controls="samples-panel"
-                >
-                  <span className="sectionCaret" aria-hidden>
-                    {samplesOpen ? "▾" : "▸"}
-                  </span>
-                  <span className="samplesTitle">Samples</span>
-                </button>
-                {samplesOpen && activeSampleMeta && (
-                  <span className="samplesDescription">{activeSampleMeta.description}</span>
-                )}
-              </div>
-              {samplesOpen && (
-                <div className="sampleScroller" role="list" id="samples-panel">
-                  {sampleCatalog.map(({ key, label, description }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`btn sampleChip ${activeSample === key ? "active" : ""}`}
-                      onClick={() => setSample(key)}
-                      aria-pressed={activeSample === key}
-                      title={description}
-                      role="listitem"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {engines.v8 && (
-                <div className="v8FlagsBlock" role="group" aria-label="V8 flags">
-                  <div className="v8FlagsHeader">
-                    <button
-                      type="button"
-                      className="sectionToggle"
-                      onClick={() => setV8FlagsOpen((open) => !open)}
-                      aria-expanded={v8FlagsOpen}
-                      aria-controls="v8-flags-panel"
-                    >
-                      <span className="sectionCaret" aria-hidden>
-                        {v8FlagsOpen ? "▾" : "▸"}
-                      </span>
-                      <span className="v8FlagsTitle">V8 flags</span>
-                    </button>
-                  </div>
-                  {v8FlagsOpen && (
-                    <div className="v8FlagsList" id="v8-flags-panel">
-                      {v8FlagOptions.map((option) => (
-                        <label key={option.flag} className="v8FlagItem">
-                          <input
-                            type="checkbox"
-                            checked={selectedV8Flag === option.flag}
-                            onChange={(e) => setV8Flag(option.flag, e.target.checked)}
-                          />
-                          <span className="v8FlagText">
-                            <span className="v8FlagLabel">{option.label}</span>
-                            <span className="v8FlagDescription">{option.description}</span>
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="editorWrap">
-            <Editor
-              height="100%"
-              defaultLanguage="javascript"
-              value={code}
-              onChange={handleEditorChange}
-              onMount={onMount}
-              options={{ minimap: { enabled: false }, fontSize: 14 }}
-            />
-          </div>
-        </section>
+          <Box
+            role="separator"
+            aria-orientation="vertical"
+            aria-valuenow={Math.round(panelSplit * 100)}
+            aria-valuemin={MIN_SPLIT * 100}
+            aria-valuemax={MAX_SPLIT * 100}
+            tabIndex={0}
+            onPointerDown={handleSplitterPointerDown}
+            onDoubleClick={handleSplitterDoubleClick}
+            onKeyDown={handleSplitterKey}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            bg={splitterBg}
+            borderRadius="full"
+            cursor="col-resize"
+            minH="160px"
+            flex="0 0 12px"
+            w="12px"
+          >
+            <Box w="4px" h="32px" borderRadius="full" bg={splitterGripBg} />
+          </Box>
 
-        <div
-          className="splitter"
-          role="separator"
-          aria-orientation="vertical"
-          aria-valuenow={Math.round(panelSplit * 100)}
-          aria-valuemin={MIN_SPLIT * 100}
-          aria-valuemax={MAX_SPLIT * 100}
-          tabIndex={0}
-          onPointerDown={handleSplitterPointerDown}
-          onDoubleClick={handleSplitterDoubleClick}
-          onKeyDown={handleSplitterKey}
-        >
-          <span className="splitterGrip" aria-hidden />
-        </div>
-
-        <section className="panel">
-          <div className="panelHead">
-            <div className="tabs">
-              {tabs
-                .filter((t) => engines[t.key]) // показываем только выбранные
-                .map((t) => {
-                  const hasOutput = (out[t.key]?.stdout?.length ?? 0) > 0 || (out[t.key]?.stderr?.length ?? 0) > 0;
-                  const exit = out[t.key]?.exitCode;
-                  const ok = typeof exit === "number" ? exit === 0 : hasOutput;
-                  // время отдельного движка: достанем из stderr/stdout мету — мы её уже получаем из API
-                  // проще: вернём ms из results в стейте out. Для этого чуть ниже будет п. “ms в состоянии”.
-                  const ms = (out as any)[t.key]?.ms as number | undefined;
-
-                  return (
-                    <button
-                      key={t.key}
-                      className={`tab ${activeTab === t.key ? "active" : ""} ${hasOutput ? "" : "muted"}`}
-                      onClick={() => setActiveTab(t.key)}
-                      title={out[t.key]?.exitCode !== null ? `exit: ${out[t.key]?.exitCode}` : "no exit code"}
-                    >
-                      <span className={`dot ${ok ? "ok" : "bad"}`} aria-hidden />
-                      {tabTitle(t.label, versions[t.key], ms)}
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-
-          <div className="outputControls">
-            <div className="controlGroup">
-              <span className="controlLabel">Copy</span>
-              <button className="btn" onClick={() => copyActive("stdout")}>
-                stdout
-              </button>
-              <button className="btn" onClick={() => copyActive("stderr")}>
-                stderr
-              </button>
-            </div>
-            <div className="controlGroup">
-              <span className="controlLabel">Download</span>
-              <button className="btn" onClick={() => downloadActive("stdout")}>
-                stdout
-              </button>
-              <button className="btn" onClick={() => downloadActive("stderr")}>
-                stderr
-              </button>
-            </div>
-          </div>
-
-          <div className="outputs">
-            {tabs.map((t) => (
-              <div key={t.key} style={{ display: activeTab === t.key ? "block" : "none" }} className="output">
-                {showOnlyErrFor(t.key) ? (
-                  <>
-                    <div className="streamTitle">stderr</div>
-                    <pre className="stderr">{out[t.key]?.stderr || "(no stderr)"}</pre>
-                  </>
-                ) : (
-                  <>
-                    <div className="streamTitle">stdout</div>
-                    <pre className="stdout">{out[t.key]?.stdout || "(no stdout)"}</pre>
-                    <div className="streamTitle">stderr</div>
-                    <pre className="stderr">{out[t.key]?.stderr || "(no stderr)"}</pre>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      <style jsx global>{`
-        * {
-          box-sizing: border-box;
-        }
-        body {
-          margin: 0;
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
-          color: #111;
-        }
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .brandName {
-          font-size: 16px;
-          font-weight: 600;
-          color: #0f172a;
-        }
-        .brandLogo {
-          border-radius: 8px;
-          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
-        }
-        .samplesWrap {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 6px;
-          min-width: 0;
-        }
-        .samplesHeader {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-          flex-wrap: wrap;
-          max-width: 420px;
-        }
-        .sectionToggle {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 8px;
-          border: 1px solid #cbd5f5;
-          border-radius: 999px;
-          background: #eef2ff;
-          color: #0f172a;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          cursor: pointer;
-          transition: background 0.2s ease, border-color 0.2s ease;
-        }
-        .sectionToggle:hover {
-          background: #dde3ff;
-        }
-        .sectionToggle:focus-visible {
-          outline: 2px solid #0f172a;
-          outline-offset: 2px;
-        }
-        .sectionCaret {
-          font-size: 12px;
-          line-height: 1;
-        }
-        .samplesTitle {
-          font-size: 13px;
-          font-weight: 600;
-          color: #0f172a;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .samplesDescription {
-          font-size: 12px;
-          color: #475569;
-          line-height: 1.4;
-        }
-        .sampleScroller {
-          display: flex;
-          gap: 6px;
-          overflow-x: auto;
-          padding-bottom: 4px;
-          max-width: 100%;
-        }
-        .sampleScroller::-webkit-scrollbar {
-          height: 6px;
-        }
-        .sampleScroller::-webkit-scrollbar-thumb {
-          background: rgba(15, 23, 42, 0.3);
-          border-radius: 999px;
-        }
-        .btn.sampleChip {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 6px 12px;
-          font-size: 13px;
-          font-weight: 500;
-          border-radius: 999px;
-          border-color: #cbd5f5;
-          background: #f8fafc;
-          color: #0f172a;
-          white-space: nowrap;
-          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-        }
-        .btn.sampleChip:hover {
-          background: #e2e8f0;
-        }
-        .btn.sampleChip.active {
-          background: #0f172a;
-          color: #fff;
-          border-color: #0f172a;
-          box-shadow: 0 0 0 1px #0f172a;
-        }
-        .splitter {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #e2e8f0;
-          border-radius: 999px;
-          cursor: col-resize;
-          touch-action: none;
-          min-height: 120px;
-        }
-        .splitter:hover {
-          background: #cbd5f5;
-        }
-        .splitter:focus-visible {
-          outline: 2px solid #0f172a;
-          outline-offset: 2px;
-        }
-        .splitterGrip {
-          width: 4px;
-          height: 32px;
-          border-radius: 999px;
-          background: rgba(15, 23, 42, 0.45);
-        }
-        .resizing-cursor,
-        .resizing-cursor * {
-          cursor: col-resize !important;
-        }
-        .page {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-        .token-native-intrinsic {
-          color: #facc15;
-          font-weight: 600;
-        }
-        .bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 12px 16px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .left,
-        .right {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        label {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 14px;
-          color: #374151;
-        }
-        .v8FlagsBlock {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          align-items: flex-start;
-          margin-top: 8px;
-        }
-        .v8FlagsHeader {
-          width: 100%;
-          display: flex;
-          align-items: center;
-        }
-        .v8FlagsTitle {
-          font-size: 12px;
-          font-weight: 600;
-          color: #0f172a;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .v8FlagsList {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          width: 100%;
-        }
-        .v8FlagItem {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 6px 8px;
-          background: #fff;
-        }
-        .v8FlagItem input {
-          margin: 2px 0 0;
-        }
-        .v8FlagText {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          font-size: 12px;
-          color: #1f2937;
-        }
-        .v8FlagLabel {
-          font-weight: 600;
-          color: #0f172a;
-        }
-        .v8FlagDescription {
-          font-size: 11px;
-          color: #4b5563;
-          line-height: 1.4;
-        }
-        .meta {
-          font-size: 12px;
-          color: #374151;
-        }
-        .versions {
-          display: flex;
-          gap: 6px;
-        }
-        .chip {
-          padding: 3px 8px;
-          border: 1px solid #d1d5db;
-          border-radius: 999px;
-          font-size: 12px;
-          background: #fff;
-          color: #111827;
-          max-width: 220px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .grid {
-          flex: 1;
-          display: grid;
-          grid-template-columns: 1fr 10px 1fr;
-          gap: 12px;
-          padding: 12px;
-        }
-        .panel {
-          border: 1px solid #e5e7eb;
-          border-radius: 10px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-        }
-        .panelHead {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 10px 12px;
-          border-bottom: 1px solid #f1f5f9;
-          background: #fafafa;
-        }
-        .editorWrap {
-          flex: 1;
-          min-height: 0;
-        }
-        .tabs {
-          display: flex;
-          gap: 6px;
-        }
-        .tab {
-          padding: 6px 10px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          background: #fff;
-          font-weight: 600;
-          font-size: 14px;
-          color: #111827;
-        }
-        .tab.active {
-          background: #111827;
-          color: #fff;
-          border-color: #111827;
-        }
-        .tab.muted {
-          opacity: 0.7;
-        }
-        .outputs {
-          flex: 1;
-          overflow: auto;
-        }
-        .outputControls {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 8px;
-          padding: 8px 12px;
-          border-bottom: 1px solid #f1f5f9;
-          background: #f8fafc;
-        }
-        .controlGroup {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .controlLabel {
-          font-size: 12px;
-          font-weight: 600;
-          color: #475569;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-        .output {
-          padding: 8px 12px;
-        }
-        .streamTitle {
-          margin: 6px 0 4px;
-          font-size: 12px;
-          color: #374151;
-          font-weight: 600;
-        }
-        pre {
-          margin: 0;
-          white-space: pre-wrap;
-          word-break: break-word;
-          font-size: 12px;
-          line-height: 1.5;
-        }
-        pre.stdout {
-          color: #065f46;
-        }
-        pre.stderr {
-          color: #7f1d1d;
-        }
-        .btn {
-          padding: 6px 10px;
-          border: 1px solid #9ca3af;
-          border-radius: 8px;
-          background: #fff;
-          cursor: pointer;
-        }
-        .btn.primary {
-          border-color: #111827;
-          background: #111827;
-          color: #fff;
-        }
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .badge {
-          padding: 4px 8px;
-          border-radius: 999px;
-          font-size: 12px;
-          background: #f3f4f6;
-          text-transform: lowercase;
-        }
-        .badge.running {
-          background: #fef3c7;
-        }
-        .badge.done {
-          background: #dcfce7;
-        }
-        .badge.error {
-          background: #fee2e2;
-        }
-        .tab {
-          padding: 6px 10px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          background: #fff;
-          font-weight: 600;
-          font-size: 14px;
-          color: #0f172a;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .tab.active {
-          background: #0f172a;
-          color: #fff;
-          border-color: #0f172a;
-        }
-        .tab.muted {
-          opacity: 0.7;
-        }
-        .dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 999px;
-          background: #9ca3af;
-          display: inline-block;
-        }
-        .dot.ok {
-          background: #22c55e;
-        }
-        .dot.bad {
-          background: #ef4444;
-        }
-
-        pre.stdout {
-          color: #0f766e;
-          background: #f0fdfa;
-          border: 1px solid #ccfbf1;
-          border-radius: 8px;
-          padding: 8px;
-        }
-        pre.stderr {
-          color: #991b1b;
-          background: #fef2f2;
-          border: 1px solid #fee2e2;
-          border-radius: 8px;
-          padding: 8px;
-        }
-      `}</style>
-    </div>
+          <Box
+            bg={panelBg}
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="lg"
+            display="flex"
+            flexDirection="column"
+            overflow="hidden"
+            minH={0}
+            flexGrow={Math.max(0.1, 1 - panelSplit)}
+            flexShrink={1}
+            flexBasis="0%"
+          >
+            <Box px={5} py={4} borderBottom="1px solid" borderColor={borderColor}>
+              <Text fontWeight="semibold">Outputs</Text>
+            </Box>
+            <OutputsPanel enabledTabs={enabledTabs} activeTabIndex={activeTabIndex} out={out} versions={versions} />
+          </Box>
+        </Flex>
+      </Flex>
+    </>
   );
 }
