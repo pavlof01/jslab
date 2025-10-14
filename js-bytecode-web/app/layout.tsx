@@ -14,8 +14,51 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JS Bytecode Explorer",
-  description: "Run snippets against V8, SpiderMonkey, and Hermes to compare bytecode side by side.",
+  title: {
+    default: "JSLab — Explore JS Engines",
+    template: "%s | JSLab",
+  },
+  description:
+    "Explore JavaScript engines interactively — view bytecode, analyze execution stages, and compare performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
+  keywords: [
+    "JavaScript",
+    "V8",
+    "bytecode",
+    "JS engines",
+    "disassembly",
+    "compiler",
+    "JS bytecode",
+    "SpiderMonkey",
+    "JavaScriptCore",
+    "Hermes",
+    "JIT",
+    "interpreter",
+    "AST",
+  ],
+  authors: { name: "Pavlov Alexey", url: "https://github.com/pavlof01" },
+  creator: "Pavlov Alexey",
+  publisher: "Pavlov Alexey",
+  metadataBase: new URL("https://jslab.cc"),
+  alternates: {
+    canonical: "https://jslab.cc",
+  },
+  openGraph: {
+    title: "JSLab — Explore JS Engines",
+    description:
+      "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
+    url: "https://jslab.cc",
+    siteName: "JSLab",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "JSLab — Explore JS Engines",
+      },
+    ],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
@@ -23,6 +66,15 @@ export const metadata: Metadata = {
     ],
     shortcut: "/favicon.ico",
     apple: [{ url: "/icon.png", sizes: "256x256", type: "image/png" }],
+  },
+  manifest: "/site.webmanifest",
+  themeColor: "#111827",
+  colorScheme: "dark",
+  category: "developer tools",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
   },
 };
 
