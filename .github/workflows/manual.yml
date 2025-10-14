@@ -1,0 +1,65 @@
+name: Deploy jslab.cc (Next.js via systemd)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (опционально) быстрый линт/тип-чекап локально
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ secrets.NODE_VERSION || '20' }}
+          cache: 'npm'
+
+      - name: Install deps (CI check only)
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm run typecheck --if-present
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Push latest code to server and build
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            cd "${{ secrets.APP_DIR }}"
+
+            echo "[1/5] Pull repo"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "[2/5] Use Node version"
+            # На сервере должен стоять нужный Node. Если используешь nvm - раскомментируй:
+            # source ~/.nvm/nvm.sh
+            # nvm install ${{ secrets.NODE_VERSION || '20' }}
+            # nvm use ${{ secrets.NODE_VERSION || '20' }}
+
+            echo "[3/5] Install deps"
+            npm ci
+
+            echo "[4/5] Build"
+            npm run build
+
+            echo "[5/5] Restart service"
+            sudo systemctl restart "${{ secrets.SERVICE_NAME }}"
+            sudo systemctl --no-pager --full status "${{ secrets.SERVICE_NAME }}" || true
