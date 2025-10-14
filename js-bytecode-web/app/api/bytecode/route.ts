@@ -21,7 +21,7 @@ function binOrHint(err: unknown, hintPath: string) {
 
 // === ПУТИ (дефолты под linux x64; переопредели через .env.local) ===
 const V8_D8 = process.env.V8_D8 || "engines/v8/out.gn/x64.release/d8";
-const SM_JS = process.env.SM_JS || "engines/spidermonkey/dist/bin/js"; // поправь под свою сборку
+const SM_JS = process.env.SM_JS || "engines/sm/dist/bin/js"; // поправь под свою сборку
 const HERMESC = process.env.HERMESC || "engines/hermes/build_release/bin/hermesc";
 const HERMES = process.env.HERMES || "engines/hermes/build_release/bin/hermes";
 const HBCDUMP = process.env.HBCDUMP || "engines/hermes/build_release/bin/hbcdump";
