@@ -5,6 +5,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+# 1) Все run-команды по умолчанию в подпапке
+defaults:
+  run:
+    working-directory: js-bytecode-web
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,13 +17,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # (опционально) быстрый линт/тип-чекап локально
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ secrets.NODE_VERSION || '20' }}
-          cache: 'npm'
+          cache: npm
+          # 2) Явно указываем путь к lock-файлу
+          cache-dependency-path: js-bytecode-web/package-lock.json
 
       - name: Install deps (CI check only)
         run: |
@@ -31,7 +39,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Push latest code to server and build
+      - name: Deploy over SSH (pull/build/restart on server)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -41,25 +49,14 @@ jobs:
           script_stop: true
           script: |
             set -e
-
             cd "${{ secrets.APP_DIR }}"
-
             echo "[1/5] Pull repo"
             git fetch origin main
             git reset --hard origin/main
-
-            echo "[2/5] Use Node version"
-            # На сервере должен стоять нужный Node. Если используешь nvm - раскомментируй:
-            # source ~/.nvm/nvm.sh
-            # nvm install ${{ secrets.NODE_VERSION || '20' }}
-            # nvm use ${{ secrets.NODE_VERSION || '20' }}
-
-            echo "[3/5] Install deps"
+            echo "[2/5] Install deps"
             npm ci
-
-            echo "[4/5] Build"
+            echo "[3/5] Build"
             npm run build
-
-            echo "[5/5] Restart service"
+            echo "[4/5] Restart service"
             sudo systemctl restart "${{ secrets.SERVICE_NAME }}"
             sudo systemctl --no-pager --full status "${{ secrets.SERVICE_NAME }}" || true
