@@ -68,24 +68,29 @@ function runProc(
 const DEFAULT_V8_FLAG = "--print-bytecode";
 
 function sanitizeV8Flags(value: unknown): string[] {
-  if (!Array.isArray(value)) {
+  const incoming = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+
+  const seen = new Set<string>();
+  const cleaned: string[] = [];
+
+  for (const raw of incoming) {
+    if (typeof raw !== "string") continue;
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith("--")) continue;
+    if (seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    cleaned.push(trimmed);
+  }
+
+  if (cleaned.length === 0) {
     return [DEFAULT_V8_FLAG];
   }
 
-  const flags = value
-    .map((flag) => (typeof flag === "string" ? flag.trim() : ""))
-    .filter((flag) => flag.startsWith("--"));
-
-  if (flags.length === 0) {
-    return [DEFAULT_V8_FLAG];
-  }
-
-  // Preserve ordering but drop duplicates, only keep first flag.
-  const first = Array.from(new Set(flags))[0];
-  return first ? [first] : [DEFAULT_V8_FLAG];
+  return cleaned;
 }
 
 async function runV8(tmpJs: string, flags: string[]): Promise<RunResult> {
+  console.log(`Running V8 with flags: ${flags.join(" ")}`);
   return runProc(V8_D8, [...flags, tmpJs], { enoentHint: V8_D8 });
 }
 
