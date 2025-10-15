@@ -34,16 +34,6 @@ export function HeaderBar({ onRun, status, meta }: HeaderBarProps) {
         <HStack align="center" gap={3}>
           <Image src="/jslab-logo-transparent.png" alt="JSLab" width={40} height={40} priority />
         </HStack>
-        <Button
-          size="xl"
-          w={120}
-          bgColor="green.300"
-          onClick={onRun}
-          loading={status === "running"}
-          loadingText="Running"
-        >
-          <CiPlay1 /> Run
-        </Button>
       </HStack>
       <HStack gap={4} align="center">
         <Badge colorScheme={statusColor[status]} textTransform="capitalize" px={3} py={1} borderRadius="md">
