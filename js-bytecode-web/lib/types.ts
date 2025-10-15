@@ -15,7 +15,6 @@ export type VersionInfo = {
 };
 export type VersionsResp = { ok: boolean; engines: Record<EngineKey, VersionInfo> };
 export type RunStatus = "idle" | "running" | "done" | "error";
-export type SampleDescriptor = { key: string; label: string; description: string };
 export type V8FlagOption = {
   flag: string;
   label: string;
