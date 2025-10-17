@@ -25,26 +25,22 @@ const v8FlagOptions: V8FlagOption[] = [
   {
     flag: "--print-code",
     label: "print-code",
-    description:
-      "Disassemble every piece of machine code V8 generates, covering baseline and optimised tiers.",
+    description: "Disassemble every piece of machine code V8 generates, covering baseline and optimised tiers.",
   },
   {
     flag: "--print-opt-code",
     label: "print-opt-code",
-    description:
-      "Emit only the optimised machine code produced by TurboFan when hot functions tier-up.",
+    description: "Emit only the optimised machine code produced by TurboFan when hot functions tier-up.",
   },
   {
     flag: "--print-regexp-bytecode",
     label: "print-regexp-bytecode",
-    description:
-      "Log the bytecode emitted by V8's regexp interpreter for each compiled pattern.",
+    description: "Log the bytecode emitted by V8's regexp interpreter for each compiled pattern.",
   },
   {
     flag: "--print-regexp-code",
     label: "print-regexp-code",
-    description:
-      "Disassemble the native code generated for regular expressions when they are JIT compiled.",
+    description: "Disassemble the native code generated for regular expressions when they are JIT compiled.",
   },
   {
     flag: "--trace-opt",
@@ -70,6 +66,18 @@ const v8FlagOptions: V8FlagOption[] = [
     description:
       "Trace inline cache updates so you can see when property accesses transition from monomorphic to megamorphic.",
   },
+  {
+    flag: "--trace-maps",
+    label: "trace-maps",
+    description:
+      "Track object shape (hidden class) creation and transitions to visualize how V8 organizes object layouts.",
+  },
+  {
+    flag: "--trace-maps-details",
+    label: "trace-maps-details",
+    description:
+      "Provide detailed information about object shape transitions including property descriptors and transition paths.",
+  },
 ];
 
 type Props = {
@@ -91,7 +99,7 @@ function V8FlagSelector({ selectedV8Flags, setSelectedV8Flags }: Props) {
     <Dialog.Root placement="center" size="lg">
       <Dialog.Trigger asChild>
         <Button variant="solid" size="sm">
-          V8 Flags: {displayLabel}
+          Select Flags: {displayLabel}
         </Button>
       </Dialog.Trigger>
       <Portal>
