@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, CodeBlock, createShikiAdapter, For, IconButton, Stack, Tabs, Text } from "@chakra-ui/react";
+import { Box, CodeBlock, createShikiAdapter, For, IconButton, Stack, Tabs, Text, HStack } from "@chakra-ui/react";
 import type { EngineKey, EngineResult } from "../../lib/types";
 import { useColorModeValue } from "../ui/color-mode";
 import { HighlighterGeneric } from "shiki";
 import V8FlagSelector from "../V8FlagSelector";
+import V8Intrinsics from "../V8Intrinsics";
 import type { Dispatch, SetStateAction } from "react";
 
 const shikiAdapter = createShikiAdapter<HighlighterGeneric<any, any>>({
@@ -71,7 +72,10 @@ export function OutputsPanel({
                 <Stack gap={4}>
                   {variant.key === "v8" ? (
                     <Stack gap={2}>
-                      <V8FlagSelector selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
+                      <HStack align="center" gap={2} flexWrap="wrap">
+                        <V8FlagSelector selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
+                        <V8Intrinsics />
+                      </HStack>
                       <Text fontSize="sm" color={subTextColor}>
                         Selected: {selectedV8Flags.length ? selectedV8Flags.join(", ") : "None"}
                       </Text>
