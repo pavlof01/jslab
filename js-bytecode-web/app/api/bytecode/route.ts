@@ -65,7 +65,7 @@ function runProc(
 
 // ---- per-engine runners ----
 
-const DEFAULT_V8_FLAG = "--print-bytecode";
+const DEFAULT_V8_FLAG: string | null = null;
 
 function sanitizeV8Flags(value: unknown): string[] {
   const incoming = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
@@ -83,7 +83,7 @@ function sanitizeV8Flags(value: unknown): string[] {
   }
 
   if (cleaned.length === 0) {
-    return [DEFAULT_V8_FLAG];
+    return DEFAULT_V8_FLAG ? [DEFAULT_V8_FLAG] : [];
   }
 
   return cleaned;
