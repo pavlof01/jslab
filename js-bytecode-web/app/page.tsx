@@ -11,10 +11,11 @@ import type { ApiResponse, EngineKey, EngineResult, RunStatus, VersionsResp } fr
 import { useColorModeValue } from "@/components/ui/color-mode";
 import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
 import { CiPlay1 } from "react-icons/ci";
-import Samples, { SampleKey, samples } from "@/components/Samples";
+import Samples, { samples } from "@/components/Samples";
 
-const MIN_SPLIT = 0.25;
-const MAX_SPLIT = 0.75;
+const MIN_SPLIT = 0.1;
+const START_SPLIT = 0.35;
+const MAX_SPLIT = 0.9;
 
 const tabs: { key: EngineKey; label: string }[] = [
   { key: "v8", label: "V8" },
@@ -79,7 +80,7 @@ export default function Page() {
   const [meta, setMeta] = useState<string>("");
   const [activeTab, setActiveTab] = useState<EngineKey>("v8");
   const [versions, setVersions] = useState<Record<EngineKey, string>>({ v8: "", sm: "", hermes: "", jsc: "" });
-  const [panelSplit, setPanelSplit] = useState(0.55);
+  const [panelSplit, setPanelSplit] = useState(START_SPLIT);
   const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
 
   const editorRef = useRef<any>(null);
@@ -339,12 +340,12 @@ export default function Page() {
     }
   }, [code, selectedEngines, selectedV8Flags]);
 
-  const setSample = (key: SampleKey) => {
-    setCode(samples[key]);
+  const handleSampleSelect = useCallback((snippet: string) => {
+    setCode(snippet);
     requestAnimationFrame(() => {
       editorRef.current?.focus?.();
     });
-  };
+  }, []);
 
   return (
     <>
@@ -377,7 +378,7 @@ export default function Page() {
               <Box>
                 <Text fontWeight="semibold">Editor</Text>
               </Box>
-              <Samples onSelectSample={(key) => setSample(key as SampleKey)} />
+              <Samples currentCode={code} onSelectSample={handleSampleSelect} />
               <Button
                 size="xl"
                 w={120}
