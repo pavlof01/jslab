@@ -2,26 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
-import { Box, Button, Flex, HStack, Text } from "@chakra-ui/react";
-import { Global } from "@emotion/react";
+import { ActionBar, Box, Button, Flex, HStack, Portal, Show, Spacer, Text } from "@chakra-ui/react";
 import { HeaderBar } from "../components/HeaderBar";
 import { EditorPanel } from "../components/EditorPanel";
 import { OutputsPanel } from "../components/OutputsPanel";
-import type { ApiResponse, EngineKey, EngineResult, RunStatus, VersionsResp } from "../lib/types";
+import { ENGINE_KEYS, EngineKey, isEngineKey } from "../lib/types";
+import type { ApiResponse, EngineResult, RunStatus, VersionsResp } from "../lib/types";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
 import { CiPlay1 } from "react-icons/ci";
+import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import Samples, { samples } from "@/components/Samples";
 
-const MIN_SPLIT = 0.1;
+const MIN_SPLIT = 0;
 const START_SPLIT = 0.35;
 const MAX_SPLIT = 0.9;
 
 const tabs: { key: EngineKey; label: string }[] = [
-  { key: "v8", label: "V8" },
-  { key: "sm", label: "SpiderMonkey" },
-  { key: "hermes", label: "Hermes" },
-  { key: "jsc", label: "JSC" },
+  { key: EngineKey.v8, label: "V8" },
+  { key: EngineKey.sm, label: "SpiderMonkey" },
+  { key: EngineKey.hermes, label: "Hermes" },
+  { key: EngineKey.jsc, label: "JSC" },
 ];
 
 const v8NativeIntrinsics = [
@@ -62,26 +63,44 @@ const v8NativeIntrinsics = [
   },
 ];
 
+const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
+const createEmptyOut = (): Record<EngineKey, EngineResult> =>
+  Object.fromEntries(ENGINE_KEYS.map((key) => [key, { ...DEFAULT_ENGINE_OUT }])) as Record<EngineKey, EngineResult>;
+const createEngineSelection = (): Record<EngineKey, boolean> => ({
+  [EngineKey.v8]: true,
+  [EngineKey.sm]: false,
+  [EngineKey.hermes]: false,
+  [EngineKey.jsc]: false,
+});
+const createEmptyVersions = (): Record<EngineKey, string> =>
+  Object.fromEntries(ENGINE_KEYS.map((key) => [key, ""])) as Record<EngineKey, string>;
+
+type PreviousRunSnapshot = {
+  out: Record<EngineKey, EngineResult>;
+  engines: EngineKey[];
+  activeTab: EngineKey;
+  code: string;
+  v8Flags: string[];
+  timestamp: number;
+};
+type RunContext = Omit<PreviousRunSnapshot, "out">;
+
 export default function Page() {
   const [code, setCode] = useState(samples.add);
-  const [engines, setEngines] = useState<Record<EngineKey, boolean>>({
-    v8: true,
-    sm: false,
-    hermes: false,
-    jsc: false,
-  });
+  const [engines, setEngines] = useState<Record<EngineKey, boolean>>(() => createEngineSelection());
   const [status, setStatus] = useState<RunStatus>("idle");
-  const [out, setOut] = useState<Record<EngineKey, EngineResult>>({
-    v8: { exitCode: null, stdout: "", stderr: "" },
-    sm: { exitCode: null, stdout: "", stderr: "" },
-    hermes: { exitCode: null, stdout: "", stderr: "" },
-    jsc: { exitCode: null, stdout: "", stderr: "" },
-  });
+
+  const [out, setOut] = useState<Record<EngineKey, EngineResult>>(() => createEmptyOut());
+
+  const [previousSnapshot, setPreviousSnapshot] = useState<PreviousRunSnapshot>();
+  const [currentRunContext, setCurrentRunContext] = useState<RunContext>();
   const [meta, setMeta] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<EngineKey>("v8");
-  const [versions, setVersions] = useState<Record<EngineKey, string>>({ v8: "", sm: "", hermes: "", jsc: "" });
+  const [activeTab, setActiveTab] = useState<EngineKey>(EngineKey.v8);
+  const [versions, setVersions] = useState<Record<EngineKey, string>>(() => createEmptyVersions());
   const [panelSplit, setPanelSplit] = useState(START_SPLIT);
   const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
+  const [showPreviousPanel, setShowPreviousPanel] = useState(false);
+  const [previousPanelTab, setPreviousPanelTab] = useState<EngineKey>(EngineKey.v8);
 
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
@@ -97,21 +116,32 @@ export default function Page() {
   const splitterGripBg = useColorModeValue("#94a3b8", "#94a3b8");
   const textPrimary = useColorModeValue("#0f172a", "#e2e8f0");
 
-  const selectedEngines = useMemo(() => (Object.keys(engines) as EngineKey[]).filter((key) => engines[key]), [engines]);
+  const selectedEngines = useMemo(() => ENGINE_KEYS.filter((key) => engines[key]), [engines]);
 
-  const handleEnginesChange = useCallback((values: string[]) => {
+  const previousTabs = useMemo(
+    () => (previousSnapshot ? tabs.filter((tab) => previousSnapshot.engines.includes(tab.key)) : []),
+    [previousSnapshot]
+  );
+
+  const previousActiveTabIndex = useMemo(() => {
+    if (!previousTabs.length) return 0;
+    const idx = previousTabs.findIndex((tab) => tab.key === previousPanelTab);
+    return idx >= 0 ? idx : 0;
+  }, [previousPanelTab, previousTabs]);
+
+  const handleEnginesChange = useCallback((values: EngineKey[]) => {
     setEngines(() => {
-      const base: Record<EngineKey, boolean> = { v8: true, sm: false, hermes: false, jsc: false };
-      const normalized = new Set<EngineKey>(["v8"]);
+      const normalized = new Set<EngineKey>([EngineKey.v8]);
       values.forEach((value) => {
-        if ((["v8", "sm", "hermes", "jsc"] as EngineKey[]).includes(value as EngineKey)) {
-          normalized.add(value as EngineKey);
+        if (isEngineKey(value)) {
+          normalized.add(value);
         }
       });
-      normalized.forEach((engine) => {
-        base[engine] = true;
+      const next = createEngineSelection();
+      ENGINE_KEYS.forEach((engine) => {
+        next[engine] = normalized.has(engine);
       });
-      return base;
+      return next;
     });
   }, []);
 
@@ -127,6 +157,31 @@ export default function Page() {
       setActiveTab(enabledTabs[0].key);
     }
   }, [enabledTabs, activeTab]);
+
+  useEffect(() => {
+    if (!previousSnapshot) return;
+    const available = tabs.filter((tab) => previousSnapshot.engines.includes(tab.key));
+    if (available.length === 0) return;
+    const preferred = available.find((tab) => tab.key === previousSnapshot.activeTab) ?? available[0];
+    setPreviousPanelTab(preferred.key);
+  }, [previousSnapshot]);
+
+  useEffect(() => {
+    setCurrentRunContext((prev) => {
+      if (!prev || prev.activeTab === activeTab) return prev;
+      return { ...prev, activeTab };
+    });
+  }, [activeTab]);
+
+  const hasPreviousSnapshot = previousSnapshot !== null && previousTabs.length > 0;
+
+  useEffect(() => {
+    if (!hasPreviousSnapshot) {
+      setShowPreviousPanel(false);
+    }
+  }, [hasPreviousSnapshot]);
+
+  const editorCollapsed = panelSplit <= MIN_SPLIT;
 
   const onMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor;
@@ -219,7 +274,10 @@ export default function Page() {
         if (rect.width <= 0) return;
         const ratio = (pointerEvent.clientX - rect.left) / rect.width;
         if (!Number.isFinite(ratio)) return;
-        setPanelSplit(clampSplit(ratio));
+        setPanelSplit((prev) => {
+          const next = clampSplit(ratio);
+          return Math.abs(prev - next) < 0.0001 ? prev : next;
+        });
       };
 
       const handleUp = () => {
@@ -254,17 +312,17 @@ export default function Page() {
         adjustSplit(0.03);
       } else if (event.key === "Home") {
         event.preventDefault();
-        setPanelSplit(MIN_SPLIT);
+        setPanelSplit((prev) => (prev === MIN_SPLIT ? prev : MIN_SPLIT));
       } else if (event.key === "End") {
         event.preventDefault();
-        setPanelSplit(MAX_SPLIT);
+        setPanelSplit((prev) => (prev === MAX_SPLIT ? prev : MAX_SPLIT));
       }
     },
     [adjustSplit]
   );
 
   const handleSplitterDoubleClick = useCallback(() => {
-    setPanelSplit(0.5);
+    setPanelSplit((prev) => (Math.abs(prev - 0.5) < 0.0001 ? prev : 0.5));
   }, []);
 
   useEffect(() => () => resizeCleanupRef.current?.(), []);
@@ -274,71 +332,79 @@ export default function Page() {
       try {
         const response = await fetch("/api/versions", { cache: "no-store" });
         const data: VersionsResp = await response.json();
-        const collected: Record<EngineKey, string> = { v8: "", sm: "", hermes: "", jsc: "" };
-        (Object.keys(collected) as EngineKey[]).forEach((key) => {
+        const collected = createEmptyVersions();
+        ENGINE_KEYS.forEach((key) => {
           const info = data?.engines?.[key];
           collected[key] = info?.ok ? info.short || "ok" : "unavailable";
         });
         setVersions(collected);
       } catch {
-        setVersions({ v8: "n/a", sm: "n/a", hermes: "n/a", jsc: "n/a" });
+        const fallback = Object.fromEntries(ENGINE_KEYS.map((key) => [key, "n/a"])) as Record<EngineKey, string>;
+        setVersions(fallback);
       }
     })();
   }, []);
 
   const run = useCallback(async () => {
+    if (currentRunContext) {
+      const snapshotOut = Object.fromEntries(
+        (Object.entries(out) as [EngineKey, EngineResult][]).map(([key, value]) => [key, { ...value }])
+      ) as Record<EngineKey, EngineResult>;
+      setPreviousSnapshot({
+        out: snapshotOut,
+        engines: [...currentRunContext.engines],
+        activeTab: currentRunContext.activeTab,
+        code: currentRunContext.code,
+        v8Flags: [...currentRunContext.v8Flags],
+        timestamp: currentRunContext.timestamp,
+      });
+    }
+
+    const enginesForRun = [...selectedEngines];
+    const flagsForRun = [...selectedV8Flags];
+    const codeForRun = code;
+    const startActiveTab = activeTab;
+    const runTimestamp = Date.now();
+
     setStatus("running");
-    setOut({
-      v8: { exitCode: null, stdout: "", stderr: "" },
-      sm: { exitCode: null, stdout: "", stderr: "" },
-      hermes: { exitCode: null, stdout: "", stderr: "" },
-      jsc: { exitCode: null, stdout: "", stderr: "" },
-    });
+    setOut(createEmptyOut());
     setMeta("");
 
     try {
       const response = await fetch("/api/bytecode", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code, engines: selectedEngines, v8Flags: selectedV8Flags }),
+        body: JSON.stringify({ code: codeForRun, engines: enginesForRun, v8Flags: flagsForRun }),
       });
       const data: ApiResponse = await response.json();
       if (!data.ok) throw new Error(data.error || "Request failed");
 
-      const results = data.results || {};
-      setOut({
-        v8: {
-          exitCode: results.v8?.exitCode ?? null,
-          stdout: (results.v8?.stdout ?? "").trim(),
-          stderr: (results.v8?.stderr ?? "").trim(),
-          ms: results.v8?.ms,
-        },
-        sm: {
-          exitCode: results.sm?.exitCode ?? null,
-          stdout: (results.sm?.stdout ?? "").trim(),
-          stderr: (results.sm?.stderr ?? "").trim(),
-          ms: results.sm?.ms,
-        },
-        hermes: {
-          exitCode: results.hermes?.exitCode ?? null,
-          stdout: (results.hermes?.stdout ?? "").trim(),
-          stderr: (results.hermes?.stderr ?? "").trim(),
-          ms: results.hermes?.ms,
-        },
-        jsc: {
-          exitCode: results.jsc?.exitCode ?? null,
-          stdout: (results.jsc?.stdout ?? "").trim(),
-          stderr: (results.jsc?.stderr ?? "").trim(),
-          ms: results.jsc?.ms,
-        },
+      const results = data.results ?? {};
+      const nextOut = createEmptyOut();
+      ENGINE_KEYS.forEach((engine) => {
+        const engineResult = results[engine];
+        nextOut[engine] = {
+          exitCode: engineResult?.exitCode ?? null,
+          stdout: (engineResult?.stdout ?? "").trim(),
+          stderr: (engineResult?.stderr ?? "").trim(),
+          ms: engineResult?.ms,
+        };
       });
+      setOut(nextOut);
       if (data.meta) setMeta(`Duration: ${data.meta.ms} ms`);
+      setCurrentRunContext({
+        engines: enginesForRun,
+        activeTab: startActiveTab,
+        code: codeForRun,
+        v8Flags: flagsForRun,
+        timestamp: runTimestamp,
+      });
       setStatus("done");
     } catch (error: any) {
       setStatus("error");
       setMeta(error?.message || "Error");
     }
-  }, [code, selectedEngines, selectedV8Flags]);
+  }, [activeTab, code, currentRunContext, out, selectedEngines, selectedV8Flags]);
 
   const handleSampleSelect = useCallback((snippet: string) => {
     setCode(snippet);
@@ -348,19 +414,13 @@ export default function Page() {
   }, []);
 
   return (
-    <>
-      <Global
-        styles={`
-          .token-native-intrinsic { color: #f59e0b; font-weight: 600; }
-          body.resizing-cursor, body.resizing-cursor * { cursor: col-resize !important; }
-        `}
-      />
-      <Flex direction="column" minH="100vh" bg={pageBg} color={textPrimary}>
-        <Box as="header" px={6} py={4} borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
-          <HeaderBar onRun={run} status={status} meta={meta} versions={versions} />
-        </Box>
+    <Flex direction="column" minH="100vh" bg={pageBg} color={textPrimary}>
+      <Box as="header" px={6} py={4} borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
+        <HeaderBar onRun={run} status={status} meta={meta} versions={versions} />
+      </Box>
 
-        <Flex ref={gridRef} gap={4} flex="1" px={6} py={4} align="stretch">
+      <Flex ref={gridRef} gap={4} flex="1" px={6} py={4} align="stretch">
+        <Show when={!editorCollapsed}>
           <Box
             bg={panelBg}
             border="1px solid"
@@ -392,7 +452,9 @@ export default function Page() {
             </HStack>
             <EditorPanel code={code} onCodeChange={handleEditorChange} onEditorMount={onMount} />
           </Box>
+        </Show>
 
+        <Show when={!editorCollapsed}>
           <Box
             role="separator"
             aria-orientation="vertical"
@@ -415,41 +477,96 @@ export default function Page() {
           >
             <Box w="4px" h="32px" borderRadius="full" bg={splitterGripBg} />
           </Box>
+        </Show>
 
-          <Box
-            bg={panelBg}
-            border="1px solid"
-            borderColor={borderColor}
-            borderRadius="lg"
-            display="flex"
-            flexDirection="column"
-            overflow="hidden"
-            minH={0}
-            flexGrow={Math.max(0.1, 1 - panelSplit)}
-            flexShrink={1}
-            flexBasis="0%"
-          >
-            <HStack px={4} py={4} borderBottom="1px solid" borderColor={borderColor}>
-              <Text fontWeight="semibold">Outputs</Text>
-              <EngineCheckboxSelector
-                selectedEngines={selectedEngines}
-                onEnginesChange={handleEnginesChange}
-                tabs={tabs}
-              />
-            </HStack>
-            <OutputsPanel
-              enabledTabs={enabledTabs}
-              activeTabIndex={activeTabIndex}
-              activeTab={activeTab}
-              onTabChange={(key) => setActiveTab(key)}
-              out={out}
-              versions={versions}
-              selectedV8Flags={selectedV8Flags}
-              setSelectedV8Flags={setSelectedV8Flags}
+        <Box
+          bg={panelBg}
+          border="1px solid"
+          borderColor={borderColor}
+          borderRadius="lg"
+          display="flex"
+          flexDirection="column"
+          overflow="hidden"
+          minH={0}
+          flexGrow={Math.max(0.1, 1 - panelSplit)}
+          flexShrink={1}
+          flexBasis="0%"
+          position="relative"
+        >
+          <ActionBar.Root open={editorCollapsed}>
+            <Portal>
+              <ActionBar.Positioner bottom="32px" left="32px">
+                <ActionBar.Content shadow="lg" borderRadius="lg">
+                  <ActionBar.SelectionTrigger display="flex" alignItems="center" gap={2}>
+                    <LuPanelLeftClose />
+                    Editor Hidden
+                  </ActionBar.SelectionTrigger>
+                  <ActionBar.Separator />
+                  <Button size="sm" colorScheme="blue" onClick={() => setPanelSplit(START_SPLIT)}>
+                    Show Editor <LuPanelLeftOpen />
+                  </Button>
+                </ActionBar.Content>
+              </ActionBar.Positioner>
+            </Portal>
+          </ActionBar.Root>
+
+          <HStack px={4} py={4} borderBottom="1px solid" borderColor={borderColor}>
+            <Text fontWeight="semibold">Outputs</Text>
+            <Spacer />
+            <Button
+              size="sm"
+              variant={showPreviousPanel ? "solid" : "outline"}
+              colorScheme={showPreviousPanel ? "blue" : undefined}
+              onClick={() => {
+                setShowPreviousPanel((prev) => {
+                  return !prev;
+                });
+              }}
+              disabled={!hasPreviousSnapshot}
+            >
+              {showPreviousPanel ? "Hide Previous Output" : "Show Previous Output"}
+            </Button>
+            <EngineCheckboxSelector
+              selectedEngines={selectedEngines}
+              onEnginesChange={handleEnginesChange}
+              tabs={tabs}
             />
-          </Box>
-        </Flex>
+          </HStack>
+          <Flex flex="1" minH="0" gap={4} px={4} py={4} overflow="hidden">
+            <Box flex="1" minH="0" display="flex">
+              <OutputsPanel
+                title="Current"
+                enabledTabs={enabledTabs}
+                activeTabIndex={activeTabIndex}
+                activeTab={activeTab}
+                onTabChange={(key) => setActiveTab(key)}
+                out={out}
+                versions={versions}
+                selectedV8Flags={selectedV8Flags}
+                setSelectedV8Flags={setSelectedV8Flags}
+                showFlagControls={!showPreviousPanel}
+              />
+            </Box>
+            <Show when={showPreviousPanel && hasPreviousSnapshot && previousSnapshot}>
+              <Box flex="1" minH="0" display="flex" borderLeft="1px solid" borderColor={borderColor} pl={4}>
+                <Box flex="1" minH="0" display="flex">
+                  <OutputsPanel
+                    title="Previous"
+                    enabledTabs={previousTabs}
+                    activeTabIndex={previousActiveTabIndex}
+                    activeTab={previousPanelTab}
+                    onTabChange={(key) => setPreviousPanelTab(key)}
+                    out={previousSnapshot?.out}
+                    versions={versions}
+                    selectedV8Flags={previousSnapshot?.v8Flags}
+                    showFlagControls={false}
+                  />
+                </Box>
+              </Box>
+            </Show>
+          </Flex>
+        </Box>
       </Flex>
-    </>
+    </Flex>
   );
 }
