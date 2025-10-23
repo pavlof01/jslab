@@ -1,12 +1,11 @@
 // app/api/versions/route.ts
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
+import { EngineKey } from "@/lib/types";
+import type { VersionInfo } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type Engine = "v8" | "sm" | "hermes" | "jsc";
-type VersionInfo = { ok: boolean; short?: string; raw?: string; exitCode?: number | null; error?: string };
 
 const V8_D8 = process.env.V8_D8 || "engines/v8/out.gn/arm64.release/d8";
 const SM_JS = process.env.SM_JS || "engines/spidermonkey/obj-aarch64-apple-darwin24.6.0/dist/bin/js";
@@ -64,6 +63,11 @@ export async function GET() {
       ? pack(true, jscProbe.out || jscProbe.err, jscProbe.code)
       : pack(false, jscProbe.out || "", jscProbe.code, jscProbe.err, "jsc");
 
-  const engines: Record<Engine, VersionInfo> = { v8, sm, hermes, jsc };
+  const engines: Record<EngineKey, VersionInfo> = {
+    [EngineKey.v8]: v8,
+    [EngineKey.sm]: sm,
+    [EngineKey.hermes]: hermes,
+    [EngineKey.jsc]: jsc,
+  };
   return NextResponse.json({ ok: true, engines });
 }
