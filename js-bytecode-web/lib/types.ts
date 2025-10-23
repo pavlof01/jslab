@@ -1,8 +1,18 @@
-export type EngineKey = "v8" | "sm" | "hermes" | "jsc";
+export enum EngineKey {
+  v8 = "v8",
+  sm = "sm",
+  hermes = "hermes",
+  jsc = "jsc",
+}
+
+export const ENGINE_KEYS: readonly EngineKey[] = [EngineKey.v8, EngineKey.sm, EngineKey.hermes, EngineKey.jsc];
+export const isEngineKey = (value: unknown): value is EngineKey =>
+  typeof value === "string" && (ENGINE_KEYS as readonly string[]).includes(value);
+
 export type EngineResult = { exitCode: number | null; stdout: string; stderr: string; ms?: number };
 export type ApiResponse = {
   ok: boolean;
-  results?: Record<string, EngineResult>;
+  results?: Partial<Record<EngineKey, EngineResult>>;
   meta?: { ms: number };
   error?: string;
 };

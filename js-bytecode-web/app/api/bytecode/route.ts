@@ -4,11 +4,11 @@ import { spawn } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Engine = "v8" | "sm" | "hermes" | "jsc";
 type RunResult = { stdout: string; stderr: string; exitCode: number | null; ms: number };
 
 function binOrHint(err: unknown, hintPath: string) {
@@ -138,9 +138,12 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const code: string = body?.code ?? "";
-    const enginesReq: string[] = body?.engines ?? ["v8", "sm", "hermes", "jsc"];
+    const enginesReq: unknown = body?.engines ?? ENGINE_KEYS;
+    const requestedEngines = Array.isArray(enginesReq) ? enginesReq : ENGINE_KEYS;
     const v8Flags = sanitizeV8Flags(body?.v8Flags);
-    const engines = enginesReq.filter((e): e is Engine => ["v8", "sm", "hermes", "jsc"].includes(e));
+    const engines = requestedEngines
+      .map((value) => (typeof value === "string" ? value : null))
+      .filter((value): value is EngineKey => (value ? isEngineKey(value) : false));
 
     if (!code || engines.length === 0) {
       return NextResponse.json({ ok: false, error: "code or engines missing" }, { status: 400 });
@@ -150,11 +153,11 @@ export async function POST(req: Request) {
     const tmpJs = path.join(tmpDir, "snippet.js");
     await fs.writeFile(tmpJs, code, "utf8");
 
-    const tasks: Record<Engine, Promise<RunResult>> = {
-      v8: runV8(tmpJs, v8Flags),
-      sm: runSpiderMonkey(tmpJs),
-      hermes: runHermes(tmpJs, tmpDir),
-      jsc: runJSC(tmpJs),
+    const tasks: Record<EngineKey, Promise<RunResult>> = {
+      [EngineKey.v8]: runV8(tmpJs, v8Flags),
+      [EngineKey.sm]: runSpiderMonkey(tmpJs),
+      [EngineKey.hermes]: runHermes(tmpJs, tmpDir),
+      [EngineKey.jsc]: runJSC(tmpJs),
     };
 
     const pending = engines.map((k) => tasks[k].then((r) => [k, r] as const));
@@ -164,7 +167,7 @@ export async function POST(req: Request) {
       await fs.rm(tmpDir, { recursive: true, force: true });
     } catch {}
 
-    const results: Record<string, RunResult> = {};
+    const results = Object.create(null) as Record<EngineKey, RunResult>;
     let totalMs = 0;
     for (const [k, r] of settled) {
       results[k] = r;
