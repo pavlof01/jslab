@@ -13,6 +13,7 @@ import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
 import { CiPlay1 } from "react-icons/ci";
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import Samples, { samples } from "@/components/Samples";
+import { DiffResult, CompareOptions, compareOutputs } from "@/utils/diff-bytcode";
 
 const MIN_SPLIT = 0;
 const START_SPLIT = 0.35;
@@ -92,12 +93,14 @@ export default function Page() {
 
   const [out, setOut] = useState<Record<EngineKey, EngineResult>>(() => createEmptyOut());
 
-  const [previousSnapshot, setPreviousSnapshot] = useState<PreviousRunSnapshot>();
-  const [currentRunContext, setCurrentRunContext] = useState<RunContext>();
+  const [previousSnapshot, setPreviousSnapshot] = useState<PreviousRunSnapshot | null>(null);
+  const [currentRunContext, setCurrentRunContext] = useState<RunContext | null>(null);
   const [meta, setMeta] = useState<string>("");
   const [activeTab, setActiveTab] = useState<EngineKey>(EngineKey.v8);
   const [versions, setVersions] = useState<Record<EngineKey, string>>(() => createEmptyVersions());
   const [panelSplit, setPanelSplit] = useState(START_SPLIT);
+  const [lastNonZeroSplit, setLastNonZeroSplit] = useState(START_SPLIT);
+  const [showDiff, setShowDiff] = useState(true);
   const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
   const [showPreviousPanel, setShowPreviousPanel] = useState(false);
   const [previousPanelTab, setPreviousPanelTab] = useState<EngineKey>(EngineKey.v8);
@@ -173,7 +176,7 @@ export default function Page() {
     });
   }, [activeTab]);
 
-  const hasPreviousSnapshot = previousSnapshot !== null && previousTabs.length > 0;
+  const hasPreviousSnapshot = Boolean(previousSnapshot) && previousTabs.length > 0;
 
   useEffect(() => {
     if (!hasPreviousSnapshot) {
@@ -182,6 +185,39 @@ export default function Page() {
   }, [hasPreviousSnapshot]);
 
   const editorCollapsed = panelSplit <= MIN_SPLIT;
+
+  useEffect(() => {
+    if (panelSplit > MIN_SPLIT && Math.abs(panelSplit - lastNonZeroSplit) >= 0.0001) {
+      setLastNonZeroSplit(panelSplit);
+    }
+  }, [panelSplit, lastNonZeroSplit]);
+
+  const diffSummary = useMemo(() => {
+    if (!previousSnapshot) return null;
+    const options: CompareOptions = {
+      normalizeLine: (line) =>
+        line
+          .replace(/0x[0-9a-fA-F]+/g, "0xADDR")
+          .replace(/<SharedFunctionInfo[^>]*>/g, "<SFI>")
+          .replace(/\s+@\s+\d+\s+:/, " @ :"),
+    };
+
+    const summary: Record<EngineKey, { stdout: DiffResult; stderr: DiffResult }> = {} as any;
+
+    ENGINE_KEYS.forEach((engine) => {
+      const prevResult = previousSnapshot.out[engine];
+      const currResult = out[engine];
+      const stdoutDiff = compareOutputs(prevResult?.stdout ?? "", currResult?.stdout ?? "", options);
+      const stderrDiff = compareOutputs(prevResult?.stderr ?? "", currResult?.stderr ?? "", options);
+
+      summary[engine] = {
+        stdout: stdoutDiff,
+        stderr: stderrDiff,
+      };
+    });
+
+    return summary;
+  }, [out, previousSnapshot]);
 
   const onMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor;
@@ -512,6 +548,14 @@ export default function Page() {
 
           <HStack px={4} py={4} borderBottom="1px solid" borderColor={borderColor}>
             <Text fontWeight="semibold">Outputs</Text>
+            <Button
+              size="sm"
+              variant={showDiff ? "solid" : "outline"}
+              colorScheme={showDiff ? "purple" : undefined}
+              onClick={() => setShowDiff((prev) => !prev)}
+            >
+              {showDiff ? "Hide Diff" : "Show Diff"}
+            </Button>
             <Spacer />
             <Button
               size="sm"
@@ -545,6 +589,7 @@ export default function Page() {
                 selectedV8Flags={selectedV8Flags}
                 setSelectedV8Flags={setSelectedV8Flags}
                 showFlagControls={!showPreviousPanel}
+                diffSummary={showDiff ? diffSummary ?? undefined : undefined}
               />
             </Box>
             <Show when={showPreviousPanel && hasPreviousSnapshot && previousSnapshot}>
@@ -560,6 +605,7 @@ export default function Page() {
                     versions={versions}
                     selectedV8Flags={previousSnapshot?.v8Flags}
                     showFlagControls={false}
+                    diffSummary={showDiff ? diffSummary ?? undefined : undefined}
                   />
                 </Box>
               </Box>
