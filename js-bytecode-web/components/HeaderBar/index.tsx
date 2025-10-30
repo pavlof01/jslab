@@ -17,13 +17,10 @@ const statusColor: Record<RunStatus, string> = {
 } as const;
 
 interface HeaderBarProps {
-  onRun: () => void;
   status: RunStatus;
-  meta: string;
-  versions: Record<EngineKey, string>;
 }
 
-export function HeaderBar({ onRun, status, meta }: HeaderBarProps) {
+export function HeaderBar({ status }: HeaderBarProps) {
   const handlePressGitHub = () => {
     window.open(MY_GH, "_blank");
   };
