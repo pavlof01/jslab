@@ -13,7 +13,6 @@ import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
 import { CiPlay1 } from "react-icons/ci";
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import Samples, { samples } from "@/components/Samples";
-import { DiffResult, CompareOptions, compareOutputs } from "@/utils/diff-bytcode";
 
 const MIN_SPLIT = 0;
 const START_SPLIT = 0.35;
@@ -191,33 +190,6 @@ export default function Page() {
       setLastNonZeroSplit(panelSplit);
     }
   }, [panelSplit, lastNonZeroSplit]);
-
-  const diffSummary = useMemo(() => {
-    if (!previousSnapshot) return null;
-    const options: CompareOptions = {
-      normalizeLine: (line) =>
-        line
-          .replace(/0x[0-9a-fA-F]+/g, "0xADDR")
-          .replace(/<SharedFunctionInfo[^>]*>/g, "<SFI>")
-          .replace(/\s+@\s+\d+\s+:/, " @ :"),
-    };
-
-    const summary: Record<EngineKey, { stdout: DiffResult; stderr: DiffResult }> = {} as any;
-
-    ENGINE_KEYS.forEach((engine) => {
-      const prevResult = previousSnapshot.out[engine];
-      const currResult = out[engine];
-      const stdoutDiff = compareOutputs(prevResult?.stdout ?? "", currResult?.stdout ?? "", options);
-      const stderrDiff = compareOutputs(prevResult?.stderr ?? "", currResult?.stderr ?? "", options);
-
-      summary[engine] = {
-        stdout: stdoutDiff,
-        stderr: stderrDiff,
-      };
-    });
-
-    return summary;
-  }, [out, previousSnapshot]);
 
   const onMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor;
@@ -452,7 +424,7 @@ export default function Page() {
   return (
     <Flex direction="column" minH="100vh" bg={pageBg} color={textPrimary}>
       <Box as="header" px={6} py={4} borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
-        <HeaderBar onRun={run} status={status} meta={meta} versions={versions} />
+        <HeaderBar status={status} />
       </Box>
 
       <Flex ref={gridRef} gap={4} flex="1" px={6} py={4} align="stretch">
@@ -585,11 +557,11 @@ export default function Page() {
                 activeTab={activeTab}
                 onTabChange={(key) => setActiveTab(key)}
                 out={out}
+                prevOut={previousSnapshot?.out}
                 versions={versions}
                 selectedV8Flags={selectedV8Flags}
                 setSelectedV8Flags={setSelectedV8Flags}
                 showFlagControls={!showPreviousPanel}
-                diffSummary={showDiff ? diffSummary ?? undefined : undefined}
               />
             </Box>
             <Show when={showPreviousPanel && hasPreviousSnapshot && previousSnapshot}>
@@ -605,7 +577,6 @@ export default function Page() {
                     versions={versions}
                     selectedV8Flags={previousSnapshot?.v8Flags}
                     showFlagControls={false}
-                    diffSummary={showDiff ? diffSummary ?? undefined : undefined}
                   />
                 </Box>
               </Box>

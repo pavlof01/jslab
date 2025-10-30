@@ -1,15 +1,13 @@
-"use client";
-
-import { useMemo } from "react";
-import { CodeBlock, IconButton, Stack, Tabs, Text, HStack, Show, createShikiAdapter } from "@chakra-ui/react";
-import { EngineKey } from "../../lib/types";
+import { useMemo, useCallback } from "react";
+import { Stack, Tabs, Text, HStack, Show, CodeBlock, createShikiAdapter } from "@chakra-ui/react";
 import type { EngineResult } from "../../lib/types";
+import { EngineKey } from "../../lib/types";
 import { useColorModeValue } from "../ui/color-mode";
-import { HighlighterGeneric } from "shiki";
-import V8FlagSelector from "../V8FlagSelector";
-import V8Intrinsics from "../V8Intrinsics";
 import type { Dispatch, SetStateAction } from "react";
-import type { DiffResult } from "@/utils/diff-bytcode";
+import { HighlightedCode } from "./CodeBlock";
+import { HighlighterGeneric } from "shiki";
+import V8MenuControls from "./v8MenuControls";
+import { DiffResult } from "@/utils/diff-bytcode";
 
 const shikiAdapter = createShikiAdapter<HighlighterGeneric<any, any>>({
   async load() {
@@ -29,11 +27,11 @@ interface OutputsPanelProps {
   activeTab: EngineKey;
   onTabChange: (key: EngineKey) => void;
   out?: Record<EngineKey, EngineResult>;
+  prevOut?: Record<EngineKey, EngineResult>;
   versions?: Record<EngineKey, string>;
   selectedV8Flags?: string[];
   setSelectedV8Flags?: Dispatch<SetStateAction<string[]>>;
   showFlagControls?: boolean;
-  diffSummary?: Record<EngineKey, { stdout: DiffResult; stderr: DiffResult }>;
 }
 
 export function OutputsPanel({
@@ -43,11 +41,11 @@ export function OutputsPanel({
   activeTab,
   onTabChange,
   out,
+  prevOut,
   versions: _versions,
   selectedV8Flags,
   setSelectedV8Flags,
   showFlagControls = true,
-  diffSummary,
 }: OutputsPanelProps) {
   if (!enabledTabs.length) {
     return null;
@@ -70,137 +68,48 @@ export function OutputsPanel({
   const outputPreBg = useColorModeValue("#f1f5f9", "#111827");
   const activeKey = currentValue as EngineKey;
   const otherTabs = enabledTabs.filter((tab) => tab.key !== activeKey);
-  const stdout = out?.[activeKey]?.stdout ?? "(no stdout)";
-  const stderr = out?.[activeKey]?.stderr ?? "(no stderr)";
-  const stdoutDiff = diffSummary?.[activeKey]?.stdout;
-  const stderrDiff = diffSummary?.[activeKey]?.stderr;
+  const stdout = out?.[activeKey]?.stdout;
+  const stderr = out?.[activeKey]?.stderr;
+  const stdPrevOut = prevOut?.[activeKey]?.stdout;
+  const stdPrevErr = prevOut?.[activeKey]?.stderr;
 
   const canRenderV8Controls = activeKey === EngineKey.v8 && showFlagControls && selectedV8Flags && setSelectedV8Flags;
 
-  const renderDiff = (diff?: DiffResult) => {
-    if (!diff) return null;
-    return (
-      <HStack gap={1} fontSize="xs">
-        <Text color={diff.added.length ? "green.400" : subTextColor}>+{diff.added.length}</Text>
-        <Text color={diff.deleted.length ? "red.400" : subTextColor}>-{diff.deleted.length}</Text>
-      </HStack>
-    );
-  };
-
-  const stdoutMeta = stdoutDiff
-    ? {
-        showLineNumbers: true,
-        wordWrap: true,
-        addedLineNumbers: stdoutDiff.added.map((l) => l.nextLine - 1),
-        removedLineNumbers: stdoutDiff.deleted.map((l) => l.prevLine - 1),
-      }
-    : { showLineNumbers: true, wordWrap: true };
-
-  const stderrMeta = stderrDiff
-    ? {
-        showLineNumbers: true,
-        wordWrap: true,
-        addedLineNumbers: stderrDiff.added.map((l) => l.nextLine - 1),
-        removedLineNumbers: stderrDiff.deleted.map((l) => l.prevLine - 1),
-      }
-    : { showLineNumbers: true, wordWrap: true };
+  const renderDiff = useCallback(
+    (diff?: DiffResult) => {
+      if (!diff) return null;
+      return (
+        <HStack gap={1} fontSize="xs">
+          <Text color={diff.added.length ? "green.400" : subTextColor}>+{diff.added.length}</Text>
+          <Text color={diff.deleted.length ? "red.400" : subTextColor}>-{diff.deleted.length}</Text>
+        </HStack>
+      );
+    },
+    [subTextColor]
+  );
 
   return (
-    <CodeBlock.AdapterProvider value={shikiAdapter}>
-      <Tabs.Root value={currentValue} onValueChange={handleTabChange} size="sm" variant="line" flex={1}>
-        <Stack flex="1" minH={0} gap={4} display="flex" w="full">
-          <Show when={canRenderV8Controls}>
-            <Stack gap={2}>
-              <HStack align="center" gap={2} flexWrap="wrap">
-                <V8FlagSelector selectedV8Flags={selectedV8Flags!} setSelectedV8Flags={setSelectedV8Flags!} />
-                <V8Intrinsics />
-              </HStack>
-              <Text fontSize="sm" color={subTextColor}>
-                {selectedV8Flags?.length ? `Selected: ${selectedV8Flags.join(", ")}` : "Selected: None"}
-              </Text>
-            </Stack>
-          </Show>
+    <Tabs.Root value={currentValue} onValueChange={handleTabChange} size="sm" variant="line" flex={1}>
+      <Stack flex="1" minH={0} gap={4} display="flex" w="full">
+        {/* <Show when={canRenderV8Controls}>
+          <V8MenuControls selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
+        </Show> */}
 
-          <Stack flex="1" minH={0} gap={4}>
-            <CodeBlock.Root
-              code={stdout}
-              language="actionscript-3"
-              borderRadius="md"
-              overflow="auto"
-              bgColor={outputPreBg}
-              flex="1"
-              minH={0}
-              display="flex"
-              flexDirection="column"
-              meta={stdoutMeta}
-            >
-              <CodeBlock.Header borderBottomWidth="1px" display="flex" alignItems="center" gap={3} flexWrap="wrap">
-                <HStack align="center" gap={2} flexShrink={0} minW="fit-content">
-                  <CodeBlock.Title>{title} stdout</CodeBlock.Title>
-                  {renderDiff(stdoutDiff)}
-                </HStack>
-                <Tabs.List w="full" border="0" ms="-1" flex="1">
-                  {enabledTabs.map((tab) => (
-                    <Tabs.Trigger colorPalette="teal" key={tab.key} value={tab.key} textStyle="xs">
-                      {tab.label}
-                    </Tabs.Trigger>
-                  ))}
-                </Tabs.List>
-                <CodeBlock.CopyTrigger asChild>
-                  <IconButton variant="ghost" size="2xs">
-                    <CodeBlock.CopyIndicator />
-                  </IconButton>
-                </CodeBlock.CopyTrigger>
-              </CodeBlock.Header>
-              <CodeBlock.Content flex="1" minH={0} display="flex" flexDirection="column" overflow="auto">
-                {otherTabs.map((tab) => (
-                  <Tabs.Content key={tab.key} value={tab.key} flex="1" />
-                ))}
-                <Tabs.Content pt="1" value={activeKey} flex="1" display="flex" minH={0}>
-                  <CodeBlock.Code flex="1" minH={0}>
-                    <CodeBlock.CodeText />
-                  </CodeBlock.Code>
-                </Tabs.Content>
-              </CodeBlock.Content>
-            </CodeBlock.Root>
+        <Tabs.List w="full" border="0" ms="-1" flex="1">
+          {enabledTabs.map((tab) => (
+            <Tabs.Trigger colorPalette="teal" key={tab.key} value={tab.key} textStyle="xs">
+              {tab.label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
 
-            <CodeBlock.Root
-              code={stderr}
-              language="actionscript-3"
-              borderRadius="md"
-              overflow="auto"
-              bgColor={outputPreBg}
-              flex="1"
-              minH={0}
-              display="flex"
-              flexDirection="column"
-              meta={stderrMeta}
-            >
-              <CodeBlock.Header display="flex" alignItems="center" gap={3} flexWrap="wrap">
-                <HStack align="center" gap={2} flexShrink={0} minW="fit-content">
-                  <CodeBlock.Title>{title} stderr</CodeBlock.Title>
-                  {renderDiff(stderrDiff)}
-                </HStack>
-                <CodeBlock.CopyTrigger asChild>
-                  <IconButton variant="ghost" size="2xs">
-                    <CodeBlock.CopyIndicator />
-                  </IconButton>
-                </CodeBlock.CopyTrigger>
-              </CodeBlock.Header>
-              <CodeBlock.Content flex="1" minH={0} display="flex" flexDirection="column" overflow="auto">
-                {otherTabs.map((tab) => (
-                  <Tabs.Content key={tab.key} value={tab.key} />
-                ))}
-                <Tabs.Content pt="1" value={activeKey} flex="1" display="flex" minH={0}>
-                  <CodeBlock.Code flex="1" minH={0}>
-                    <CodeBlock.CodeText />
-                  </CodeBlock.Code>
-                </Tabs.Content>
-              </CodeBlock.Content>
-            </CodeBlock.Root>
+        <Tabs.Content value={activeKey} flex="1" minH={0}>
+          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
+            <HighlightedCode out={stdout} prev={stdPrevOut} />
+            <HighlightedCode out={stderr} prev={stdPrevErr} EmptyCodeBlockState={() => <></>} />
           </Stack>
-        </Stack>
-      </Tabs.Root>
-    </CodeBlock.AdapterProvider>
+        </Tabs.Content>
+      </Stack>
+    </Tabs.Root>
   );
 }
