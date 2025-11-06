@@ -1,0 +1,192 @@
+import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
+
+import { ENGINE_KEYS, EngineKey, RunStatus, type EngineResult, type ApiResponse } from "@/lib/types";
+
+const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
+
+export const createEmptyOut = (): Record<EngineKey, EngineResult> =>
+  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...DEFAULT_ENGINE_OUT }])) as Record<
+    EngineKey,
+    EngineResult
+  >;
+
+const cloneOut = (out: Record<EngineKey, EngineResult>): Record<EngineKey, EngineResult> =>
+  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...(out[engine] ?? DEFAULT_ENGINE_OUT) }])) as Record<
+    EngineKey,
+    EngineResult
+  >;
+
+type RunContext = {
+  engines: EngineKey[];
+  activeTab: EngineKey;
+  code: string;
+  v8Flags: string[];
+  timestamp: number;
+};
+
+export type RunRequest = {
+  code: string;
+  engines: EngineKey[];
+  v8Flags: string[];
+  activeTab: EngineKey;
+};
+
+type PreviousRunSnapshot = RunContext & { out: Record<EngineKey, EngineResult> };
+
+interface EngineOutputsState {
+  out: Record<EngineKey, EngineResult>;
+  status: RunStatus;
+  meta: string;
+  error?: string;
+  previousSnapshot: PreviousRunSnapshot | null;
+  currentRun: RunContext | null;
+}
+
+interface EngineOutputsActions {
+  runEngines: (request: RunRequest) => Promise<void>;
+  reset: () => void;
+  clearPreviousSnapshot: () => void;
+  updateCurrentRunActiveTab: (activeTab: EngineKey) => void;
+  setOut: (next: Record<EngineKey, EngineResult>) => void;
+  setMeta: (meta: string) => void;
+  setStatus: (status: RunStatus) => void;
+}
+
+const createInitialState = (): EngineOutputsState => ({
+  out: createEmptyOut(),
+  status: RunStatus.idle,
+  meta: "",
+  error: undefined,
+  previousSnapshot: null,
+  currentRun: null,
+});
+
+type EngineOutputsStore = EngineOutputsState & EngineOutputsActions;
+
+export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
+  ...createInitialState(),
+
+  setOut: (next) => set({ out: next }),
+  setMeta: (meta) => set({ meta }),
+  setStatus: (status) => set({ status }),
+  clearPreviousSnapshot: () => set({ previousSnapshot: null }),
+  reset: () => set({ ...createInitialState() }),
+
+  updateCurrentRunActiveTab: (activeTab) =>
+    set((state) => {
+      if (!state.currentRun || state.currentRun.activeTab === activeTab) {
+        return state;
+      }
+      return { currentRun: { ...state.currentRun, activeTab } };
+    }),
+
+  runEngines: async ({ code, engines, v8Flags, activeTab }) => {
+    const runTimestamp = Date.now();
+    const previousState = get();
+
+    if (previousState.currentRun) {
+      set({
+        previousSnapshot: {
+          out: cloneOut(previousState.out),
+          engines: [...previousState.currentRun.engines],
+          activeTab: previousState.currentRun.activeTab,
+          code: previousState.currentRun.code,
+          v8Flags: [...previousState.currentRun.v8Flags],
+          timestamp: previousState.currentRun.timestamp,
+        },
+      });
+    }
+
+    set({
+      status: RunStatus.running,
+      meta: "",
+      error: undefined,
+      out: createEmptyOut(),
+    });
+
+    try {
+      const response = await fetch("/api/bytecode", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code, engines, v8Flags }),
+      });
+
+      const data: ApiResponse = await response.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Request failed");
+      }
+
+      const results = data.results ?? {};
+      const nextOut = createEmptyOut();
+
+      ENGINE_KEYS.forEach((engine) => {
+        const engineResult = results[engine];
+        nextOut[engine] = {
+          exitCode: engineResult?.exitCode ?? null,
+          stdout: (engineResult?.stdout ?? "").trim(),
+          stderr: (engineResult?.stderr ?? "").trim(),
+          ms: engineResult?.ms,
+        };
+      });
+
+      set({
+        out: nextOut,
+        meta: data.meta ? `Duration: ${data.meta.ms} ms` : "",
+        status: RunStatus.done,
+        currentRun: {
+          engines: [...engines],
+          activeTab,
+          code,
+          v8Flags: [...v8Flags],
+          timestamp: runTimestamp,
+        },
+        error: undefined,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      set({
+        status: RunStatus.error,
+        meta: message,
+        error: message,
+      });
+      throw error;
+    }
+  },
+}));
+
+export const engineOutputsSelectors = {
+  out: (state: EngineOutputsState) => state.out,
+  status: (state: EngineOutputsState) => state.status,
+  meta: (state: EngineOutputsState) => state.meta,
+  error: (state: EngineOutputsState) => state.error,
+  previousSnapshot: (state: EngineOutputsState) => state.previousSnapshot,
+  currentRun: (state: EngineOutputsState) => state.currentRun,
+};
+
+export const useEngineOutputsState = () =>
+  useEngineOutputsStore(
+    useShallow((state) => ({
+      out: state.out,
+      status: state.status,
+      meta: state.meta,
+      error: state.error,
+      previousSnapshot: state.previousSnapshot,
+      currentRun: state.currentRun,
+    }))
+  );
+
+export const useEngineOutputsActions = () =>
+  useEngineOutputsStore(
+    useShallow((state) => ({
+      runEngines: state.runEngines,
+      reset: state.reset,
+      clearPreviousSnapshot: state.clearPreviousSnapshot,
+      updateCurrentRunActiveTab: state.updateCurrentRunActiveTab,
+      setOut: state.setOut,
+      setMeta: state.setMeta,
+      setStatus: state.setStatus,
+    }))
+  );
+
+export type { EngineOutputsState, EngineOutputsActions, RunContext, PreviousRunSnapshot };
