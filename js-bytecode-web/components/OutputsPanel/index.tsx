@@ -28,7 +28,6 @@ interface OutputsPanelProps {
   onTabChange: (key: EngineKey) => void;
   out?: Record<EngineKey, EngineResult>;
   prevOut?: Record<EngineKey, EngineResult>;
-  versions?: Record<EngineKey, string>;
   selectedV8Flags?: string[];
   setSelectedV8Flags?: Dispatch<SetStateAction<string[]>>;
   showFlagControls?: boolean;
@@ -42,7 +41,6 @@ export function OutputsPanel({
   onTabChange,
   out,
   prevOut,
-  versions: _versions,
   selectedV8Flags,
   setSelectedV8Flags,
   showFlagControls = true,
