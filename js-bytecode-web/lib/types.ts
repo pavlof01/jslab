@@ -24,7 +24,12 @@ export type VersionInfo = {
   error?: string;
 };
 export type VersionsResp = { ok: boolean; engines: Record<EngineKey, VersionInfo> };
-export type RunStatus = "idle" | "running" | "done" | "error";
+export enum RunStatus {
+  idle = "idle",
+  running = "running",
+  done = "done",
+  error = "error",
+}
 export type V8FlagOption = {
   flag: string;
   label: string;
