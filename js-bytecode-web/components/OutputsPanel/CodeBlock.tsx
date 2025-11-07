@@ -75,7 +75,7 @@ export async function highlight(code: string, lang: BundledLanguage | CustomLang
   const isPlaceholderOutput = /^\(no [^)]+\)$/i.test(code.trim());
 
   if (isEmptyOutput) {
-    return <Spinner size="lg" />;
+    return <Spinner size="lg" alignSelf="center" m={10} />;
   }
 
   if (!prevCode || isPlaceholderOutput) {

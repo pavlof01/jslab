@@ -32,14 +32,13 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 export default function Page() {
   const [code, setCode] = useState(samples.add);
   const [engines, setEngines] = useState<Record<EngineKey, boolean>>(() => createEngineSelection());
-  const { out, status, previousSnapshot } = useEngineOutputsState();
+  const { status, previousSnapshot } = useEngineOutputsState();
   const { runEngines, updateCurrentRunActiveTab } = useEngineOutputsActions();
   const [activeTab, setActiveTab] = useState<EngineKey>(EngineKey.v8);
   const { resetSplitter, panelSplit, gridRef, editorCollapsed, handleSplitterPointerDown, handleSplitterDoubleClick } =
     useSplitter();
   const [showDiff, setShowDiff] = useState(true);
   const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
-  const [showPreviousPanel, setShowPreviousPanel] = useState(false);
   const [previousPanelTab, setPreviousPanelTab] = useState<EngineKey>(EngineKey.v8);
 
   const pageBg = useColorModeValue("#f8fafc", "#0f172a");
@@ -102,12 +101,6 @@ export default function Page() {
   }, [activeTab, updateCurrentRunActiveTab]);
 
   const hasPreviousSnapshot = Boolean(previousSnapshot) && previousTabs.length > 0;
-
-  useEffect(() => {
-    if (!hasPreviousSnapshot) {
-      setShowPreviousPanel(false);
-    }
-  }, [hasPreviousSnapshot]);
 
   const handleEditorChange = useCallback((value?: string) => {
     const next = value ?? "";
@@ -219,19 +212,6 @@ export default function Page() {
               {showDiff ? "Hide Diff" : "Show Diff"}
             </Button>
             <Spacer />
-            <Button
-              size="sm"
-              variant={showPreviousPanel ? "solid" : "outline"}
-              colorScheme={showPreviousPanel ? "blue" : undefined}
-              onClick={() => {
-                setShowPreviousPanel((prev) => {
-                  return !prev;
-                });
-              }}
-              disabled={!hasPreviousSnapshot}
-            >
-              {showPreviousPanel ? "Hide Previous Output" : "Show Previous Output"}
-            </Button>
             <EngineCheckboxSelector
               selectedEngines={selectedEngines}
               onEnginesChange={handleEnginesChange}
@@ -241,34 +221,14 @@ export default function Page() {
           <Flex flex="1" minH="0" gap={4} px={4} py={4} overflow="hidden">
             <Box flex="1" minH="0" display="flex">
               <OutputsPanel
-                title="Current"
                 enabledTabs={enabledTabs}
                 activeTabIndex={activeTabIndex}
                 activeTab={activeTab}
                 onTabChange={(key) => setActiveTab(key)}
-                out={out}
-                prevOut={previousSnapshot?.out}
                 selectedV8Flags={selectedV8Flags}
                 setSelectedV8Flags={setSelectedV8Flags}
-                showFlagControls={!showPreviousPanel}
               />
             </Box>
-            <Show when={showPreviousPanel && hasPreviousSnapshot && previousSnapshot}>
-              <Box flex="1" minH="0" display="flex" borderLeft="1px solid" borderColor={borderColor} pl={4}>
-                <Box flex="1" minH="0" display="flex">
-                  <OutputsPanel
-                    title="Previous"
-                    enabledTabs={previousTabs}
-                    activeTabIndex={previousActiveTabIndex}
-                    activeTab={previousPanelTab}
-                    onTabChange={(key) => setPreviousPanelTab(key)}
-                    out={previousSnapshot?.out}
-                    selectedV8Flags={previousSnapshot?.v8Flags}
-                    showFlagControls={false}
-                  />
-                </Box>
-              </Box>
-            </Show>
           </Flex>
         </Box>
       </Flex>
