@@ -4,7 +4,6 @@ import { useColorModeValue } from "../ui/color-mode";
 import type { Dispatch, SetStateAction } from "react";
 import { HighlightedCode } from "./CodeBlock";
 import V8MenuControls from "./v8MenuControls";
-import { DiffResult } from "@/utils/diff-bytcode";
 import { useEngineOutputsState } from "@/store/useEngineOutputs";
 
 interface OutputsPanelProps {
@@ -14,6 +13,7 @@ interface OutputsPanelProps {
   onTabChange: (key: EngineKey) => void;
   selectedV8Flags?: string[];
   setSelectedV8Flags?: Dispatch<SetStateAction<string[]>>;
+  showDiff?: boolean;
 }
 
 export function OutputsPanel({
@@ -23,6 +23,7 @@ export function OutputsPanel({
   onTabChange,
   selectedV8Flags,
   setSelectedV8Flags,
+  showDiff = true,
 }: OutputsPanelProps) {
   const { out, previousSnapshot } = useEngineOutputsState();
 
@@ -59,8 +60,8 @@ export function OutputsPanel({
 
         <Tabs.Content value={activeKey} flex="1" minH={0}>
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
-            <HighlightedCode out={stdout} prev={stdPrevOut} />
-            <HighlightedCode out={stderr} prev={stdPrevErr} EmptyCodeBlockState={() => <></>} />
+            <HighlightedCode out={stdout} prev={stdPrevOut} showDiff={showDiff} />
+            <HighlightedCode out={stderr} prev={stdPrevErr} showDiff={showDiff} EmptyCodeBlockState={() => <></>} />
           </Stack>
         </Tabs.Content>
       </Stack>
