@@ -1,22 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CSSProperties, JSX } from "react";
+import type { JSX } from "react";
 import type { BundledLanguage } from "shiki/bundle/web";
-import type { Highlighter, ThemedToken } from "shiki";
+import type { Highlighter, TokensResult } from "shiki";
 import { createHighlighter } from "shiki";
 
 import v8bc from "./v8-bytecode.tmLanguage.json";
 import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
 import { compareOutputs } from "@/utils/diff-bytcode";
-import { Spinner } from "@chakra-ui/react";
+import { EngineKey } from "@/lib/types";
+import CodeDisplay from "./components/Code";
 
 type CustomLanguages = "v8bc";
 const THEME = "ayu-dark";
 
-/* ── Highlighter (singleton) ───────────────────────────────────── */
-let highlighterPromise: Promise<Highlighter> | null = null;
+const langHighlighterByEngineKey: Record<EngineKey, CustomLanguages> = {
+  [EngineKey.v8]: "v8bc",
+  [EngineKey.jsc]: "v8bc",
+  [EngineKey.sm]: "v8bc",
+  [EngineKey.hermes]: "v8bc",
+};
 
+let highlighterPromise: Promise<Highlighter> | null = null;
 async function getHighlighter() {
   if (!highlighterPromise) {
     highlighterPromise = (async () => {
@@ -31,260 +37,54 @@ async function getHighlighter() {
   return highlighterPromise;
 }
 
-/* ── Shiki tokens result can vary by version; normalize it ─────── */
-type TokensResult = ThemedToken[][] | { tokens: ThemedToken[][]; fg?: string; bg?: string };
-
-function unpackTokens(res: TokensResult): {
-  tokens: ThemedToken[][];
-  fg?: string;
-  bg?: string;
-} {
-  if (Array.isArray(res)) return { tokens: res };
-  return { tokens: res.tokens, fg: res.fg, bg: res.bg };
-}
-
-type DiffKind = "keep" | "add" | "del";
-
-interface DiffLine {
-  type: DiffKind;
-  prevLine?: number;
-  nextLine?: number;
-  tokens: ThemedToken[];
-}
-
-const linePresentation: Record<DiffKind, { prefix: string; background: string; accent: string }> = {
-  keep: { prefix: " ", background: "transparent", accent: "inherit" },
-  add: { prefix: "+", background: "rgba(72, 187, 120, 0.12)", accent: "#68d391" },
-  del: { prefix: "-", background: "rgba(245, 101, 101, 0.12)", accent: "#fc8181" },
-};
-
 const normalizeForDiff = (line: string) =>
   line
-    .replace(/\b0x[0-9a-fA-F]+\b/g, "0x____") // addresses
-    .replace(/(@\s*)\d+/g, "$1<OFF>") // offsets like " @    17"
-    .replace(/\s+/g, " "); // collapse whitespace runs
+    .replace(/\b0x[0-9a-fA-F]+\b/g, "0x____")
+    .replace(/(@\s*)\d+/g, "$1<OFF>")
+    .replace(/\s+/g, " ");
 
 export async function highlight(code: string, lang: BundledLanguage | CustomLanguages, prevCode?: string) {
   const highlighter = await getHighlighter();
-  const shikiLang = lang as unknown as BundledLanguage; // allow custom tmLanguage id
+  const shikiLang = lang as BundledLanguage;
 
   const currentRaw = await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME });
-  const { tokens: currentTokens, fg, bg } = unpackTokens(currentRaw);
 
-  const isEmptyOutput = !code || code.trim().length === 0;
-  const isPlaceholderOutput = /^\(no [^)]+\)$/i.test(code.trim());
-
-  if (isEmptyOutput) {
-    return <Spinner size="lg" alignSelf="center" m={10} />;
-  }
-
-  if (!prevCode || isPlaceholderOutput) {
-    return (
-      <CodeDisplay
-        rows={currentTokens.map((tokens) => ({
-          kind: "plain" as const,
-          tokens,
-        }))}
-        fg={fg}
-        bg={bg}
-      />
-    );
+  if (!prevCode) {
+    return currentRaw;
   }
 
   const prevRaw = await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME });
-  const { tokens: prevTokens } = unpackTokens(prevRaw);
 
-  // External, non-destructive diff on the raw text
-  const diff = compareOutputs(prevCode, code, { normalizeLine: normalizeForDiff });
+  const diffTokens = compareOutputs(prevRaw, currentRaw, { normalizeLine: normalizeForDiff });
 
-  const diffLines: DiffLine[] = diff.changes.map((change) => {
-    if (change.type === "keep") {
-      return {
-        type: "keep",
-        prevLine: change.prevLine,
-        nextLine: change.nextLine,
-        tokens: currentTokens[(change.nextLine ?? 1) - 1] ?? [],
-      };
-    }
-    if (change.type === "add") {
-      return {
-        type: "add",
-        nextLine: change.nextLine,
-        tokens: currentTokens[(change.nextLine ?? 1) - 1] ?? [],
-      };
-    }
-    // del
-    return {
-      type: "del",
-      prevLine: change.prevLine,
-      tokens: prevTokens[(change.prevLine ?? 1) - 1] ?? [],
-    };
-  });
-
-  return (
-    <CodeDisplay
-      rows={diffLines.map((line) => ({
-        kind: "diff" as const,
-        line,
-      }))}
-      fg={fg}
-      bg={bg}
-    />
-  );
+  return diffTokens;
 }
 
-/* ── Unified renderer ──────────────────────────────────────────── */
-type CodeDisplayRow = { kind: "plain"; tokens: ThemedToken[] } | { kind: "diff"; line: DiffLine };
-
-interface CodeDisplayProps {
-  rows: CodeDisplayRow[];
-  fg?: string;
-  bg?: string;
-}
-
-function CodeDisplay({ rows, fg, bg }: CodeDisplayProps) {
-  return (
-    <pre
-      style={{
-        margin: 0,
-        padding: 16,
-        overflowX: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        fontSize: "0.85rem",
-        lineHeight: 1.6,
-        color: fg ?? "inherit",
-        background: bg ?? "transparent",
-      }}
-    >
-      {rows.map((row, idx) =>
-        row.kind === "plain" ? (
-          <PlainCodeRow key={`plain-${idx}`} tokens={row.tokens} />
-        ) : (
-          <DiffCodeLine
-            key={`${row.line.type}-${row.line.prevLine ?? "x"}-${row.line.nextLine ?? "y"}-${idx}`}
-            line={row.line}
-          />
-        )
-      )}
-    </pre>
-  );
-}
-
-interface PlainCodeRowProps {
-  tokens: ThemedToken[];
-}
-
-function PlainCodeRow({ tokens }: PlainCodeRowProps) {
-  return (
-    <span style={{ whiteSpace: "pre", display: "inline-block", minHeight: "1.65em" }}>
-      {tokens.length ? tokens.map((token, index) => <TokenSpan key={index} token={token} />) : <span>&nbsp;</span>}
-    </span>
-  );
-}
-
-interface DiffCodeLineProps {
-  line: DiffLine;
-}
-
-function DiffCodeLine({ line }: DiffCodeLineProps) {
-  const meta = linePresentation[line.type];
-  const prevLine = line.type === "add" ? "" : line.prevLine ?? "";
-  const nextLine = line.type === "del" ? "" : line.nextLine ?? "";
-  const showMergedNumber = prevLine !== "" && nextLine !== "" && String(prevLine) === String(nextLine);
-
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "4ch 4ch 1.5ch minmax(0, 1fr)",
-        alignItems: "stretch",
-        paddingInline: 8,
-        borderRadius: 4,
-        backgroundColor: meta.background,
-        minHeight: "1.65em",
-      }}
-    >
-      <LineNumber value={nextLine} color={line.type === "del" ? meta.accent : undefined} />
-      {/* <LineNumber value={showMergedNumber ? "" : nextLine} color={line.type === "add" ? meta.accent : undefined} /> */}
-      <span
-        style={{
-          color: meta.accent,
-          fontWeight: "bold",
-          textAlign: "center",
-          userSelect: "none",
-        }}
-      >
-        {meta.prefix}
-      </span>
-      <span style={{ whiteSpace: "pre", display: "inline-block", minHeight: "1.65em" }}>
-        {line.tokens.length ? (
-          line.tokens.map((token, index) => <TokenSpan key={index} token={token} />)
-        ) : (
-          <span>&nbsp;</span>
-        )}
-      </span>
-    </div>
-  );
-}
-
-/* ── Tiny atoms ────────────────────────────────────────────────── */
-interface LineNumberProps {
-  value: number | string;
-  color?: string;
-}
-function LineNumber({ value, color }: LineNumberProps) {
-  return (
-    <span
-      style={{
-        textAlign: "right",
-        paddingInlineEnd: 8,
-        opacity: 0.6,
-        color,
-        userSelect: "none",
-      }}
-    >
-      {value}
-    </span>
-  );
-}
-
-interface TokenSpanProps {
-  token: ThemedToken;
-}
-function TokenSpan({ token }: TokenSpanProps) {
-  const style: CSSProperties = {
-    color: token.color ?? "inherit",
-    whiteSpace: "pre",
-  };
-  if (token.fontStyle) {
-    if (token.fontStyle & 1) style.fontStyle = "italic";
-    if (token.fontStyle & 2) style.fontWeight = "bold";
-    if (token.fontStyle & 4) style.textDecoration = "underline";
-  }
-  return <span style={style}>{token.content || "\u00A0"}</span>;
-}
-
-/* ── Public component: async highlight + render ────────────────── */
 interface Props {
   out?: string;
   prev?: string;
+  showDiff?: boolean;
   EmptyCodeBlockState?: () => JSX.Element;
 }
 
-export function HighlightedCode({ out = "", prev, EmptyCodeBlockState = DefaultEmptyCodeBlockState }: Props) {
-  const [parsedOut, setParsedOut] = useState<JSX.Element>();
+export function HighlightedCode({
+  out = "",
+  prev = "",
+  showDiff = true,
+  EmptyCodeBlockState = DefaultEmptyCodeBlockState,
+}: Props) {
+  const [tokens, setTokens] = useState<TokensResult>();
 
   useEffect(() => {
-    if (out || prev) {
-      void highlight(out, "v8bc", prev).then(setParsedOut);
-    } else {
-      setParsedOut(undefined);
-    }
-  }, [out, prev]);
+    void highlight(out, "v8bc", prev).then((node) => {
+      console.log(node);
+      setTokens(node);
+    });
+  }, [out, prev, showDiff]);
 
-  return parsedOut ?? <EmptyCodeBlockState />;
+  if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
+
+  return <CodeDisplay {...tokens} />;
 }
 
 /** ── (Optional) Opcode glossary for future popovers ───────────── */

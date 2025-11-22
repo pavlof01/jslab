@@ -35,3 +35,19 @@ export type V8FlagOption = {
   label: string;
   description: string;
 };
+export enum DiffKind {
+  Keep = "keep",
+  Add = "add",
+  Del = "del",
+}
+
+export type ChangeAdd = { type: DiffKind.Add; line: string; nextLine: number };
+export type ChangeDel = { type: DiffKind.Del; line: string; prevLine: number };
+export type ChangeText = { type: DiffKind.Keep; line: string; prevLine: number; nextLine: number };
+export type Change = ChangeText | ChangeDel | ChangeAdd;
+
+export type DiffResult = {
+  added: { line: string; nextLine: number }[];
+  deleted: { line: string; prevLine: number }[];
+  changes: Change[];
+};
