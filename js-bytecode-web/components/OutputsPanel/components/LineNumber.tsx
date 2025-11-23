@@ -1,12 +1,13 @@
 import React from "react";
 
 type Props = {
-  value: number | string;
+  value?: number | string;
   color?: string;
   width?: string;
 };
 
 const LineNumber: React.FC<Props> = ({ value, color, width = "4ch" }) => {
+  if (value === undefined) return null;
   return (
     <span
       style={{

@@ -38,6 +38,7 @@ interface EngineOutputsState {
   out: Record<EngineKey, EngineResult>;
   status: RunStatus;
   meta: string;
+  showDiff: boolean;
   error?: string;
   previousSnapshot: PreviousRunSnapshot | null;
   currentRun: RunContext | null;
@@ -46,6 +47,8 @@ interface EngineOutputsState {
 interface EngineOutputsActions {
   runEngines: (request: RunRequest) => Promise<void>;
   reset: () => void;
+  setShowDiff: (value: boolean) => void;
+  toggleDiff: () => void;
   clearPreviousSnapshot: () => void;
   updateCurrentRunActiveTab: (activeTab: EngineKey) => void;
   setOut: (next: Record<EngineKey, EngineResult>) => void;
@@ -57,6 +60,7 @@ const createInitialState = (): EngineOutputsState => ({
   out: createEmptyOut(),
   status: RunStatus.idle,
   meta: "",
+  showDiff: true,
   error: undefined,
   previousSnapshot: null,
   currentRun: null,
@@ -70,6 +74,8 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
   setOut: (next) => set({ out: next }),
   setMeta: (meta) => set({ meta }),
   setStatus: (status) => set({ status }),
+  setShowDiff: (value) => set({ showDiff: value }),
+  toggleDiff: () => set((state) => ({ showDiff: !state.showDiff })),
   clearPreviousSnapshot: () => set({ previousSnapshot: null }),
   reset: () => set({ ...createInitialState() }),
 
@@ -170,6 +176,7 @@ export const useEngineOutputsState = () =>
       out: state.out,
       status: state.status,
       meta: state.meta,
+      showDiff: state.showDiff,
       error: state.error,
       previousSnapshot: state.previousSnapshot,
       currentRun: state.currentRun,
@@ -181,6 +188,8 @@ export const useEngineOutputsActions = () =>
     useShallow((state) => ({
       runEngines: state.runEngines,
       reset: state.reset,
+      setShowDiff: state.setShowDiff,
+      toggleDiff: state.toggleDiff,
       clearPreviousSnapshot: state.clearPreviousSnapshot,
       updateCurrentRunActiveTab: state.updateCurrentRunActiveTab,
       setOut: state.setOut,
