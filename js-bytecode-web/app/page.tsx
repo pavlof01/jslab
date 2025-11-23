@@ -32,12 +32,11 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 export default function Page() {
   const [code, setCode] = useState(samples.add);
   const [engines, setEngines] = useState<Record<EngineKey, boolean>>(() => createEngineSelection());
-  const { status, previousSnapshot } = useEngineOutputsState();
-  const { runEngines, updateCurrentRunActiveTab } = useEngineOutputsActions();
+  const { status, previousSnapshot, showDiff } = useEngineOutputsState();
+  const { runEngines, updateCurrentRunActiveTab, toggleDiff } = useEngineOutputsActions();
   const [activeTab, setActiveTab] = useState<EngineKey>(EngineKey.v8);
   const { resetSplitter, panelSplit, gridRef, editorCollapsed, handleSplitterPointerDown, handleSplitterDoubleClick } =
     useSplitter();
-  const [showDiff, setShowDiff] = useState(true);
   const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
   const [previousPanelTab, setPreviousPanelTab] = useState<EngineKey>(EngineKey.v8);
 
@@ -207,7 +206,7 @@ export default function Page() {
               size="sm"
               variant={showDiff ? "solid" : "outline"}
               colorScheme={showDiff ? "purple" : undefined}
-              onClick={() => setShowDiff((prev) => !prev)}
+              onClick={toggleDiff}
             >
               {showDiff ? "Hide Diff" : "Show Diff"}
             </Button>
