@@ -11,6 +11,7 @@
     "@chakra-ui/react": "^3.27.0",
     "@emotion/react": "^11.14.0",
     "@monaco-editor/react": "^4.7.0",
+    "diff": "^8.0.2",
     "glob": "^11.0.3",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "immer": "^10.2.0",

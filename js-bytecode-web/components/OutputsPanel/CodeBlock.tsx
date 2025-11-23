@@ -8,9 +8,9 @@ import { createHighlighter } from "shiki";
 
 import v8bc from "./v8-bytecode.tmLanguage.json";
 import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
-import { compareOutputs } from "@/utils/diff-bytcode";
 import { EngineKey } from "@/lib/types";
 import CodeDisplay from "./components/Code";
+import { compareOutputs } from "@/utils/diff-bytecode";
 
 type CustomLanguages = "v8bc";
 const THEME = "ayu-dark";
