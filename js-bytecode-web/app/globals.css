@@ -25,21 +25,35 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-pre.shiki {
-  counter-reset: line;
+.diff-add {
+  background-color: rgba(72, 187, 120, 0.12);
+}
+.diff-del {
+  background-color: rgba(245, 101, 101, 0.12);
 }
 
-pre.shiki .line::before {
-  counter-increment: line;
-  content: counter(line);
-  width: var(--code-block-line-number-width);
-  margin-right: var(--code-block-line-number-margin);
-  display: inline-block;
-  text-align: end;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  white-space: nowrap;
+.diff-add > span:first-child {
+  color: #68d391;
+}
+
+.diff-del > span:first-child {
+  color: #fc8181;
+}
+
+.diff-add .line-number:first-of-type,
+.diff-keep .line-number:first-of-type {
   opacity: 0.4;
+}
+
+.diff-del .line-number:last-of-type,
+.diff-keep .line-number:last-of-type {
+  opacity: 0.4;
+}
+
+.diff-add .line-number:last-of-type {
+  color: #68d391;
+}
+
+.diff-del .line-number:first-of-type {
+  color: #fc8181;
 }
