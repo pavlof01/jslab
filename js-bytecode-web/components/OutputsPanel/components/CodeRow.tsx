@@ -5,6 +5,7 @@ import LineNumber from "./LineNumber";
 
 type Props = {
   tokens: ThemedToken[];
+  lineNumber: number;
 };
 
 const diffKindToClass: Record<DiffKind, string> = {
@@ -13,7 +14,7 @@ const diffKindToClass: Record<DiffKind, string> = {
   [DiffKind.Keep]: "diff-keep",
 };
 
-const PlainCodeRow: React.FC<Props> = ({ tokens }) => {
+const PlainCodeRow: React.FC<Props> = ({ tokens, lineNumber }) => {
   if (!tokens.length) return null;
 
   const tok = tokens[0];
@@ -40,7 +41,7 @@ const PlainCodeRow: React.FC<Props> = ({ tokens }) => {
       >
         {prefix}
       </span>
-      <LineNumber value={tok.prevLine ?? ""} />
+      <LineNumber value={tok.prevLine ?? lineNumber} />
       <LineNumber value={tok.nextLine ?? ""} />
       {tokens.map((token, index) => (
         <TokenSpan key={index} token={token} />

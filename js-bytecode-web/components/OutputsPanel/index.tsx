@@ -13,7 +13,6 @@ interface OutputsPanelProps {
   onTabChange: (key: EngineKey) => void;
   selectedV8Flags?: string[];
   setSelectedV8Flags?: Dispatch<SetStateAction<string[]>>;
-  showDiff?: boolean;
 }
 
 export function OutputsPanel({
@@ -23,9 +22,8 @@ export function OutputsPanel({
   onTabChange,
   selectedV8Flags,
   setSelectedV8Flags,
-  showDiff = true,
 }: OutputsPanelProps) {
-  const { out, previousSnapshot } = useEngineOutputsState();
+  const { out, previousSnapshot, showDiff } = useEngineOutputsState();
 
   const handleTabChange = (detail: { value: string | null }) => {
     const next = (detail.value ?? activeKey) as EngineKey;

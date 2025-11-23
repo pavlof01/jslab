@@ -6,7 +6,8 @@ const CodeDisplay: React.FC<TokensResult> = ({ tokens, fg, bg }) => {
     <code
       style={{
         margin: 0,
-        padding: 16,
+        paddingTop: 16,
+        paddingBottom: 16,
         overflowX: "auto",
         display: "flex",
         flexDirection: "column",
@@ -18,7 +19,7 @@ const CodeDisplay: React.FC<TokensResult> = ({ tokens, fg, bg }) => {
       }}
     >
       {tokens.map((row, idx) => (
-        <PlainCodeRow key={`line-${idx}`} tokens={row} />
+        <PlainCodeRow key={`line-${idx}`} tokens={row} lineNumber={idx} />
       ))}
     </code>
   );

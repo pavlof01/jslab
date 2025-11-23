@@ -76,7 +76,7 @@ export function HighlightedCode({
   const [tokens, setTokens] = useState<TokensResult>();
 
   useEffect(() => {
-    void highlight(out, "v8bc", prev).then((node) => {
+    void highlight(out, "v8bc", showDiff ? prev : "").then((node) => {
       console.log(node);
       setTokens(node);
     });
