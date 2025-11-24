@@ -64,23 +64,25 @@ interface Props {
   out?: string;
   prev?: string;
   showDiff?: boolean;
+  isLoading?: boolean;
   EmptyCodeBlockState?: () => JSX.Element;
 }
 
 export function HighlightedCode({
   out = "",
   prev = "",
+  isLoading = false,
   showDiff = true,
   EmptyCodeBlockState = DefaultEmptyCodeBlockState,
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
 
   useEffect(() => {
+    if (isLoading || !out) return;
     void highlight(out, "v8bc", showDiff ? prev : "").then((node) => {
-      console.log(node);
       setTokens(node);
     });
-  }, [out, prev, showDiff]);
+  }, [out, prev, showDiff, isLoading]);
 
   if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
 
