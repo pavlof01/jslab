@@ -5,12 +5,14 @@ import type { JSX } from "react";
 import type { BundledLanguage } from "shiki/bundle/web";
 import type { Highlighter, TokensResult } from "shiki";
 import { createHighlighter } from "shiki";
+import { Box } from "@chakra-ui/react";
 
 import v8bc from "./v8-bytecode.tmLanguage.json";
 import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
 import { EngineKey } from "@/lib/types";
 import CodeDisplay from "./components/Code";
 import { compareOutputs } from "@/utils/diff-bytecode";
+import CopyButton from "./components/CopyButton";
 
 type CustomLanguages = "v8bc";
 const THEME = "ayu-dark";
@@ -86,5 +88,10 @@ export function HighlightedCode({
 
   if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
 
-  return <CodeDisplay {...tokens} />;
+  return (
+    <Box>
+      <CopyButton out={out} />
+      <CodeDisplay {...tokens} />
+    </Box>
+  );
 }
