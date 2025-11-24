@@ -1,4 +1,5 @@
 import { TokensResult } from "shiki";
+
 import PlainCodeRow from "./CodeRow";
 
 const CodeDisplay: React.FC<TokensResult> = ({ tokens, fg, bg }) => {
