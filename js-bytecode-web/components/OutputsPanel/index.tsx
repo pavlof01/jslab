@@ -1,5 +1,5 @@
 import { Stack, Tabs } from "@chakra-ui/react";
-import { EngineKey } from "../../lib/types";
+import { EngineKey, RunStatus } from "../../lib/types";
 import { useColorModeValue } from "../ui/color-mode";
 import type { Dispatch, SetStateAction } from "react";
 import { HighlightedCode } from "./CodeBlock";
@@ -23,7 +23,7 @@ export function OutputsPanel({
   selectedV8Flags,
   setSelectedV8Flags,
 }: OutputsPanelProps) {
-  const { out, previousSnapshot, showDiff } = useEngineOutputsState();
+  const { out, previousSnapshot, showDiff, status } = useEngineOutputsState();
 
   const handleTabChange = (detail: { value: string | null }) => {
     const next = (detail.value ?? activeKey) as EngineKey;
@@ -58,7 +58,12 @@ export function OutputsPanel({
 
         <Tabs.Content value={activeKey} flex="1" minH={0}>
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
-            <HighlightedCode out={stdout} prev={stdPrevOut} showDiff={showDiff} />
+            <HighlightedCode
+              out={stdout}
+              prev={stdPrevOut}
+              showDiff={showDiff}
+              isLoading={status === RunStatus.running}
+            />
             <HighlightedCode out={stderr} prev={stdPrevErr} showDiff={showDiff} EmptyCodeBlockState={() => <></>} />
           </Stack>
         </Tabs.Content>
