@@ -2,7 +2,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Button, Popover, Portal, Text } from "@chakra-ui/react";
 import type { CSSProperties } from "react";
 import type { ThemedToken } from "shiki";
-import { getBytecodeInfo } from "../v8-opcodes";
+import { getOpcodeInfo } from "../v8-opcodes";
 
 type Props = {
   token: ThemedToken;
@@ -21,7 +21,7 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
   }
 
   const opcodeKey = token.content?.trim();
-  const opcodeDescription = opcodeKey ? getBytecodeInfo(opcodeKey) : undefined;
+  const opcodeDescription = opcodeKey ? getOpcodeInfo(opcodeKey) : undefined;
 
   const content = <span style={style}>{token.content}</span>;
 
