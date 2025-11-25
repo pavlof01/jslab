@@ -173,6 +173,77 @@ export function resolveRegisterOpcode(opcode: string): string | undefined {
 }
 
 /**
+ * Resolve memory/code addresses printed by V8 in the bytecode dump.
+ *
+ * Supported examples:
+ *   0x25c3001000a0
+ *   0x140c00100db4
+ *   0x140c00100db4:
+ *
+ * This does NOT influence semantics — these values are internal tagged
+ * pointers or code object addresses printed for debugging/correlation.
+ */
+function resolveAddressToken(fragment: string): string | undefined {
+  const key = fragment.trim();
+  if (!key) return undefined;
+
+  // Optional trailing colon: "0x1234:" → valid
+  const m = key.match(/^0x[0-9a-fA-F]+:?$/);
+  if (!m) return undefined;
+
+  return (
+    "Internal V8 code/memory address (tagged pointer / code object). " +
+    "Used only for debugging and correlating disassembly output."
+  );
+}
+
+/**
+ * Resolve function-level metadata printed by V8 in bytecode dumps.
+ *
+ * Supported patterns:
+ *   "Bytecode length: N"
+ *   "Parameter count N"
+ *   "Register count N"
+ *   "Frame size N"
+ */
+function resolveFunctionMetadata(fragment: string): string | undefined {
+  const s = fragment.trim();
+  if (!s) return undefined;
+
+  // Bytecode length
+  let m = s.match(/^Bytecode length:\s*(\d+)$/);
+  if (m) {
+    return `Total number of bytecode instructions emitted for this function (${m[1]} ops).`;
+  }
+
+  // Parameter count
+  m = s.match(/^Parameter count\s+(\d+)$/);
+  if (m) {
+    return `Number of declared parameters for this function (${m[1]}).`;
+  }
+
+  // Register count
+  m = s.match(/^Register count\s+(\d+)$/);
+  if (m) {
+    return (
+      `Number of virtual registers allocated for this function (` +
+      `${m[1]}). Registers store temporary values during execution.`
+    );
+  }
+
+  // Frame size
+  m = s.match(/^Frame size\s+(\d+)$/);
+  if (m) {
+    return (
+      `Stack frame size in bytes used by this function at runtime (` +
+      `${m[1]} bytes). Includes registers, locals, spills, etc.`
+    );
+  }
+
+  return undefined;
+}
+
+/**
  * Meta-descriptions of various sections in the bytecode:
  *   "Constant pool (size = 0)"
  *   "Handler Table (size = 32)"
@@ -206,17 +277,35 @@ export function getOpcodeInfo(rawToken: string | null | undefined): string | und
   return undefined;
 }
 
+/**
+ * Unified helper for any bytecode-related token:
+ *  - opcodes (normal or register-based)
+ *  - memory addresses (0x...)
+ *  - special V8 dump sections (Constant pool, Handler Table, ...)
+ *  - special registers (<closure>, <context>, ...)
+ */
 export function getBytecodeInfo(fragment: string | null | undefined): string | undefined {
   if (!fragment) return undefined;
   const key = fragment.trim();
   if (!key) return undefined;
 
+  // 1) Opcodes
   const opcodeInfo = getOpcodeInfo(key);
   if (opcodeInfo) return opcodeInfo;
 
+  // 2) Memory address
+  const addressInfo = resolveAddressToken(key);
+  if (addressInfo) return addressInfo;
+
+  // 3) Function metadata (Bytecode length, Register count, etc.)
+  const metadataInfo = resolveFunctionMetadata(key);
+  if (metadataInfo) return metadataInfo;
+
+  // 4) Sections (Constant pool, Handler Table, Source Position Table)
   const sectionInfo = getSectionInfo(key);
   if (sectionInfo) return sectionInfo;
 
+  // 5) Special registers (<closure>, <context>, ...)
   const special = SPECIAL_REGISTERS[key];
   if (special) return special;
 
