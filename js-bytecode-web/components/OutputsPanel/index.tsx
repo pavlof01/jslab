@@ -56,7 +56,7 @@ export function OutputsPanel({
           ))}
         </Tabs.List>
 
-        <Tabs.Content value={activeKey} display="flex" flex="1" minH={0} overflow="scroll">
+        <Tabs.Content value={activeKey} display="flex" flex="1" minH={0}>
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
             <HighlightedCode
               out={stdout}

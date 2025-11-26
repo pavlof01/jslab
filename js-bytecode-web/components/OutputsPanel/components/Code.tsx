@@ -9,7 +9,6 @@ const CodeDisplay: React.FC<TokensResult> = ({ tokens, fg, bg }) => {
         margin: 0,
         paddingTop: 16,
         paddingBottom: 16,
-        overflowX: "auto",
         display: "flex",
         flexDirection: "column",
         gap: 4,
