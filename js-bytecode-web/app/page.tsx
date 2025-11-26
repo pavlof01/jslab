@@ -123,11 +123,11 @@ export default function Page() {
 
   return (
     <Flex direction="column" maxH="100vh" minH="100vh" bg={pageBg} color={textPrimary}>
-      <Box as="header" px={6} py={4} borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
+      <Box as="header" px={6} py={4} height="8vh" borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
         <HeaderBar status={status} />
       </Box>
 
-      <Flex ref={gridRef} gap={4} flex="1" px={6} py={4}>
+      <Flex ref={gridRef} gap={4} flex="1" maxH="92vh" px={6} py={4}>
         <Show when={!editorCollapsed}>
           <Box
             bg={panelBg}
@@ -202,7 +202,7 @@ export default function Page() {
               tabs={tabs}
             />
           </HStack>
-          <Flex flex={1} p={4}>
+          <Flex flex={1} p={4} overflow="scroll">
             <OutputsPanel
               enabledTabs={enabledTabs}
               activeTabIndex={activeTabIndex}
