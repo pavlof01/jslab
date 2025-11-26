@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActionBar, Box, Button, Flex, HStack, Portal, Show, Spacer, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, HStack, Show, Spacer, Text } from "@chakra-ui/react";
 import { HeaderBar } from "../components/HeaderBar";
 import { EditorPanel } from "../components/EditorPanel";
 import { OutputsPanel } from "../components/OutputsPanel";
@@ -9,11 +9,11 @@ import { ENGINE_KEYS, EngineKey, isEngineKey } from "../lib/types";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
 import { CiPlay1 } from "react-icons/ci";
-import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import Samples, { samples } from "@/components/Samples";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
 import { useSplitter } from "@/hooks/useSplitterScreen";
 import Splitter from "@/components/Splitter";
+import ActionsBarClosedEditor from "@/components/ActionBarClosedEditor";
 
 const tabs: { key: EngineKey; label: string }[] = [
   { key: EngineKey.v8, label: "V8" },
@@ -122,12 +122,12 @@ export default function Page() {
   }, []);
 
   return (
-    <Flex direction="column" minH="100vh" bg={pageBg} color={textPrimary}>
+    <Flex direction="column" maxH="100vh" minH="100vh" bg={pageBg} color={textPrimary}>
       <Box as="header" px={6} py={4} borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
         <HeaderBar status={status} />
       </Box>
 
-      <Flex ref={gridRef} gap={4} flex="1" px={6} py={4} align="stretch">
+      <Flex ref={gridRef} gap={4} flex="1" px={6} py={4}>
         <Show when={!editorCollapsed}>
           <Box
             bg={panelBg}
@@ -169,7 +169,7 @@ export default function Page() {
           onDoubleClick={handleSplitterDoubleClick}
         />
 
-        <Box
+        <Flex
           bg={panelBg}
           border="1px solid"
           borderColor={borderColor}
@@ -183,24 +183,9 @@ export default function Page() {
           flexBasis="0%"
           position="relative"
         >
-          <ActionBar.Root open={editorCollapsed}>
-            <Portal>
-              <ActionBar.Positioner bottom="32px" left="32px">
-                <ActionBar.Content shadow="lg" borderRadius="lg">
-                  <ActionBar.SelectionTrigger display="flex" alignItems="center" gap={2}>
-                    <LuPanelLeftClose />
-                    Editor Hidden
-                  </ActionBar.SelectionTrigger>
-                  <ActionBar.Separator />
-                  <Button size="sm" colorScheme="blue" onClick={resetSplitter}>
-                    Show Editor <LuPanelLeftOpen />
-                  </Button>
-                </ActionBar.Content>
-              </ActionBar.Positioner>
-            </Portal>
-          </ActionBar.Root>
+          <ActionsBarClosedEditor editorCollapsed={editorCollapsed} resetSplitter={resetSplitter} />
 
-          <HStack px={4} py={4} borderBottom="1px solid" borderColor={borderColor}>
+          <HStack p={4} borderBottom="1px solid" borderColor={borderColor}>
             <Text fontWeight="semibold">Outputs</Text>
             <Button
               size="sm"
@@ -217,19 +202,17 @@ export default function Page() {
               tabs={tabs}
             />
           </HStack>
-          <Flex flex="1" minH="0" gap={4} px={4} py={4} overflow="hidden">
-            <Box flex="1" minH="0" display="flex">
-              <OutputsPanel
-                enabledTabs={enabledTabs}
-                activeTabIndex={activeTabIndex}
-                activeTab={activeTab}
-                onTabChange={(key) => setActiveTab(key)}
-                selectedV8Flags={selectedV8Flags}
-                setSelectedV8Flags={setSelectedV8Flags}
-              />
-            </Box>
+          <Flex flex={1} p={4}>
+            <OutputsPanel
+              enabledTabs={enabledTabs}
+              activeTabIndex={activeTabIndex}
+              activeTab={activeTab}
+              onTabChange={(key) => setActiveTab(key)}
+              selectedV8Flags={selectedV8Flags}
+              setSelectedV8Flags={setSelectedV8Flags}
+            />
           </Flex>
-        </Box>
+        </Flex>
       </Flex>
     </Flex>
   );
