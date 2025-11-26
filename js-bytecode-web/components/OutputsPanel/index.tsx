@@ -1,4 +1,4 @@
-import { Stack, Tabs } from "@chakra-ui/react";
+import { Flex, Stack, Tabs } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "../../lib/types";
 import { useColorModeValue } from "../ui/color-mode";
 import type { Dispatch, SetStateAction } from "react";
@@ -42,13 +42,13 @@ export function OutputsPanel({
   const canRenderV8Controls = activeKey === EngineKey.v8 && selectedV8Flags && setSelectedV8Flags;
 
   return (
-    <Tabs.Root value={activeKey} onValueChange={handleTabChange} size="sm" variant="line" flex={1}>
-      <Stack flex="1" minH={0} gap={4} display="flex" w="full">
+    <Tabs.Root value={activeKey} onValueChange={handleTabChange} display="flex" size="sm" variant="line" flex="1">
+      <Stack flex="1" minH={0} gap={4} w="full">
         {/* <Show when={canRenderV8Controls}>
           <V8MenuControls selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
         </Show> */}
 
-        <Tabs.List w="full" border="0" ms="-1" flex="1">
+        <Tabs.List w="full" border="0" ms="-1">
           {enabledTabs.map((tab) => (
             <Tabs.Trigger colorPalette="teal" key={tab.key} value={tab.key} textStyle="xs">
               {tab.label}
@@ -56,7 +56,7 @@ export function OutputsPanel({
           ))}
         </Tabs.List>
 
-        <Tabs.Content value={activeKey} flex="1" minH={0}>
+        <Tabs.Content value={activeKey} display="flex" flex="1" minH={0} overflow="scroll">
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
             <HighlightedCode
               out={stdout}
