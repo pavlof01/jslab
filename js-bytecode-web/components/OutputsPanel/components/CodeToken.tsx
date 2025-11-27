@@ -36,7 +36,7 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button size="2xs" fontSize={14} variant="ghost">
+        <Button as="span" size="2xs" fontSize={14} variant="ghost">
           {content}
         </Button>
       </Popover.Trigger>
