@@ -23,7 +23,11 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
   const opcodeKey = token.content?.trim();
   const opcodeDescription = opcodeKey ? getOpcodeInfo(opcodeKey) : undefined;
 
-  const content = <span style={style}>{token.content}</span>;
+  const content = (
+    <Text as="span" fontSize={14} style={style}>
+      {token.content}
+    </Text>
+  );
 
   if (!opcodeDescription) {
     return content;
@@ -32,7 +36,7 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button size="2xs" fontSize={13.6} variant="ghost">
+        <Button size="2xs" fontSize={14} variant="ghost">
           {content}
         </Button>
       </Popover.Trigger>
