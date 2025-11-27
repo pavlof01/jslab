@@ -1,4 +1,5 @@
 import React from "react";
+import { Text } from "@chakra-ui/react";
 
 type Props = {
   value?: number | string;
@@ -9,19 +10,19 @@ type Props = {
 const LineNumber: React.FC<Props> = ({ value, color, width = "4ch" }) => {
   if (value === undefined) return null;
   return (
-    <span
-      style={{
-        display: "inline-block",
-        width,
-        textAlign: "right",
-        paddingInlineEnd: 8,
-        opacity: 0.6,
-        color,
-        userSelect: "none",
-      }}
+    <Text
+      as="span"
+      userSelect="none"
+      color={color}
+      opacity={0.6}
+      paddingInlineEnd={8}
+      textAlign="right"
+      display="inline-block"
+      width={width}
+      fontSize={12}
     >
       {value}
-    </span>
+    </Text>
   );
 };
 

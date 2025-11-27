@@ -202,7 +202,7 @@ export default function Page() {
               tabs={tabs}
             />
           </HStack>
-          <Flex flex={1} p={4} overflow="scroll">
+          <Flex flex={1} overflow="scroll">
             <OutputsPanel
               enabledTabs={enabledTabs}
               activeTabIndex={activeTabIndex}
