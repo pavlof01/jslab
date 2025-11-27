@@ -43,12 +43,12 @@ export function OutputsPanel({
 
   return (
     <Tabs.Root value={activeKey} onValueChange={handleTabChange} display="flex" size="sm" variant="line" flex="1">
-      <Stack flex="1" minH={0} gap={4} w="full">
+      <Stack flex="1" minH={0} w="full">
         {/* <Show when={canRenderV8Controls}>
           <V8MenuControls selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
         </Show> */}
 
-        <Tabs.List w="full" border="0" ms="-1">
+        <Tabs.List w="full" ms="-1" px={4}>
           {enabledTabs.map((tab) => (
             <Tabs.Trigger colorPalette="teal" key={tab.key} value={tab.key} textStyle="xs">
               {tab.label}
