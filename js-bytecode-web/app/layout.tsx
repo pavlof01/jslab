@@ -29,6 +29,7 @@ export const metadata: Metadata = {
   description:
     "Explore JavaScript engines interactively — view bytecode, analyze execution stages, and compare performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
   keywords: [
+    "Alexey Pavlov",
     "JavaScript",
     "V8",
     "bytecode",
