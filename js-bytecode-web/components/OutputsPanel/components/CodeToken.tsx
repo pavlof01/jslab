@@ -34,7 +34,7 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
   }
 
   return (
-    <Popover.Root>
+    <Popover.Root lazyMount unmountOnExit>
       <Popover.Trigger asChild>
         <Button as="span" size="2xs" fontSize={14} variant="ghost">
           {content}
