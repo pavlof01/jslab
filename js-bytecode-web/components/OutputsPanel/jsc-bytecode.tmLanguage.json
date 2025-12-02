@@ -1,0 +1,87 @@
+
+{
+  "name": "jscbc",
+  "displayName": "JavaScriptCore Bytecode",
+  "scopeName": "source.jscbc",
+  "fileTypes": ["jscbc", "jscdis"],
+  "patterns": [
+    { "include": "#header" },
+    { "include": "#block-header" },
+    { "include": "#predecessors-successors" },
+    { "include": "#instruction-line" }
+  ],
+  "repository": {
+    "header": {
+      "patterns": [
+        {
+          "name": "entity.name.section.header.jscbc",
+          "match": "^<global>#[^:]+:.*$"
+        }
+      ]
+    },
+    "block-header": {
+      "patterns": [
+        {
+          "name": "entity.name.tag.jscbc",
+          "match": "^bb#\\d+"
+        }
+      ]
+    },
+    "predecessors-successors": {
+      "patterns": [
+        {
+          "name": "comment.line.jscbc",
+          "match": "^(Predecessors|Successors):\\s*\\[.*\\]"
+        }
+      ]
+    },
+    "instruction-line": {
+      "patterns": [
+        {
+          "name": "meta.instruction.line.jscbc",
+          "begin": "^\\[\\s*(\\d+)\\]\\s+([a-zA-Z0-9_]+)",
+          "beginCaptures": {
+            "1": { "name": "constant.numeric.dec.offset.jscbc" },
+            "2": { "name": "keyword.operator.opcode.jscbc" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#operands" }
+          ]
+        }
+      ]
+    },
+    "operands": {
+      "patterns": [
+        {
+          "name": "variable.parameter.jscbc",
+          "match": "\\b(dst|src|scope|var|value|base|property|getter|setter|callee|lhs|rhs|condition|message|errorType|operand|functionDecl|resolveType|localScopeDepth|getPutInfo|symbolTableOrScopeDepth|offset|inlineCapacity|attributes):"
+        },
+        {
+          "name": "variable.language.register.jscbc",
+          "match": "\\bloc\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.dec.jscbc",
+          "match": "\\b\\d+\\b"
+        },
+        {
+          "name": "string.unquoted.jscbc",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        },
+        {
+          "name": "entity.name.type.jscbc",
+          "match": "<[^>]+>"
+        },
+        {
+          "name": "string.quoted.jscbc",
+          "match": "\\(.*?\\)"
+        },
+        {
+          "name": "punctuation.separator.jscbc",
+          "match": ","
+        }
+      ]
+    }
+  }
+}
