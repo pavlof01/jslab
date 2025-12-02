@@ -1,0 +1,82 @@
+{
+  "name": "smbc",
+  "displayName": "SpiderMonkey Bytecode",
+  "scopeName": "source.smbc",
+  "fileTypes": ["smbc", "smdis"],
+  "patterns": [
+    { "include": "#header" },
+    { "include": "#column-header" },
+    { "include": "#label" },
+    { "include": "#instruction-line" }
+  ],
+  "repository": {
+    "header": {
+      "name": "meta.header.smbc",
+      "begin": "^(SpiderMonkey) (\\{)",
+      "beginCaptures": {
+        "1": { "name": "entity.name.type.smbc" },
+        "2": { "name": "punctuation.definition.brace.begin.smbc" }
+      },
+      "end": "^(\\})",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.brace.end.smbc" }
+      },
+      "patterns": [
+        { "name": "string.quoted.double.json", "match": "\"[^\"]+\"" },
+        { "name": "constant.numeric.json", "match": "\\b\\d+\\b" },
+        { "name": "punctuation.separator.dictionary.key-value.json", "match": ":" },
+        { "name": "punctuation.separator.array.json", "match": "," }
+      ]
+    },
+    "column-header": {
+      "patterns": [
+        {
+          "name": "markup.heading.column.smbc",
+          "match": "^(loc\\s+line\\s+op)$"
+        },
+        {
+          "name": "comment.line.smbc",
+          "match": "^(-----\\s+----\\s+--)$"
+        }
+      ]
+    },
+    "label": {
+      "patterns": [
+        {
+          "name": "entity.name.tag.label.smbc",
+          "match": "^([A-Za-z0-9_]+):$"
+        }
+      ]
+    },
+    "instruction-line": {
+      "name": "meta.instruction.line.smbc",
+      "begin": "^(\\d{5}):\\s+(\\d+)\\s+",
+      "beginCaptures": {
+        "1": { "name": "constant.numeric.address.smbc" },
+        "2": { "name": "constant.numeric.line-number.smbc" }
+      },
+      "end": "$",
+      "patterns": [{ "include": "#opcode" }, { "include": "#operands" }, { "include": "#inline-comment" }]
+    },
+    "opcode": {
+      "patterns": [
+        {
+          "name": "keyword.operator.opcode.smbc",
+          "match": "\\b[A-Z][a-zA-Z0-9]+\\b"
+        }
+      ]
+    },
+    "operands": {
+      "patterns": [
+        { "name": "constant.numeric.smbc", "match": "\\b\\d+\\b" },
+        { "name": "string.quoted.double.smbc", "match": "\"[^\"]+\"" },
+        { "name": "string.quoted.single.smbc", "match": "'[^']+'" },
+        { "name": "string.unquoted.smbc", "match": "\\{[^}]+\\}" }
+      ]
+    },
+    "inline-comment": {
+      "name": "comment.line.number-sign.smbc",
+      "match": "#.*$"
+    }
+  }
+}
