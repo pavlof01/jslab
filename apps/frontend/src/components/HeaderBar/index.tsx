@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Badge, Button, HStack, Text, IconButton } from "@chakra-ui/react";
-import { CiPlay1 } from "react-icons/ci";
+import { Badge, HStack, IconButton } from "@chakra-ui/react";
 import { FaGithubSquare } from "react-icons/fa";
 
-import type { EngineKey, RunStatus } from "../../lib/types";
+import type { RunStatus } from "../../lib/types";
+import Link from "next/link";
 
 const MY_GH = "https://github.com/pavlof01";
 
@@ -32,6 +32,7 @@ export function HeaderBar({ status }: HeaderBarProps) {
           <Image src="/jslab-logo-transparent.png" alt="JSLab" width={40} height={40} priority />
         </HStack>
       </HStack>
+      <Link href="/loose-equality">Loose Equality Visualizer</Link>
       <HStack gap={4} align="center">
         <Badge colorScheme={statusColor[status]} textTransform="capitalize" px={3} py={1} borderRadius="md">
           {status}
