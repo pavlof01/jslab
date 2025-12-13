@@ -2,8 +2,8 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json tsconfig.json ./
-COPY src ./src
+COPY apps/api/package.json apps/api/tsconfig.json ./
+COPY apps/api/src ./src
 RUN npm install --include=dev
 RUN npm run build
 RUN npm prune --omit=dev
