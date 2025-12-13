@@ -2,8 +2,10 @@ import { ToNumeric } from "../Number/ToNumeric";
 import { ToPrimitive } from "../Object/ToPrimitive";
 import { SameType } from "../SameType";
 import { ToString } from "../String/ToString";
+import { GetValue } from "../GetValue";
 
-type Operator = "**" | "*" | "/" | "%" | "+" | "-" | "<<" | ">>" | ">>>" | "&" | "^" | "|";
+export type Operator = "**" | "*" | "/" | "%" | "+" | "-" | "<<" | ">>" | ">>>" | "&" | "^" | "|";
+export const OPERATORS: Operator[] = ["**", "*", "/", "%", "+", "-", "<<", ">>", ">>>", "&", "^", "|"];
 
 /* BigInt operations – matching the spec names */
 const BigIntOps = {
@@ -114,4 +116,26 @@ export function ApplyStringOrNumericBinaryOperator(lVal: any, opText: Operator, 
   const op = NumberOperatorMap[opText];
   const fn = NumberOps[op];
   return fn(lNum, rNum as number);
+}
+
+/**
+ * EvaluateStringOrNumericBinaryExpression ( leftOperand, opText, rightOperand )
+ * https://tc39.es/ecma262/multipage/abstract-operations.html#sec-evaluatestringornumericbinaryexpression
+ */
+export function EvaluateStringOrNumericBinaryExpression(
+  leftOperand: { evaluate: () => unknown } | (() => unknown) | unknown,
+  opText: Operator,
+  rightOperand: { evaluate: () => unknown } | (() => unknown) | unknown
+): string | number | bigint {
+  const lRef = evaluateOperand(leftOperand);
+  const lVal = GetValue(lRef);
+  const rRef = evaluateOperand(rightOperand);
+  const rVal = GetValue(rRef);
+  return ApplyStringOrNumericBinaryOperator(lVal, opText, rVal);
+}
+
+function evaluateOperand(node: { evaluate: () => unknown } | (() => unknown) | unknown): unknown {
+  if (typeof node === "function") return node();
+  if (node && typeof (node as any).evaluate === "function") return (node as any).evaluate();
+  return node;
 }

@@ -33,6 +33,7 @@ export function HeaderBar({ status }: HeaderBarProps) {
         </HStack>
       </HStack>
       <Link href="/loose-equality">Loose Equality Visualizer</Link>
+      <Link href="/arithmetic-operations">EvaluateString Or Numeric Binary Expression</Link>
       <HStack gap={4} align="center">
         <Badge colorScheme={statusColor[status]} textTransform="capitalize" px={3} py={1} borderRadius="md">
           {status}
