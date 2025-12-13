@@ -5,8 +5,8 @@ FROM ${V8_BASE_IMAGE} AS v8-binary
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json tsconfig.json ./
-COPY src ./src
+COPY apps/engine-v8/package.json apps/engine-v8/tsconfig.json ./
+COPY apps/engine-v8/src ./src
 RUN npm install --include=dev
 RUN npm run build
 RUN npm prune --omit=dev
