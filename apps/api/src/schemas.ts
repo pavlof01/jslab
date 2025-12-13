@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { EngineKind, RunRequest, TaskKind } from "./types";
+import type { EngineKind, RunRequest, TaskKind } from "./types.js";
 
 const engineFlags: Record<EngineKind, readonly string[]> = {
   v8: ["--print-bytecode", "--trace-ignition", "--trace-deopt", "--allow-natives-syntax", "--no-liftoff", "--no-wasm-async-compilation"],
