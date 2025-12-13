@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import type { Redis } from "ioredis";
-import type { ApiResponse, NormalizedRunRequest } from "./types";
+import type { ApiResponse, NormalizedRunRequest } from "./types.js";
 
 export function cacheKey(payload: NormalizedRunRequest): string {
   const normalized = {
