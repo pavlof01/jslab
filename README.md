@@ -43,9 +43,8 @@ Goals:
   ├─ api             # Fastify API gateway (rate limit + cache + engine proxy)
   ├─ engine-v8       # d8 wrapper HTTP service
   ├─ engine-hermes   # hermesc/hermes wrapper HTTP service
-  └─ frontend        # uses existing Next.js UI in js-bytecode-web (no UI changes)
+  └─ frontend        # existing Next.js UI (code in apps/frontend/src, no UI changes)
 /infra/k8s           # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
-/js-bytecode-web     # existing Next.js UI (untouched)
 ```
 
 ### Docker images
