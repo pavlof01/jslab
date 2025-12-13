@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: api
-          image: jslab-api:latest
+          image: pavlof01/jslab-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
