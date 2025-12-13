@@ -38,6 +38,64 @@ Goals:
 
 ## 🧱 Repository Structure
 
+```
+/apps
+  ├─ api             # Fastify API gateway (rate limit + cache + engine proxy)
+  ├─ engine-v8       # d8 wrapper HTTP service
+  ├─ engine-hermes   # hermesc/hermes wrapper HTTP service
+  └─ frontend        # uses existing Next.js UI in js-bytecode-web (no UI changes)
+/infra/k8s           # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
+/js-bytecode-web     # existing Next.js UI (untouched)
+```
+
+### Docker images
+- Frontend: `docker build -f apps/frontend/Dockerfile -t jslab-frontend .`
+- API: `docker build -f apps/api/Dockerfile -t jslab-api .`
+- Engine V8: `docker build -f apps/engine-v8/Dockerfile --build-arg V8_BASE_IMAGE=my-v8-image:latest -t jslab-engine-v8 .`
+- Engine Hermes: `docker build -f apps/engine-hermes/Dockerfile --build-arg HERMES_BASE_IMAGE=my-hermes-image:latest -t jslab-engine-hermes .`
+- You can swap `my-v8-image`/`my-hermes-image` with your own base layers that already contain `d8`/`hermes`/`hermesc`/`hbcdump` (or extend `Dockerfile.v8`/`Dockerfile.hermes` to bake binaries).
+
+### k3s / Traefik deploy
+- Apply base stack: `kubectl apply -k infra/k8s/base`
+- Namespace: `jslab`
+- Set real secrets in `infra/k8s/base/api-secret.example.yaml` (or replace with your own Secret/SealedSecret generator).
+- Ingress (Traefik): host `jslab.local` → `/` → `frontend`, `/api` → `api` (with security headers middleware).
+- NetworkPolicy: only API reachable from Traefik/namespace, engines reachable only from API, Redis reachable only from API.
+- Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
+- PodDisruptionBudgets for api/frontend/engines; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
+
+### API contract
+- Endpoint: `POST /api/run`
+- Request:
+```json
+{
+  "engine": "v8 | hermes",
+  "task": "bytecode | run",
+  "sourceText": "string",
+  "options": { "flags": ["..."], "timeoutMs": 2000 }
+}
+```
+- Response:
+```json
+{
+  "ok": true,
+  "stdout": "...",
+  "stderr": "...",
+  "artifacts": [{ "kind": "bytecode", "mime": "text/plain", "dataBase64": "..." }],
+  "meta": { "durationMs": 0, "engine": "v8", "cacheHit": false }
+}
+```
+- Rate limits: 60 req/min per IP + 20 heavy req/min (task=run|bytecode) stored in Redis (`Retry-After` headers on 429).
+- Cache: Redis hash of engine+task+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s).
+- API key (optional): set `API_KEY` for gateway and `ENGINE_SHARED_SECRET` for engine services; header `x-api-key`/`x-engine-key` validated when set.
+
+### Quick curl example
+```bash
+curl -X POST https://jslab.local/api/run \
+  -H "content-type: application/json" \
+  -d '{"engine":"v8","task":"bytecode","sourceText":"function f(){return 1+2};f();","options":{"flags":["--print-bytecode"],"timeoutMs":2000}}'
+```
+
 ---
 
 ## 🗺 Roadmap Overview

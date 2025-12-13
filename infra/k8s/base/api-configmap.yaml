@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  labels:
+    app: api
+data:
+  ENGINE_V8_URL: http://engine-v8:8080
+  ENGINE_HERMES_URL: http://engine-hermes:8080
+  REDIS_URL: redis://redis:6379
+  CACHE_TTL_SECONDS: "600"
+  RATE_LIMIT_PER_MIN: "60"
+  RATE_LIMIT_HEAVY_PER_MIN: "20"
+  MAX_TIMEOUT_MS: "5000"
+  DEFAULT_TIMEOUT_MS: "2000"
+  LOG_LEVEL: info
