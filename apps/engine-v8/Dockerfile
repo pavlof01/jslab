@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG V8_BASE_IMAGE=my-v8-image:latest
+ARG V8_BASE_IMAGE=pavlof01/v8-d8:latest
 FROM ${V8_BASE_IMAGE} AS v8-binary
 
 FROM node:20-bookworm-slim AS builder

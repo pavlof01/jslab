@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG HERMES_BASE_IMAGE=my-hermes-image:latest
+ARG HERMES_BASE_IMAGE=pavlof01/hermes:latest
 FROM ${HERMES_BASE_IMAGE} AS hermes-binary
 
 FROM node:20-bookworm-slim AS builder
