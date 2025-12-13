@@ -1,6 +1,6 @@
 import type { FastifyReply } from "fastify";
 import type { Redis } from "ioredis";
-import type { TaskKind } from "./types";
+import type { TaskKind } from "./types.js";
 
 export type RateLimitConfig = {
   generalLimit: number;
