@@ -31,6 +31,7 @@ type RunResult = {
 };
 
 app.addHook("onRequest", async (req, reply) => {
+  if (req.url === "/healthz") return;
   if (config.API_KEY) {
     const incoming = req.headers["x-engine-key"];
     if (incoming !== config.API_KEY) {

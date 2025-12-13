@@ -34,8 +34,9 @@ app.register(underPressure, {
   retryAfter: 10,
 });
 
-// API key guard
+// API key guard (skip for health checks)
 app.addHook("onRequest", async (req, reply) => {
+  if (req.url === "/healthz") return;
   if (!config.API_KEY) return;
 
   const incoming = req.headers["x-api-key"];
