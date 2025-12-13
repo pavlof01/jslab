@@ -63,6 +63,27 @@ Goals:
 - Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
 - PodDisruptionBudgets for api/frontend/engines; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
 
+### Быстрый запуск всей инфраструктуры
+1. Собрать образы (из корня):
+   - `docker build -f apps/api/Dockerfile -t jslab-api .`
+   - `docker build -f apps/engine-v8/Dockerfile -t jslab-engine-v8 .`
+   - `docker build -f apps/engine-hermes/Dockerfile -t jslab-engine-hermes .`
+   - `docker build -f apps/frontend/Dockerfile -t jslab-frontend .`
+2. Создать секреты (пример):
+   - `kubectl create namespace jslab`
+   - `kubectl -n jslab create secret generic api-secrets --from-literal=API_KEY=api-secret --from-literal=ENGINE_SHARED_SECRET=engine-secret`
+3. Применить манифесты:
+   - `kubectl apply -k infra/k8s/base`
+4. Проверить готовность:
+   - `kubectl -n jslab get pods,svc,ingress`
+5. Добавить host, если локально: `/etc/hosts` → `127.0.0.1 jslab.local` (или IP Ingress/LoadBalancer).
+6. Тест API:
+   ```bash
+   curl -k -H "x-api-key: api-secret" -H "content-type: application/json" \
+     -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
+     https://jslab.local/api/run
+   ```
+
 ### API contract
 - Endpoint: `POST /api/run`
 - Request:
