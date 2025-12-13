@@ -1,0 +1,39 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: jslab-security-headers
+spec:
+  headers:
+    customResponseHeaders:
+      Strict-Transport-Security: "max-age=63072000; includeSubDomains; preload"
+      X-Frame-Options: "DENY"
+      X-Content-Type-Options: "nosniff"
+      Referrer-Policy: "no-referrer"
+      Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jslab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-security-headers@kubernetescrd
+spec:
+  rules:
+    - host: jslab.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
