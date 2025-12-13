@@ -1,7 +1,8 @@
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: jslab-security-headers
+  namespace: jslab
 spec:
   headers:
     customResponseHeaders:
@@ -11,16 +12,49 @@ spec:
       Referrer-Policy: "no-referrer"
       Permissions-Policy: "geolocation=(), microphone=(), camera=()"
 ---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jslab-https-redirect
+  namespace: jslab
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: jslab
+  namespace: jslab
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: jslab-security-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-https-redirect@kubernetescrd,jslab-jslab-security-headers@kubernetescrd
 spec:
+  tls:
+    - hosts:
+        - jslab.cc
+        - www.jslab.cc
+      secretName: jslab-tls
   rules:
-    - host: jslab.local
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.cc
       http:
         paths:
           - path: /api
