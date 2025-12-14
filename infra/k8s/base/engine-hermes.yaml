@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: engine-hermes
-          image: jslab-engine-hermes:latest
+          image: pavlof01/jslab-engine-hermes:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: NODE_ENV

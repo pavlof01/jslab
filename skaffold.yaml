@@ -1,0 +1,86 @@
+# skaffold.yaml
+apiVersion: skaffold/v4beta6
+kind: Config
+metadata:
+  name: jslab
+
+build:
+  local:
+    push: false
+    useBuildkit: true
+  artifacts:
+    - image: jslab-api
+      context: apps/api
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*.ts"
+          - "package.json"
+          - "package-lock.json"
+          - "tsconfig*.json"
+
+    - image: jslab-frontend
+      context: apps/frontend
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*"
+          - "Dockerfile"
+
+    - image: jslab-engine-v8
+      context: apps/engine-v8
+      # d8 in pavlof01/v8-d8 is amd64-only right now, so on Apple Silicon
+      # we run the whole engine container as linux/amd64 under emulation.
+      platforms: ["linux/amd64"]
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*.ts"
+          - "package.json"
+          - "package-lock.json"
+          - "tsconfig*.json"
+
+    - image: jslab-engine-hermes
+      context: apps/engine-hermes
+      # Hermes toolchain in pavlof01/hermes is amd64-only right now, so on Apple Silicon
+      # we run the whole engine container as linux/amd64 under emulation.
+      platforms: ["linux/amd64"]
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*.ts"
+          - "package.json"
+          - "package-lock.json"
+          - "tsconfig*.json"
+
+manifests:
+  kustomize:
+    paths:
+      - infra/k8s/dev
+    # Allow kustomize overlays to reference files outside their directory (e.g. ../base).
+    # Needed because Skaffold renders via `kubectl kustomize` which defaults to root-only load restriction.
+    buildArgs:
+      - --load-restrictor=LoadRestrictionsNone
+
+deploy:
+  kubectl: {}
+
+portForward:
+  - resourceType: service
+    resourceName: frontend
+    namespace: jslab
+    port: 3000
+    localPort: 3000
+  - resourceType: service
+    resourceName: api
+    namespace: jslab
+    port: 8080
+    localPort: 8080

@@ -5,8 +5,8 @@ metadata:
   name: api-hpa
   namespace: jslab
 spec:
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment

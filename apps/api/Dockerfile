@@ -1,10 +1,22 @@
 # syntax=docker/dockerfile:1
-FROM node:20-bookworm-slim AS builder
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+FROM deps AS dev
+ENV NODE_ENV=development
+COPY tsconfig.json ./
+COPY src ./src
+RUN chown -R 1000:1000 /app
+USER 1000
+EXPOSE 8080
+CMD ["npm", "run", "dev"]
+
+FROM deps AS builder
 ENV NODE_ENV=production
-COPY apps/api/package.json apps/api/tsconfig.json ./
-COPY apps/api/src ./src
-RUN npm install --include=dev
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 RUN npm prune --omit=dev
 

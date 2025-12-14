@@ -5,7 +5,7 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -21,11 +21,18 @@ spec:
         fsGroup: 1000
       containers:
         - name: frontend
-          image: jslab-frontend:latest
+          image: pavlof01/jslab-frontend:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: NODE_ENV
               value: production
+            - name: JSLAB_BACKEND_URL
+              value: http://api:8080/api/run
+            - name: JSLAB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: API_KEY
           ports:
             - containerPort: 3000
           livenessProbe:
