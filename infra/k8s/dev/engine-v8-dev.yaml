@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-v8
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engine-v8
+  template:
+    metadata:
+      labels:
+        app: engine-v8
+    spec:
+      containers:
+        - name: engine-v8
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+          securityContext:
+            readOnlyRootFilesystem: false

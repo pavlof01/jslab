@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+          securityContext:
+            readOnlyRootFilesystem: false
