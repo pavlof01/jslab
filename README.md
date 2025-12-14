@@ -63,7 +63,7 @@ Goals:
 - Apply base stack: `kubectl apply -k infra/k8s/base`
 - Namespace: `jslab`
 - Set real secrets in `infra/k8s/base/api-secret.example.yaml` (or replace with your own Secret/SealedSecret generator).
-- Ingress (Traefik): host `jslab.local` → `/` → `frontend`, `/api` → `api` (with security headers middleware).
+- Ingress (Traefik): routes everything to `frontend` (Next.js), which proxies `/api/run` server-side to the internal `api` service.
 - NetworkPolicy: only API reachable from Traefik/namespace, engines reachable only from API, Redis reachable only from API.
 - Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
 - PodDisruptionBudgets for api/frontend/engines; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
@@ -86,7 +86,8 @@ Goals:
    - Add a host record: `/etc/hosts` → `127.0.0.1 jslab.local` (or your Ingress/LoadBalancer IP).
 6. Test API:
    ```bash
-   curl -k -H "x-api-key: api-secret" -H "content-type: application/json" \
+   # Browser/client calls Next.js at /api/run (no API key needed).
+   curl -k -H "content-type: application/json" \
      -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
      https://jslab.local/api/run
    ```
