@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: engine-v8
-          image: jslab-engine-v8:latest
+          image: pavlof01/jslab-engine-v8:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: NODE_ENV

@@ -52,11 +52,11 @@ Goals:
 
 ### Docker images
 
-- Frontend: `docker build -f apps/frontend/Dockerfile -t jslab-frontend .`
-- API: `docker build -f apps/api/Dockerfile -t pavlof01/jslab-api .`
-- Engine V8: `docker build -f apps/engine-v8/Dockerfile --build-arg V8_BASE_IMAGE=my-v8-image:latest -t jslab-engine-v8 .`
-- Engine Hermes: `docker build -f apps/engine-hermes/Dockerfile --build-arg HERMES_BASE_IMAGE=my-hermes-image:latest -t jslab-engine-hermes .`
-- You can swap `my-v8-image`/`my-hermes-image` with your own base layers that already contain `d8`/`hermes`/`hermesc`/`hbcdump` (or extend `Dockerfile.v8`/`Dockerfile.hermes` to bake binaries).
+- Frontend: `docker build -t pavlof01/jslab-frontend apps/frontend`
+- API: `docker build -t pavlof01/jslab-api apps/api`
+- Engine V8: `docker build --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 apps/engine-v8`
+- Engine Hermes: `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
+- You can swap `pavlof01/v8-d8`/`pavlof01/hermes` with your own base layers that already contain `d8`/`hermes`/`hermesc`/`hbcdump`.
 
 ### k3s / Traefik deploy
 
@@ -68,27 +68,45 @@ Goals:
 - Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
 - PodDisruptionBudgets for api/frontend/engines; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
 
-### Быстрый запуск всей инфраструктуры
+### Quickstart (Kubernetes)
 
-1. Собрать образы (из корня):
-   - `docker build -f apps/api/Dockerfile -t pavlof01/jslab-api .`
-   - `docker build -f apps/engine-v8/Dockerfile -t jslab-engine-v8 .`
-   - `docker build -f apps/engine-hermes/Dockerfile -t jslab-engine-hermes .`
-   - `docker build -f apps/frontend/Dockerfile -t jslab-frontend .`
-2. Создать секреты (пример):
+1. Build images (from repo root):
+   - `docker build -t pavlof01/jslab-api apps/api`
+   - `docker build --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 apps/engine-v8`
+   - `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
+   - `docker build -t pavlof01/jslab-frontend apps/frontend`
+2. Create secrets (example):
    - `kubectl create namespace jslab`
    - `kubectl -n jslab create secret generic api-secrets --from-literal=API_KEY=api-secret --from-literal=ENGINE_SHARED_SECRET=engine-secret`
-3. Применить манифесты:
+3. Apply manifests:
    - `kubectl apply -k infra/k8s/base`
-4. Проверить готовность:
+4. Check readiness:
    - `kubectl -n jslab get pods,svc,ingress`
-5. Добавить host, если локально: `/etc/hosts` → `127.0.0.1 jslab.local` (или IP Ingress/LoadBalancer).
-6. Тест API:
+5. Local access (optional):
+   - Add a host record: `/etc/hosts` → `127.0.0.1 jslab.local` (or your Ingress/LoadBalancer IP).
+6. Test API:
    ```bash
    curl -k -H "x-api-key: api-secret" -H "content-type: application/json" \
      -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
      https://jslab.local/api/run
    ```
+
+### Local development (Skaffold + hot-reload)
+
+1. Start the dev loop (from repo root):
+   - `skaffold dev --port-forward -n jslab`
+
+2. Access UI and API locally:
+   - UI: `http://127.0.0.1:3000/`
+   - API health: `curl -sS http://127.0.0.1:8080/healthz`
+
+3. Apple Silicon / arm64 note (V8/Hermes binaries are currently amd64):
+   - If you see `rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2`, the engine is trying to run an `amd64` binary inside an `arm64` container.
+   - Quick dev fix (build engine images as `linux/amd64` under emulation):
+     - Stop `skaffold dev` (Ctrl+C)
+     - Run: `skaffold dev --port-forward -n jslab --check-cluster-node-platforms=false --cache-artifacts=false`
+   - If you still see the old error with `cacheHit: true`, flush Redis cache or wait for TTL:
+     - `kubectl -n jslab run tmp-redis --rm -it --image=redis:7-alpine --restart=Never -- redis-cli -h redis FLUSHALL`
 
 ### API contract
 

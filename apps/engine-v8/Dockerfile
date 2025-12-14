@@ -2,12 +2,25 @@
 ARG V8_BASE_IMAGE=pavlof01/v8-d8:latest
 FROM ${V8_BASE_IMAGE} AS v8-binary
 
-FROM node:20-bookworm-slim AS builder
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+FROM deps AS dev
+ENV NODE_ENV=development
+COPY tsconfig.json ./
+COPY src ./src
+COPY --from=v8-binary /opt/v8/d8 /usr/local/bin/d8
+RUN chown -R 1000:1000 /app
+USER 1000
+EXPOSE 8080
+CMD ["npm", "run", "dev"]
+
+FROM deps AS builder
 ENV NODE_ENV=production
-COPY apps/engine-v8/package.json apps/engine-v8/tsconfig.json ./
-COPY apps/engine-v8/src ./src
-RUN npm install --include=dev
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 RUN npm prune --omit=dev
 

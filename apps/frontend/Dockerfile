@@ -1,13 +1,20 @@
 # syntax=docker/dockerfile:1
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app/frontend
-COPY apps/frontend/src/package.json apps/frontend/src/package-lock.json ./
+COPY src/package.json src/package-lock.json ./
 RUN npm ci
 
-FROM node:20-bookworm-slim AS builder
-WORKDIR /app/frontend
-COPY --from=deps /app/frontend/node_modules ./node_modules
-COPY apps/frontend/src ./
+FROM deps AS dev
+ENV NODE_ENV=development
+COPY src ./
+RUN chown -R 1000:1000 /app/frontend
+USER 1000
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]
+
+FROM deps AS builder
+ENV NODE_ENV=production
+COPY src ./
 RUN npm run build
 RUN npm prune --omit=dev
 
