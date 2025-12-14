@@ -40,13 +40,6 @@ spec:
     - host: jslab.cc
       http:
         paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: api
-                port:
-                  number: 8080
           - path: /
             pathType: Prefix
             backend:
@@ -57,13 +50,6 @@ spec:
     - host: www.jslab.cc
       http:
         paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: api
-                port:
-                  number: 8080
           - path: /
             pathType: Prefix
             backend:
