@@ -1,0 +1,60 @@
+# syntax=docker/dockerfile:1.7
+
+############################
+# STAGE 1: build Hermes
+############################
+FROM ubuntu:24.04 AS builder
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git ca-certificates \
+    python3 \
+    cmake ninja-build \
+    clang lld \
+    build-essential \
+    pkg-config \
+    libicu-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone https://github.com/facebook/hermes.git
+
+WORKDIR /src/hermes
+
+RUN set -eux; \
+    cmake -S . -B build_release \
+      -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DHERMES_ENABLE_TEST_SUITE=OFF \
+      -DHERMES_ENABLE_DEBUGGER=ON; \
+    ninja -C build_release hermes hermesc hbcdump; \
+    ls -la build_release/bin
+
+############################
+# STAGE 2: runtime
+############################
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libstdc++6 libgcc-s1 \
+    libicu74 \
+    zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/hermes
+RUN mkdir -p /opt/hermes/bin
+
+COPY --from=builder /src/hermes/build_release/bin/hermes  /opt/hermes/bin/hermes
+COPY --from=builder /src/hermes/build_release/bin/hermesc /opt/hermes/bin/hermesc
+COPY --from=builder /src/hermes/build_release/bin/hbcdump /opt/hermes/bin/hbcdump
+
+RUN chmod +x /opt/hermes/bin/* \
+ && ln -sf /opt/hermes/bin/hermes  /usr/local/bin/hermes \
+ && ln -sf /opt/hermes/bin/hermesc /usr/local/bin/hermesc \
+ && ln -sf /opt/hermes/bin/hbcdump /usr/local/bin/hbcdump
+
+WORKDIR /workspace
+CMD ["hermes", "--help"]
