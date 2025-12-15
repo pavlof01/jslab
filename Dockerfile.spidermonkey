@@ -1,0 +1,130 @@
+# syntax=docker/dockerfile:1.7
+
+ARG UBUNTU_VERSION=24.04
+ARG FIREFOX_TAG=FIREFOX_134_0_RELEASE
+ARG CBINDGEN_VERSION=0.26.0
+
+############################################
+# Builder: build SpiderMonkey shell (js)
+############################################
+FROM ubuntu:${UBUNTU_VERSION} AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG FIREFOX_TAG
+ARG CBINDGEN_VERSION
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl xz-utils \
+    python3 python3-venv python3-pip \
+    build-essential \
+    clang lld llvm \
+    cmake ninja-build pkg-config \
+    autoconf2.13 \
+    zlib1g-dev \
+    libffi-dev \
+    libreadline-dev \
+    libncurses-dev \
+    libsqlite3-dev \
+    libicu-dev \
+    libssl-dev \
+    liblzma-dev \
+    libbz2-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# --- Rust via rustup (Firefox/SM requires >= 1.76) ---
+ENV RUSTUP_HOME=/opt/rustup \
+    CARGO_HOME=/opt/cargo \
+    PATH=/opt/cargo/bin:$PATH
+
+RUN set -eux; \
+  curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --profile minimal; \
+  rustup toolchain install stable; \
+  rustup default stable; \
+  rustc --version; \
+  cargo --version
+
+# --- Install cbindgen (required by configure) ---
+# Use caches so it doesn't recompile every build
+RUN --mount=type=cache,target=/opt/cargo/registry \
+    --mount=type=cache,target=/opt/cargo/git \
+    set -eux; \
+    cargo install cbindgen --version "${CBINDGEN_VERSION}"; \
+    cbindgen --version
+
+WORKDIR /src
+
+# Firefox sources (we build js shell from it)
+ADD https://codeload.github.com/mozilla-firefox/firefox/tar.gz/refs/tags/${FIREFOX_TAG} /tmp/firefox.tar.gz
+
+RUN set -eux; \
+  mkdir -p /src/firefox; \
+  tar -xzf /tmp/firefox.tar.gz -C /src/firefox --strip-components=1; \
+  rm -f /tmp/firefox.tar.gz
+
+# Prepare configure scripts
+RUN set -eux; \
+  cd /src/firefox/js/src; \
+  autoconf2.13 || true
+
+# Build SpiderMonkey shell
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/root/.mozbuild \
+    --mount=type=cache,target=/opt/cargo/registry \
+    --mount=type=cache,target=/opt/cargo/git \
+    set -eux; \
+    mkdir -p /src/firefox/obj-sm; \
+    cd /src/firefox/obj-sm; \
+    ../js/src/configure \
+      --enable-project=js \
+      --enable-js-shell \
+      --enable-optimize \
+      --disable-debug; \
+    make -j"$(nproc)"
+
+# Collect artifacts
+RUN set -eux; \
+  OBJ=/src/firefox/obj-sm; \
+  mkdir -p /out/bin; \
+  if [ -f "${OBJ}/dist/bin/js" ]; then \
+    cp -a "${OBJ}/dist/bin/js" /out/bin/; \
+  elif [ -f "${OBJ}/js/src/js" ]; then \
+    cp -a "${OBJ}/js/src/js" /out/bin/; \
+  else \
+    echo "js binary not found"; \
+    find "${OBJ}" -maxdepth 6 -type f -name js -print; \
+    exit 1; \
+  fi; \
+  cp -a "${OBJ}/dist/bin/"*.so* /out/bin/ 2>/dev/null || true; \
+  cp -a "${OBJ}/dist/bin/icudt"*.dat /out/bin/ 2>/dev/null || true; \
+  /out/bin/js --version || true
+
+############################################
+# Runtime: small image with js
+############################################
+FROM ubuntu:${UBUNTU_VERSION} AS runtime
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libstdc++6 \
+    libgcc-s1 \
+    zlib1g \
+    libffi8 \
+    libreadline8 \
+    libncurses6 \
+    libsqlite3-0 \
+    libicu74 \
+    libssl3 \
+    liblzma5 \
+    libbz2-1.0 \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+COPY --from=builder /out/bin/ /usr/local/spidermonkey/
+
+ENV PATH="/usr/local/spidermonkey:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/spidermonkey:${LD_LIBRARY_PATH}"
+
+ENTRYPOINT ["js"]
+CMD ["-e", "print(1+1)"]
