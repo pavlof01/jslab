@@ -50,6 +50,8 @@ Goals:
 /infra/k8s           # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
 ```
 
+For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/infra.md).
+
 ### Docker images
 
 - Frontend: `docker build -t pavlof01/jslab-frontend apps/frontend`
