@@ -44,7 +44,6 @@ RUN set -eux; \
   cargo --version
 
 # --- Install cbindgen (required by configure) ---
-# Use caches so it doesn't recompile every build
 RUN --mount=type=cache,target=/opt/cargo/registry \
     --mount=type=cache,target=/opt/cargo/git \
     set -eux; \
@@ -53,7 +52,6 @@ RUN --mount=type=cache,target=/opt/cargo/registry \
 
 WORKDIR /src
 
-# Firefox sources (we build js shell from it)
 ADD https://codeload.github.com/mozilla-firefox/firefox/tar.gz/refs/tags/${FIREFOX_TAG} /tmp/firefox.tar.gz
 
 RUN set -eux; \
@@ -61,12 +59,11 @@ RUN set -eux; \
   tar -xzf /tmp/firefox.tar.gz -C /src/firefox --strip-components=1; \
   rm -f /tmp/firefox.tar.gz
 
-# Prepare configure scripts
 RUN set -eux; \
   cd /src/firefox/js/src; \
   autoconf2.13 || true
 
-# Build SpiderMonkey shell
+# Build SpiderMonkey shell (DEBUG)
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/root/.mozbuild \
     --mount=type=cache,target=/opt/cargo/registry \
@@ -77,8 +74,9 @@ RUN --mount=type=cache,target=/root/.cache \
     ../js/src/configure \
       --enable-project=js \
       --enable-js-shell \
-      --enable-optimize \
-      --disable-debug; \
+      --enable-debug \
+      --disable-optimize \
+      --enable-gczeal; \
     make -j"$(nproc)"
 
 # Collect artifacts
