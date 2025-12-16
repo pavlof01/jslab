@@ -1,62 +1,144 @@
-name: Deploy jslab.cc (Next.js via systemd)
+name: Deploy (Kubernetes)
+
+# Required GitHub secrets:
+# - DOCKERHUB_USERNAME / DOCKERHUB_TOKEN: push images to Docker Hub
+# - KUBECONFIG_BASE64: base64-encoded kubeconfig with cluster access
+# - API_KEY / ENGINE_SHARED_SECRET: runtime credentials for jslab services
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy (defaults to the commit SHA)"
+        required: false
 
-# 1) Все run-команды по умолчанию в подпапке
-defaults:
-  run:
-    working-directory: js-bytecode-web
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      NAMESPACE: jslab
+      IMAGE_REPO: pavlof01
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ secrets.NODE_VERSION || '20' }}
-          cache: npm
-          # 2) Явно указываем путь к lock-файлу
-          cache-dependency-path: js-bytecode-web/package-lock.json
-
-      - name: Install deps (CI check only)
+      - name: Resolve image tag
         run: |
-          npm ci
-          npm run lint --if-present
-          npm run typecheck --if-present
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_TAG=${GITHUB_SHA}" >> "$GITHUB_ENV"
+          fi
 
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Deploy over SSH (pull/build/restart on server)
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            cd "${{ secrets.APP_DIR }}"
-            echo "[1/5] Pull repo"
-            git fetch origin main
-            git reset --hard origin/main
-            echo "[2/5] Install deps"
-            npm ci
-            echo "[3/5] Build"
-            npm run build
-            echo "[4/5] Restart service"
-            sudo systemctl restart "${{ secrets.SERVICE_NAME }}"
-            sudo systemctl --no-pager --full status "${{ secrets.SERVICE_NAME }}" || true
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push api
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/jslab-api:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/jslab-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push engine-v8
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/engine-v8
+          file: apps/engine-v8/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/jslab-engine-v8:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/jslab-engine-v8:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push engine-hermes
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/engine-hermes
+          file: apps/engine-hermes/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/jslab-engine-hermes:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/jslab-engine-hermes:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/frontend
+          file: apps/frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/jslab-frontend:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/jslab-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.0
+
+      - name: Configure kubeconfig
+        env:
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG_BASE64 }}
+        run: |
+          mkdir -p ~/.kube
+          printf '%s' "$KUBECONFIG_BASE64" | base64 --decode > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Create/update runtime secrets
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          ENGINE_SHARED_SECRET: ${{ secrets.ENGINE_SHARED_SECRET }}
+        run: |
+          set -euo pipefail
+
+          kubectl apply -f infra/k8s/base/namespace.yaml
+
+          kubectl -n "${NAMESPACE}" create secret generic api-secrets \
+            --from-literal=API_KEY="${API_KEY}" \
+            --from-literal=ENGINE_SHARED_SECRET="${ENGINE_SHARED_SECRET}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy manifests (kustomize)
+        run: |
+          set -euo pipefail
+
+          # Inject the tag for this deploy.
+          sed -i "s/__IMAGE_TAG__/${IMAGE_TAG}/g" infra/k8s/prod/kustomization.yaml
+
+          kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+
+      - name: Wait for rollouts
+        run: |
+          set -euo pipefail
+
+          kubectl -n "${NAMESPACE}" rollout status deployment/api --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/frontend --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/engine-v8 --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/engine-hermes --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/redis --timeout=10m
