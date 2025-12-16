@@ -5,12 +5,13 @@ FROM node:20-bookworm-slim AS node-tooling
 
 FROM ${SPIDERMONKEY_BASE_IMAGE} AS deps
 WORKDIR /app
+ENTRYPOINT []
 
 # Add Node+NPM into the engine base image for build/dev stages.
 COPY --from=node-tooling /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-tooling /usr/local/bin/npm /usr/local/bin/npm
-COPY --from=node-tooling /usr/local/bin/npx /usr/local/bin/npx
 COPY --from=node-tooling /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -46,4 +47,3 @@ RUN chown -R 1000:1000 /app
 USER 1000
 EXPOSE 8080
 ENTRYPOINT ["node", "dist/server.js"]
-
