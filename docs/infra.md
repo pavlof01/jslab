@@ -7,9 +7,11 @@ This document is a quick “map” of the infrastructure: what services (contain
 | Component | Dockerfile | Kubernetes resources | Port | Dependencies |
 | --- | --- | --- | --- | --- |
 | `frontend` (Next.js) | `apps/frontend/Dockerfile` | `Deployment/frontend` + `Service/frontend` | `3000` | `api` |
-| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` + `Secret/api-secrets` | `8080` | `redis`, `engine-v8`, `engine-hermes` |
+| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` + `Secret/api-secrets` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey` |
 | `engine-v8` (d8 wrapper) | `apps/engine-v8/Dockerfile` | `Deployment/engine-v8` + `Service/engine-v8` | `8080` | — |
 | `engine-hermes` (Hermes toolchain wrapper) | `apps/engine-hermes/Dockerfile` | `Deployment/engine-hermes` + `Service/engine-hermes` | `8080` | — |
+| `engine-jsc` (JavaScriptCore wrapper) | `apps/engine-jsc/Dockerfile` | `Deployment/engine-jsc` + `Service/engine-jsc` | `8080` | — |
+| `engine-spidermonkey` (SpiderMonkey shell wrapper) | `apps/engine-spidermonkey/Dockerfile` | `Deployment/engine-spidermonkey` + `Service/engine-spidermonkey` | `8080` | — |
 | `redis` (cache / rate limit) | (image) `redis:7-alpine` | `Deployment/redis` + `Service/redis` | `6379` | — |
 
 ## 2) Topology (Kubernetes)
@@ -34,6 +36,12 @@ flowchart LR
     svc_hermes[Service: engine-hermes:8080]
     dep_hermes[Deployment: engine-hermes]
 
+    svc_jsc[Service: engine-jsc:8080]
+    dep_jsc[Deployment: engine-jsc]
+
+    svc_sm[Service: engine-spidermonkey:8080]
+    dep_sm[Deployment: engine-spidermonkey]
+
     svc_redis[Service: redis:6379]
     dep_redis[Deployment: redis]
 
@@ -45,12 +53,16 @@ flowchart LR
   dep_front -->|server-side call| svc_api --> dep_api
   dep_api --> svc_v8 --> dep_v8
   dep_api --> svc_hermes --> dep_hermes
+  dep_api --> svc_jsc --> dep_jsc
+  dep_api --> svc_sm --> dep_sm
   dep_api --> svc_redis --> dep_redis
 
   cm_api -. envFrom .-> dep_api
   sec_api -. secrets .-> dep_api
   sec_api -. secrets .-> dep_v8
   sec_api -. secrets .-> dep_hermes
+  sec_api -. secrets .-> dep_jsc
+  sec_api -. secrets .-> dep_sm
   sec_api -. secrets .-> dep_front
 ```
 
@@ -62,7 +74,7 @@ sequenceDiagram
   participant Frontend as Frontend (Next.js)
   participant API as API (Fastify)
   participant Redis as Redis
-  participant Engine as Engine (V8/Hermes)
+  participant Engine as Engine (V8/Hermes/SM/JSC)
 
   Browser->>Frontend: POST /api/run
   Frontend->>API: POST http://api:8080/api/run
