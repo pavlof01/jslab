@@ -3,7 +3,9 @@ import type { EngineKind, RunRequest, TaskKind } from "./types.js";
 
 const engineFlags: Record<EngineKind, readonly string[]> = {
   v8: ["--print-bytecode", "--trace-ignition", "--trace-deopt", "--allow-natives-syntax", "--no-liftoff", "--no-wasm-async-compilation"],
-  hermes: ["-O", "-gc-sanitize-handles", "-strict"]
+  hermes: ["-O", "-gc-sanitize-handles", "-strict"],
+  sm: ["--baseline-eager", "--ion-eager"],
+  jsc: ["--dumpBytecode", "--dumpGraph", "--useDollarVM=1"]
 };
 
 export function allowedFlags(engine: EngineKind): readonly string[] {
@@ -11,7 +13,7 @@ export function allowedFlags(engine: EngineKind): readonly string[] {
 }
 
 export const runRequestSchema: z.ZodType<RunRequest> = z.object({
-  engine: z.enum(["v8", "hermes"]),
+  engine: z.enum(["v8", "hermes", "sm", "jsc"]),
   task: z.enum(["run", "bytecode"]),
   sourceText: z.string().min(1),
   options: z
