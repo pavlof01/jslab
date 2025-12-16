@@ -85,6 +85,30 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push engine-jsc
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/engine-jsc
+          file: apps/engine-jsc/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/jslab-engine-jsc:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/jslab-engine-jsc:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push engine-spidermonkey
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/engine-spidermonkey
+          file: apps/engine-spidermonkey/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/jslab-engine-spidermonkey:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/jslab-engine-spidermonkey:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Build and push frontend
         uses: docker/build-push-action@v6
         with:
@@ -141,4 +165,6 @@ jobs:
           kubectl -n "${NAMESPACE}" rollout status deployment/frontend --timeout=10m
           kubectl -n "${NAMESPACE}" rollout status deployment/engine-v8 --timeout=10m
           kubectl -n "${NAMESPACE}" rollout status deployment/engine-hermes --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/engine-jsc --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/engine-spidermonkey --timeout=10m
           kubectl -n "${NAMESPACE}" rollout status deployment/redis --timeout=10m
