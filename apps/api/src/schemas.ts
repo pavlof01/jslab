@@ -5,7 +5,7 @@ const engineFlags: Record<EngineKind, readonly string[]> = {
   v8: ["--print-bytecode", "--trace-ignition", "--trace-deopt", "--allow-natives-syntax", "--no-liftoff", "--no-wasm-async-compilation"],
   hermes: ["-O", "-gc-sanitize-handles", "-strict"],
   sm: ["--baseline-eager", "--ion-eager"],
-  jsc: ["--dumpBytecode", "--dumpGraph", "--useDollarVM=1"]
+  jsc: ["-d"]
 };
 
 export function allowedFlags(engine: EngineKind): readonly string[] {

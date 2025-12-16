@@ -15,12 +15,14 @@ const requestSchema = z.object({
   options: z
     .object({
       flags: z.array(z.string()).optional(),
-      timeoutMs: z.number().int().positive().optional()
+      timeoutMs: z.number().int().positive().optional(),
     })
-    .optional()
+    .optional(),
 });
 
-const allowedFlags = new Set(["--dumpBytecode", "--dumpGraph", "--useDollarVM=1"]);
+const BYTECODE_FLAG = "-d" as const;
+
+const allowedFlags = new Set<string>([BYTECODE_FLAG]);
 
 type RunResult = {
   stdout: string;
@@ -54,17 +56,63 @@ function sanitizeFlags(flags: string[] = []): string[] {
     seen.add(trimmed);
     out.push(trimmed);
   }
-  out.sort();
+  // NOTE: keep stable order; don't sort (order may matter if you add more flags later)
   return out;
 }
 
 function ensureBytecodeFlag(flags: string[]): string[] {
-  if (!flags.includes("--dumpBytecode")) return [...flags, "--dumpBytecode"];
+  if (!flags.includes(BYTECODE_FLAG)) {
+    return [...flags, BYTECODE_FLAG];
+  }
   return flags;
 }
 
+/**
+ * Conservative detection of "flag is not supported".
+ * We only use this together with `exitCode !== 0` to avoid false positives
+ * when JSC prints bytecode or other diagnostics to stderr.
+ */
+function looksLikeInvalidOption(stdout: string, stderr: string, flag: string): boolean {
+  const text = (stderr || stdout || "").toLowerCase();
+  const f = flag.toLowerCase();
+
+  const hasInvalidPattern =
+    text.includes("invalid option") ||
+    text.includes("unknown option") ||
+    text.includes("unrecognized option") ||
+    text.includes("illegal option") ||
+    text.includes("unknown command line option") ||
+    text.includes("is not a valid option");
+
+  if (!hasInvalidPattern) return false;
+
+  // Try to ensure it really refers to the exact flag (not just a random "-d" inside other text)
+  return (
+    text.includes(` ${f}`) ||
+    text.includes(`\n${f}`) ||
+    text.includes(`option ${f}`) ||
+    text.includes(`:${f}`) ||
+    text.includes(`'${f}'`) ||
+    text.includes(`"${f}"`)
+  );
+}
+
+/**
+ * Bytecode / diagnostics output may appear in stdout and/or stderr.
+ * Don't drop stdout just because stderr isn't empty.
+ */
+function pickBytecodeOutput(stdout: string, stderr: string): string {
+  return [stdout, stderr].filter(Boolean).join("\n");
+}
+
 async function runCommand(cmd: string, args: string[], opts: { timeoutMs: number }): Promise<RunResult> {
-  const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
+  // JSC parses env vars starting with "JSC_" as VM options (Options.cpp).
+  // `JSC_PATH` is meant for this wrapper, not for the engine itself, and causes noisy stderr output.
+  const env = { ...process.env };
+  delete (env as any).JSC_PATH;
+
+  const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"], env });
+
   let stdout = "";
   let stderr = "";
   let outputTruncated = false;
@@ -72,6 +120,7 @@ async function runCommand(cmd: string, args: string[], opts: { timeoutMs: number
 
   const timer = setTimeout(() => {
     timedOut = true;
+    // SIGKILL is fine inside a container; if you want graceful stop first, send SIGTERM then SIGKILL.
     child.kill("SIGKILL");
   }, opts.timeoutMs);
 
@@ -93,19 +142,28 @@ async function runCommand(cmd: string, args: string[], opts: { timeoutMs: number
   });
 
   return await new Promise<RunResult>((resolve) => {
+    let settled = false;
+    const done = (r: RunResult) => {
+      if (settled) return;
+      settled = true;
+      resolve(r);
+    };
+
     child.on("close", (code) => {
       clearTimeout(timer);
-      resolve({ stdout, stderr, exitCode: code, timedOut, outputTruncated });
+      done({ stdout, stderr, exitCode: code, timedOut, outputTruncated });
     });
+
     child.on("error", (err) => {
       clearTimeout(timer);
-      resolve({ stdout: "", stderr: String(err), exitCode: -1, timedOut, outputTruncated });
+      done({ stdout: "", stderr: String(err), exitCode: -1, timedOut, outputTruncated });
     });
   });
 }
 
 app.post("/run", async (req, reply) => {
   const start = Date.now();
+
   let parsed: z.infer<typeof requestSchema>;
   try {
     parsed = requestSchema.parse(req.body);
@@ -120,15 +178,20 @@ app.post("/run", async (req, reply) => {
   }
 
   const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
+
   let flags = sanitizeFlags(parsed.options?.flags || []);
-  if (parsed.task === "bytecode") flags = ensureBytecodeFlag(flags);
+  if (parsed.task === "bytecode") {
+    flags = ensureBytecodeFlag(flags);
+  }
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "engine-jsc-"));
   const scriptPath = path.join(tmpDir, "snippet.js");
-  await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
 
   try {
-    const result = await runCommand(config.JSC_PATH, [...flags, scriptPath], { timeoutMs });
+    await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
+
+    const result = await runCommand(config.JSCSHELL_PATH, [...flags, scriptPath], { timeoutMs });
+
     if (result.timedOut) {
       reply.code(408).send({ ok: false, error: "execution timed out" });
       return;
@@ -138,14 +201,28 @@ app.post("/run", async (req, reply) => {
       return;
     }
 
+    // IMPORTANT: avoid false positives by requiring non-zero exit code
+    if (
+      parsed.task === "bytecode" &&
+      result.exitCode !== 0 &&
+      looksLikeInvalidOption(result.stdout, result.stderr, BYTECODE_FLAG)
+    ) {
+      reply.code(400).send({
+        ok: false,
+        error:
+          "this jsc build does not support bytecode dumping via -d (try rebuilding the base image with debug options)",
+      });
+      return;
+    }
+
     const artifacts =
       parsed.task === "bytecode"
         ? [
             {
               kind: "bytecode" as const,
               mime: "text/plain",
-              dataBase64: Buffer.from(result.stdout || "", "utf8").toString("base64")
-            }
+              dataBase64: Buffer.from(pickBytecodeOutput(result.stdout, result.stderr), "utf8").toString("base64"),
+            },
           ]
         : [];
 
@@ -154,7 +231,7 @@ app.post("/run", async (req, reply) => {
       stdout: result.stdout,
       stderr: result.stderr,
       artifacts,
-      meta: { durationMs: Date.now() - start, engine: "jsc" }
+      meta: { durationMs: Date.now() - start, engine: "jsc" },
     });
   } catch (err: any) {
     reply.code(500).send({ ok: false, error: err?.message || "execution failed" });
@@ -177,4 +254,3 @@ process.on("SIGTERM", () => app.close().finally(() => process.exit(0)));
 process.on("SIGINT", () => app.close().finally(() => process.exit(0)));
 
 listen();
-
