@@ -130,7 +130,14 @@ app.post("/api/run", async (req, reply) => {
     return;
   }
 
-  const engineBase = normalized.engine === "v8" ? config.ENGINE_V8_URL : config.ENGINE_HERMES_URL;
+  const engineBaseByKind = {
+    v8: config.ENGINE_V8_URL,
+    hermes: config.ENGINE_HERMES_URL,
+    sm: config.ENGINE_SM_URL,
+    jsc: config.ENGINE_JSC_URL
+  } as const;
+
+  const engineBase = engineBaseByKind[normalized.engine];
   const engineUrl = `${engineBase.replace(/\/$/, "")}/run`;
 
   try {
