@@ -16,11 +16,11 @@ type RunResult = {
   status?: number; // upstream http status (optional)
 };
 
-const SUPPORTED_ENGINES = [EngineKey.v8, EngineKey.hermes] as const;
+const SUPPORTED_ENGINES = [EngineKey.v8, EngineKey.hermes, EngineKey.sm, EngineKey.jsc] as const;
 type SupportedEngine = (typeof SUPPORTED_ENGINES)[number];
 
 function isSupportedEngine(engine: EngineKey): engine is SupportedEngine {
-  return engine === EngineKey.v8 || engine === EngineKey.hermes;
+  return engine === EngineKey.v8 || engine === EngineKey.hermes || engine === EngineKey.sm || engine === EngineKey.jsc;
 }
 
 // лучше whitelist, чем "любые --*"

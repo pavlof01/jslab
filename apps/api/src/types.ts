@@ -1,4 +1,4 @@
-export type EngineKind = "v8" | "hermes";
+export type EngineKind = "v8" | "hermes" | "sm" | "jsc";
 export type TaskKind = "run" | "bytecode";
 
 export type RunRequest = {
