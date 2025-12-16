@@ -81,6 +81,7 @@ sequenceDiagram
 ## 4) Where this lives in the repo
 
 - Base (closest to “prod”): `infra/k8s/base` — full set of resources (Ingress/NetworkPolicy/PDB, etc.).
+- Prod overlay: `infra/k8s/prod` — base + CI-injected image tags; removes the example `api-secrets` manifest (secrets managed out-of-band).
 - Dev overlay: `infra/k8s/dev` — rewrites `images:` to local Skaffold names and patches manifests for dev (hot-reload, `readOnlyRootFilesystem: false`), and excludes Traefik CRDs (Ingress/Middleware).
 - Dev loop: `skaffold.yaml` — builds 4 images and deploys `infra/k8s/dev` (with port-forward for `frontend` and `api`).
 
@@ -91,6 +92,7 @@ Render (see final YAML, without applying):
 ```bash
 kubectl kustomize infra/k8s/base
 kubectl kustomize infra/k8s/dev
+kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone
 ```
 
 Dev loop (build + deploy + port-forward):
