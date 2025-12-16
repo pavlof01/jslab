@@ -37,3 +37,23 @@ spec:
   selector:
     matchLabels:
       app: engine-hermes
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: engine-jsc-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: engine-jsc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: engine-spidermonkey-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: engine-spidermonkey

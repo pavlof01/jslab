@@ -18,6 +18,9 @@ images:
     newTag: "__IMAGE_TAG__"
   - name: pavlof01/jslab-engine-hermes
     newTag: "__IMAGE_TAG__"
+  - name: pavlof01/jslab-engine-jsc
+    newTag: "__IMAGE_TAG__"
+  - name: pavlof01/jslab-engine-spidermonkey
+    newTag: "__IMAGE_TAG__"
   - name: pavlof01/jslab-frontend
     newTag: "__IMAGE_TAG__"
-

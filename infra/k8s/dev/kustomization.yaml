@@ -11,6 +11,8 @@ resources:
   - ../base/api-deployment.yaml
   - ../base/engine-v8.yaml
   - ../base/engine-hermes.yaml
+  - ../base/engine-jsc.yaml
+  - ../base/engine-spidermonkey.yaml
   - ../base/frontend.yaml
   - ../base/pdb.yaml
 images:
@@ -21,6 +23,10 @@ images:
     newName: jslab-engine-v8
   - name: pavlof01/jslab-engine-hermes
     newName: jslab-engine-hermes
+  - name: pavlof01/jslab-engine-jsc
+    newName: jslab-engine-jsc
+  - name: pavlof01/jslab-engine-spidermonkey
+    newName: jslab-engine-spidermonkey
   - name: pavlof01/jslab-frontend
     newName: jslab-frontend
 patches:
@@ -28,3 +34,5 @@ patches:
   - path: api-dev.yaml
   - path: engine-v8-dev.yaml
   - path: engine-hermes-dev.yaml
+  - path: engine-jsc-dev.yaml
+  - path: engine-spidermonkey-dev.yaml
