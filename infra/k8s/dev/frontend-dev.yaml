@@ -24,24 +24,6 @@ spec:
               # `true` can mean a large default interval. Use a small interval
               # so edits are picked up quickly.
               value: "200"
-          # Next.js dev can take >1s to respond on first request (compilation).
-          # Use relaxed probes to avoid restarts during initial compilation.
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 20
-            failureThreshold: 30
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 2
-            periodSeconds: 5
-            timeoutSeconds: 20
-            failureThreshold: 30
           # Next dev (especially Turbopack) can be memory-hungry; keep dev stable.
           resources:
             requests:

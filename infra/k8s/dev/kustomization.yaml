@@ -36,3 +36,64 @@ patches:
   - path: engine-hermes-dev.yaml
   - path: engine-jsc-dev.yaml
   - path: engine-spidermonkey-dev.yaml
+  # Disable probes in dev to avoid noisy /healthz logs during Skaffold hot-reload.
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: api
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: frontend
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: engine-v8
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: engine-hermes
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: engine-jsc
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: engine-spidermonkey
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
