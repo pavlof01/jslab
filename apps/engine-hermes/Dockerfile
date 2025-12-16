@@ -1,9 +1,18 @@
 # syntax=docker/dockerfile:1
 ARG HERMES_BASE_IMAGE=pavlof01/hermes:latest
-FROM ${HERMES_BASE_IMAGE} AS hermes-binary
 
-FROM node:20-bookworm-slim AS deps
+FROM node:20-bookworm-slim AS node-tooling
+
+FROM ${HERMES_BASE_IMAGE} AS deps
 WORKDIR /app
+ENTRYPOINT []
+
+# Add Node+NPM into the engine base image for build/dev stages.
+COPY --from=node-tooling /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-tooling /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -11,9 +20,6 @@ FROM deps AS dev
 ENV NODE_ENV=development
 COPY tsconfig.json ./
 COPY src ./src
-COPY --from=hermes-binary /opt/hermes/bin/hermes /usr/local/bin/hermes
-COPY --from=hermes-binary /opt/hermes/bin/hermesc /usr/local/bin/hermesc
-COPY --from=hermes-binary /opt/hermes/bin/hbcdump /usr/local/bin/hbcdump
 RUN chown -R 1000:1000 /app
 USER 1000
 EXPOSE 8080
@@ -26,16 +32,18 @@ COPY src ./src
 RUN npm run build
 RUN npm prune --omit=dev
 
-FROM node:20-bookworm-slim AS runner
+FROM ${HERMES_BASE_IMAGE} AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN groupadd -r app && useradd -r -g app app
-COPY --from=hermes-binary /opt/hermes/bin/hermes /usr/local/bin/hermes
-COPY --from=hermes-binary /opt/hermes/bin/hermesc /usr/local/bin/hermesc
-COPY --from=hermes-binary /opt/hermes/bin/hbcdump /usr/local/bin/hbcdump
+
+# Only Node is needed at runtime (no npm).
+COPY --from=node-tooling /usr/local/bin/node /usr/local/bin/node
+
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-USER app
+
+RUN chown -R 1000:1000 /app
+USER 1000
 EXPOSE 8080
-CMD ["node", "dist/server.js"]
+ENTRYPOINT ["node", "dist/server.js"]
