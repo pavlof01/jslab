@@ -21,4 +21,3 @@ spec:
               value: "true"
           securityContext:
             readOnlyRootFilesystem: false
-
