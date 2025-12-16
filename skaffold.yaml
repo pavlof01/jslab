@@ -61,6 +61,36 @@ build:
           - "package-lock.json"
           - "tsconfig*.json"
 
+    - image: jslab-engine-jsc
+      context: apps/engine-jsc
+      # JSC toolchain in pavlof01/jsc is amd64-only right now, so on Apple Silicon
+      # we run the whole engine container as linux/amd64 under emulation.
+      platforms: ["linux/amd64"]
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*.ts"
+          - "package.json"
+          - "package-lock.json"
+          - "tsconfig*.json"
+
+    - image: jslab-engine-spidermonkey
+      context: apps/engine-spidermonkey
+      # SpiderMonkey shell in pavlof01/spidermonkey is amd64-only right now, so on Apple Silicon
+      # we run the whole engine container as linux/amd64 under emulation.
+      platforms: ["linux/amd64"]
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*.ts"
+          - "package.json"
+          - "package-lock.json"
+          - "tsconfig*.json"
+
 manifests:
   kustomize:
     paths:
