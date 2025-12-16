@@ -1,0 +1,86 @@
+# syntax=docker/dockerfile:1.7
+
+############################
+# Builder
+############################
+FROM ubuntu:24.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG WEBKIT_BRANCH=main
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl git \
+    python3 python3-venv python3-pip \
+    ruby \
+    build-essential \
+    clang lld llvm \
+    cmake ninja-build pkg-config \
+    bison flex gperf \
+    libglib2.0-dev \
+    libicu-dev \
+    libsqlite3-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libcurl4-openssl-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# WebKit source
+RUN git clone --depth 1 --branch "${WEBKIT_BRANCH}" \
+    https://github.com/WebKit/WebKit.git webkit
+
+WORKDIR /src/webkit
+
+# Build JSC only
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/root/.ccache \
+    set -eux; \
+    export CC=clang CXX=clang++; \
+    ./Tools/Scripts/build-jsc --release --jsc-only
+
+# Extract artifacts
+RUN set -eux; \
+    OUT=/out; \
+    mkdir -p "$OUT/bin" "$OUT/lib"; \
+    cp WebKitBuild/JSCOnly/Release/bin/jsc "$OUT/bin/"; \
+    cp -a WebKitBuild/JSCOnly/Release/lib/libJavaScriptCore.so* "$OUT/lib/"; \
+    strip "$OUT/bin/jsc" || true; \
+    ls -la "$OUT/bin" "$OUT/lib"
+
+############################
+# Runtime
+############################
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Runtime deps (включая libatomic1!)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libc-bin \
+    libstdc++6 \
+    libgcc-s1 \
+    libatomic1 \
+    zlib1g \
+    libicu74 \
+    libsqlite3-0 \
+    libxml2 \
+    libxslt1.1 \
+    libcurl4 \
+    libglib2.0-0 \
+    libffi8 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /out/bin/jsc /usr/local/bin/jsc
+COPY --from=builder /out/lib/ /usr/local/lib/
+
+# чтобы динамический линкер находил libJavaScriptCore.so.1
+RUN set -eux; \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/webkit.conf; \
+    ldconfig; \
+    ldd /usr/local/bin/jsc | head -n 200
+
+WORKDIR /work
+ENTRYPOINT ["jsc"]
