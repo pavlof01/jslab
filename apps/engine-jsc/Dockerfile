@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG JSC_BASE_IMAGE=pavlof01/jsc:latest
+ARG JSC_BASE_IMAGE=pavlof01/jsc:debug
 
 FROM node:20-bookworm-slim AS node-tooling
 

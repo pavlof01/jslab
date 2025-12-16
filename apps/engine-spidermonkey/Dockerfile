@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:latest
+ARG SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug
 
 FROM node:20-bookworm-slim AS node-tooling
 

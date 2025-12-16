@@ -21,7 +21,7 @@ The site lets you:
 | ------------------ | ------------------------------- | ------------------------------------------------------------------------ |
 | **V8**             | AST / Bytecode / TurboFan Graph | `--print-bytecode`, `--trace-opt`, `--allow-natives-syntax`, `--log-all` |
 | **SpiderMonkey**   | Bytecode (`dis()`)              | `--baseline-eager`, `--ion-eager`                                        |
-| **JavaScriptCore** | Bytecode / DFG Graph            | `--dumpBytecode`, `--dumpGraph`, `--useDollarVM=1`                       |
+| **JavaScriptCore** | Bytecode / DFG Graph            | `-d`                                                                     |
 | **Hermes**         | IR / Bytecode                   | `-dump-ir`, `-dump-bytecode`, `-O`                                       |
 
 ---
@@ -60,8 +60,8 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
 - API: `docker build -t pavlof01/jslab-api apps/api`
 - Engine V8: `docker build --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 apps/engine-v8`
 - Engine Hermes: `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
-- Engine JSC: `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:latest -t pavlof01/jslab-engine-jsc apps/engine-jsc`
-- Engine SpiderMonkey: `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:latest -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
+- Engine JSC: `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
+- Engine SpiderMonkey: `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
 - You can swap `pavlof01/v8-d8`/`pavlof01/hermes`/`pavlof01/jsc`/`pavlof01/spidermonkey` with your own base layers that already contain `d8`/`hermes`/`hermesc`/`hbcdump`/`jsc`/`js`.
 
 ### k3s / Traefik deploy
@@ -80,8 +80,8 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
    - `docker build -t pavlof01/jslab-api apps/api`
    - `docker build --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 apps/engine-v8`
    - `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
-   - `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:latest -t pavlof01/jslab-engine-jsc apps/engine-jsc`
-   - `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:latest -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
+   - `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
+   - `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
    - `docker build -t pavlof01/jslab-frontend apps/frontend`
 2. Create secrets (example):
    - `kubectl create namespace jslab`
@@ -109,7 +109,7 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
    - UI: `http://127.0.0.1:3000/`
    - API health: `curl -sS http://127.0.0.1:8080/healthz`
 
-3. Apple Silicon / arm64 note (engine images are currently amd64):
+3. Apple Silicon / arm64 note:
    - If you see `rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2`, the engine is trying to run an `amd64` binary inside an `arm64` container.
    - Quick dev fix (build engine images as `linux/amd64` under emulation):
      - Stop `skaffold dev` (Ctrl+C)
