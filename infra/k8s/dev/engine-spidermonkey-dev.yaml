@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-spidermonkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engine-spidermonkey
+  template:
+    metadata:
+      labels:
+        app: engine-spidermonkey
+    spec:
+      containers:
+        - name: engine-spidermonkey
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+          securityContext:
+            readOnlyRootFilesystem: false
+

@@ -9,6 +9,8 @@ resources:
   - api-deployment.yaml
   - engine-v8.yaml
   - engine-hermes.yaml
+  - engine-jsc.yaml
+  - engine-spidermonkey.yaml
   - frontend.yaml
   - ingress.yaml
   - networkpolicy.yaml
