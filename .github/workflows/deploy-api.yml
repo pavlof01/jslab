@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "apps/api/**"
+      - ".github/workflows/deploy-api.yml"
+      - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
 
 jobs:
@@ -18,4 +20,3 @@ jobs:
       deployment: api
       container: api
     secrets: inherit
-

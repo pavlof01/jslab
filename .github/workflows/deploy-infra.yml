@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "infra/**"
+      - ".github/workflows/deploy-infra.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,68 +19,20 @@ jobs:
   deploy:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
+      - name: Deploy over SSH (git pull + kubectl apply)
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          version: v1.30.0
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          key: ${{ secrets.SSH_KEY }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
 
-      - name: Write SSH key
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: |
-          set -euo pipefail
+            cd "${{ secrets.APP_DIR }}"
+            git pull --ff-only
 
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          # Support raw multi-line keys, "\n"-escaped keys, and base64-encoded keys.
-          if printf '%s' "${SSH_KEY}" | grep -q "BEGIN .*PRIVATE KEY"; then
-            printf '%b' "${SSH_KEY}" | tr -d '\r' > ~/.ssh/deploy.key
-          else
-            printf '%s' "${SSH_KEY}" | base64 --decode | tr -d '\r' > ~/.ssh/deploy.key
-          fi
-
-          chmod 600 ~/.ssh/deploy.key
-
-      - name: Trust VPS host key
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-        run: |
-          set -euo pipefail
-
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          if [ -n "${SSH_KNOWN_HOSTS}" ]; then
-            printf '%s\n' "${SSH_KNOWN_HOSTS}" >> ~/.ssh/known_hosts
-          else
-            SSH_PORT="${SSH_PORT:-22}"
-            ssh-keyscan -H -p "${SSH_PORT}" "${SSH_HOST}" >> ~/.ssh/known_hosts
-          fi
-
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Apply prod manifests (kustomize -> kubectl on VPS)
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-        run: |
-          set -euo pipefail
-
-          SSH_PORT="${SSH_PORT:-22}"
-          kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone \
-            | ssh \
-                -o BatchMode=yes \
-                -o StrictHostKeyChecking=yes \
-                -o UserKnownHostsFile=~/.ssh/known_hosts \
-                -o IdentitiesOnly=yes \
-                -i ~/.ssh/deploy.key \
-                -p "${SSH_PORT}" \
-                "${SSH_USER}@${SSH_HOST}" \
-                "kubectl apply -f -"
+            kubectl apply -f infra/k8s/base/namespace.yaml
+            kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone | kubectl apply -f -

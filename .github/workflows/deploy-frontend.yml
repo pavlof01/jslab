@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "apps/frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+      - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
 
 jobs:
@@ -18,4 +20,3 @@ jobs:
       deployment: frontend
       container: frontend
     secrets: inherit
-
