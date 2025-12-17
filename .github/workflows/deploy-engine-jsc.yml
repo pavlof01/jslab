@@ -1,0 +1,21 @@
+name: deploy-engine-jsc
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/engine-jsc/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: engine-jsc
+      context: apps/engine-jsc
+      dockerfile: apps/engine-jsc/Dockerfile
+      image: jslab-engine-jsc
+      deployment: engine-jsc
+      container: engine-jsc
+    secrets: inherit
+

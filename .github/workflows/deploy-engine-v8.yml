@@ -1,0 +1,21 @@
+name: deploy-engine-v8
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/engine-v8/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: engine-v8
+      context: apps/engine-v8
+      dockerfile: apps/engine-v8/Dockerfile
+      image: jslab-engine-v8
+      deployment: engine-v8
+      container: engine-v8
+    secrets: inherit
+

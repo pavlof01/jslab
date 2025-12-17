@@ -1,0 +1,21 @@
+name: deploy-engine-hermes
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/engine-hermes/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: engine-hermes
+      context: apps/engine-hermes
+      dockerfile: apps/engine-hermes/Dockerfile
+      image: jslab-engine-hermes
+      deployment: engine-hermes
+      container: engine-hermes
+    secrets: inherit
+
