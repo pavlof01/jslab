@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-hermes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engine-hermes
+  template:
+    metadata:
+      labels:
+        app: engine-hermes
+    spec:
+      containers:
+        - name: engine-hermes
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+          securityContext:
+            readOnlyRootFilesystem: false
