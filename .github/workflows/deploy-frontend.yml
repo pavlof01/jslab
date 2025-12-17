@@ -1,0 +1,21 @@
+name: deploy-frontend
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/frontend/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: frontend
+      context: apps/frontend
+      dockerfile: apps/frontend/Dockerfile
+      image: jslab-frontend
+      deployment: frontend
+      container: frontend
+    secrets: inherit
+

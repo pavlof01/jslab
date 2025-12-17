@@ -1,0 +1,149 @@
+name: Reusable - Deploy service to VPS (SSH)
+
+# Required secrets (GitHub Actions):
+# - DOCKERHUB_USERNAME / DOCKERHUB_TOKEN: push images to Docker Hub
+# - SSH_HOST / SSH_USER / SSH_KEY: SSH access to the VPS
+# - (optional) SSH_PORT: SSH port (defaults to 22)
+# - (optional) SSH_KNOWN_HOSTS: known_hosts entry (recommended; otherwise ssh-keyscan is used)
+#
+# VPS requirements:
+# - kubectl installed and configured (e.g. k3s on the same VPS, or kubeconfig in ~/.kube/config)
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Service key (used for cache scope / concurrency)"
+        required: true
+        type: string
+      context:
+        description: "Docker build context"
+        required: true
+        type: string
+      dockerfile:
+        description: "Path to Dockerfile"
+        required: true
+        type: string
+      image:
+        description: "Docker image name (without repo)"
+        required: true
+        type: string
+      deployment:
+        description: "Kubernetes Deployment name"
+        required: true
+        type: string
+      container:
+        description: "Kubernetes container name inside the Deployment"
+        required: true
+        type: string
+      namespace:
+        description: "Kubernetes namespace"
+        required: false
+        default: jslab
+        type: string
+      image_repo:
+        description: "Docker image repository (e.g. DockerHub org)"
+        required: false
+        default: pavlof01
+        type: string
+      image_tag:
+        description: "Optional image tag override (defaults to commit SHA)"
+        required: false
+        default: ""
+        type: string
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      SSH_HOST:
+        required: true
+      SSH_USER:
+        required: true
+      SSH_KEY:
+        required: true
+      SSH_PORT:
+        required: false
+      SSH_KNOWN_HOSTS:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  NAMESPACE: ${{ inputs.namespace }}
+  IMAGE_REPO: ${{ inputs.image_repo }}
+  IMAGE_NAME: ${{ inputs.image }}
+  IMAGE_TAG: ${{ inputs.image_tag != '' && inputs.image_tag || github.sha }}
+  DEPLOYMENT_NAME: ${{ inputs.deployment }}
+  CONTAINER_NAME: ${{ inputs.container }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: deploy-${{ inputs.service }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ inputs.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha,scope=${{ inputs.service }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.service }}
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Trust VPS host key
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          if [ -n "${SSH_KNOWN_HOSTS}" ]; then
+            printf '%s\n' "${SSH_KNOWN_HOSTS}" >> ~/.ssh/known_hosts
+          else
+            SSH_PORT="${SSH_PORT:-22}"
+            ssh-keyscan -H -p "${SSH_PORT}" "${SSH_HOST}" >> ~/.ssh/known_hosts
+          fi
+
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy via SSH (kubectl on VPS)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          set -euo pipefail
+
+          SSH_PORT="${SSH_PORT:-22}"
+          ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+            "kubectl -n \"${NAMESPACE}\" set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${IMAGE_REPO}/${IMAGE_NAME}:${IMAGE_TAG} && \
+             kubectl -n \"${NAMESPACE}\" rollout status deployment/${DEPLOYMENT_NAME} --timeout=10m"

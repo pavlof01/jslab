@@ -11,16 +11,16 @@ patches:
   - path: delete-api-secret.yaml
 
 images:
-  # Tags are set by CI (e.g. to the commit SHA) before applying.
+  # CI overrides these tags for each deploy (e.g. to the commit SHA).
   - name: pavlof01/jslab-api
-    newTag: "__IMAGE_TAG__"
+    newTag: latest
   - name: pavlof01/jslab-engine-v8
-    newTag: "__IMAGE_TAG__"
+    newTag: latest
   - name: pavlof01/jslab-engine-hermes
-    newTag: "__IMAGE_TAG__"
+    newTag: latest
   - name: pavlof01/jslab-engine-jsc
-    newTag: "__IMAGE_TAG__"
+    newTag: latest
   - name: pavlof01/jslab-engine-spidermonkey
-    newTag: "__IMAGE_TAG__"
+    newTag: latest
   - name: pavlof01/jslab-frontend
-    newTag: "__IMAGE_TAG__"
+    newTag: latest

@@ -1,0 +1,21 @@
+name: deploy-api
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/api/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: api
+      context: apps/api
+      dockerfile: apps/api/Dockerfile
+      image: jslab-api
+      deployment: api
+      container: api
+    secrets: inherit
+

@@ -1,4 +1,4 @@
-name: Deploy (Kubernetes)
+name: deploy-all
 
 # Required GitHub secrets:
 # - DOCKERHUB_USERNAME / DOCKERHUB_TOKEN: push images to Docker Hub
@@ -6,8 +6,6 @@ name: Deploy (Kubernetes)
 # - API_KEY / ENGINE_SHARED_SECRET: runtime credentials for jslab services
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
     inputs:
       image_tag:
@@ -21,24 +19,45 @@ concurrency:
   group: deploy-prod
   cancel-in-progress: true
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    env:
-      NAMESPACE: jslab
-      IMAGE_REPO: pavlof01
+env:
+  NAMESPACE: jslab
+  IMAGE_REPO: pavlof01
+  IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
 
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        svc:
+          - name: api
+            context: apps/api
+            dockerfile: apps/api/Dockerfile
+            image: jslab-api
+          - name: engine-v8
+            context: apps/engine-v8
+            dockerfile: apps/engine-v8/Dockerfile
+            image: jslab-engine-v8
+          - name: engine-hermes
+            context: apps/engine-hermes
+            dockerfile: apps/engine-hermes/Dockerfile
+            image: jslab-engine-hermes
+          - name: engine-jsc
+            context: apps/engine-jsc
+            dockerfile: apps/engine-jsc/Dockerfile
+            image: jslab-engine-jsc
+          - name: engine-spidermonkey
+            context: apps/engine-spidermonkey
+            dockerfile: apps/engine-spidermonkey/Dockerfile
+            image: jslab-engine-spidermonkey
+          - name: frontend
+            context: apps/frontend
+            dockerfile: apps/frontend/Dockerfile
+            image: jslab-frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Resolve image tag
-        run: |
-          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
-            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> "$GITHUB_ENV"
-          else
-            echo "IMAGE_TAG=${GITHUB_SHA}" >> "$GITHUB_ENV"
-          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -49,82 +68,35 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push api
+      - name: Build and push ${{ matrix.svc.name }}
         uses: docker/build-push-action@v6
         with:
-          context: apps/api
-          file: apps/api/Dockerfile
+          context: ${{ matrix.svc.context }}
+          file: ${{ matrix.svc.dockerfile }}
           push: true
           tags: |
-            ${{ env.IMAGE_REPO }}/jslab-api:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_REPO }}/jslab-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ env.IMAGE_REPO }}/${{ matrix.svc.image }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_REPO }}/${{ matrix.svc.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.svc.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.svc.name }}
 
-      - name: Build and push engine-v8
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/engine-v8
-          file: apps/engine-v8/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_REPO }}/jslab-engine-v8:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_REPO }}/jslab-engine-v8:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push engine-hermes
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/engine-hermes
-          file: apps/engine-hermes/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_REPO }}/jslab-engine-hermes:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_REPO }}/jslab-engine-hermes:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push engine-jsc
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/engine-jsc
-          file: apps/engine-jsc/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_REPO }}/jslab-engine-jsc:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_REPO }}/jslab-engine-jsc:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push engine-spidermonkey
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/engine-spidermonkey
-          file: apps/engine-spidermonkey/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_REPO }}/jslab-engine-spidermonkey:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_REPO }}/jslab-engine-spidermonkey:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/frontend
-          file: apps/frontend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_REPO }}/jslab-frontend:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_REPO }}/jslab-frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: v1.30.0
+
+      - name: Setup kustomize
+        uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.5.0"
 
       - name: Configure kubeconfig
         env:
@@ -152,10 +124,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Inject the tag for this deploy.
-          sed -i "s/__IMAGE_TAG__/${IMAGE_TAG}/g" infra/k8s/prod/kustomization.yaml
+          K8S_DIR="${RUNNER_TEMP}/k8s-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cp -R infra/k8s "${K8S_DIR}"
+          cd "${K8S_DIR}/prod"
 
-          kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+          kustomize edit set image \
+            pavlof01/jslab-api=pavlof01/jslab-api:${IMAGE_TAG} \
+            pavlof01/jslab-engine-v8=pavlof01/jslab-engine-v8:${IMAGE_TAG} \
+            pavlof01/jslab-engine-hermes=pavlof01/jslab-engine-hermes:${IMAGE_TAG} \
+            pavlof01/jslab-engine-jsc=pavlof01/jslab-engine-jsc:${IMAGE_TAG} \
+            pavlof01/jslab-engine-spidermonkey=pavlof01/jslab-engine-spidermonkey:${IMAGE_TAG} \
+            pavlof01/jslab-frontend=pavlof01/jslab-frontend:${IMAGE_TAG}
+
+          kustomize build . --load-restrictor LoadRestrictionsNone | kubectl apply -f -
 
       - name: Wait for rollouts
         run: |
