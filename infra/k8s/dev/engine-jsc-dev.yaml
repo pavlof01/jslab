@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-jsc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engine-jsc
+  template:
+    metadata:
+      labels:
+        app: engine-jsc
+    spec:
+      containers:
+        - name: engine-jsc
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+          securityContext:
+            readOnlyRootFilesystem: false

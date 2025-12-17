@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: jslab
+resources:
+  - namespace.yaml
+  - api-configmap.yaml
+  - api-secret.example.yaml
+  - redis.yaml
+  - api-deployment.yaml
+  - engine-v8.yaml
+  - engine-hermes.yaml
+  - engine-jsc.yaml
+  - engine-spidermonkey.yaml
+  - frontend.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+  - pdb.yaml

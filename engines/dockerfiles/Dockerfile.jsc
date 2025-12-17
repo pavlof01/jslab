@@ -1,0 +1,100 @@
+# syntax=docker/dockerfile:1.7
+
+############################
+# Builder (JSC Debug)
+############################
+FROM ubuntu:24.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+# branch/tag/commit-ish
+ARG WEBKIT_REF=main
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl git \
+    python3 python3-venv python3-pip \
+    ruby \
+    build-essential \
+    clang lld llvm \
+    cmake ninja-build pkg-config \
+    bison flex gperf \
+    libglib2.0-dev \
+    libicu-dev \
+    libsqlite3-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libcurl4-openssl-dev \
+    libffi-dev \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# WebKit source (надёжный clone с ретраями + partial clone)
+RUN set -eux; \
+    git config --global advice.detachedHead false; \
+    git config --global http.lowSpeedLimit 1; \
+    git config --global http.lowSpeedTime 600; \
+    git config --global http.postBuffer 524288000; \
+    for i in 1 2 3 4 5; do \
+      rm -rf /src/webkit; \
+      echo "Cloning WebKit (try ${i}) ref=${WEBKIT_REF}"; \
+      if git clone --depth 1 --single-branch --filter=blob:none \
+        --branch "${WEBKIT_REF}" https://github.com/WebKit/WebKit.git /src/webkit; then \
+        break; \
+      fi; \
+      if [ "${i}" = "5" ]; then exit 128; fi; \
+      sleep $((i * 5)); \
+    done
+
+WORKDIR /src/webkit
+
+# Build JSC only (Debug)
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/root/.ccache \
+    set -eux; \
+    export CC=clang CXX=clang++; \
+    ./Tools/Scripts/build-jsc --debug --jsc-only
+
+# Extract artifacts
+RUN set -eux; \
+    OUT=/out; \
+    mkdir -p "$OUT/bin" "$OUT/lib"; \
+    cp "WebKitBuild/JSCOnly/Debug/bin/jsc" "$OUT/bin/"; \
+    cp -a "WebKitBuild/JSCOnly/Debug/lib/libJavaScriptCore.so"* "$OUT/lib/"; \
+    ls -la "$OUT/bin" "$OUT/lib"
+
+############################
+# Runtime
+############################
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Runtime deps (включая libatomic1!)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libc-bin \
+    libstdc++6 \
+    libgcc-s1 \
+    libatomic1 \
+    zlib1g \
+    libicu74 \
+    libsqlite3-0 \
+    libxml2 \
+    libxslt1.1 \
+    libcurl4 \
+    libglib2.0-0 \
+    libffi8 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /out/bin/jsc /usr/local/bin/jsc
+COPY --from=builder /out/lib/ /usr/local/lib/
+
+# чтобы динамический линкер находил libJavaScriptCore.so.1
+RUN set -eux; \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/webkit.conf; \
+    ldconfig; \
+    ldd /usr/local/bin/jsc | head -n 200
+
+WORKDIR /work
+ENTRYPOINT ["jsc"]

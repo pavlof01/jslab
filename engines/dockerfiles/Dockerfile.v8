@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1.7
+
+############################
+# STAGE 1: build d8 (AMD64)
+############################
+FROM --platform=linux/amd64 ubuntu:24.04 AS builder
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/depot_tools:${PATH}"
+ENV GCLIENT_SUPPRESS_GIT_VERSION_WARNING=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl ca-certificates python3 \
+    build-essential ninja-build pkg-config subversion \
+    libglib2.0-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /depot_tools
+
+WORKDIR /root
+
+RUN set -eux; \
+    mkdir -p /root/v8; \
+    cd /root; \
+    gclient config --spec 'solutions = [ { "name": "v8", "url": "https://chromium.googlesource.com/v8/v8.git", "deps_file": "DEPS", "managed": False, "custom_deps": {}, }, ]'
+
+RUN set -eux; \
+    cd /root; \
+    gclient sync -j1 --no-history --with_branch_heads
+
+WORKDIR /root/v8
+
+RUN set -eux; \
+    python3 build/linux/sysroot_scripts/install-sysroot.py --arch=amd64
+
+# GN args: embedded snapshot => snapshot_blob.bin не будет
+RUN set -eux; \
+    tools/dev/v8gen.py x64.release -- \
+      is_debug=false \
+      is_component_build=false \
+      v8_monolithic=true \
+      v8_use_external_startup_data=false \
+      v8_enable_i18n_support=true \
+      treat_warnings_as_errors=false
+
+RUN set -eux; \
+    ninja -C out.gn/x64.release d8
+
+############################
+# STAGE 2: runtime (AMD64)
+############################
+FROM --platform=linux/amd64 debian:bookworm-slim AS runtime
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates bash libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/v8
+
+COPY --from=builder /root/v8/out.gn/x64.release/d8         /opt/v8/d8
+COPY --from=builder /root/v8/out.gn/x64.release/icudtl.dat /opt/v8/icudtl.dat
+
+RUN set -eux; \
+    cat > /usr/local/bin/d8 <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+cd /opt/v8
+exec /opt/v8/d8 "$@"
+SH
+RUN chmod +x /usr/local/bin/d8
+
+WORKDIR /workspace
+ENTRYPOINT ["d8"]
+CMD ["--help"]

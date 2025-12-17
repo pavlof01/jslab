@@ -1,0 +1,8 @@
+src/node_modules
+src/.next
+src/.turbo
+src/coverage
+src/*.tsbuildinfo
+src/.env
+src/.env.*
+npm-debug.log*
