@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "apps/engine-jsc/**"
+      - ".github/workflows/deploy-engine-jsc.yml"
+      - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
 
 jobs:
@@ -18,4 +20,3 @@ jobs:
       deployment: engine-jsc
       container: engine-jsc
     secrets: inherit
-
