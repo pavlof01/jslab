@@ -2,7 +2,7 @@ name: Reusable - Deploy service to VPS (SSH)
 
 # Required secrets (GitHub Actions):
 # - DOCKERHUB_USERNAME / DOCKERHUB_TOKEN: push images to Docker Hub
-# - SSH_HOST / SSH_USER / SSH_KEY: SSH access to the VPS
+# - SSH_HOST / SSH_USER / SSH_KEY: SSH access to the VPS (SSH_KEY is a private key; raw multi-line is recommended)
 # - (optional) SSH_PORT: SSH port (defaults to 22)
 # - (optional) SSH_KNOWN_HOSTS: known_hosts entry (recommended; otherwise ssh-keyscan is used)
 #
@@ -110,10 +110,23 @@ jobs:
           cache-from: type=gha,scope=${{ inputs.service }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service }}
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+      - name: Write SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # Support raw multi-line keys, "\n"-escaped keys, and base64-encoded keys.
+          if printf '%s' "${SSH_KEY}" | grep -q "BEGIN .*PRIVATE KEY"; then
+            printf '%b' "${SSH_KEY}" | tr -d '\r' > ~/.ssh/deploy.key
+          else
+            printf '%s' "${SSH_KEY}" | base64 --decode | tr -d '\r' > ~/.ssh/deploy.key
+          fi
+
+          chmod 600 ~/.ssh/deploy.key
 
       - name: Trust VPS host key
         env:
@@ -144,6 +157,13 @@ jobs:
           set -euo pipefail
 
           SSH_PORT="${SSH_PORT:-22}"
-          ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+          ssh \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o IdentitiesOnly=yes \
+            -i ~/.ssh/deploy.key \
+            -p "${SSH_PORT}" \
+            "${SSH_USER}@${SSH_HOST}" \
             "kubectl -n \"${NAMESPACE}\" set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${IMAGE_REPO}/${IMAGE_NAME}:${IMAGE_TAG} && \
              kubectl -n \"${NAMESPACE}\" rollout status deployment/${DEPLOYMENT_NAME} --timeout=10m"

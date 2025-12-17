@@ -26,10 +26,23 @@ jobs:
         with:
           version: v1.30.0
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+      - name: Write SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # Support raw multi-line keys, "\n"-escaped keys, and base64-encoded keys.
+          if printf '%s' "${SSH_KEY}" | grep -q "BEGIN .*PRIVATE KEY"; then
+            printf '%b' "${SSH_KEY}" | tr -d '\r' > ~/.ssh/deploy.key
+          else
+            printf '%s' "${SSH_KEY}" | base64 --decode | tr -d '\r' > ~/.ssh/deploy.key
+          fi
+
+          chmod 600 ~/.ssh/deploy.key
 
       - name: Trust VPS host key
         env:
@@ -61,4 +74,12 @@ jobs:
 
           SSH_PORT="${SSH_PORT:-22}"
           kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone \
-            | ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "kubectl apply -f -"
+            | ssh \
+                -o BatchMode=yes \
+                -o StrictHostKeyChecking=yes \
+                -o UserKnownHostsFile=~/.ssh/known_hosts \
+                -o IdentitiesOnly=yes \
+                -i ~/.ssh/deploy.key \
+                -p "${SSH_PORT}" \
+                "${SSH_USER}@${SSH_HOST}" \
+                "kubectl apply -f -"
