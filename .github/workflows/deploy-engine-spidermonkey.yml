@@ -1,0 +1,21 @@
+name: deploy-engine-spidermonkey
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/engine-spidermonkey/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: engine-spidermonkey
+      context: apps/engine-spidermonkey
+      dockerfile: apps/engine-spidermonkey/Dockerfile
+      image: jslab-engine-spidermonkey
+      deployment: engine-spidermonkey
+      container: engine-spidermonkey
+    secrets: inherit
+
