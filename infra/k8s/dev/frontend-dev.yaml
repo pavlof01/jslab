@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: NEXT_TELEMETRY_DISABLED
+              value: "1"
+            - name: WATCHPACK_POLLING
+              # Polling is sometimes needed in containerized dev setups, but
+              # `true` can mean a large default interval. Use a small interval
+              # so edits are picked up quickly.
+              value: "200"
+          # Next dev (especially Turbopack) can be memory-hungry; keep dev stable.
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            readOnlyRootFilesystem: false
