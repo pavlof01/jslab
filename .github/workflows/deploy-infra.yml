@@ -19,20 +19,33 @@ jobs:
   deploy:
     runs-on: ubuntu-24.04
     steps:
-      - name: Deploy over SSH (git pull + kubectl apply)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          key: ${{ secrets.SSH_KEY }}
-          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
-          script_stop: true
-          script: |
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          ssh-keyscan -H 103.106.2.32 >> ~/.ssh/known_hosts
+
+      - name: Test SSH
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@103.106.2.32 "echo ok"
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@103.106.2.32 <<'EOSSH'
             set -euo pipefail
 
-            cd "${{ secrets.APP_DIR }}"
-            git pull --ff-only
+            cd /root/js-engines
+
+            git fetch origin main
+            git checkout -B main origin/main
+            git reset --hard origin/main
+            git clean -fd
 
             kubectl apply -f infra/k8s/base/namespace.yaml
             kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+          EOSSH
