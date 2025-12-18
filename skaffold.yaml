@@ -1,4 +1,3 @@
-# skaffold.yaml
 apiVersion: skaffold/v4beta6
 kind: Config
 metadata:
@@ -33,9 +32,7 @@ build:
 
     - image: jslab-engine-v8
       context: apps/engine-v8
-      # d8 in pavlof01/v8-d8 is amd64-only right now, so on Apple Silicon
-      # we run the whole engine container as linux/amd64 under emulation.
-      platforms: ["linux/amd64"]
+
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -48,9 +45,7 @@ build:
 
     - image: jslab-engine-hermes
       context: apps/engine-hermes
-      # Hermes toolchain in pavlof01/hermes is amd64-only right now, so on Apple Silicon
-      # we run the whole engine container as linux/amd64 under emulation.
-      platforms: ["linux/amd64"]
+
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -63,9 +58,7 @@ build:
 
     - image: jslab-engine-jsc
       context: apps/engine-jsc
-      # JSC toolchain in pavlof01/jsc is amd64-only right now, so on Apple Silicon
-      # we run the whole engine container as linux/amd64 under emulation.
-      platforms: ["linux/amd64"]
+
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -78,9 +71,7 @@ build:
 
     - image: jslab-engine-spidermonkey
       context: apps/engine-spidermonkey
-      # SpiderMonkey shell in pavlof01/spidermonkey is amd64-only right now, so on Apple Silicon
-      # we run the whole engine container as linux/amd64 under emulation.
-      platforms: ["linux/amd64"]
+
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -95,13 +86,12 @@ manifests:
   kustomize:
     paths:
       - infra/k8s/dev
-    # Allow kustomize overlays to reference files outside their directory (e.g. ../base).
-    # Needed because Skaffold renders via `kubectl kustomize` which defaults to root-only load restriction.
     buildArgs:
       - --load-restrictor=LoadRestrictionsNone
 
 deploy:
-  kubectl: {}
+  kubectl:
+    defaultNamespace: jslab
 
 portForward:
   - resourceType: service
