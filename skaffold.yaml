@@ -7,6 +7,8 @@ build:
   local:
     push: false
     useBuildkit: true
+  platforms:
+    - linux/arm64
   artifacts:
     - image: jslab-api
       context: apps/api
@@ -32,7 +34,6 @@ build:
 
     - image: jslab-engine-v8
       context: apps/engine-v8
-
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -45,7 +46,6 @@ build:
 
     - image: jslab-engine-hermes
       context: apps/engine-hermes
-
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -58,7 +58,6 @@ build:
 
     - image: jslab-engine-jsc
       context: apps/engine-jsc
-
       docker:
         dockerfile: Dockerfile
         target: dev
@@ -71,7 +70,6 @@ build:
 
     - image: jslab-engine-spidermonkey
       context: apps/engine-spidermonkey
-
       docker:
         dockerfile: Dockerfile
         target: dev
