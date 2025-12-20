@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1.7
 
 ############################
-# STAGE 1: build d8 (AMD64)
+# STAGE 1: fetch V8 sources (common)
 ############################
-FROM --platform=linux/amd64 ubuntu:24.04 AS builder
+FROM ubuntu:24.04 AS v8src
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/depot_tools:${PATH}"
 ENV GCLIENT_SUPPRESS_GIT_VERSION_WARNING=1
@@ -12,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl ca-certificates python3 \
     build-essential ninja-build pkg-config subversion \
     libglib2.0-dev \
+    file \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /depot_tools
@@ -21,34 +23,68 @@ WORKDIR /root
 RUN set -eux; \
     mkdir -p /root/v8; \
     cd /root; \
-    gclient config --spec 'solutions = [ { "name": "v8", "url": "https://chromium.googlesource.com/v8/v8.git", "deps_file": "DEPS", "managed": False, "custom_deps": {}, }, ]'
+    gclient config --spec 'solutions = [ { \
+      "name": "v8", \
+      "url": "https://chromium.googlesource.com/v8/v8.git", \
+      "deps_file": "DEPS", \
+      "managed": False, \
+      "custom_deps": {}, \
+    } ]'
 
 RUN set -eux; \
     cd /root; \
     gclient sync -j1 --no-history --with_branch_heads
 
+############################
+# STAGE 2: build d8 (per-arch)
+############################
+FROM v8src AS builder
+
+ARG TARGETARCH
+
 WORKDIR /root/v8
 
 RUN set -eux; \
-    python3 build/linux/sysroot_scripts/install-sysroot.py --arch=amd64
-
-# GN args: embedded snapshot => snapshot_blob.bin не будет
-RUN set -eux; \
-    tools/dev/v8gen.py x64.release -- \
+    case "${TARGETARCH}" in \
+      amd64) \
+        SYSROOT_ARCH=amd64; \
+        GN_CPU=x64; \
+        OUT=x64.release; \
+        ;; \
+      arm64) \
+        SYSROOT_ARCH=arm64; \
+        GN_CPU=arm64; \
+        OUT=arm64.release; \
+        ;; \
+      *) \
+        echo "Unsupported TARGETARCH=${TARGETARCH}" && exit 1; \
+        ;; \
+    esac; \
+    \
+    python3 build/linux/sysroot_scripts/install-sysroot.py --arch="${SYSROOT_ARCH}"; \
+    \
+    tools/dev/v8gen.py "${OUT}" -- \
       is_debug=false \
       is_component_build=false \
       v8_monolithic=true \
       v8_use_external_startup_data=false \
       v8_enable_i18n_support=true \
-      treat_warnings_as_errors=false
-
-RUN set -eux; \
-    ninja -C out.gn/x64.release d8
+      treat_warnings_as_errors=false \
+      target_cpu=\"${GN_CPU}\"; \
+    \
+    ninja -C "out.gn/${OUT}" d8; \
+    \
+    mkdir -p /artifacts; \
+    cp "out.gn/${OUT}/d8" /artifacts/d8; \
+    cp "out.gn/${OUT}/icudtl.dat" /artifacts/icudtl.dat; \
+    \
+    file /artifacts/d8
 
 ############################
-# STAGE 2: runtime (AMD64)
+# STAGE 3: runtime (per-arch)
 ############################
-FROM --platform=linux/amd64 debian:bookworm-slim AS runtime
+FROM debian:bookworm-slim AS runtime
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -57,18 +93,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /opt/v8
 
-COPY --from=builder /root/v8/out.gn/x64.release/d8         /opt/v8/d8
-COPY --from=builder /root/v8/out.gn/x64.release/icudtl.dat /opt/v8/icudtl.dat
+COPY --from=builder /artifacts/d8         /opt/v8/d8
+COPY --from=builder /artifacts/icudtl.dat /opt/v8/icudtl.dat
 
 RUN set -eux; \
-    cat > /usr/local/bin/d8 <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-cd /opt/v8
+  cat > /usr/local/bin/d8 <<'SH'
+#!/bin/sh
 exec /opt/v8/d8 "$@"
 SH
 RUN chmod +x /usr/local/bin/d8
 
 WORKDIR /workspace
-ENTRYPOINT ["d8"]
+ENTRYPOINT ["/usr/local/bin/d8"]
 CMD ["--help"]
