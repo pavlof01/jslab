@@ -32,9 +32,9 @@ type RunResult = {
 
 app.addHook("onRequest", async (req, reply) => {
   if (req.url === "/healthz") return;
-  if (config.API_KEY) {
+  if (config.ENGINE_SHARED_SECRET) {
     const incoming = req.headers["x-engine-key"];
-    if (incoming !== config.API_KEY) {
+    if (incoming !== config.ENGINE_SHARED_SECRET) {
       return reply.code(401).send({ ok: false, error: "invalid engine key" });
     }
   }
@@ -205,4 +205,3 @@ process.on("SIGTERM", () => app.close().finally(() => process.exit(0)));
 process.on("SIGINT", () => app.close().finally(() => process.exit(0)));
 
 listen();
-

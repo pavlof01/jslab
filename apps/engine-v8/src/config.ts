@@ -9,7 +9,7 @@ const envSchema = z.object({
   MAX_OUTPUT_BYTES: z.coerce.number().default(2 * 1024 * 1024),
   MAX_FLAGS: z.coerce.number().default(10),
   MAX_SOURCE_LENGTH: z.coerce.number().default(20000),
-  API_KEY: z.string().optional(),
+  ENGINE_SHARED_SECRET: z.string().optional(),
   LOG_LEVEL: z.string().default("info")
 });
 
