@@ -30,10 +30,16 @@ type RunResult = {
   outputTruncated: boolean;
 };
 
+function headerOne(v: unknown): string | undefined {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) && typeof v[0] === "string") return v[0];
+  return undefined;
+}
+
 app.addHook("onRequest", async (req, reply) => {
   if (req.url === "/healthz") return;
   if (config.ENGINE_SHARED_SECRET) {
-    const incoming = req.headers["x-engine-key"];
+    const incoming = headerOne(req.headers["x-engine-key"]);
     if (incoming !== config.ENGINE_SHARED_SECRET) {
       return reply.code(401).send({ ok: false, error: "invalid engine key" });
     }
