@@ -26,7 +26,7 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            - name: API_KEY
+            - name: ENGINE_SHARED_SECRET
               valueFrom:
                 secretKeyRef:
                   name: api-secrets
