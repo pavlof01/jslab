@@ -30,6 +30,38 @@ type RunResult = {
   outputTruncated: boolean;
 };
 
+const openapiDoc = {
+  openapi: "3.0.0",
+  info: {
+    title: "engine-v8",
+    version: "1.0.0"
+  },
+  components: {
+    securitySchemes: {
+      EngineKey: { type: "apiKey", name: "x-engine-key", in: "header" }
+    }
+  },
+  security: [{ EngineKey: [] }],
+  paths: {
+    "/healthz": {
+      get: {
+        responses: { "200": { description: "ok" } }
+      }
+    },
+    "/openapi.json": {
+      get: {
+        responses: { "200": { description: "openapi document" } }
+      }
+    },
+    "/run": {
+      post: {
+        requestBody: { description: "engine run request" },
+        responses: { "200": { description: "run response" } }
+      }
+    }
+  }
+};
+
 function headerOne(v: unknown): string | undefined {
   if (typeof v === "string") return v;
   if (Array.isArray(v) && typeof v[0] === "string") return v[0];
@@ -47,6 +79,7 @@ app.addHook("onRequest", async (req, reply) => {
 });
 
 app.get("/healthz", async () => ({ ok: true }));
+app.get("/openapi.json", async () => openapiDoc);
 
 function sanitizeFlags(flags: string[] = []): string[] {
   const seen = new Set<string>();

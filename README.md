@@ -100,6 +100,42 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
      https://jslab.local/api/run
    ```
 
+### Debugging NetworkPolicy Races (k3s + flannel)
+
+Short-lived debug pods can hit a brief window where NetworkPolicy rules have not been applied yet, causing transient connection failures (e.g., "Could not connect") for the first few seconds.
+
+Recommended approaches:
+
+- Use a long-lived debug pod and `kubectl exec` into it.
+- Or add a short `sleep` before curling services.
+
+Example debug pod (long-lived):
+
+```bash
+kubectl -n jslab run debug-shell \
+  --rm -it --restart=Never \
+  --image=curlimages/curl:8.5.0 \
+  --command -- sleep 3600
+```
+
+Verify engine connectivity (requires `x-engine-key`):
+
+```bash
+kubectl -n jslab exec -it debug-shell -- \
+  curl -sS -H "x-engine-key: $ENGINE_SHARED_SECRET" \
+  http://engine-v8:8080/healthz
+```
+
+Verify API run request (requires `x-api-key`):
+
+```bash
+kubectl -n jslab exec -it debug-shell -- \
+  curl -sS -H "content-type: application/json" \
+  -H "x-api-key: $API_KEY" \
+  -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
+  http://api:8080/api/run
+```
+
 ### Local development (Skaffold + hot-reload)
 
 1. Start the dev loop (from repo root):
