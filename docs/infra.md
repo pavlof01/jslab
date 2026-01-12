@@ -112,3 +112,7 @@ Dev loop (build + deploy + port-forward):
 ```bash
 skaffold dev --port-forward -n jslab
 ```
+
+## 6) Troubleshooting
+
+- Ephemeral debug containers (`kubectl debug`) do not inherit the app container's environment variables; use the main container or pass env explicitly when inspecting secrets.

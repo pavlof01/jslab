@@ -36,5 +36,4 @@ docker run --rm -it pavlof01/spidermonkey:debug \
 See `apps/engine-spidermonkey/src/config.ts`.
 
 - `SM_PATH` (default `js`)
-- `API_KEY` (optional; caller must send `x-engine-key`)
-
+- `ENGINE_SHARED_SECRET` (optional; caller must send `x-engine-key`)
