@@ -88,6 +88,26 @@ function mapEngineErrorToStatus(enginePayload: any): number {
   return 502;
 }
 
+function classifyEngineError(err: any): { kind: string; message: string } {
+  const code = err?.code;
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
+    return { kind: "dns", message: "engine DNS lookup failed" };
+  }
+  if (code === "ECONNREFUSED") {
+    return { kind: "connect_refused", message: "engine connection refused" };
+  }
+  if (code === "UND_ERR_CONNECT_TIMEOUT" || code === "ETIMEDOUT") {
+    return { kind: "connect_timeout", message: "engine connect timeout" };
+  }
+  if (code === "UND_ERR_HEADERS_TIMEOUT") {
+    return { kind: "headers_timeout", message: "engine headers timeout" };
+  }
+  if (code === "UND_ERR_BODY_TIMEOUT") {
+    return { kind: "body_timeout", message: "engine body timeout" };
+  }
+  return { kind: "request_error", message: "engine request failed" };
+}
+
 app.post("/api/run", async (req, reply) => {
   const start = Date.now();
 
@@ -156,12 +176,6 @@ app.post("/api/run", async (req, reply) => {
       headersTimeout: normalized.timeoutMs + 1000,
     });
 
-    // 5xx from the engine => treat as Bad Gateway
-    if (engineRes.statusCode >= 500) {
-      reply.code(502).send({ ok: false, error: `engine unavailable (${engineRes.statusCode})` });
-      return;
-    }
-
     // Prefer undici's body.text() if available, fallback to stream read otherwise.
     const engineText =
       typeof (engineRes.body as any)?.text === "function"
@@ -173,6 +187,19 @@ app.post("/api/run", async (req, reply) => {
             (engineRes.body as NodeJS.ReadableStream).on("end", () => resolve(data));
             (engineRes.body as NodeJS.ReadableStream).on("error", reject);
           });
+
+    if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
+      req.log.error(
+        { engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) },
+        "engine returned non-2xx"
+      );
+    }
+
+    // 5xx from the engine => treat as Bad Gateway
+    if (engineRes.statusCode >= 500) {
+      reply.code(502).send({ ok: false, error: `engine unavailable (${engineRes.statusCode})` });
+      return;
+    }
 
     let enginePayload: EngineResponse;
     try {
@@ -202,8 +229,9 @@ app.post("/api/run", async (req, reply) => {
     await writeCache(redis, key, response, config.CACHE_TTL_SECONDS);
     reply.send(response);
   } catch (err: any) {
-    req.log.error({ err }, "engine request failed");
-    reply.code(502).send({ ok: false, error: "engine request failed" });
+    const classified = classifyEngineError(err);
+    req.log.error({ err, engineUrl, kind: classified.kind }, "engine request failed");
+    reply.code(502).send({ ok: false, error: classified.message });
   }
 });
 
