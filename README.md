@@ -69,7 +69,7 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
 - Apply base stack: `kubectl apply -k infra/k8s/base`
 - Namespace: `jslab`
 - Set real secrets in `infra/k8s/base/api-secret.example.yaml` (or replace with your own Secret/SealedSecret generator).
-- Ingress (Traefik): routes everything to `frontend` (Next.js), which proxies `/api/run` server-side to the internal `api` service.
+- Ingress (Traefik): routes `/api` to the `api` service and `/` to `frontend` (Next.js) with explicit router priorities.
 - NetworkPolicy: only API reachable from Traefik/namespace, engines reachable only from API, Redis reachable only from API.
 - Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
 - PodDisruptionBudgets for api/frontend/engines; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
