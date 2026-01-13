@@ -25,12 +25,52 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jslab
+  name: jslab-api
   namespace: jslab
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-https-redirect@kubernetescrd,jslab-jslab-security-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - jslab.cc
+        - www.jslab.cc
+      secretName: jslab-tls
+  rules:
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
+    - host: www.jslab.cc
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jslab-frontend
+  namespace: jslab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-https-redirect@kubernetescrd,jslab-jslab-security-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "10"
+spec:
+  ingressClassName: traefik
   tls:
     - hosts:
         - jslab.cc

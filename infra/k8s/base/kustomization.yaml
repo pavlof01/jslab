@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - api-configmap.yaml
   - api-secret.example.yaml
+  - tls-secret.example.yaml
   - redis.yaml
   - api-deployment.yaml
   - engine-v8.yaml
