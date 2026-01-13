@@ -50,7 +50,7 @@ async function proxy(req: Request) {
   const apiKey = process.env.JSLAB_API_KEY;
 
   // Не палим названия/значения env
-  if (!upstreamUrl || !apiKey) return res(500, "Internal Server Error");
+  if (!upstreamUrl) return res(500, "Internal Server Error");
 
   // Только POST
   if (req.method !== "POST") return res(405, "Method Not Allowed");
@@ -78,7 +78,7 @@ async function proxy(req: Request) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": apiKey,
+        ...(apiKey ? { "x-api-key": apiKey } : {}),
       },
       body: body.text || "{}", // чтобы upstream не упал, если ожидает json
       signal: controller.signal,

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
-import { ENGINE_KEYS, EngineKey, RunStatus, type EngineResult, type ApiResponse } from "@/lib/types";
+import { ENGINE_KEYS, EngineKey, RunStatus, type EngineResult } from "@/lib/types";
 
 const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
 
@@ -112,33 +112,59 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
     });
 
     try {
-      const response = await fetch("/api/bytecode", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code, engines, v8Flags }),
+      const tasks = engines.map(async (engine) => {
+        try {
+          const response = await fetch("/api/run", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              engine,
+              task: "bytecode",
+              sourceText: code,
+              options: engine === EngineKey.v8 ? { flags: v8Flags } : {},
+            }),
+          });
+
+          const payload = await response.json().catch(() => null);
+          if (!response.ok || !payload?.ok) {
+            return [
+              engine,
+              {
+                exitCode: null,
+                stdout: (payload?.stdout ?? "").trim(),
+                stderr: (payload?.error ?? payload?.stderr ?? `http ${response.status}`).trim(),
+                ms: payload?.meta?.durationMs ?? 0,
+              },
+            ] as const;
+          }
+
+          return [
+            engine,
+            {
+              exitCode: null,
+              stdout: (payload.stdout ?? "").trim(),
+              stderr: (payload.stderr ?? "").trim(),
+              ms: payload.meta?.durationMs ?? 0,
+            },
+          ] as const;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          return [engine, { exitCode: null, stdout: "", stderr: message, ms: 0 }] as const;
+        }
       });
 
-      const data: ApiResponse = await response.json();
-      if (!data.ok) {
-        throw new Error(data.error || "Request failed");
-      }
-
-      const results = data.results ?? {};
+      const settled = await Promise.all(tasks);
       const nextOut = createEmptyOut();
+      let maxMs = 0;
 
-      ENGINE_KEYS.forEach((engine) => {
-        const engineResult = results[engine];
-        nextOut[engine] = {
-          exitCode: engineResult?.exitCode ?? null,
-          stdout: (engineResult?.stdout ?? "").trim(),
-          stderr: (engineResult?.stderr ?? "").trim(),
-          ms: engineResult?.ms,
-        };
-      });
+      for (const [engine, result] of settled) {
+        nextOut[engine] = result;
+        maxMs = Math.max(maxMs, result.ms ?? 0);
+      }
 
       set({
         out: nextOut,
-        meta: data.meta ? `Duration: ${data.meta.ms} ms` : "",
+        meta: maxMs ? `Duration: ${maxMs} ms` : "",
         status: RunStatus.done,
         currentRun: {
           engines: [...engines],

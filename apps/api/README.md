@@ -24,6 +24,6 @@ All env vars are defined in `apps/api/src/config.ts`. Common ones:
 
 - `REDIS_URL` (default `redis://redis:6379`)
 - `ENGINE_V8_URL`, `ENGINE_HERMES_URL`, `ENGINE_SM_URL`, `ENGINE_JSC_URL` (defaults are Kubernetes service URLs)
-- `API_KEY` (optional; client must send `x-api-key`)
+- `API_KEY` (optional; client must send `x-api-key` when `PUBLIC_RUN_ENDPOINT=false`)
+- `PUBLIC_RUN_ENDPOINT` (default `true`; set to `false` to require `x-api-key` for `/api/run`)
 - `ENGINE_SHARED_SECRET` (optional; forwarded to engines as `x-engine-key`)
-
