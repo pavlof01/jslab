@@ -17,6 +17,7 @@ const envSchema = z.object({
   MAX_SOURCE_LENGTH: z.coerce.number().default(20000),
   REQUEST_BODY_LIMIT_BYTES: z.coerce.number().default(512 * 1024),
   API_KEY: z.string().optional(),
+  PUBLIC_RUN_ENDPOINT: z.coerce.boolean().default(true),
   ENGINE_SHARED_SECRET: z.string().optional(),
   LOG_LEVEL: z.string().default("info")
 });
