@@ -181,7 +181,7 @@ kubectl -n jslab exec -it debug-shell -- \
 
 - Rate limits: 60 req/min per IP + 20 heavy req/min (task=run|bytecode) stored in Redis (`Retry-After` headers on 429).
 - Cache: Redis hash of engine+task+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s).
-- API key (optional): set `API_KEY` for gateway and `ENGINE_SHARED_SECRET` for engine services; header `x-api-key`/`x-engine-key` validated when set.
+- API key (optional): set `API_KEY` for gateway and `ENGINE_SHARED_SECRET` for engine services; engine header `x-engine-key` is always validated when configured. The API key is enforced only when `PUBLIC_RUN_ENDPOINT=false`.
 
 ### Quick curl example
 
@@ -190,6 +190,16 @@ curl -X POST https://jslab.local/api/run \
   -H "content-type: application/json" \
   -d '{"engine":"v8","task":"bytecode","sourceText":"function f(){return 1+2};f();","options":{"flags":["--print-bytecode"],"timeoutMs":2000}}'
 ```
+
+### Smoke test (bytecode via API)
+
+```bash
+curl -sS https://jslab.cc/api/run \
+  -H "content-type: application/json" \
+  -d '{"engine":"v8","task":"bytecode","sourceText":"1+2"}'
+```
+
+If `PUBLIC_RUN_ENDPOINT=false`, add `-H "x-api-key: $API_KEY"`.
 
 ---
 

@@ -26,6 +26,12 @@ const app = fastify({
   trustProxy: (addr) => addr === "127.0.0.1" || addr === "::1", // или CIDR твоего ingress
 });
 
+function headerOne(v: unknown): string | undefined {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) && typeof v[0] === "string") return v[0];
+  return undefined;
+}
+
 // Under pressure (it's better to set thresholds explicitly)
 app.register(underPressure, {
   maxEventLoopDelay: 1000,
@@ -37,9 +43,13 @@ app.register(underPressure, {
 // API key guard (skip for health checks)
 app.addHook("onRequest", async (req, reply) => {
   if (req.url === "/healthz") return;
-  if (!config.API_KEY) return;
+  if (config.PUBLIC_RUN_ENDPOINT) return;
+  if (!config.API_KEY) {
+    req.log.error("API_KEY is required but missing");
+    return reply.code(500).send({ ok: false, error: "api key not configured" });
+  }
 
-  const incoming = req.headers["x-api-key"];
+  const incoming = headerOne(req.headers["x-api-key"]);
   if (incoming !== config.API_KEY) {
     return reply.code(401).send({ ok: false, error: "invalid api key" });
   }
@@ -189,10 +199,8 @@ app.post("/api/run", async (req, reply) => {
           });
 
     if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
-      req.log.error(
-        { engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) },
-        "engine returned non-2xx"
-      );
+      const msg = engineRes.statusCode === 401 ? "engine auth failed" : "engine returned non-2xx";
+      req.log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, msg);
     }
 
     // 5xx from the engine => treat as Bad Gateway
