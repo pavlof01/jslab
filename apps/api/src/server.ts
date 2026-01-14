@@ -1,9 +1,11 @@
 import fastify from "fastify";
+import apiReference from "@scalar/fastify-api-reference";
 import underPressure from "@fastify/under-pressure";
 import { Redis } from "ioredis";
 import { request } from "undici";
 import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
+import { openapiDoc } from "./openapi.js";
 import { enforceRateLimit } from "./rateLimit.js";
 import { normalizeFlags, runRequestSchema } from "./schemas.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
@@ -23,7 +25,7 @@ const app = fastify({
   // IMPORTANT: enable only if you are actually behind a reverse proxy (Traefik/Nginx).
   // With trustProxy=true, Fastify derives req.ip from X-Forwarded-For *only* from trusted proxies,
   // so we don't have to parse XFF manually (and avoid spoofing).
-  trustProxy: (addr) => addr === "127.0.0.1" || addr === "::1", // или CIDR твоего ingress
+  trustProxy: (addr) => addr === "127.0.0.1" || addr === "::1" // или CIDR твоего ingress
 });
 
 // Under pressure (it's better to set thresholds explicitly)
@@ -35,6 +37,14 @@ app.register(underPressure, {
 });
 
 app.get("/healthz", async () => ({ ok: true, redis: redis.status }));
+app.get("/api/openapi.json", async () => openapiDoc);
+
+app.register(apiReference, {
+  routePrefix: "/api/docs",
+  configuration: {
+    content: openapiDoc
+  }
+});
 
 function clientIp(req: any): string {
   // With trustProxy=true, Fastify will compute req.ip correctly behind trusted proxies.

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fastify/under-pressure": "^8.2.0",
+    "@scalar/fastify-api-reference": "^1.43.4",
     "fastify": "^4.27.2",
     "fastify-plugin": "^4.5.0",
     "ioredis": "^5.4.1",
