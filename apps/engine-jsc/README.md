@@ -29,6 +29,5 @@ For `task=bytecode` the service ensures `-d` is present and returns the bytecode
 See `apps/engine-jsc/src/config.ts`.
 
 - `JSCSHELL_PATH` (preferred) or legacy `JSC_PATH`
-- `ENGINE_SHARED_SECRET` (optional; caller must send `x-engine-key`)
 
 Note: JSC treats environment variables starting with `JSC_` as VM options. The wrapper strips `JSC_PATH` from the child process environment to avoid noisy `invalid option: JSC_PATH=...` output.

@@ -7,7 +7,7 @@ This document is a quick “map” of the infrastructure: what services (contain
 | Component | Dockerfile | Kubernetes resources | Port | Dependencies |
 | --- | --- | --- | --- | --- |
 | `frontend` (Next.js) | `apps/frontend/Dockerfile` | `Deployment/frontend` + `Service/frontend` | `3000` | `api` |
-| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` + `Secret/api-secrets` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey` |
+| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey` |
 | `engine-v8` (d8 wrapper) | `apps/engine-v8/Dockerfile` | `Deployment/engine-v8` + `Service/engine-v8` | `8080` | — |
 | `engine-hermes` (Hermes toolchain wrapper) | `apps/engine-hermes/Dockerfile` | `Deployment/engine-hermes` + `Service/engine-hermes` | `8080` | — |
 | `engine-jsc` (JavaScriptCore wrapper) | `apps/engine-jsc/Dockerfile` | `Deployment/engine-jsc` + `Service/engine-jsc` | `8080` | — |
@@ -46,7 +46,6 @@ flowchart LR
     dep_redis[Deployment: redis]
 
     cm_api[ConfigMap: api-config]
-    sec_api[Secret: api-secrets]
   end
 
   user -->|HTTPS| traefik --> ing --> svc_front --> dep_front
@@ -58,12 +57,6 @@ flowchart LR
   dep_api --> svc_redis --> dep_redis
 
   cm_api -. envFrom .-> dep_api
-  sec_api -. secrets .-> dep_api
-  sec_api -. secrets .-> dep_v8
-  sec_api -. secrets .-> dep_hermes
-  sec_api -. secrets .-> dep_jsc
-  sec_api -. secrets .-> dep_sm
-  sec_api -. secrets .-> dep_front
 ```
 
 ## 3) Request flow for `/api/run`
@@ -82,7 +75,7 @@ sequenceDiagram
   alt cache hit
     Redis-->>API: cached result
   else cache miss
-    API->>Engine: execute (x-engine-key)
+    API->>Engine: execute
     Engine-->>API: stdout/stderr/artifacts
     API->>Redis: store result (TTL)
   end
@@ -93,7 +86,7 @@ sequenceDiagram
 ## 4) Where this lives in the repo
 
 - Base (closest to “prod”): `infra/k8s/base` — full set of resources (Ingress/NetworkPolicy/PDB, etc.).
-- Prod overlay: `infra/k8s/prod` — base + CI-injected image tags; removes the example `api-secrets` manifest (secrets managed out-of-band).
+- Prod overlay: `infra/k8s/prod` — base + CI-injected image tags; secrets managed out-of-band.
 - Dev overlay: `infra/k8s/dev` — rewrites `images:` to local Skaffold names and patches manifests for dev (hot-reload, `readOnlyRootFilesystem: false`), and excludes Traefik CRDs (Ingress/Middleware).
 - Dev loop: `skaffold.yaml` — builds 4 images and deploys `infra/k8s/dev` (with port-forward for `frontend` and `api`).
 

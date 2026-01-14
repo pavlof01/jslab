@@ -6,7 +6,6 @@ resources:
   # since local clusters may not have them installed. Use port-forward instead.
   - ../base/namespace.yaml
   - ../base/api-configmap.yaml
-  - ../base/api-secret.example.yaml
   - ../base/redis.yaml
   - ../base/api-deployment.yaml
   - ../base/engine-v8.yaml
