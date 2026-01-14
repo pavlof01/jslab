@@ -47,7 +47,6 @@ async function readBodyWithLimit(req: Request): Promise<{ ok: true; text: string
 
 async function proxy(req: Request) {
   const upstreamUrl = process.env.JSLAB_BACKEND_URL;
-  const apiKey = process.env.JSLAB_API_KEY;
 
   // Не палим названия/значения env
   if (!upstreamUrl) return res(500, "Internal Server Error");
@@ -78,7 +77,6 @@ async function proxy(req: Request) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        ...(apiKey ? { "x-api-key": apiKey } : {}),
       },
       body: body.text || "{}", // чтобы upstream не упал, если ожидает json
       signal: controller.signal,

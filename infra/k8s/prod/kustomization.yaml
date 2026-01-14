@@ -5,11 +5,6 @@ namespace: jslab
 resources:
   - ../base
 
-patches:
-  # Secrets are managed out-of-band (GitHub Actions / SealedSecrets / etc).
-  # The base includes an example Secret for local/dev convenience; delete it in prod.
-  - path: delete-api-secret.yaml
-
 images:
   # CI overrides these tags for each deploy (e.g. to the commit SHA).
   - name: pavlof01/jslab-api

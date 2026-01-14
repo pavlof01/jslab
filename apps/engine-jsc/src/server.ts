@@ -32,16 +32,6 @@ type RunResult = {
   outputTruncated: boolean;
 };
 
-app.addHook("onRequest", async (req, reply) => {
-  if (req.url === "/healthz") return;
-  if (config.ENGINE_SHARED_SECRET) {
-    const incoming = req.headers["x-engine-key"];
-    if (incoming !== config.ENGINE_SHARED_SECRET) {
-      return reply.code(401).send({ ok: false, error: "invalid engine key" });
-    }
-  }
-});
-
 app.get("/healthz", async () => ({ ok: true }));
 
 function sanitizeFlags(flags: string[] = []): string[] {

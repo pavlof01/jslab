@@ -26,11 +26,6 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            - name: ENGINE_SHARED_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: api-secrets
-                  key: ENGINE_SHARED_SECRET
             - name: HERMES_PATH
               value: /usr/local/bin/hermes
             - name: HERMESC_PATH
