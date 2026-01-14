@@ -29,4 +29,3 @@ For `task=bytecode` the service compiles `sourceText` to an `.hbc` file via `her
 See `apps/engine-hermes/src/config.ts`.
 
 - `HERMES_PATH`, `HERMESC_PATH`, `HBCDUMP_PATH`
-- `ENGINE_SHARED_SECRET` (optional; caller must send `x-engine-key`)

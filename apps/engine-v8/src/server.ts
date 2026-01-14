@@ -36,12 +36,6 @@ const openapiDoc = {
     title: "engine-v8",
     version: "1.0.0"
   },
-  components: {
-    securitySchemes: {
-      EngineKey: { type: "apiKey", name: "x-engine-key", in: "header" }
-    }
-  },
-  security: [{ EngineKey: [] }],
   paths: {
     "/healthz": {
       get: {
@@ -61,22 +55,6 @@ const openapiDoc = {
     }
   }
 };
-
-function headerOne(v: unknown): string | undefined {
-  if (typeof v === "string") return v;
-  if (Array.isArray(v) && typeof v[0] === "string") return v[0];
-  return undefined;
-}
-
-app.addHook("onRequest", async (req, reply) => {
-  if (req.url === "/healthz") return;
-  if (config.ENGINE_SHARED_SECRET) {
-    const incoming = headerOne(req.headers["x-engine-key"]);
-    if (incoming !== config.ENGINE_SHARED_SECRET) {
-      return reply.code(401).send({ ok: false, error: "invalid engine key" });
-    }
-  }
-});
 
 app.get("/healthz", async () => ({ ok: true }));
 app.get("/openapi.json", async () => openapiDoc);

@@ -68,7 +68,6 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
 
 - Apply base stack: `kubectl apply -k infra/k8s/base`
 - Namespace: `jslab`
-- Set real secrets in `infra/k8s/base/api-secret.example.yaml` (or replace with your own Secret/SealedSecret generator).
 - Ingress (Traefik): routes `/api` to the `api` service and `/` to `frontend` (Next.js) with explicit router priorities.
 - NetworkPolicy: only API reachable from Traefik/namespace, engines reachable only from API, Redis reachable only from API.
 - Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
@@ -83,18 +82,15 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
    - `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
    - `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
    - `docker build -t pavlof01/jslab-frontend apps/frontend`
-2. Create secrets (example):
-   - `kubectl create namespace jslab`
-   - `kubectl -n jslab create secret generic api-secrets --from-literal=API_KEY=api-secret --from-literal=ENGINE_SHARED_SECRET=engine-secret`
-3. Apply manifests:
+2. Apply manifests:
    - `kubectl apply -k infra/k8s/base`
-4. Check readiness:
+3. Check readiness:
    - `kubectl -n jslab get pods,svc,ingress`
-5. Local access (optional):
+4. Local access (optional):
    - Add a host record: `/etc/hosts` → `127.0.0.1 jslab.local` (or your Ingress/LoadBalancer IP).
-6. Test API:
+5. Test API:
    ```bash
-   # Browser/client calls Next.js at /api/run (no API key needed).
+   # Browser/client calls Next.js at /api/run (no auth required).
    curl -k -H "content-type: application/json" \
      -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
      https://jslab.local/api/run
@@ -118,20 +114,18 @@ kubectl -n jslab run debug-shell \
   --command -- sleep 3600
 ```
 
-Verify engine connectivity (requires `x-engine-key`):
+Verify engine connectivity:
 
 ```bash
 kubectl -n jslab exec -it debug-shell -- \
-  curl -sS -H "x-engine-key: $ENGINE_SHARED_SECRET" \
-  http://engine-v8:8080/healthz
+  curl -sS http://engine-v8:8080/healthz
 ```
 
-Verify API run request (requires `x-api-key`):
+Verify API run request:
 
 ```bash
 kubectl -n jslab exec -it debug-shell -- \
   curl -sS -H "content-type: application/json" \
-  -H "x-api-key: $API_KEY" \
   -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
   http://api:8080/api/run
 ```
@@ -181,7 +175,6 @@ kubectl -n jslab exec -it debug-shell -- \
 
 - Rate limits: 60 req/min per IP + 20 heavy req/min (task=run|bytecode) stored in Redis (`Retry-After` headers on 429).
 - Cache: Redis hash of engine+task+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s).
-- API key (optional): set `API_KEY` for gateway and `ENGINE_SHARED_SECRET` for engine services; engine header `x-engine-key` is always validated when configured. The API key is enforced only when `PUBLIC_RUN_ENDPOINT=false`.
 
 ### Quick curl example
 
@@ -198,8 +191,6 @@ curl -sS https://jslab.cc/api/run \
   -H "content-type: application/json" \
   -d '{"engine":"v8","task":"bytecode","sourceText":"1+2"}'
 ```
-
-If `PUBLIC_RUN_ENDPOINT=false`, add `-H "x-api-key: $API_KEY"`.
 
 ---
 

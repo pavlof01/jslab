@@ -28,8 +28,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: api-config
-            - secretRef:
-                name: api-secrets
           env:
             - name: NODE_ENV
               value: production

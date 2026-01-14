@@ -29,4 +29,3 @@ For `task=bytecode` the service ensures `--print-bytecode` is present.
 See `apps/engine-v8/src/config.ts`.
 
 - `D8_PATH` (default `/usr/bin/d8`)
-- `ENGINE_SHARED_SECRET` (optional; caller must send `x-engine-key`)
