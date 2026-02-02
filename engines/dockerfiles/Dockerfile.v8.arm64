@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1.7
+
+########################
+# Builder
+########################
+FROM ubuntu:24.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl ca-certificates python3 \
+    build-essential \
+    ninja-build pkg-config \
+    xz-utils file \
+  && rm -rf /var/lib/apt/lists/*
+
+# depot_tools
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /depot_tools
+ENV PATH="/depot_tools:${PATH}"
+
+WORKDIR /root
+
+# Fetch V8
+RUN fetch v8
+WORKDIR /root/v8
+RUN gclient sync
+
+# Build d8 for arm64
+RUN gn gen out/release --args='\
+  is_debug=false \
+  target_cpu="arm64" \
+  v8_enable_i18n_support=true \
+  v8_use_external_startup_data=true \
+'
+RUN ninja -C out/release d8
+
+########################
+# Runtime
+########################
+FROM debian:bookworm-slim AS runtime
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates bash libatomic1 \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/v8
+
+COPY --from=builder /root/v8/out/release/d8 /opt/v8/d8
+COPY --from=builder /root/v8/out/release/icudtl.dat /opt/v8/icudtl.dat
+COPY --from=builder /root/v8/out/release/snapshot_blob.bin /opt/v8/snapshot_blob.bin
+COPY --from=builder /root/v8/out/release/natives_blob.bin /opt/v8/natives_blob.bin
+
+ENV ICU_DATA=/opt/v8/icudtl.dat
+
+ENTRYPOINT ["/opt/v8/d8"]
