@@ -1,108 +1,94 @@
 # syntax=docker/dockerfile:1.7
 
-############################
-# STAGE 1: fetch V8 sources (common)
-############################
-FROM ubuntu:24.04 AS v8src
+########################
+# Builder (amd64 host toolchain)
+########################
+FROM --platform=linux/amd64 ubuntu:24.04 AS builder
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/depot_tools:${PATH}"
-ENV GCLIENT_SUPPRESS_GIT_VERSION_WARNING=1
+ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl ca-certificates python3 \
-    build-essential ninja-build pkg-config subversion \
-    libglib2.0-dev \
-    file \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential \
+    ninja-build pkg-config \
+    xz-utils file \
+  && rm -rf /var/lib/apt/lists/*
 
+# depot_tools
 RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /depot_tools
+ENV PATH="/depot_tools:${PATH}"
 
 WORKDIR /root
-
-RUN set -eux; \
-    mkdir -p /root/v8; \
-    cd /root; \
-    gclient config --spec 'solutions = [ { \
-      "name": "v8", \
-      "url": "https://chromium.googlesource.com/v8/v8.git", \
-      "deps_file": "DEPS", \
-      "managed": False, \
-      "custom_deps": {}, \
-    } ]'
-
-RUN set -eux; \
-    cd /root; \
-    gclient sync -j1 --no-history --with_branch_heads
-
-############################
-# STAGE 2: build d8 (per-arch)
-############################
-FROM v8src AS builder
-
-ARG TARGETARCH
+RUN fetch v8
 
 WORKDIR /root/v8
 
+# Cache gclient / git downloads
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/root/.config \
+    --mount=type=cache,target=/root/.gitcache \
+    gclient sync
+
+# If building arm64 target, install sysroot for cross-compiling.
+RUN if [ "${TARGETARCH}" = "arm64" ]; then \
+      python3 build/linux/sysroot_scripts/install-sysroot.py --arch=arm64; \
+    fi
+
+# GN gen + build + export artifacts
+# We branch by TARGETARCH so one Dockerfile works for both platforms.
 RUN set -eux; \
-    case "${TARGETARCH}" in \
-      amd64) \
-        SYSROOT_ARCH=amd64; \
-        GN_CPU=x64; \
-        OUT=x64.release; \
-        ;; \
-      arm64) \
-        SYSROOT_ARCH=arm64; \
-        GN_CPU=arm64; \
-        OUT=arm64.release; \
-        ;; \
-      *) \
-        echo "Unsupported TARGETARCH=${TARGETARCH}" && exit 1; \
-        ;; \
-    esac; \
-    \
-    python3 build/linux/sysroot_scripts/install-sysroot.py --arch="${SYSROOT_ARCH}"; \
-    \
-    tools/dev/v8gen.py "${OUT}" -- \
-      is_debug=false \
-      is_component_build=false \
-      v8_monolithic=true \
-      v8_use_external_startup_data=false \
-      v8_enable_i18n_support=true \
-      treat_warnings_as_errors=false \
-      target_cpu=\"${GN_CPU}\"; \
-    \
-    ninja -C "out.gn/${OUT}" d8; \
-    \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+      OUT=out/release_amd64; \
+      CACHE_ID=v8-out-amd64; \
+      GN_ARGS='is_debug=false target_cpu="x64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; \
+    elif [ "${TARGETARCH}" = "arm64" ]; then \
+      OUT=out/release_arm64; \
+      CACHE_ID=v8-out-arm64; \
+      GN_ARGS='is_debug=false target_cpu="arm64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; \
+    else \
+      echo "Unsupported TARGETARCH=${TARGETARCH}"; exit 1; \
+    fi; \
+    echo "OUT=$OUT CACHE_ID=$CACHE_ID"; \
+    true
+
+# GN gen (share out/ cache per arch)
+RUN --mount=type=cache,id=v8-out-${TARGETARCH},target=/root/v8/out \
+    set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then OUT=out/release_amd64; GN_ARGS='is_debug=false target_cpu="x64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; fi; \
+    if [ "${TARGETARCH}" = "arm64" ]; then OUT=out/release_arm64; GN_ARGS='is_debug=false target_cpu="arm64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; fi; \
+    gn gen "${OUT}" --args="${GN_ARGS}"
+
+# Build d8 (use small parallelism to avoid OOM on builders)
+RUN --mount=type=cache,id=v8-out-${TARGETARCH},target=/root/v8/out \
+    set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then OUT=out/release_amd64; fi; \
+    if [ "${TARGETARCH}" = "arm64" ]; then OUT=out/release_arm64; fi; \
+    ninja -C "${OUT}" -j2 d8
+
+# Export artifacts to a real layer
+RUN --mount=type=cache,id=v8-out-${TARGETARCH},target=/root/v8/out \
+    set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then OUT=out/release_amd64; fi; \
+    if [ "${TARGETARCH}" = "arm64" ]; then OUT=out/release_arm64; fi; \
     mkdir -p /artifacts; \
-    cp "out.gn/${OUT}/d8" /artifacts/d8; \
-    cp "out.gn/${OUT}/icudtl.dat" /artifacts/icudtl.dat; \
-    \
-    file /artifacts/d8
+    cp -v "${OUT}/d8" /artifacts/; \
+    cp -v "${OUT}/snapshot_blob.bin" /artifacts/
 
-############################
-# STAGE 3: runtime (per-arch)
-############################
-FROM debian:bookworm-slim AS runtime
+########################
+# Runtime (final image)
+########################
+FROM --platform=$TARGETPLATFORM debian:bookworm-slim AS runtime
 
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates bash libatomic1 \
-    && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/v8
 
-COPY --from=builder /artifacts/d8         /opt/v8/d8
-COPY --from=builder /artifacts/icudtl.dat /opt/v8/icudtl.dat
+COPY --from=builder /artifacts/d8 /opt/v8/d8
+COPY --from=builder /artifacts/snapshot_blob.bin /opt/v8/snapshot_blob.bin
 
-RUN set -eux; \
-  cat > /usr/local/bin/d8 <<'SH'
-#!/bin/sh
-exec /opt/v8/d8 "$@"
-SH
-RUN chmod +x /usr/local/bin/d8
-
-WORKDIR /workspace
-ENTRYPOINT ["/usr/local/bin/d8"]
-CMD ["--help"]
+ENTRYPOINT ["/opt/v8/d8"]

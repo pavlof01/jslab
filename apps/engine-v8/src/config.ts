@@ -3,7 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.coerce.number().default(8080),
   HOST: z.string().default("0.0.0.0"),
-  D8_PATH: z.string().default("/usr/bin/d8"),
+  D8_PATH: z.string().default("/opt/v8/d8"),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
   DEFAULT_TIMEOUT_MS: z.coerce.number().default(2000),
   MAX_OUTPUT_BYTES: z.coerce.number().default(2 * 1024 * 1024),
