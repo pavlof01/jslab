@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
 ########################
-# Builder
+# Builder (force amd64 so V8 prebuilt toolchain runs)
 ########################
-FROM ubuntu:24.04 AS builder
+FROM --platform=linux/amd64 ubuntu:24.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -19,25 +19,42 @@ RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /
 ENV PATH="/depot_tools:${PATH}"
 
 WORKDIR /root
-
-# Fetch V8
 RUN fetch v8
+
 WORKDIR /root/v8
-RUN gclient sync
 
-# Build d8 for arm64
-RUN gn gen out/release --args='\
-  is_debug=false \
-  target_cpu="arm64" \
-  v8_enable_i18n_support=true \
-  v8_use_external_startup_data=true \
-'
-RUN ninja -C out/release d8
+# Cache gclient / git downloads
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/root/.config \
+    --mount=type=cache,target=/root/.gitcache \
+    gclient sync
+
+# Sysroot for cross-compiling to arm64
+RUN python3 build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+
+# GN gen (share out/ cache)
+RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
+    gn gen out/release_arm64 --args='\
+      is_debug=false \
+      target_cpu="arm64" \
+      v8_enable_i18n_support=false \
+      v8_use_external_startup_data=true \
+    '
+
+# Build d8 (same out/ cache)
+RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
+    ninja -C out/release_arm64 d8
+
+# Export artifacts to a real layer (no cache mount here)
+RUN set -eux; \
+    mkdir -p /artifacts; \
+    cp -v out/release_arm64/d8 /artifacts/; \
+    cp -v out/release_arm64/snapshot_blob.bin /artifacts/
 
 ########################
-# Runtime
+# Runtime (final image)
 ########################
-FROM debian:bookworm-slim AS runtime
+FROM --platform=$TARGETPLATFORM debian:bookworm-slim AS runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -47,11 +64,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /opt/v8
 
-COPY --from=builder /root/v8/out/release/d8 /opt/v8/d8
-COPY --from=builder /root/v8/out/release/icudtl.dat /opt/v8/icudtl.dat
-COPY --from=builder /root/v8/out/release/snapshot_blob.bin /opt/v8/snapshot_blob.bin
-COPY --from=builder /root/v8/out/release/natives_blob.bin /opt/v8/natives_blob.bin
-
-ENV ICU_DATA=/opt/v8/icudtl.dat
+COPY --from=builder /artifacts/d8 /opt/v8/d8
+COPY --from=builder /artifacts/snapshot_blob.bin /opt/v8/snapshot_blob.bin
 
 ENTRYPOINT ["/opt/v8/d8"]
