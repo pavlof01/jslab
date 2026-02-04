@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 ########################
-# Builder (force amd64 so V8 prebuilt toolchain runs)
+# Builder (amd64)
 ########################
 FROM --platform=linux/amd64 ubuntu:24.04 AS builder
 
@@ -29,27 +29,25 @@ RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/root/.gitcache \
     gclient sync
 
-# Sysroot for cross-compiling to arm64
-RUN python3 build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
-
 # GN gen (share out/ cache)
-RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
-    gn gen out/release_arm64 --args='\
+RUN --mount=type=cache,id=v8-out-amd64,target=/root/v8/out \
+    gn gen out/release_amd64 --args='\
       is_debug=false \
-      target_cpu="arm64" \
+      target_cpu="x64" \
       v8_enable_i18n_support=false \
       v8_use_external_startup_data=true \
     '
 
 # Build d8 (same out/ cache)
-RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
-    ninja -C out/release_arm64 d8
+RUN --mount=type=cache,id=v8-out-amd64,target=/root/v8/out \
+    ninja -C out/release_amd64 -j2 d8
 
-# Export artifacts to a real layer (no cache mount here)
-RUN set -eux; \
+# Export artifacts to a real layer
+RUN --mount=type=cache,id=v8-out-amd64,target=/root/v8/out \
+    set -eux; \
     mkdir -p /artifacts; \
-    cp -v out/release_arm64/d8 /artifacts/; \
-    cp -v out/release_arm64/snapshot_blob.bin /artifacts/
+    cp -v out/release_amd64/d8 /artifacts/; \
+    cp -v out/release_amd64/snapshot_blob.bin /artifacts/
 
 ########################
 # Runtime (final image)
