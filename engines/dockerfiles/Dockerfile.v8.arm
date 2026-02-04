@@ -1,0 +1,71 @@
+# syntax=docker/dockerfile:1.7
+
+########################
+# Builder (force amd64 so V8 prebuilt toolchain runs)
+########################
+FROM --platform=linux/amd64 ubuntu:24.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl ca-certificates python3 \
+    build-essential \
+    ninja-build pkg-config \
+    xz-utils file \
+  && rm -rf /var/lib/apt/lists/*
+
+# depot_tools
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /depot_tools
+ENV PATH="/depot_tools:${PATH}"
+
+WORKDIR /root
+RUN fetch v8
+
+WORKDIR /root/v8
+
+# Cache gclient / git downloads
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/root/.config \
+    --mount=type=cache,target=/root/.gitcache \
+    gclient sync
+
+# Sysroot for cross-compiling to arm64
+RUN python3 build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+
+# GN gen (share out/ cache)
+RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
+    gn gen out/release_arm64 --args='\
+      is_debug=false \
+      target_cpu="arm64" \
+      v8_enable_i18n_support=false \
+      v8_use_external_startup_data=true \
+    '
+
+# Build d8 (same out/ cache)
+RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
+    ninja -C out/release_arm64 d8
+
+# Export artifacts to a real layer (no cache mount here)
+RUN --mount=type=cache,id=v8-out-arm64,target=/root/v8/out \
+    set -eux; \
+    mkdir -p /artifacts; \
+    cp -v out/release_arm64/d8 /artifacts/; \
+    cp -v out/release_arm64/snapshot_blob.bin /artifacts/
+
+########################
+# Runtime (final image)
+########################
+FROM --platform=$TARGETPLATFORM debian:bookworm-slim AS runtime
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates bash libatomic1 \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/v8
+
+COPY --from=builder /artifacts/d8 /opt/v8/d8
+COPY --from=builder /artifacts/snapshot_blob.bin /opt/v8/snapshot_blob.bin
+
+ENTRYPOINT ["/opt/v8/d8"]
