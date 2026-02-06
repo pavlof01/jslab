@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
-import type { BundledLanguage } from "shiki/bundle/web";
-import type { Highlighter, TokensResult } from "shiki";
-import { createHighlighter } from "shiki";
+import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
+import type { TokensResult } from "shiki";
 import { Box } from "@chakra-ui/react";
 
 import v8bc from "./v8-bytecode.tmLanguage.json";
@@ -28,6 +27,7 @@ let highlighterPromise: Promise<Highlighter> | null = null;
 async function getHighlighter() {
   if (!highlighterPromise) {
     highlighterPromise = (async () => {
+      const { createHighlighter } = await import("shiki/bundle/web");
       const highlighter = await createHighlighter({
         langs: [],
         themes: [THEME],
