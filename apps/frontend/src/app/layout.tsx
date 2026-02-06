@@ -1,17 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
-import { Provider } from "../components/ui/provider";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Providers } from "./providers";
 
 export const viewport: Viewport = {
   themeColor: "#111827",
@@ -87,8 +78,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Provider>{children}</Provider>
+      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
