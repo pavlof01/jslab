@@ -1,9 +1,11 @@
 "use client";
 
-import Editor from "@monaco-editor/react";
-import { Box } from "@chakra-ui/react";
+import dynamic from "next/dynamic";
+import { Box, Skeleton } from "@chakra-ui/react";
 import { useColorModeValue } from "../ui/color-mode";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 const v8NativeIntrinsics = [
   {
@@ -53,6 +55,8 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   const monacoRef = useRef<any>(null);
   const decorationsRef = useRef<string[]>([]);
   const completionRef = useRef<any>(null);
+  const [isEditorReady, setIsEditorReady] = useState(false);
+  const borderColor = useColorModeValue("#e2e8f0", "#334155");
 
   useEffect(() => () => completionRef.current?.dispose?.(), []);
 
@@ -83,6 +87,7 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   const onMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+    setIsEditorReady(true);
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: false,
       noSyntaxValidation: false,
@@ -119,8 +124,17 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   }, []);
 
   return (
-    <Box flex="1" minH={0} borderTop="1px solid" borderColor={useColorModeValue("#e2e8f0", "#334155")}>
-      <Editor
+    <Box
+      flex="1"
+      minH={0}
+      borderTop="1px solid"
+      borderColor={borderColor}
+      position="relative"
+    >
+      {!isEditorReady && (
+        <Skeleton position="absolute" inset={0} borderRadius="md" pointerEvents="none" />
+      )}
+      <MonacoEditor
         height="100%"
         defaultLanguage="javascript"
         value={code}
