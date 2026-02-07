@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${JSLAB_BASE_URL:-https://jslab.cc}"
+BASE_URL="${JSLAB_BASE_URL:-https://jslab.su}"
 CURL_FLAGS="${CURL_FLAGS:-}"
 
 BASE_URL="${BASE_URL%/}"
