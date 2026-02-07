@@ -187,7 +187,7 @@ curl -X POST https://jslab.local/api/run \
 ### Smoke test (bytecode via API)
 
 ```bash
-curl -sS https://jslab.cc/api/run \
+curl -sS https://jslab.su/api/run \
   -H "content-type: application/json" \
   -d '{"engine":"v8","task":"bytecode","sourceText":"1+2"}'
 ```

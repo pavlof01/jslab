@@ -5,7 +5,7 @@ export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: "https://jslab.cc/",
+      url: "https://jslab.su/",
       changeFrequency: "weekly",
       priority: 1,
     },
