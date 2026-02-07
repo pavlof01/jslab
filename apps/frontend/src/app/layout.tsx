@@ -38,15 +38,15 @@ export const metadata: Metadata = {
   authors: { name: "Pavlov Alexey", url: "https://github.com/pavlof01" },
   creator: "Pavlov Alexey",
   publisher: "Pavlov Alexey",
-  metadataBase: new URL("https://jslab.cc"),
+  metadataBase: new URL("https://jslab.su"),
   alternates: {
-    canonical: "https://jslab.cc",
+    canonical: "https://jslab.su",
   },
   openGraph: {
     title: "JSLab — Explore JS Engines",
     description:
       "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
-    url: "https://jslab.cc",
+    url: "https://jslab.su",
     siteName: "JSLab",
     type: "website",
     locale: "en_US",
