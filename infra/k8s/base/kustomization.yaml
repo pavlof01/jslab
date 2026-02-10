@@ -4,7 +4,6 @@ namespace: jslab
 resources:
   - namespace.yaml
   - api-configmap.yaml
-  - tls-secret.example.yaml
   - redis.yaml
   - api-deployment.yaml
   - engine-v8.yaml
