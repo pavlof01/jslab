@@ -1,3 +1,12 @@
+# jslab-traefik-cloudflare.yaml
+#
+# Production-ready setup (Cloudflare in front, Traefik at origin):
+# - HTTPS redirect handled by Cloudflare (no redirect middleware here)
+# - HSTS handled by Cloudflare (do NOT set Strict-Transport-Security here unless you fully control it)
+# - Traefik does routing + basic security headers
+# - Two ingresses with explicit priorities so `/api` is never shadowed by `/`
+
+---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -6,21 +15,11 @@ metadata:
 spec:
   headers:
     customResponseHeaders:
-      Strict-Transport-Security: "max-age=63072000; includeSubDomains; preload"
       X-Frame-Options: "DENY"
       X-Content-Type-Options: "nosniff"
       Referrer-Policy: "no-referrer"
       Permissions-Policy: "geolocation=(), microphone=(), camera=()"
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: jslab-https-redirect
-  namespace: jslab
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -28,16 +27,16 @@ metadata:
   name: jslab-api
   namespace: jslab
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-https-redirect@kubernetescrd,jslab-jslab-security-headers@kubernetescrd
-    traefik.ingress.kubernetes.io/router.priority: "100"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.priority: "1000"
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
         - jslab.su
         - www.jslab.su
-      secretName: jslab-tls
+      secretName: cloudflare-origin-tls
   rules:
     - host: jslab.su
       http:
@@ -59,6 +58,7 @@ spec:
                 name: api
                 port:
                   number: 8080
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -66,16 +66,16 @@ metadata:
   name: jslab-frontend
   namespace: jslab
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-https-redirect@kubernetescrd,jslab-jslab-security-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.priority: "10"
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
         - jslab.su
         - www.jslab.su
-      secretName: jslab-tls
+      secretName: cloudflare-origin-tls
   rules:
     - host: jslab.su
       http:
