@@ -6,6 +6,9 @@ import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
 import { Box } from "@chakra-ui/react";
 
+import hermesbc from "./hermes-bytecode.tmLanguage.json";
+import jscbc from "./jsc-bytecode.tmLanguage.json";
+import smbc from "./spidermonkey-bytecode.tmLanguage.json";
 import v8bc from "./v8-bytecode.tmLanguage.json";
 import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
 import { EngineKey } from "@/lib/types";
@@ -13,14 +16,14 @@ import CodeDisplay from "./components/Code";
 import { compareOutputs } from "@/utils/diff-bytecode";
 import CopyButton from "./components/CopyButton";
 
-type CustomLanguages = "v8bc";
+type CustomLanguages = "v8bc" | "jscbc" | "smbc" | "hermesbc";
 const THEME = "ayu-dark";
 
 const langHighlighterByEngineKey: Record<EngineKey, CustomLanguages> = {
   [EngineKey.v8]: "v8bc",
-  [EngineKey.jsc]: "v8bc",
-  [EngineKey.sm]: "v8bc",
-  [EngineKey.hermes]: "v8bc",
+  [EngineKey.jsc]: "jscbc",
+  [EngineKey.sm]: "smbc",
+  [EngineKey.hermes]: "hermesbc",
 };
 
 let highlighterPromise: Promise<Highlighter> | null = null;
@@ -32,7 +35,12 @@ async function getHighlighter() {
         langs: [],
         themes: [THEME],
       });
-      await highlighter.loadLanguage(v8bc);
+      await Promise.all([
+        highlighter.loadLanguage(v8bc),
+        highlighter.loadLanguage(jscbc),
+        highlighter.loadLanguage(smbc),
+        highlighter.loadLanguage(hermesbc),
+      ]);
       return highlighter;
     })();
   }
@@ -43,6 +51,9 @@ const normalizeForDiff = (line: string) =>
   line
     .replace(/\b0x[0-9a-fA-F]+\b/g, "0x____")
     .replace(/(@\s*)\d+/g, "$1<OFF>")
+    .replace(/\[\s*\d+\s*\]/g, "[<OFF>]")
+    .replace(/^(\s*)\d{5}:(?=\s)/, "$1<ADDR>:")
+    .replace(/^(\s*)\d+:(?=\s+[A-Za-z_])/, "$1<OFF>:")
     .replace(/\s+/g, " ");
 
 export async function highlight(code: string, lang: BundledLanguage | CustomLanguages, prevCode?: string) {
@@ -63,6 +74,7 @@ export async function highlight(code: string, lang: BundledLanguage | CustomLang
 }
 
 interface Props {
+  engineKey: EngineKey;
   out?: string;
   prev?: string;
   showDiff?: boolean;
@@ -71,6 +83,7 @@ interface Props {
 }
 
 export function HighlightedCode({
+  engineKey,
   out = "",
   prev = "",
   isLoading = false,
@@ -80,18 +93,28 @@ export function HighlightedCode({
   const [tokens, setTokens] = useState<TokensResult>();
 
   useEffect(() => {
-    if (isLoading || !out) return;
-    void highlight(out, "v8bc", showDiff ? prev : "").then((node) => {
-      setTokens(node);
+    if (isLoading || !out) {
+      setTokens(undefined);
+      return;
+    }
+
+    const lang = langHighlighterByEngineKey[engineKey];
+    let cancelled = false;
+    void highlight(out, lang, showDiff ? prev : "").then((node) => {
+      if (!cancelled) setTokens(node);
     });
-  }, [out, prev, showDiff, isLoading]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [engineKey, out, prev, showDiff, isLoading]);
 
   if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
 
   return (
     <Box>
       <CopyButton out={out} />
-      <CodeDisplay {...tokens} />
+      <CodeDisplay {...tokens} engineKey={engineKey} />
     </Box>
   );
 }
