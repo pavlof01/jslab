@@ -1,0 +1,64 @@
+{
+  "name": "hermesbc",
+  "displayName": "Hermes Bytecode",
+  "scopeName": "source.hermesbc",
+  "fileTypes": ["hermesbc", "hbcdis", "hbcdump"],
+  "patterns": [
+    { "include": "#prompt" },
+    { "include": "#function-header" },
+    { "include": "#label" },
+    { "include": "#section-head" },
+    { "include": "#instruction-line" }
+  ],
+  "repository": {
+    "prompt": {
+      "patterns": [{ "name": "comment.line.prompt.hermesbc", "match": "^hbcdump>.*$" }]
+    },
+    "function-header": {
+      "patterns": [{ "name": "entity.name.section.function.hermesbc", "match": "^(Function\\b.*)$" }]
+    },
+    "label": {
+      "patterns": [{ "name": "entity.name.tag.label.hermesbc", "match": "^\\s*([A-Za-z_.$][A-Za-z0-9_.$]*):\\s*$" }]
+    },
+    "section-head": {
+      "patterns": [{ "name": "markup.heading.section.hermesbc", "match": "^[A-Za-z][A-Za-z0-9 \\-_/()]*:\\s*$" }]
+    },
+    "instruction-line": {
+      "patterns": [
+        {
+          "name": "meta.instruction.line.hermesbc",
+          "begin": "^\\s*(0x[0-9A-Fa-f]+|\\d+)(?:\\s*:\\s*|\\s+)([A-Za-z_][A-Za-z0-9_]*)",
+          "beginCaptures": {
+            "1": { "name": "constant.numeric.offset.hermesbc" },
+            "2": { "name": "keyword.operator.opcode.hermesbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
+        }
+      ]
+    },
+    "operands": {
+      "patterns": [
+        { "name": "variable.language.register.hermesbc", "match": "\\br\\d+\\b" },
+        { "name": "entity.name.type.hermesbc", "match": "<[^>]+>" },
+        { "name": "constant.other.pool-index.hermesbc", "match": "\\[[-+]?\\d+\\]" },
+        { "name": "string.quoted.double.hermesbc", "match": "\"[^\"]*\"" },
+        { "name": "string.quoted.single.hermesbc", "match": "'[^']*'" },
+        { "name": "punctuation.separator.hermesbc", "match": "," }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        { "name": "constant.numeric.hex.hermesbc", "match": "\\b0x[0-9A-Fa-f]+\\b" },
+        { "name": "constant.numeric.dec.hermesbc", "match": "(?<![A-Za-z_])[-+]?\\b\\d+\\b" }
+      ]
+    },
+    "inline-comment": {
+      "patterns": [
+        { "name": "comment.line.semicolon.hermesbc", "match": "\\s+;.*$" },
+        { "name": "comment.line.number-sign.hermesbc", "match": "\\s+#.*$" },
+        { "name": "comment.line.double-slash.hermesbc", "match": "\\s+//.*$" }
+      ]
+    }
+  }
+}

@@ -59,12 +59,19 @@ export function OutputsPanel({
         <Tabs.Content value={activeKey} display="flex" flex="1" minH={0}>
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
             <HighlightedCode
+              engineKey={activeKey}
               out={stdout}
               prev={stdPrevOut}
               showDiff={showDiff}
               isLoading={status === RunStatus.running}
             />
-            <HighlightedCode out={stderr} prev={stdPrevErr} showDiff={showDiff} EmptyCodeBlockState={() => <></>} />
+            <HighlightedCode
+              engineKey={activeKey}
+              out={stderr}
+              prev={stdPrevErr}
+              showDiff={showDiff}
+              EmptyCodeBlockState={() => <></>}
+            />
           </Stack>
         </Tabs.Content>
       </Stack>

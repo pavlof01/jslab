@@ -2,13 +2,17 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Button, Popover, Portal, Text } from "@chakra-ui/react";
 import type { CSSProperties } from "react";
 import type { ThemedToken } from "shiki";
-import { getOpcodeInfo } from "../v8-opcodes";
+import { getTokenInfo as getJscTokenInfo } from "../jsc-opcodes";
+import { getOpcodeInfo as getV8OpcodeInfo } from "../v8-opcodes";
+import type { EngineKey } from "@/lib/types";
 
 type Props = {
   token: ThemedToken;
+  nextToken?: ThemedToken;
+  engineKey: EngineKey;
 };
 
-const TokenSpan: React.FC<Props> = ({ token }) => {
+const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey }) => {
   const style: CSSProperties = {
     color: token.color ?? "inherit",
     whiteSpace: "pre",
@@ -21,7 +25,12 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
   }
 
   const opcodeKey = token.content?.trim();
-  const opcodeDescription = opcodeKey ? getOpcodeInfo(opcodeKey) : undefined;
+  const opcodeDescription = (() => {
+    if (!opcodeKey) return undefined;
+    if (engineKey === "v8") return getV8OpcodeInfo(opcodeKey);
+    if (engineKey === "jsc") return getJscTokenInfo(opcodeKey, { nextToken: nextToken?.content ?? null });
+    return undefined;
+  })();
 
   const content = (
     <Text as="span" fontSize={14} style={style}>
@@ -52,14 +61,6 @@ const TokenSpan: React.FC<Props> = ({ token }) => {
         </Popover.Positioner>
       </Portal>
     </Popover.Root>
-  );
-
-  return (
-    <Tooltip content={opcodeDescription} showArrow>
-      <Text as="span" cursor="pointer">
-        {content}
-      </Text>
-    </Tooltip>
   );
 };
 

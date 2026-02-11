@@ -6,32 +6,60 @@
   "fileTypes": ["jscbc", "jscdis"],
   "patterns": [
     { "include": "#header" },
+    { "include": "#section-head" },
     { "include": "#block-header" },
     { "include": "#predecessors-successors" },
-    { "include": "#instruction-line" }
+    { "include": "#instruction-line" },
+    { "include": "#identifier-entry" },
+    { "include": "#constant-entry" },
+    { "include": "#exception-handler-entry" },
+    { "include": "#switch-table-entry" }
   ],
   "repository": {
     "header": {
       "patterns": [
         {
-          "name": "entity.name.section.header.jscbc",
-          "match": "^<global>#[^:]+:.*$"
+          "name": "meta.header.jscbc",
+          "begin": "^(<global>|[A-Za-z_.$][A-Za-z0-9_.$]*)#([^:]+):",
+          "beginCaptures": {
+            "1": { "name": "entity.name.section.header.jscbc" },
+            "2": { "name": "constant.other.header.hash.jscbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#tokens" }]
+        }
+      ]
+    },
+    "section-head": {
+      "patterns": [
+        {
+          "name": "markup.heading.section.jscbc",
+          "match": "^(Identifiers|Constants|Exception Handlers|Switch Jump Tables):\\s*$"
         }
       ]
     },
     "block-header": {
       "patterns": [
         {
-          "name": "entity.name.tag.jscbc",
-          "match": "^bb#\\d+"
+          "name": "entity.name.tag.bb.jscbc",
+          "match": "^(bb#)(\\d+)\\s*$",
+          "captures": {
+            "1": { "name": "entity.name.tag.bb.jscbc" },
+            "2": { "name": "constant.numeric.dec.bb.jscbc" }
+          }
         }
       ]
     },
     "predecessors-successors": {
       "patterns": [
         {
-          "name": "comment.line.jscbc",
-          "match": "^(Predecessors|Successors):\\s*\\[.*\\]"
+          "name": "meta.block.edges.jscbc",
+          "begin": "^(Predecessors|Successors):\\s*\\[",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.edge.jscbc" }
+          },
+          "end": "\\]\\s*$",
+          "patterns": [{ "include": "#tokens" }]
         }
       ]
     },
@@ -39,47 +67,144 @@
       "patterns": [
         {
           "name": "meta.instruction.line.jscbc",
-          "begin": "^\\[\\s*(\\d+)\\]\\s+([a-zA-Z0-9_]+)",
+          "begin": "^\\[\\s*(\\d+)\\]\\s+([*]*[A-Za-z_][A-Za-z0-9_]*)",
           "beginCaptures": {
             "1": { "name": "constant.numeric.dec.offset.jscbc" },
             "2": { "name": "keyword.operator.opcode.jscbc" }
           },
           "end": "$",
-          "patterns": [
-            { "include": "#operands" }
-          ]
+          "patterns": [{ "include": "#tokens" }]
         }
       ]
     },
-    "operands": {
+    "identifier-entry": {
+      "patterns": [
+        {
+          "name": "meta.identifiers.entry.jscbc",
+          "begin": "^\\s*(id\\d+)\\s*=\\s*",
+          "beginCaptures": {
+            "1": { "name": "constant.other.identifier-index.jscbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#tokens" }]
+        }
+      ]
+    },
+    "constant-entry": {
+      "patterns": [
+        {
+          "name": "meta.constants.entry.jscbc",
+          "begin": "^\\s*(k\\d+)\\s*=\\s*",
+          "beginCaptures": {
+            "1": { "name": "constant.other.constant-index.jscbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#tokens" }]
+        }
+      ]
+    },
+    "exception-handler-entry": {
+      "patterns": [
+        {
+          "name": "meta.exception.handler.jscbc",
+          "begin": "^\\s*(\\d+):\\s*(\\{)",
+          "beginCaptures": {
+            "1": { "name": "constant.numeric.dec.handler-index.jscbc" },
+            "2": { "name": "punctuation.definition.block.begin.jscbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#tokens" }]
+        }
+      ]
+    },
+    "switch-table-entry": {
+      "patterns": [
+        {
+          "name": "meta.switch.table.entry.jscbc",
+          "match": "^\\s*(\\d+)\\s*(=)\\s*(\\{)\\s*$",
+          "captures": {
+            "1": { "name": "constant.numeric.dec.jscbc" },
+            "2": { "name": "punctuation.separator.jscbc" },
+            "3": { "name": "punctuation.definition.block.begin.jscbc" }
+          }
+        },
+        {
+          "name": "meta.switch.table.row.jscbc",
+          "match": "^\\s*(default|\\d+)\\s*(=>)\\s*(\\d+)\\s*$",
+          "captures": {
+            "1": { "name": "constant.numeric.dec.jscbc" },
+            "2": { "name": "keyword.operator.arrow.jscbc" },
+            "3": { "name": "constant.numeric.dec.jscbc" }
+          }
+        },
+        { "name": "punctuation.definition.block.end.jscbc", "match": "^\\s*\\}\\s*$" }
+      ]
+    },
+    "tokens": {
       "patterns": [
         {
           "name": "variable.parameter.jscbc",
-          "match": "\\b(dst|src|scope|var|value|base|property|getter|setter|callee|lhs|rhs|condition|message|errorType|operand|functionDecl|resolveType|localScopeDepth|getPutInfo|symbolTableOrScopeDepth|offset|inlineCapacity|attributes):"
+          "match": "\\b(?!Int32|String|Cell|Object|OperandTypes)([A-Za-z_][A-Za-z0-9_]*)\\s*:"
         },
         {
           "name": "variable.language.register.jscbc",
-          "match": "\\bloc\\d+\\b"
+          "match": "\\b(?:loc\\d+|arg\\d+|this|callee)\\b"
         },
         {
-          "name": "constant.numeric.dec.jscbc",
-          "match": "\\b\\d+\\b"
+          "name": "constant.other.index.jscbc",
+          "match": "\\b(?:const|id|k)\\d+\\b"
         },
         {
-          "name": "string.unquoted.jscbc",
-          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+          "name": "constant.other.bbref.jscbc",
+          "match": "#\\d+"
+        },
+        {
+          "name": "constant.language.jscbc",
+          "match": "\\b(?:Undefined|Null|True|False)\\b"
+        },
+        {
+          "name": "entity.name.type.jscbc",
+          "match": "\\b(?:Int32|String|Object|Cell|OperandTypes)\\b"
         },
         {
           "name": "entity.name.type.jscbc",
           "match": "<[^>]+>"
         },
         {
-          "name": "string.quoted.jscbc",
-          "match": "\\(.*?\\)"
+          "name": "constant.numeric.hex.jscbc",
+          "match": "\\b0x[0-9A-Fa-f]+\\b"
+        },
+        {
+          "name": "constant.numeric.dec.jscbc",
+          "match": "(?<![A-Za-z_])[-+]?\\b\\d+\\b"
+        },
+        {
+          "name": "string.quoted.double.jscbc",
+          "match": "\"[^\"]*\""
+        },
+        {
+          "name": "string.quoted.single.jscbc",
+          "match": "'[^']*'"
+        },
+        {
+          "name": "punctuation.definition.group.jscbc",
+          "match": "[()\\[\\]{}]"
         },
         {
           "name": "punctuation.separator.jscbc",
           "match": ","
+        },
+        {
+          "name": "keyword.operator.arrow.jscbc",
+          "match": "=>|->"
+        },
+        {
+          "name": "punctuation.separator.jscbc",
+          "match": "[=:|]"
+        },
+        {
+          "name": "string.unquoted.jscbc",
+          "match": "\\b[A-Za-z_.$][A-Za-z0-9_.$]*\\b"
         }
       ]
     }
