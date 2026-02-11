@@ -2,7 +2,7 @@ name: Reusable - Deploy service to VPS (SSH)
 
 # Required secrets (GitHub Actions):
 # - DOCKERHUB_USERNAME / DOCKERHUB_TOKEN: push images to Docker Hub
-# - SSH_HOST / SSH_USER / SSH_KEY: SSH access to the VPS (SSH_KEY is a private key; raw multi-line is recommended)
+# - SSH_HOST / SSH_USER / SSH_KEY: SSH access to the VPS (SSH_KEY can be raw multi-line or base64-encoded)
 # - (optional) SSH_PORT: SSH port (defaults to 22)
 # - (optional) SSH_FINGERPRINT: host key fingerprint (recommended)
 #
@@ -141,8 +141,28 @@ jobs:
           set -euo pipefail
 
           mkdir -p ~/.ssh
-          printf '%s' "${SSH_KEY}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
+          key_path="$HOME/.ssh/id_deploy"
+          raw_tmp="$(mktemp)"
+          b64_tmp="$(mktemp)"
+          trap 'rm -f "${raw_tmp}" "${b64_tmp}"' EXIT
+
+          # Support both:
+          # - raw multi-line private keys (recommended)
+          # - base64-encoded private keys (common when storing secrets)
+          printf '%s\n' "${SSH_KEY}" | tr -d '\r' > "${raw_tmp}"
+          if ssh-keygen -y -f "${raw_tmp}" </dev/null >/dev/null 2>&1; then
+            mv "${raw_tmp}" "${key_path}"
+          else
+            if printf '%s' "${SSH_KEY}" | base64 --decode 2>/dev/null | tr -d '\r' > "${b64_tmp}" \
+              && ssh-keygen -y -f "${b64_tmp}" </dev/null >/dev/null 2>&1; then
+              mv "${b64_tmp}" "${key_path}"
+            else
+              echo "SSH_KEY secret is not a valid private key (raw PEM/OpenSSH or base64-encoded)." >&2
+              echo "Tip: ensure the key is unencrypted and pasted without extra quotes." >&2
+              exit 1
+            fi
+          fi
+          chmod 600 "${key_path}"
 
           hostkeys="$(mktemp)"
           ssh-keyscan -p "${SSH_PORT}" -H "${SSH_HOST}" > "${hostkeys}" 2>/dev/null
@@ -169,6 +189,7 @@ jobs:
           set -euo pipefail
 
           ssh -i ~/.ssh/id_deploy \
+            -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             -p "${SSH_PORT}" \
