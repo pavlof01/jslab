@@ -5,17 +5,36 @@
   "fileTypes": ["hermesbc", "hbcdis", "hbcdump"],
   "patterns": [
     { "include": "#prompt" },
+    { "include": "#comment-line" },
     { "include": "#function-header" },
     { "include": "#label" },
     { "include": "#section-head" },
+    { "include": "#string-table-entry" },
+    { "include": "#exception-handler-entry" },
+    { "include": "#buffer-entry" },
+    { "include": "#key-value" },
     { "include": "#instruction-line" }
   ],
   "repository": {
     "prompt": {
       "patterns": [{ "name": "comment.line.prompt.hermesbc", "match": "^hbcdump>.*$" }]
     },
+    "comment-line": {
+      "patterns": [{ "name": "comment.line.semicolon.hermesbc", "match": "^\\s*;.*$" }]
+    },
     "function-header": {
-      "patterns": [{ "name": "entity.name.section.function.hermesbc", "match": "^(Function\\b.*)$" }]
+      "patterns": [
+        {
+          "name": "meta.function.header.hermesbc",
+          "match": "^(Function|NCFunction|Constructor)<([^>]+)>(\\d+)(.*)$",
+          "captures": {
+            "1": { "name": "storage.type.function-kind.hermesbc" },
+            "2": { "name": "entity.name.function.hermesbc" },
+            "3": { "name": "constant.numeric.dec.function-index.hermesbc" },
+            "4": { "name": "meta.function.signature.hermesbc" }
+          }
+        }
+      ]
     },
     "label": {
       "patterns": [{ "name": "entity.name.tag.label.hermesbc", "match": "^\\s*([A-Za-z_.$][A-Za-z0-9_.$]*):\\s*$" }]
@@ -23,14 +42,72 @@
     "section-head": {
       "patterns": [{ "name": "markup.heading.section.hermesbc", "match": "^[A-Za-z][A-Za-z0-9 \\-_/()]*:\\s*$" }]
     },
+    "string-table-entry": {
+      "patterns": [
+        {
+          "name": "meta.stringtable.entry.hermesbc",
+          "begin": "^\\s*([si]\\d+)(\\[[^\\]]*\\])(?:\\s+(#[0-9A-Fa-f]+))?\\s*:\\s*",
+          "beginCaptures": {
+            "1": { "name": "constant.other.string-index.hermesbc" },
+            "2": { "name": "comment.line.meta.hermesbc" },
+            "3": { "name": "constant.numeric.hex.hermesbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
+        }
+      ]
+    },
+    "exception-handler-entry": {
+      "patterns": [
+        {
+          "name": "meta.exception.handler.hermesbc",
+          "begin": "^\\s*(\\d+)\\s*:\\s*",
+          "beginCaptures": {
+            "1": { "name": "constant.numeric.dec.handler-index.hermesbc" }
+          },
+          "end": "$",
+          "patterns": [
+            { "name": "variable.parameter.key.hermesbc", "match": "\\b(?:start|end|target)\\b" },
+            { "include": "#operands" },
+            { "include": "#numbers" },
+            { "include": "#inline-comment" }
+          ]
+        }
+      ]
+    },
+    "buffer-entry": {
+      "patterns": [
+        {
+          "name": "meta.buffer.entry.hermesbc",
+          "match": "^\\s*\\[\\s*([A-Za-z][A-Za-z0-9_]*)\\s+([-+]?\\d+)\\s*\\]\\s*$",
+          "captures": {
+            "1": { "name": "entity.name.type.hermesbc" },
+            "2": { "name": "constant.numeric.dec.hermesbc" }
+          }
+        },
+        { "name": "constant.language.hermesbc", "match": "^\\s*(?:null|true|false|undefined)\\s*$" }
+      ]
+    },
+    "key-value": {
+      "patterns": [
+        {
+          "name": "meta.keyvalue.hermesbc",
+          "begin": "^\\s*([A-Za-z][A-Za-z0-9 \\-_()/]+)\\s*:\\s*",
+          "beginCaptures": {
+            "1": { "name": "variable.parameter.key.hermesbc" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
+        }
+      ]
+    },
     "instruction-line": {
       "patterns": [
         {
           "name": "meta.instruction.line.hermesbc",
-          "begin": "^\\s*(0x[0-9A-Fa-f]+|\\d+)(?:\\s*:\\s*|\\s+)([A-Za-z_][A-Za-z0-9_]*)",
+          "begin": "^\\s+([A-Za-z][A-Za-z0-9_]*)\\b",
           "beginCaptures": {
-            "1": { "name": "constant.numeric.offset.hermesbc" },
-            "2": { "name": "keyword.operator.opcode.hermesbc" }
+            "1": { "name": "keyword.operator.opcode.hermesbc" }
           },
           "end": "$",
           "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
@@ -40,10 +117,17 @@
     "operands": {
       "patterns": [
         { "name": "variable.language.register.hermesbc", "match": "\\br\\d+\\b" },
+        { "name": "entity.name.tag.label.hermesbc", "match": "\\bL\\d+\\b" },
+        { "name": "entity.name.function.ref.hermesbc", "match": "\\b(?:Function|NCFunction|Constructor)<[^>]+>\\d+\\b" },
+        { "name": "constant.other.string-index.hermesbc", "match": "\\b[si]\\d+\\b" },
+        { "name": "constant.language.hermesbc", "match": "\\b(?:null|true|false|undefined)\\b" },
         { "name": "entity.name.type.hermesbc", "match": "<[^>]+>" },
         { "name": "constant.other.pool-index.hermesbc", "match": "\\[[-+]?\\d+\\]" },
+        { "name": "constant.numeric.hex.hermesbc", "match": "#[0-9A-Fa-f]+" },
         { "name": "string.quoted.double.hermesbc", "match": "\"[^\"]*\"" },
         { "name": "string.quoted.single.hermesbc", "match": "'[^']*'" },
+        { "name": "keyword.operator.arrow.hermesbc", "match": "->" },
+        { "name": "punctuation.separator.hermesbc", "match": "=" },
         { "name": "punctuation.separator.hermesbc", "match": "," }
       ]
     },
