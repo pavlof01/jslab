@@ -5,28 +5,34 @@
   "fileTypes": ["smbc", "smdis"],
   "patterns": [
     { "include": "#header" },
+    { "include": "#comment-line" },
     { "include": "#column-header" },
     { "include": "#label" },
+    { "include": "#section-head" },
     { "include": "#instruction-line" }
   ],
   "repository": {
     "header": {
       "name": "meta.header.smbc",
-      "begin": "^(SpiderMonkey) (\\{)",
+      "begin": "\\A\\s*(?:(SpiderMonkey)\\s*)?(\\{)\\s*$",
       "beginCaptures": {
         "1": { "name": "entity.name.type.smbc" },
         "2": { "name": "punctuation.definition.brace.begin.smbc" }
       },
-      "end": "^(\\})",
+      "end": "^\\s*(\\})\\s*$",
       "endCaptures": {
         "1": { "name": "punctuation.definition.brace.end.smbc" }
       },
       "patterns": [
         { "name": "string.quoted.double.json", "match": "\"[^\"]+\"" },
+        { "name": "constant.language.json", "match": "\\b(?:true|false|null)\\b" },
         { "name": "constant.numeric.json", "match": "\\b\\d+\\b" },
         { "name": "punctuation.separator.dictionary.key-value.json", "match": ":" },
         { "name": "punctuation.separator.array.json", "match": "," }
       ]
+    },
+    "comment-line": {
+      "patterns": [{ "name": "comment.line.number-sign.smbc", "match": "^\\s*#.*$" }]
     },
     "column-header": {
       "patterns": [
@@ -37,6 +43,14 @@
         {
           "name": "comment.line.smbc",
           "match": "^(-----\\s+----\\s+--)$"
+        },
+        {
+          "name": "markup.heading.column.smbc",
+          "match": "^\\s*ofs\\s+line\\s+column\\s+pc\\s+delta\\s+desc\\s+args\\s*$"
+        },
+        {
+          "name": "comment.line.smbc",
+          "match": "^\\s*----\\s+----\\s+------\\s+-----\\s+------\\s+----------------\\s+------\\s*$"
         }
       ]
     },
@@ -47,6 +61,9 @@
           "match": "^([A-Za-z0-9_]+):$"
         }
       ]
+    },
+    "section-head": {
+      "patterns": [{ "name": "markup.heading.section.smbc", "match": "^[A-Za-z][A-Za-z0-9 ]+:\\s*$" }]
     },
     "instruction-line": {
       "name": "meta.instruction.line.smbc",
@@ -68,6 +85,7 @@
     },
     "operands": {
       "patterns": [
+        { "name": "variable.parameter.smbc", "match": "\\b(?:hops|slot|ic|frame|env)\\b" },
         { "name": "constant.numeric.smbc", "match": "\\b\\d+\\b" },
         { "name": "string.quoted.double.smbc", "match": "\"[^\"]+\"" },
         { "name": "string.quoted.single.smbc", "match": "'[^']+'" },
