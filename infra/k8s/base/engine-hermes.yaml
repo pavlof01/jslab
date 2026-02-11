@@ -22,7 +22,6 @@ spec:
       containers:
         - name: engine-hermes
           image: pavlof01/jslab-engine-hermes:latest
-          imagePullPolicy: IfNotPresent
           env:
             - name: NODE_ENV
               value: production

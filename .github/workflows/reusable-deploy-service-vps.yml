@@ -76,7 +76,6 @@ env:
   IMAGE_NAME: ${{ inputs.image }}
   IMAGE_TAG: ${{ inputs.image_tag != '' && inputs.image_tag || github.sha }}
   DEPLOYMENT_NAME: ${{ inputs.deployment }}
-  CONTAINER_NAME: ${{ inputs.container }}
 
 jobs:
   build-and-deploy:
@@ -110,18 +109,69 @@ jobs:
           cache-from: type=gha,scope=${{ inputs.service }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service }}
 
-      - name: Deploy over SSH (kubectl set image)
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Setup kustomize
+        uses: imranismail/setup-kustomize@v2
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          key: ${{ secrets.SSH_KEY }}
-          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
-          script_stop: true
-          script: |
-            set -euo pipefail
+          kustomize-version: "5.5.0"
 
-            kubectl -n "${{ env.NAMESPACE }}" set image "deployment/${{ env.DEPLOYMENT_NAME }}" \
-              "${{ env.CONTAINER_NAME }}=${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-            kubectl -n "${{ env.NAMESPACE }}" rollout status "deployment/${{ env.DEPLOYMENT_NAME }}" --timeout=10m
+      - name: Render manifests (kustomize)
+        id: render
+        run: |
+          set -euo pipefail
+
+          K8S_DIR="${RUNNER_TEMP}/k8s-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${{ inputs.service }}"
+          MANIFEST="${RUNNER_TEMP}/manifest-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${{ inputs.service }}.yaml"
+
+          cp -R infra/k8s "${K8S_DIR}"
+          cd "${K8S_DIR}/prod/services/${{ inputs.service }}"
+
+          kustomize edit set image \
+            "pavlof01/${IMAGE_NAME}=${IMAGE_REPO}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+          kustomize build . --load-restrictor LoadRestrictionsNone > "${MANIFEST}"
+          echo "manifest=${MANIFEST}" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup SSH (known_hosts + key)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          printf '%s' "${SSH_KEY}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+
+          hostkeys="$(mktemp)"
+          ssh-keyscan -p "${SSH_PORT}" -H "${SSH_HOST}" > "${hostkeys}" 2>/dev/null
+
+          if [ -n "${SSH_FINGERPRINT:-}" ]; then
+            if ! ssh-keygen -lf "${hostkeys}" | grep -Fq "${SSH_FINGERPRINT}"; then
+              echo "SSH host key fingerprint mismatch for ${SSH_HOST}." >&2
+              echo "Expected: ${SSH_FINGERPRINT}" >&2
+              echo "Got:" >&2
+              ssh-keygen -lf "${hostkeys}" >&2 || true
+              exit 1
+            fi
+          fi
+
+          cat "${hostkeys}" >> ~/.ssh/known_hosts
+          rm -f "${hostkeys}"
+
+      - name: Deploy over SSH (kubectl apply)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+
+          ssh -i ~/.ssh/id_deploy \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "${SSH_PORT}" \
+            "${SSH_USER}@${SSH_HOST}" \
+            "kubectl apply -f - && kubectl -n \"${NAMESPACE}\" rollout status \"deployment/${DEPLOYMENT_NAME}\" --timeout=10m" \
+            < "${{ steps.render.outputs.manifest }}"

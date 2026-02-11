@@ -47,5 +47,60 @@ jobs:
             git clean -fd
 
             kubectl apply -f infra/k8s/base/namespace.yaml
-            kubectl kustomize infra/k8s/prod --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+
+            # Preserve already-deployed immutable tags when applying infra changes.
+            # Otherwise, applying `infra/k8s/prod` would reset images back to whatever
+            # tag is checked into git (e.g. `latest` placeholders).
+            NAMESPACE="jslab"
+
+            current_image() {
+              local deployment="$1"
+              kubectl -n "${NAMESPACE}" get deployment "${deployment}" \
+                -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true
+            }
+
+            api_image="$(current_image api)"
+            v8_image="$(current_image engine-v8)"
+            hermes_image="$(current_image engine-hermes)"
+            jsc_image="$(current_image engine-jsc)"
+            sm_image="$(current_image engine-spidermonkey)"
+            frontend_image="$(current_image frontend)"
+
+            api_image="${api_image:-pavlof01/jslab-api:latest}"
+            v8_image="${v8_image:-pavlof01/jslab-engine-v8:latest}"
+            hermes_image="${hermes_image:-pavlof01/jslab-engine-hermes:latest}"
+            jsc_image="${jsc_image:-pavlof01/jslab-engine-jsc:latest}"
+            sm_image="${sm_image:-pavlof01/jslab-engine-spidermonkey:latest}"
+            frontend_image="${frontend_image:-pavlof01/jslab-frontend:latest}"
+
+            overlay="$(mktemp -d)"
+            trap 'rm -rf "${overlay}"' EXIT
+
+          cat > "${overlay}/kustomization.yaml" <<EOF
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - $(pwd)/infra/k8s/prod
+          images:
+            - name: pavlof01/jslab-api
+              newName: ${api_image%:*}
+              newTag: ${api_image##*:}
+            - name: pavlof01/jslab-engine-v8
+              newName: ${v8_image%:*}
+              newTag: ${v8_image##*:}
+            - name: pavlof01/jslab-engine-hermes
+              newName: ${hermes_image%:*}
+              newTag: ${hermes_image##*:}
+            - name: pavlof01/jslab-engine-jsc
+              newName: ${jsc_image%:*}
+              newTag: ${jsc_image##*:}
+            - name: pavlof01/jslab-engine-spidermonkey
+              newName: ${sm_image%:*}
+              newTag: ${sm_image##*:}
+            - name: pavlof01/jslab-frontend
+              newName: ${frontend_image%:*}
+              newTag: ${frontend_image##*:}
+          EOF
+
+            kubectl kustomize "${overlay}" --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
           EOSSH
