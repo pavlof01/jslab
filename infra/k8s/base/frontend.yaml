@@ -22,7 +22,6 @@ spec:
       containers:
         - name: frontend
           image: pavlof01/jslab-frontend:latest
-          imagePullPolicy: Always
           env:
             - name: NODE_ENV
               value: production

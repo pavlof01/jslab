@@ -22,7 +22,6 @@ spec:
       containers:
         - name: engine-jsc
           image: pavlof01/jslab-engine-jsc:latest
-          imagePullPolicy: IfNotPresent
           env:
             - name: NODE_ENV
               value: production
