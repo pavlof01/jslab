@@ -27,16 +27,16 @@ COPY src ./src
 
 # Keep V8 layout identical to base image
 RUN mkdir -p /opt/v8
-COPY --from=v8-binary /opt/v8/d8 /opt/v8/d8
-COPY --from=v8-binary /opt/v8/snapshot_blob.bin /opt/v8/snapshot_blob.bin
+COPY --from=v8-binary /opt/v8/ /opt/v8/
 
 # Make it callable from PATH
 RUN ln -sf /opt/v8/d8 /usr/local/bin/d8
-RUN ln -sf /opt/v8/snapshot_blob.bin /usr/local/bin/snapshot_blob.bin
+RUN if [ -f /opt/v8/snapshot_blob.bin ]; then ln -sf /opt/v8/snapshot_blob.bin /usr/local/bin/snapshot_blob.bin; fi
 
 # Sanity checks (no 'file' package needed)
 RUN set -eux; \
-    ls -la /opt/v8/d8 /opt/v8/snapshot_blob.bin; \
+    ls -la /opt/v8/d8; \
+    [ ! -f /opt/v8/snapshot_blob.bin ] || ls -la /opt/v8/snapshot_blob.bin; \
     /opt/v8/d8 -e 'print("d8 smoke ok")' >/dev/null
 
 RUN chown -R 1000:1000 /app
@@ -67,17 +67,17 @@ ENV NODE_ENV=production
 RUN groupadd -r app && useradd -r -g app app
 
 RUN mkdir -p /opt/v8
-COPY --from=v8-binary /opt/v8/d8 /opt/v8/d8
-COPY --from=v8-binary /opt/v8/snapshot_blob.bin /opt/v8/snapshot_blob.bin
+COPY --from=v8-binary /opt/v8/ /opt/v8/
 RUN ln -sf /opt/v8/d8 /usr/local/bin/d8
-RUN ln -sf /opt/v8/snapshot_blob.bin /usr/local/bin/snapshot_blob.bin
+RUN if [ -f /opt/v8/snapshot_blob.bin ]; then ln -sf /opt/v8/snapshot_blob.bin /usr/local/bin/snapshot_blob.bin; fi
 
 # Ensure readable for non-root
-RUN chmod 755 /opt/v8/d8 && chmod 644 /opt/v8/snapshot_blob.bin
+RUN chmod 755 /opt/v8/d8 && if [ -f /opt/v8/snapshot_blob.bin ]; then chmod 644 /opt/v8/snapshot_blob.bin; fi
 
 # Sanity check
 RUN set -eux; \
-    ls -la /opt/v8/d8 /opt/v8/snapshot_blob.bin; \
+    ls -la /opt/v8/d8; \
+    [ ! -f /opt/v8/snapshot_blob.bin ] || ls -la /opt/v8/snapshot_blob.bin; \
     /opt/v8/d8 -e 'print("d8 smoke ok")' >/dev/null
 
 COPY --from=builder /app/package.json ./
