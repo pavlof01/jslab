@@ -22,7 +22,6 @@ spec:
       containers:
         - name: api
           image: pavlof01/jslab-api:latest
-          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           envFrom:

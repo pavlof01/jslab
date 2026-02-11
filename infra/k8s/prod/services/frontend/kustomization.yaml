@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: jslab
+
+resources:
+  - ../../../base/namespace.yaml
+  - ../../../base/frontend.yaml
+
+images:
+  # CI overrides tag to an immutable value (e.g. git SHA).
+  - name: pavlof01/jslab-frontend
+    newTag: latest
