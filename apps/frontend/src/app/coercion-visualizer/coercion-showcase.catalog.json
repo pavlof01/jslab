@@ -1,0 +1,882 @@
+{
+  "file": "coercion-showcase.catalog.json",
+  "catalogVersion": 1,
+  "notes": [
+    "This is a pragmatic, UI-friendly IR for a coercion showcase. It is NOT a full ECMA-262 implementation.",
+    "Objects are modeled as tagged values with {id,class,preview}. OrdinaryToPrimitive is table-driven for MVP.",
+    "Algorithms emit UI hints via 'hint' and optional 'meta.ui'. Runner should turn meta.ui + observed type-changes into 'transitions' for trace."
+  ],
+  "valueTypes": ["Undefined", "Null", "Boolean", "Number", "String", "Object", "TypeTag"],
+  "intrinsics": {
+    "Type": { "args": ["v"], "returns": "TypeTag" },
+    "SameValue": { "args": ["a", "b"], "returns": "Boolean" },
+    "And": { "args": ["a", "b"], "returns": "Boolean" },
+    "Or": { "args": ["a", "b"], "returns": "Boolean" },
+    "IsObject": { "args": ["v"], "returns": "Boolean" },
+    "ConcatStrings": { "args": ["a", "b"], "returns": "String" },
+    "AddNumbers": { "args": ["a", "b"], "returns": "Number" },
+    "StringToNumber": { "args": ["s"], "returns": "Number" },
+    "NumberToString": { "args": ["n"], "returns": "String" },
+    "StrictEquals": { "args": ["x", "y"], "returns": "Boolean" },
+    "ToBoolean": { "args": ["v"], "returns": "Boolean" }
+  },
+  "algorithms": [
+    {
+      "id": "ToNumber",
+      "title": "ToNumber",
+      "params": ["argument"],
+      "locals": ["primValue"],
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "op": "SameValue",
+            "args": [
+              { "op": "Type", "args": [{ "var": "argument" }] },
+              { "lit": { "type": "TypeTag", "value": "Number" } }
+            ]
+          },
+          "then": [
+            {
+              "op": "return",
+              "expr": { "var": "argument" },
+              "hint": "Return argument (already a Number).",
+              "meta": { "specStep": 1 }
+            }
+          ],
+          "else": [],
+          "hint": "Check: argument is a Number?",
+          "meta": { "specStep": 1 }
+        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "Or",
+            "args": [
+              {
+                "op": "SameValue",
+                "args": [
+                  { "op": "Type", "args": [{ "var": "argument" }] },
+                  { "lit": { "type": "TypeTag", "value": "Symbol" } }
+                ]
+              },
+              {
+                "op": "SameValue",
+                "args": [
+                  { "op": "Type", "args": [{ "var": "argument" }] },
+                  { "lit": { "type": "TypeTag", "value": "BigInt" } }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "return",
+	              "expr": {
+	                "op": "ThrowTypeError",
+	                "args": [{ "lit": { "type": "String", "value": "ToNumber: cannot convert Symbol/BigInt" } }]
+	              },
+	              "hint": "Throw TypeError for Symbol/BigInt (not modeled here).",
+	              "meta": { "specStep": 2 }
+	            }
+	          ],
+	          "else": [],
+	          "hint": "Check: Symbol/BigInt (would throw).",
+	          "meta": { "specStep": 2 }
+	        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "SameValue",
+            "args": [
+              { "op": "Type", "args": [{ "var": "argument" }] },
+              { "lit": { "type": "TypeTag", "value": "Undefined" } }
+            ]
+          },
+          "then": [
+            {
+	              "op": "return",
+	              "expr": { "lit": { "type": "Number", "value": "NaN" } },
+	              "hint": "undefined → NaN.",
+	              "meta": { "specStep": 3 }
+	            }
+	          ],
+	          "else": [],
+	          "hint": "Check: undefined?",
+	          "meta": { "specStep": 3 }
+	        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "Or",
+            "args": [
+              {
+                "op": "SameValue",
+                "args": [
+                  { "op": "Type", "args": [{ "var": "argument" }] },
+                  { "lit": { "type": "TypeTag", "value": "Null" } }
+                ]
+              },
+              {
+                "op": "And",
+                "args": [
+                  {
+                    "op": "SameValue",
+                    "args": [
+                      { "op": "Type", "args": [{ "var": "argument" }] },
+                      { "lit": { "type": "TypeTag", "value": "Boolean" } }
+                    ]
+                  },
+                  { "op": "SameValue", "args": [{ "var": "argument" }, { "lit": { "type": "Boolean", "value": false } }] }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+	              "op": "return",
+	              "expr": { "lit": { "type": "Number", "value": 0 } },
+	              "hint": "null/false → +0.",
+	              "meta": { "specStep": 4 }
+	            }
+	          ],
+	          "else": [],
+	          "hint": "Check: null or false?",
+	          "meta": { "specStep": 4 }
+	        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "And",
+            "args": [
+              {
+                "op": "SameValue",
+                "args": [
+                  { "op": "Type", "args": [{ "var": "argument" }] },
+                  { "lit": { "type": "TypeTag", "value": "Boolean" } }
+                ]
+              },
+              { "op": "SameValue", "args": [{ "var": "argument" }, { "lit": { "type": "Boolean", "value": true } }] }
+            ]
+          },
+          "then": [
+            {
+	              "op": "return",
+	              "expr": { "lit": { "type": "Number", "value": 1 } },
+	              "hint": "true → 1.",
+	              "meta": { "specStep": 5 }
+	            }
+	          ],
+	          "else": [],
+	          "hint": "Check: true?",
+	          "meta": { "specStep": 5 }
+	        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "SameValue",
+            "args": [
+              { "op": "Type", "args": [{ "var": "argument" }] },
+              { "lit": { "type": "TypeTag", "value": "String" } }
+            ]
+          },
+          "then": [
+            {
+	              "op": "return",
+	              "expr": { "op": "StringToNumber", "args": [{ "var": "argument" }] },
+	              "hint": "String → parse numeric literal (StringToNumber).",
+	              "meta": { "specStep": 6 }
+	            }
+	          ],
+	          "else": [],
+	          "hint": "Check: String?",
+	          "meta": { "specStep": 6 }
+	        },
+        {
+          "op": "if",
+          "cond": { "op": "IsObject", "args": [{ "var": "argument" }] },
+          "then": [],
+          "else": [
+            {
+              "op": "return",
+	              "expr": {
+	                "op": "ThrowTypeError",
+	                "args": [{ "lit": { "type": "String", "value": "ToNumber: expected Object after primitive checks" } }]
+	              },
+	              "hint": "Assert failed: expected Object.",
+	              "meta": { "specStep": 7 }
+	            }
+	          ],
+	          "hint": "Assert: remaining case is Object.",
+	          "meta": { "specStep": 7 }
+	        },
+        {
+          "op": "let",
+          "name": "primValue",
+          "expr": {
+            "op": "call",
+            "algo": "ToPrimitive",
+            "args": [{ "var": "argument" }, { "lit": { "type": "String", "value": "NUMBER" } }]
+          },
+	          "hint": "Object → primValue = ? ToPrimitive(argument, NUMBER).",
+	          "meta": { "specStep": 8 }
+	        },
+        {
+          "op": "if",
+          "cond": { "op": "IsObject", "args": [{ "var": "primValue" }] },
+          "then": [
+            {
+              "op": "return",
+	              "expr": {
+	                "op": "ThrowTypeError",
+	                "args": [{ "lit": { "type": "String", "value": "ToNumber: ToPrimitive returned Object" } }]
+	              },
+	              "hint": "Assert failed: ToPrimitive returned Object.",
+	              "meta": { "specStep": 9 }
+	            }
+	          ],
+	          "else": [],
+	          "hint": "Assert: primValue is not an Object.",
+	          "meta": { "specStep": 9 }
+	        },
+        {
+	          "op": "return",
+	          "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "primValue" }] },
+	          "hint": "Convert primValue via ? ToNumber(primValue).",
+	          "meta": { "specStep": 10 }
+	        }
+      ]
+    },
+    {
+      "id": "ToString",
+      "title": "ToString",
+      "params": ["arg"],
+      "locals": ["t", "prim", "tp"],
+      "body": [
+        {
+          "op": "let",
+          "name": "t",
+          "expr": { "op": "Type", "args": [{ "var": "arg" }] },
+          "hint": "Let t be Type(arg)."
+        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "SameValue",
+            "args": [{ "var": "t" }, { "lit": { "type": "TypeTag", "value": "String" } }]
+          },
+          "then": [{ "op": "return", "expr": { "var": "arg" }, "hint": "If t is String, return arg." }],
+          "else": [
+            {
+              "op": "if",
+              "cond": {
+                "op": "SameValue",
+                "args": [{ "var": "t" }, { "lit": { "type": "TypeTag", "value": "Number" } }]
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "expr": { "op": "NumberToString", "args": [{ "var": "arg" }] },
+                  "hint": "If t is Number, return NumberToString(arg).",
+                  "meta": {
+                    "ui": {
+                      "markAsCoercion": true,
+                      "label": "Number → String",
+                      "explain": "Numbers convert to their string representation."
+                    }
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "op": "SameValue",
+                    "args": [{ "var": "t" }, { "lit": { "type": "TypeTag", "value": "Boolean" } }]
+                  },
+                  "then": [
+                    {
+                      "op": "return",
+                      "expr": {
+                        "op": "ifExpr",
+                        "cond": { "var": "arg" },
+                        "then": { "lit": { "type": "String", "value": "true" } },
+                        "else": { "lit": { "type": "String", "value": "false" } }
+                      },
+                      "hint": "If t is Boolean, return \"true\" or \"false\".",
+                      "meta": {
+                        "ui": {
+                          "markAsCoercion": true,
+                          "label": "Boolean → String",
+                          "explain": "true → \"true\", false → \"false\"."
+                        }
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "cond": {
+                        "op": "SameValue",
+                        "args": [{ "var": "t" }, { "lit": { "type": "TypeTag", "value": "Null" } }]
+                      },
+                      "then": [
+                        {
+                          "op": "return",
+                          "expr": { "lit": { "type": "String", "value": "null" } },
+                          "hint": "If t is Null, return \"null\".",
+                          "meta": {
+                            "ui": {
+                              "markAsCoercion": true,
+                              "label": "null → \"null\"",
+                              "explain": "Null converts to the string \"null\"."
+                            }
+                          }
+                        }
+                      ],
+                      "else": [
+                        {
+                          "op": "if",
+                          "cond": {
+                            "op": "SameValue",
+                            "args": [{ "var": "t" }, { "lit": { "type": "TypeTag", "value": "Undefined" } }]
+                          },
+                          "then": [
+                            {
+                              "op": "return",
+                              "expr": { "lit": { "type": "String", "value": "undefined" } },
+                              "hint": "If t is Undefined, return \"undefined\".",
+                              "meta": {
+                                "ui": {
+                                  "markAsCoercion": true,
+                                  "label": "undefined → \"undefined\"",
+                                  "explain": "Undefined converts to the string \"undefined\"."
+                                }
+                              }
+                            }
+                          ],
+                          "else": [
+                            {
+                              "op": "if",
+                              "cond": { "op": "IsObject", "args": [{ "var": "arg" }] },
+                              "then": [
+                                {
+                                  "op": "let",
+                                  "name": "prim",
+                                  "expr": {
+                                    "op": "call",
+                                    "algo": "ToPrimitive",
+                                    "args": [{ "var": "arg" }, { "lit": { "type": "String", "value": "string" } }]
+                                  },
+                                  "hint": "Let prim be ToPrimitive(arg, \"string\")."
+                                },
+                                {
+                                  "op": "return",
+                                  "expr": { "op": "call", "algo": "ToString", "args": [{ "var": "prim" }] },
+                                  "hint": "Return ToString(prim)."
+                                }
+                              ],
+                              "else": [
+                                {
+                                  "op": "return",
+                                  "expr": { "lit": { "type": "String", "value": "" } },
+                                  "hint": "MVP: remaining cases not implemented."
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToPrimitive",
+      "title": "ToPrimitive(input, hint)",
+      "params": ["input", "hint"],
+      "locals": [],
+      "body": [
+        {
+          "op": "if",
+          "cond": { "op": "IsObject", "args": [{ "var": "input" }] },
+          "then": [
+            {
+              "op": "return",
+              "expr": {
+                "op": "call",
+                "algo": "OrdinaryToPrimitive",
+                "args": [{ "var": "input" }, { "var": "hint" }]
+              },
+              "hint": "If input is an Object, then return ? OrdinaryToPrimitive(input, hint).",
+              "meta": {
+                "specStep": 1,
+                "ui": {
+                  "label": "Object → Primitive",
+                  "explain": "Objects are converted to primitives using OrdinaryToPrimitive (MVP table)."
+                }
+              }
+            }
+          ],
+          "else": [],
+          "hint": "If input is an Object, then",
+          "meta": { "specStep": 1 }
+        },
+        { "op": "return", "expr": { "var": "input" }, "hint": "Return input.", "meta": { "specStep": 2 } }
+      ]
+    },
+    {
+      "id": "OrdinaryToPrimitive",
+      "title": "OrdinaryToPrimitive(O, hint)",
+      "params": ["O", "hint"],
+      "locals": ["klass"],
+      "body": [
+        {
+          "op": "if",
+          "cond": {
+            "op": "SameValue",
+            "args": [{ "var": "hint" }, { "lit": { "type": "String", "value": "STRING" } }]
+          },
+          "then": [
+            {
+              "op": "let",
+              "name": "klass",
+              "expr": { "op": "GetField", "args": [{ "var": "O" }, { "lit": { "type": "String", "value": "class" } }] },
+              "hint": "Let klass be O.[[Class]] (MVP: O.value.class).",
+              "meta": { "specStep": 3 }
+            },
+            {
+              "op": "if",
+              "cond": {
+                "op": "SameValue",
+                "args": [{ "var": "klass" }, { "lit": { "type": "String", "value": "Array" } }]
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "expr": { "lit": { "type": "String", "value": "" } },
+                  "hint": "MVP: Array → \"\" (like [].toString()).",
+                  "meta": {
+                    "specStep": 3,
+                    "ui": {
+                      "markAsCoercion": true,
+                      "label": "[] → \"\"",
+                      "explain": "For showcase, [] becomes \"\" when coerced to primitive."
+                    }
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "op": "SameValue",
+                    "args": [{ "var": "klass" }, { "lit": { "type": "String", "value": "Object" } }]
+                  },
+                  "then": [
+                    {
+                      "op": "return",
+                      "expr": { "lit": { "type": "String", "value": "[object Object]" } },
+                      "hint": "MVP: Object → \"[object Object]\" (like {}.toString()).",
+                      "meta": {
+                        "specStep": 3,
+                        "ui": {
+                          "markAsCoercion": true,
+                          "label": "{} → \"[object Object]\"",
+                          "explain": "For showcase, {} becomes \"[object Object]\" when coerced to primitive."
+                        }
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "return",
+                      "expr": { "lit": { "type": "String", "value": "[object Object]" } },
+                      "hint": "MVP: fallback object toString.",
+                      "meta": { "specStep": 3 }
+                    }
+                  ]
+                }
+              ],
+              "hint": "For each element name of methodNames, do",
+              "meta": { "specStep": 3 }
+            }
+          ],
+          "else": [],
+          "hint": "If hint is STRING, then",
+          "meta": { "specStep": 1 }
+        },
+        { "op": "if", "cond": { "lit": { "type": "Boolean", "value": true } }, "then": [], "else": [], "hint": "Else,", "meta": { "specStep": 2 } },
+        {
+          "op": "let",
+          "name": "klass",
+          "expr": { "op": "GetField", "args": [{ "var": "O" }, { "lit": { "type": "String", "value": "class" } }] },
+          "hint": "Let klass be O.[[Class]] (MVP: O.value.class).",
+          "meta": { "specStep": 3 }
+        },
+        {
+          "op": "if",
+          "cond": {
+            "op": "SameValue",
+            "args": [{ "var": "klass" }, { "lit": { "type": "String", "value": "Array" } }]
+          },
+          "then": [
+            {
+              "op": "return",
+              "expr": { "lit": { "type": "String", "value": "" } },
+              "hint": "MVP: Array → \"\" (like [].toString()).",
+              "meta": {
+                "specStep": 3,
+                "ui": {
+                  "markAsCoercion": true,
+                  "label": "[] → \"\"",
+                  "explain": "For showcase, [] becomes \"\" when coerced to primitive."
+                }
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "if",
+              "cond": {
+                "op": "SameValue",
+                "args": [{ "var": "klass" }, { "lit": { "type": "String", "value": "Object" } }]
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "expr": { "lit": { "type": "String", "value": "[object Object]" } },
+                  "hint": "MVP: Object → \"[object Object]\" (like {}.toString()).",
+                  "meta": {
+                    "specStep": 3,
+                    "ui": {
+                      "markAsCoercion": true,
+                      "label": "{} → \"[object Object]\"",
+                      "explain": "For showcase, {} becomes \"[object Object]\" when coerced to primitive."
+                    }
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "return",
+                  "expr": { "lit": { "type": "String", "value": "[object Object]" } },
+                  "hint": "MVP: fallback object toString.",
+                  "meta": { "specStep": 3 }
+                }
+              ]
+            }
+          ],
+          "hint": "For each element name of methodNames, do",
+          "meta": { "specStep": 3 }
+        },
+        {
+          "op": "return",
+          "expr": { "op": "ThrowTypeError", "args": [{ "lit": { "type": "String", "value": "OrdinaryToPrimitive: TypeError" } }] },
+          "hint": "Throw a TypeError exception.",
+          "meta": { "specStep": 4 }
+        }
+      ]
+    },
+    {
+      "id": "AbstractEqualityComparison",
+      "title": "Abstract Equality Comparison (==)",
+      "params": ["x", "y"],
+      "locals": ["tx", "ty", "nx", "ny", "bx", "by"],
+      "body": [
+        { "op": "let", "name": "tx", "expr": { "op": "Type", "args": [{ "var": "x" }] }, "hint": "Let tx be Type(x)." },
+        { "op": "let", "name": "ty", "expr": { "op": "Type", "args": [{ "var": "y" }] }, "hint": "Let ty be Type(y)." },
+
+        {
+          "op": "if",
+          "cond": { "op": "SameValue", "args": [{ "var": "tx" }, { "var": "ty" }] },
+          "then": [
+            {
+              "op": "return",
+              "expr": { "op": "StrictEquals", "args": [{ "var": "x" }, { "var": "y" }] },
+              "hint": "If same type, return StrictEquals(x, y)."
+            }
+          ],
+          "else": [
+            {
+              "op": "if",
+              "cond": {
+                "op": "Or",
+                "args": [
+                  {
+                    "op": "And",
+                    "args": [
+                      {
+                        "op": "SameValue",
+                        "args": [{ "var": "tx" }, { "lit": { "type": "TypeTag", "value": "Null" } }]
+                      },
+                      {
+                        "op": "SameValue",
+                        "args": [{ "var": "ty" }, { "lit": { "type": "TypeTag", "value": "Undefined" } }]
+                      }
+                    ]
+                  },
+                  {
+                    "op": "And",
+                    "args": [
+                      {
+                        "op": "SameValue",
+                        "args": [{ "var": "tx" }, { "lit": { "type": "TypeTag", "value": "Undefined" } }]
+                      },
+                      {
+                        "op": "SameValue",
+                        "args": [{ "var": "ty" }, { "lit": { "type": "TypeTag", "value": "Null" } }]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "then": [
+                {
+                  "op": "return",
+                  "expr": { "lit": { "type": "Boolean", "value": true } },
+                  "hint": "If x is null and y is undefined (or vice versa), return true."
+                }
+              ],
+              "else": [
+                {
+                  "op": "if",
+                  "cond": {
+                    "op": "And",
+                    "args": [
+                      {
+                        "op": "SameValue",
+                        "args": [{ "var": "tx" }, { "lit": { "type": "TypeTag", "value": "Number" } }]
+                      },
+                      {
+                        "op": "SameValue",
+                        "args": [{ "var": "ty" }, { "lit": { "type": "TypeTag", "value": "String" } }]
+                      }
+                    ]
+                  },
+                  "then": [
+                    {
+                      "op": "let",
+                      "name": "ny",
+                      "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "y" }] },
+                      "hint": "Let ny be ToNumber(y)."
+                    },
+                    {
+                      "op": "return",
+                      "expr": {
+                        "op": "call",
+                        "algo": "AbstractEqualityComparison",
+                        "args": [{ "var": "x" }, { "var": "ny" }]
+                      },
+                      "hint": "Return AbstractEqualityComparison(x, ny)."
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "cond": {
+                        "op": "And",
+                        "args": [
+                          {
+                            "op": "SameValue",
+                            "args": [{ "var": "tx" }, { "lit": { "type": "TypeTag", "value": "String" } }]
+                          },
+                          {
+                            "op": "SameValue",
+                            "args": [{ "var": "ty" }, { "lit": { "type": "TypeTag", "value": "Number" } }]
+                          }
+                        ]
+                      },
+                      "then": [
+                        {
+                          "op": "let",
+                          "name": "nx",
+                          "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "x" }] },
+                          "hint": "Let nx be ToNumber(x)."
+                        },
+                        {
+                          "op": "return",
+                          "expr": {
+                            "op": "call",
+                            "algo": "AbstractEqualityComparison",
+                            "args": [{ "var": "nx" }, { "var": "y" }]
+                          },
+                          "hint": "Return AbstractEqualityComparison(nx, y)."
+                        }
+                      ],
+                      "else": [
+                        {
+                          "op": "if",
+                          "cond": {
+                            "op": "SameValue",
+                            "args": [{ "var": "tx" }, { "lit": { "type": "TypeTag", "value": "Boolean" } }]
+                          },
+                          "then": [
+                            {
+                              "op": "let",
+                              "name": "nx",
+                              "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "x" }] },
+                              "hint": "Let nx be ToNumber(x)."
+                            },
+                            {
+                              "op": "return",
+                              "expr": {
+                                "op": "call",
+                                "algo": "AbstractEqualityComparison",
+                                "args": [{ "var": "nx" }, { "var": "y" }]
+                              },
+                              "hint": "Return AbstractEqualityComparison(nx, y)."
+                            }
+                          ],
+                          "else": [
+                            {
+                              "op": "if",
+                              "cond": {
+                                "op": "SameValue",
+                                "args": [{ "var": "ty" }, { "lit": { "type": "TypeTag", "value": "Boolean" } }]
+                              },
+                              "then": [
+                                {
+                                  "op": "let",
+                                  "name": "ny",
+                                  "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "y" }] },
+                                  "hint": "Let ny be ToNumber(y)."
+                                },
+                                {
+                                  "op": "return",
+                                  "expr": {
+                                    "op": "call",
+                                    "algo": "AbstractEqualityComparison",
+                                    "args": [{ "var": "x" }, { "var": "ny" }]
+                                  },
+                                  "hint": "Return AbstractEqualityComparison(x, ny)."
+                                }
+                              ],
+                              "else": [
+                                {
+                                  "op": "return",
+                                  "expr": { "lit": { "type": "Boolean", "value": false } },
+                                  "hint": "MVP: other combinations not implemented."
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Add",
+      "title": "Addition / Concatenation (+) showcase entry",
+      "params": ["x", "y"],
+      "locals": ["px", "py", "tx", "ty", "sx", "sy", "nx", "ny"],
+      "body": [
+        {
+          "op": "let",
+          "name": "px",
+          "expr": {
+            "op": "call",
+            "algo": "ToPrimitive",
+            "args": [{ "var": "x" }, { "lit": { "type": "String", "value": "default" } }]
+          },
+          "hint": "Let px be ToPrimitive(x, \"default\")."
+        },
+        {
+          "op": "let",
+          "name": "py",
+          "expr": {
+            "op": "call",
+            "algo": "ToPrimitive",
+            "args": [{ "var": "y" }, { "lit": { "type": "String", "value": "default" } }]
+          },
+          "hint": "Let py be ToPrimitive(y, \"default\")."
+        },
+        {
+          "op": "let",
+          "name": "tx",
+          "expr": { "op": "Type", "args": [{ "var": "px" }] },
+          "hint": "Let tx be Type(px)."
+        },
+        {
+          "op": "let",
+          "name": "ty",
+          "expr": { "op": "Type", "args": [{ "var": "py" }] },
+          "hint": "Let ty be Type(py)."
+        },
+
+        {
+          "op": "if",
+          "cond": {
+            "op": "Or",
+            "args": [
+              { "op": "SameValue", "args": [{ "var": "tx" }, { "lit": { "type": "TypeTag", "value": "String" } }] },
+              { "op": "SameValue", "args": [{ "var": "ty" }, { "lit": { "type": "TypeTag", "value": "String" } }] }
+            ]
+          },
+          "then": [
+            {
+              "op": "let",
+              "name": "sx",
+              "expr": { "op": "call", "algo": "ToString", "args": [{ "var": "px" }] },
+              "hint": "Let sx be ToString(px)."
+            },
+            {
+              "op": "let",
+              "name": "sy",
+              "expr": { "op": "call", "algo": "ToString", "args": [{ "var": "py" }] },
+              "hint": "Let sy be ToString(py)."
+            },
+            {
+              "op": "return",
+              "expr": { "op": "ConcatStrings", "args": [{ "var": "sx" }, { "var": "sy" }] },
+              "hint": "Return the string concatenation of sx and sy.",
+              "meta": {
+                "ui": {
+                  "label": "String concatenation",
+                  "explain": "If either primitive is a String, + concatenates."
+                }
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "let",
+              "name": "nx",
+              "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "px" }] },
+              "hint": "Let nx be ToNumber(px)."
+            },
+            {
+              "op": "let",
+              "name": "ny",
+              "expr": { "op": "call", "algo": "ToNumber", "args": [{ "var": "py" }] },
+              "hint": "Let ny be ToNumber(py)."
+            },
+            {
+              "op": "return",
+              "expr": { "op": "AddNumbers", "args": [{ "var": "nx" }, { "var": "ny" }] },
+              "hint": "Return the numeric sum nx + ny.",
+              "meta": {
+                "ui": {
+                  "label": "Numeric addition",
+                  "explain": "If neither primitive is a String, + adds numbers (after ToNumber)."
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
