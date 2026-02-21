@@ -1,12 +1,16 @@
 /**
  * Algorithm Executors - главной индекс
  *
- * Экспортирует все executors и утилиты для работы с алгоритмами
+ * Экспортирует все executors и утилиты для работы с алгоритмами ToNumber
  */
+
+// Types
+export type { ExecutedStep, TraceResult } from '../abstract-operations-tracer';
 
 // Утилиты
 export { StepBuilder } from './executors/step-builder';
 export { TypeChecker } from './executors/type-checker';
+export { ExecutorUtilities } from './executors/executor-utilities';
 
 // Executors
 export { StringToNumberExecutor } from './executors/string-to-number-executor';

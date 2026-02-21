@@ -31,10 +31,10 @@ export class ToPrimitiveExecutor {
 
     // Шаг 1: If input is an Object, then
     if (TypeChecker.isObject(input)) {
-      const objRecord = input as Record<string, unknown>;
+      const objRecord = input as Record<string | symbol, unknown>;
 
       // 1.a: Let exoticToPrim be ? GetMethod(input, %Symbol.toPrimitive%).
-      const toPrimitiveMethod = objRecord[Symbol.toPrimitive];
+      const toPrimitiveMethod = (objRecord as any)[Symbol.toPrimitive];
       const getMethodStep = StepBuilder.assignment(
         'Let exoticToPrim be ? GetMethod(input, %Symbol.toPrimitive%).',
         toPrimitiveMethod,

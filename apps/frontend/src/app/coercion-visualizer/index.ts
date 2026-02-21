@@ -8,12 +8,10 @@ export {
 } from './abstract-operations-tracer';
 
 export {
-  getAllAlgorithms,
-  getAlgorithmById,
-  getAlgorithmByName,
-  ToNumberAlgorithm,
-  StringToNumberAlgorithm,
-  ToPrimitiveAlgorithm,
-  OrdinaryToPrimitiveAlgorithm,
-  IsCallableAlgorithm,
+  ToNumberExecutor,
+  StringToNumberExecutor,
+  ToPrimitiveExecutor,
+  OrdinaryToPrimitiveExecutor,
+  TypeChecker,
+  StepBuilder,
 } from './algorithms';

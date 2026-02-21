@@ -13,6 +13,7 @@ export type TypeTag =
   | "Object"
   | "Symbol"
   | "BigInt"
+  | "Array"
   | "TypeTag";
 
 export type SpecValue =
@@ -27,6 +28,7 @@ export type SpecValue =
       type: "Object";
       value: { id: string; class: string; preview?: string; [k: string]: unknown };
     }
+  | { type: "Array"; value: unknown[] }
   | { type: "TypeTag"; value: TypeTag };
 
 export type VarExpr = { var: string };

@@ -2,7 +2,7 @@
  * StepBuilder - утилиты для создания ExecutedStep
  */
 
-import type { ExecutedStep } from '../abstract-operations-tracer';
+import type { ExecutedStep } from '../../abstract-operations-tracer';
 
 /**
  * Расширенный набор утилит для создания структурированных шагов выполнения алгоритма

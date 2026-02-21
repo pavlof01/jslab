@@ -9,6 +9,7 @@ export const SPEC_VALUE_TYPE_PALETTE: Record<SpecValue["type"], string> = {
   String: "green",
   Symbol: "cyan",
   Object: "orange",
+  Array: "amber",
   TypeTag: "gray",
 };
 

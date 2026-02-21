@@ -4,6 +4,9 @@
 export interface AlgorithmStep {
   kind: string;
   description: string;
+  number?: string | number;
+  letter?: string;
+  roman?: string;
   subSteps?: AlgorithmStep[];
 }
 
@@ -169,9 +172,11 @@ export class AbstractOperationTracer {
     }
 
     const executedStep: ExecutedStep = {
-      ...('number' in step && { number: step.number }),
-      ...('letter' in step && { letter: step.letter }),
-      ...('roman' in step && { roman: step.roman }),
+      ...('number' in step && typeof (step as any).number === 'number' || typeof (step as any).number === 'string'
+        ? { number: (step as any).number }
+        : {}),
+      ...('letter' in step && typeof (step as any).letter === 'string' ? { letter: (step as any).letter } : {}),
+      ...('roman' in step && typeof (step as any).roman === 'string' ? { roman: (step as any).roman } : {}),
       kind: step.kind,
       description: step.description,
       executed: true, // По умолчанию шаг выполнен
