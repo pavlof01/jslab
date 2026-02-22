@@ -184,6 +184,7 @@ export class OrdinaryToPrimitiveExecutor {
       algorithmName: 'OrdinaryToPrimitive',
       algorithmDescription:
         'The abstract operation OrdinaryToPrimitive takes arguments O (an Object) and hint (STRING or NUMBER) and returns either a normal completion containing an ECMAScript language value or a throw completion.',
+      algorithmUrl: 'https://262.ecma-international.org/#sec-ordinarytoprimitive',
       input,
       output,
       success,

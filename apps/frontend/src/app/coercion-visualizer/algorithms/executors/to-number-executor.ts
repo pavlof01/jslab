@@ -177,9 +177,10 @@ export class ToNumberExecutor {
   ): TraceResult {
     return {
       algorithmId: 'toNumber',
-      algorithmName: 'ToNumber',
+      algorithmName: 'ToNumber ( arg )',
       algorithmDescription:
         'The abstract operation ToNumber takes argument argument (an ECMAScript language value) and returns either a normal completion containing a Number or a throw completion. It converts argument to a value of type Number.',
+      algorithmUrl: 'https://262.ecma-international.org/#sec-tonumber',
       input,
       output,
       success,

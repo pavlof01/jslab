@@ -6,8 +6,8 @@
 "use client";
 
 import * as React from "react";
-import { Box, VStack, HStack, Text, Collapsible, Badge } from "@chakra-ui/react";
-import { LuChevronDown, LuChevronRight, LuCircleX, LuCircleCheck } from "react-icons/lu";
+import { Box, VStack, HStack, Text, Collapsible, Badge, IconButton } from "@chakra-ui/react";
+import { LuChevronDown, LuChevronRight, LuCircleX, LuCircleCheck, LuExternalLink } from "react-icons/lu";
 import type { ExecutedStep, TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
 import { useColorModeValue } from "@/components/ui/color-mode";
 
@@ -23,6 +23,7 @@ export function ExecutorStepsPanel({
   const panelBg = useColorModeValue("#ffffff", "rgba(20,20,20,0.30)");
   const panelBorder = useColorModeValue("#e2e8f0", "#262626");
   const softSurfaceBgStrong = useColorModeValue("rgba(255,255,255,0.80)", "rgba(0,0,0,0.18)");
+  const algorithmSpecUrl = resolveAlgorithmSpecUrl(traceResult);
 
   if (!traceResult) {
     return (
@@ -61,9 +62,25 @@ export function ExecutorStepsPanel({
       minH="92vh"
     >
       <Box mb={4}>
-        <Text fontSize="10px" fontWeight="black" textTransform="uppercase" letterSpacing="0.2em" opacity={0.65} mb={2}>
-          Algorithm: {traceResult.algorithmName}
-        </Text>
+        <HStack justify="space-between" align="flex-start" mb={2}>
+          <Text fontSize="10px" fontWeight="black" letterSpacing="0.2em" opacity={0.65} mb={0}>
+            ALGORITHM: {traceResult.algorithmName}
+          </Text>
+          <IconButton
+            aria-label={`Open ${traceResult.algorithmName} specification`}
+            size="2xs"
+            variant="ghost"
+            disabled={!algorithmSpecUrl}
+            title={algorithmSpecUrl ? "Open ECMAScript specification" : "Specification URL is unavailable"}
+            onClick={() => {
+              if (algorithmSpecUrl) {
+                window.open(algorithmSpecUrl, "_blank", "noopener,noreferrer");
+              }
+            }}
+          >
+            <LuExternalLink size={13} />
+          </IconButton>
+        </HStack>
         <Text fontSize="xs" opacity={0.75} mb={2}>
           {traceResult.algorithmDescription}
         </Text>
@@ -110,6 +127,34 @@ export function ExecutorStepsPanel({
         </VStack>
       </Box>
     </Box>
+  );
+}
+
+const SPEC_URL_BY_ALGORITHM_ID: Record<string, string> = {
+  ToNumber: "https://262.ecma-international.org/#sec-tonumber",
+  toNumber: "https://262.ecma-international.org/#sec-tonumber",
+  StringToNumber: "https://262.ecma-international.org/#sec-stringtonumber",
+  stringToNumber: "https://262.ecma-international.org/#sec-stringtonumber",
+  ToPrimitive: "https://262.ecma-international.org/#sec-toprimitive",
+  toPrimitive: "https://262.ecma-international.org/#sec-toprimitive",
+  OrdinaryToPrimitive: "https://262.ecma-international.org/#sec-ordinarytoprimitive",
+  ordinaryToPrimitive: "https://262.ecma-international.org/#sec-ordinarytoprimitive",
+};
+
+const SPEC_URL_BY_ALGORITHM_NAME: Record<string, string> = {
+  "ToNumber ( arg )": "https://262.ecma-international.org/#sec-tonumber",
+  ToNumber: "https://262.ecma-international.org/#sec-tonumber",
+  StringToNumber: "https://262.ecma-international.org/#sec-stringtonumber",
+  ToPrimitive: "https://262.ecma-international.org/#sec-toprimitive",
+  OrdinaryToPrimitive: "https://262.ecma-international.org/#sec-ordinarytoprimitive",
+};
+
+function resolveAlgorithmSpecUrl(traceResult: TraceResult | null): string | undefined {
+  if (!traceResult) return undefined;
+  return (
+    traceResult.algorithmUrl ??
+    SPEC_URL_BY_ALGORITHM_ID[traceResult.algorithmId] ??
+    SPEC_URL_BY_ALGORITHM_NAME[traceResult.algorithmName]
   );
 }
 

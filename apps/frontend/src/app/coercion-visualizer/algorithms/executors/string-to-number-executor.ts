@@ -114,6 +114,7 @@ export class StringToNumberExecutor {
       algorithmName: 'StringToNumber',
       algorithmDescription:
         'The abstract operation StringToNumber takes argument str (a String) and returns a Number.',
+      algorithmUrl: 'https://262.ecma-international.org/#sec-stringtonumber',
       input,
       output,
       success,

@@ -187,6 +187,7 @@ export class ToPrimitiveExecutor {
       algorithmName: 'ToPrimitive',
       algorithmDescription:
         'The abstract operation ToPrimitive takes argument input (an ECMAScript language value) and optional argument preferredType (STRING or NUMBER) and returns either a normal completion containing an ECMAScript language value or a throw completion.',
+      algorithmUrl: 'https://262.ecma-international.org/#sec-toprimitive',
       input,
       output,
       success,
