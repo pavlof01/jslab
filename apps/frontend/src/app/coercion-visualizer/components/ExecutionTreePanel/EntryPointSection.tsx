@@ -2,7 +2,15 @@
 
 import { Box, Card, Text, VStack } from "@chakra-ui/react";
 
-export function EntryPointSection({ entryLabel, hasNodes }: { entryLabel: string; hasNodes: boolean }) {
+export function EntryPointSection({
+  entryLabel,
+  userInputRaw,
+  hasNodes,
+}: {
+  entryLabel: string;
+  userInputRaw: string;
+  hasNodes: boolean;
+}) {
   return (
     <VStack align="center" gap={0}>
       <Card.Root
@@ -19,7 +27,7 @@ export function EntryPointSection({ entryLabel, hasNodes }: { entryLabel: string
         </Card.Header>
         <Card.Body pt={0}>
           <Text fontFamily="mono" fontSize="sm" fontWeight="bold">
-            {entryLabel}
+            {entryLabel}({userInputRaw})
           </Text>
         </Card.Body>
       </Card.Root>
@@ -28,4 +36,3 @@ export function EntryPointSection({ entryLabel, hasNodes }: { entryLabel: string
     </VStack>
   );
 }
-

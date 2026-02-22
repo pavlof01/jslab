@@ -116,6 +116,14 @@ export type TraceTransition =
       why: string;
     };
 
+export type NestedTraceInfo = {
+  algorithmName: string;
+  algorithmId: string;
+  input: SpecValue;
+  output?: SpecValue;
+  steps: TraceStep[];
+};
+
 export type TraceStep =
   | {
       stepId: number;
@@ -145,6 +153,7 @@ export type TraceStep =
       specStep?: number;
       envDelta: Record<string, SpecValue>;
       transitions?: TraceTransition[];
+      nestedTrace?: NestedTraceInfo;
       stack: string[];
       frameId?: string;
       parentFrameId?: string;
@@ -158,6 +167,7 @@ export type TraceStep =
       specStep?: number;
       condPretty?: string;
       decision: { taken: "then" | "else"; why: string };
+      nestedTrace?: NestedTraceInfo;
       stack: string[];
       frameId?: string;
       parentFrameId?: string;
@@ -171,6 +181,7 @@ export type TraceStep =
       specStep?: number;
       value: SpecValue;
       transitions?: TraceTransition[];
+      nestedTrace?: NestedTraceInfo;
       stack: string[];
       frameId?: string;
       parentFrameId?: string;

@@ -26,8 +26,8 @@ export function CoercionVisualizer() {
   const { selectedIndex, isPlaying, setIsPlaying, onSelectIndex, maxIndex } = usePlayback(trace.length);
 
   // ToNumber input state - separate raw text from parsed value
-  const [traceInputRaw, setTraceInputRaw] = React.useState<string>('{ toString: () => "1" }');
-  const [traceInput, setTraceInput] = React.useState<unknown>('{ toString: () => "1" }');
+  const [traceInputRaw, setTraceInputRaw] = React.useState<string>('{ valueOf: () => "1" }');
+  const [traceInput, setTraceInput] = React.useState<unknown>('{ valueOf: () => "1" }');
 
   // Handler to parse and commit raw input
   const commitTraceInput = React.useCallback((rawInput: string) => {
@@ -103,6 +103,7 @@ export function CoercionVisualizer() {
             framesByStep={traceModel.framesByStep}
             algoById={algoById}
             entryLabel="ToNumber"
+            userInputRaw={traceInputRaw}
             onSelectIndex={onSelectIndex}
           />
           <PlaybackDock

@@ -4,7 +4,21 @@
  */
 
 import type { ExecutedStep, TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
-import type { TraceStep, SpecValue } from "@/app/coercion-visualizer/spec-runner";
+import type { TraceStep, SpecValue, NestedTraceInfo } from "@/app/coercion-visualizer/spec-runner";
+
+/**
+ * Convert TraceResult to NestedTraceInfo and recursively convert nested steps
+ */
+function toNestedTraceInfo(trace: TraceResult): NestedTraceInfo | undefined {
+  if (!trace) return undefined;
+  return {
+    algorithmName: trace.algorithmName,
+    algorithmId: trace.algorithmId,
+    input: valueToSpecValue(trace.input),
+    output: trace.output !== undefined ? valueToSpecValue(trace.output) : undefined,
+    steps: traceResultToTraceSteps(trace),
+  };
+}
 
 /**
  * Convert ExecutedStep to TraceStep format
@@ -25,6 +39,7 @@ export function executedStepToTraceStep(step: ExecutedStep, index: number, algoI
         nodePath: [index],
         value: valueToSpecValue(step.result),
         hint: step.description,
+        nestedTrace: step.nestedTrace ? toNestedTraceInfo(step.nestedTrace) : undefined,
       };
     }
 
@@ -37,6 +52,7 @@ export function executedStepToTraceStep(step: ExecutedStep, index: number, algoI
       envDelta: {
         [step.description]: valueToSpecValue(step.result),
       },
+      nestedTrace: step.nestedTrace ? toNestedTraceInfo(step.nestedTrace) : undefined,
     };
   } else {
     // Skipped step - still include as "if" that was not taken
@@ -50,6 +66,7 @@ export function executedStepToTraceStep(step: ExecutedStep, index: number, algoI
         taken: "else" as const,
         why: step.reason || "Condition not met",
       },
+      nestedTrace: step.nestedTrace ? toNestedTraceInfo(step.nestedTrace) : undefined,
     };
   }
 }
