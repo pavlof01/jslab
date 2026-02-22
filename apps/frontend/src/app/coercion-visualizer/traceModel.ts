@@ -369,19 +369,6 @@ export function buildTraceEnvModel(
   return { snapshots: model.visibleEnvByStep, diffs: model.visibleDiffKeysByStep, framesByStep };
 }
 
-export function buildSnapshots(trace: TraceStep[], getAlgoParams?: (algoId: string) => string[] | undefined): EnvSnapshot[] {
-  return buildTraceEnvModel(trace, getAlgoParams).snapshots;
-}
-
-export function isSameNodePath(a?: NodePath, b?: NodePath): boolean {
-  if (!a || !b) return false;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
-
 export function formatNodePath(nodePath?: NodePath): string {
   if (!nodePath?.length) return "";
   return nodePath
@@ -431,23 +418,4 @@ export function formatSpecValue(value: SpecValue, maxLen = 42): string {
 
   if (raw.length <= maxLen) return raw;
   return `${raw.slice(0, Math.max(0, maxLen - 1))}…`;
-}
-
-export function getStepSummary(step: TraceStep): { title: string; detail?: string } {
-  switch (step.kind) {
-    case "call":
-      return { title: `call ${step.toAlgo}`, detail: `${step.args.length} arg(s)` };
-    case "ret":
-      return { title: `ret ${step.fromAlgo}`, detail: `${formatSpecValue(step.value)}` };
-    case "let":
-      return { title: "let", detail: step.hint ?? formatNodePath(step.nodePath) };
-    case "if":
-      return { title: "if", detail: step.hint ?? step.condPretty ?? formatNodePath(step.nodePath) };
-    case "return":
-      return { title: "return", detail: step.hint ?? formatSpecValue(step.value) };
-    default: {
-      const _exhaustive: never = step;
-      return { title: String(_exhaustive) };
-    }
-  }
 }
