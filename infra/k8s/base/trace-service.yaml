@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: trace-service
   labels:
-    app: frontend
+    app: trace-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: trace-service
   template:
     metadata:
       labels:
-        app: frontend
+        app: trace-service
     spec:
       securityContext:
         runAsNonRoot: true
@@ -20,36 +20,36 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-        - name: frontend
-          image: pavlof01/jslab-frontend:latest
+        - name: trace-service
+          image: pavlof01/jslab-trace-service:latest
           env:
             - name: NODE_ENV
               value: production
-            - name: JSLAB_BACKEND_URL
-              value: http://api:8080/api/run
-            - name: TRACE_SERVICE_URL
-              value: http://trace-service:8080
+            - name: PORT
+              value: "8080"
+            - name: HOST
+              value: "0.0.0.0"
           ports:
-            - containerPort: 3000
+            - containerPort: 8080
           livenessProbe:
             httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 15
-            periodSeconds: 15
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 15
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             requests:
-              cpu: 150m
-              memory: 256Mi
-            limits:
               cpu: 500m
               memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -71,12 +71,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: trace-service
   labels:
-    app: frontend
+    app: trace-service
 spec:
   selector:
-    app: frontend
+    app: trace-service
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: 8080
+      targetPort: 8080
