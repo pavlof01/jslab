@@ -3,9 +3,9 @@
 import * as React from "react";
 import { Box, Card, Text, VStack } from "@chakra-ui/react";
 
-import type { NestedTraceInfo, TraceStep } from "@/app/coercion-visualizer/spec-runner";
-import { BranchNode } from "@/app/coercion-visualizer/components/ExecutionTreePanel/BranchNode";
-import { TraceStepNode } from "@/app/coercion-visualizer/components/ExecutionTreePanel/TraceStepNode";
+import type { NestedTraceInfo, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import { BranchNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/BranchNode";
+import { TraceStepNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceStepNode";
 import { FaArrowRight } from "react-icons/fa6";
 
 export function NestedTraceSection({

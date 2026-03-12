@@ -2,10 +2,10 @@
 
 import { Box, Card, Code, HStack, Tag, Text, VStack } from "@chakra-ui/react";
 
-import type { Algorithm, TraceStep } from "@/app/coercion-visualizer/spec-runner";
-import { getInstrAtPath } from "@/app/coercion-visualizer/lib/algoIr";
-import { formatNodePath, type NodePath } from "@/app/coercion-visualizer/traceModel";
-import { summarizeBranch } from "@/app/coercion-visualizer/components/ExecutionTreePanel/executionTreeUtils";
+import type { Algorithm, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import { getInstrAtPath } from "@/app/abstract-functions-visualizer/lib/algoIr";
+import { formatNodePath, type NodePath } from "@/app/abstract-functions-visualizer/traceModel";
+import { summarizeBranch } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
 import { FaBan, FaCheck, FaBolt } from "react-icons/fa6";
 
 export function BranchNode({

@@ -1,8 +1,8 @@
 "use client";
 
-import { type Algorithm, type SpecValue } from "@/app/coercion-visualizer/spec-runner";
-import { ExecutorStepsPanel } from "@/app/coercion-visualizer/components/ExecutorStepsPanel";
-import type { TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
+import { type Algorithm, type SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
+import { ExecutorStepsPanel } from "@/app/abstract-functions-visualizer/components/ExecutorStepsPanel";
+import type { TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
 
 export interface RightPanelProps {
   currentTraceResult: TraceResult | null;

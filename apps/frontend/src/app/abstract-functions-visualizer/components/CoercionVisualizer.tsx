@@ -3,16 +3,16 @@
 import * as React from "react";
 import { Box, Grid } from "@chakra-ui/react";
 
-import { ExplorerSidebar } from "@/app/coercion-visualizer/components/ExplorerSidebar";
-import { ExecutionTreePanel } from "@/app/coercion-visualizer/components/ExecutionTreePanel";
-import { PlaybackDock } from "@/app/coercion-visualizer/components/PlaybackDock";
-import { RightPanel } from "@/app/coercion-visualizer/components/RightPanel";
+import { ExplorerSidebar } from "@/app/abstract-functions-visualizer/components/ExplorerSidebar";
+import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
+import { PlaybackDock } from "@/app/abstract-functions-visualizer/components/PlaybackDock";
+import { RightPanel } from "@/app/abstract-functions-visualizer/components/RightPanel";
 import { useColorModeValue } from "@/components/ui/color-mode";
-import { buildTraceModel } from "@/app/coercion-visualizer/traceModel";
-import { traceResultToTraceSteps } from "@/app/coercion-visualizer/adapters/executor-to-trace-adapter";
-import { parseUserInput } from "@/app/coercion-visualizer/utils/parseUserInput";
-import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/coercion-visualizer/hooks";
-import { executeAlgorithmTrace } from "@/app/coercion-visualizer/components/CoercionVisualizer.executors";
+import { buildTraceModel } from "@/app/abstract-functions-visualizer/traceModel";
+import { traceResultToTraceSteps } from "@/app/abstract-functions-visualizer/adapters/executor-to-trace-adapter";
+import { parseUserInput } from "@/app/abstract-functions-visualizer/utils/parseUserInput";
+import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
+import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
 
 export function CoercionVisualizer() {
   // Catalog and algorithms
@@ -35,25 +35,30 @@ export function CoercionVisualizer() {
     setTraceInput(parsed.value);
   }, []);
 
+  const [isLoading, setIsLoading] = React.useState(false);
+
   // Execution
   const runNow = React.useCallback(() => {
     setIsPlaying(false);
-    try {
-      setError(null);
-      setCurrentTraceResult(null);
+    setIsLoading(true);
+    setError(null);
+    setCurrentTraceResult(null);
 
-      const { traceResult, resultValue: result } = executeAlgorithmTrace(traceInput);
-      const traceSteps = traceResultToTraceSteps(traceResult);
-      setTrace(traceSteps);
-      setCurrentTraceResult(traceResult);
-      setResultValue(result);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown executor error";
-      setError(msg);
-      setTrace([]);
-      setResultValue(undefined);
-      setCurrentTraceResult(null);
-    }
+    executeAlgorithmTrace("ToNumber", traceInput)
+      .then(({ traceResult, resultValue: result }) => {
+        const traceSteps = traceResultToTraceSteps(traceResult);
+        setTrace(traceSteps);
+        setCurrentTraceResult(traceResult);
+        setResultValue(result);
+      })
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : "Unknown executor error";
+        setError(msg);
+        setTrace([]);
+        setResultValue(undefined);
+        setCurrentTraceResult(null);
+      })
+      .finally(() => setIsLoading(false));
   }, [traceInput, setIsPlaying, setError, setCurrentTraceResult, setTrace, setResultValue]);
 
   React.useEffect(() => {
@@ -94,6 +99,7 @@ export function CoercionVisualizer() {
           traceInputRaw={traceInputRaw}
           onTraceInputRawChange={setTraceInputRaw}
           onTraceInputCommit={commitTraceInput}
+          isLoading={isLoading}
         />
 
         <Box position="relative" minH={0} overflow="hidden">

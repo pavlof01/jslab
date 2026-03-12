@@ -1,4 +1,4 @@
-import type { SpecValue } from "@/app/coercion-visualizer/spec-runner";
+import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
 
 export function parseUserInput(input: string): SpecValue {
   const trimmed = input.trim();

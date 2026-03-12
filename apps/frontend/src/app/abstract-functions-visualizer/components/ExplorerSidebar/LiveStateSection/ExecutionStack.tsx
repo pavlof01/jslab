@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, HStack, Show, Text, VStack } from "@chakra-ui/react";
-import type { TraceFrame } from "@/app/coercion-visualizer/traceModel";
-import type { Algorithm } from "@/app/coercion-visualizer/spec-runner";
+import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
+import type { Algorithm } from "@/app/abstract-functions-visualizer/spec-runner";
 
 export function ExecutionStack({
   currentFrames,

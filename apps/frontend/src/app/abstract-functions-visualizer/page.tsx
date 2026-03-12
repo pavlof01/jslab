@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { CoercionVisualizer } from "@/app/coercion-visualizer/components/CoercionVisualizer";
+import { CoercionVisualizer } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer";
 
 export const metadata: Metadata = {
   title: "ToNumber Algorithm Visualizer",

@@ -1,4 +1,4 @@
-import type { SpecValue, TraceStep, TraceTransition } from "@/app/coercion-visualizer/spec-runner";
+import type { SpecValue, TraceStep, TraceTransition } from "@/app/abstract-functions-visualizer/spec-runner";
 
 export type NodePath = (number | string)[];
 export type EnvSnapshot = Record<string, SpecValue>;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { type Algorithm, type Catalog } from "@/app/coercion-visualizer/spec-runner";
+import { type Algorithm, type Catalog } from "@/app/abstract-functions-visualizer/spec-runner";
 
 interface CatalogData {
   algoById: Map<string, Algorithm>;

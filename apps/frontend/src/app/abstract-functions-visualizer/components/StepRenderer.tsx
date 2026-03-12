@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Box, HStack, VStack, Text, IconButton, Code, Badge } from "@chakra-ui/react";
 import { LuChevronDown, LuChevronRight, LuCircleX, LuCircleCheck } from "react-icons/lu";
-import type { ExecutedStep, TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
+import type { ExecutedStep, TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
 
 // Lazy load TraceRenderer to avoid circular dependency
 const TraceRenderer = React.lazy(() => import("./TraceRenderer").then((m) => ({ default: m.TraceRenderer })));

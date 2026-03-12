@@ -3,18 +3,18 @@
 import * as React from "react";
 import { Box, VStack } from "@chakra-ui/react";
 
-import type { Algorithm, TraceStep } from "@/app/coercion-visualizer/spec-runner";
-import type { TraceFrame } from "@/app/coercion-visualizer/traceModel";
-import { BranchNode } from "@/app/coercion-visualizer/components/ExecutionTreePanel/BranchNode";
-import { EntryPointSection } from "@/app/coercion-visualizer/components/ExecutionTreePanel/EntryPointSection";
-import { ExecutionTreeHeader } from "@/app/coercion-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
+import type { Algorithm, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
+import { BranchNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/BranchNode";
+import { EntryPointSection } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
+import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
 import {
   KeyEventAnnotation,
   type KeyEventType,
-} from "@/app/coercion-visualizer/components/ExecutionTreePanel/KeyEventAnnotation";
-import { NestedTraceSection } from "@/app/coercion-visualizer/components/ExecutionTreePanel/NestedTraceSection";
-import { TraceStepNode } from "@/app/coercion-visualizer/components/ExecutionTreePanel/TraceStepNode";
-import { getDepthForStep } from "@/app/coercion-visualizer/components/ExecutionTreePanel/executionTreeUtils";
+} from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/KeyEventAnnotation";
+import { NestedTraceSection } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/NestedTraceSection";
+import { TraceStepNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceStepNode";
+import { getDepthForStep } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
 
 export function ExecutionTreePanel({
   trace,

@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, VStack } from "@chakra-ui/react";
-import type { Algorithm, SpecValue } from "@/app/coercion-visualizer/spec-runner";
-import type { TraceFrame } from "@/app/coercion-visualizer/traceModel";
+import type { Algorithm, SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
 import { ResultDisplay } from "./ResultDisplay";
 import { ExecutionStack } from "./ExecutionStack";
 

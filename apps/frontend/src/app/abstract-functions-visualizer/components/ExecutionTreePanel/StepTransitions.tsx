@@ -2,8 +2,8 @@
 
 import { HStack, Tag, Text, VStack } from "@chakra-ui/react";
 
-import type { TraceTransition } from "@/app/coercion-visualizer/spec-runner";
-import { formatSpecValue } from "@/app/coercion-visualizer/traceModel";
+import type { TraceTransition } from "@/app/abstract-functions-visualizer/spec-runner";
+import { formatSpecValue } from "@/app/abstract-functions-visualizer/traceModel";
 
 export function StepTransitions({ transitions }: { transitions: TraceTransition[] }) {
   return (

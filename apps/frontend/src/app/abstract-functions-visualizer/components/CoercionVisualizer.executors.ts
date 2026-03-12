@@ -1,21 +1,47 @@
-import type { SpecValue } from "@/app/coercion-visualizer/spec-runner";
-import type { TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
+import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
 import {
-  ToNumberExecutor,
-} from "@/app/coercion-visualizer/algorithms/executors";
+  type TraceServiceResponse,
+  traceServiceResponseToTraceResult,
+} from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
 
-interface ExecutionResult {
+export interface ExecutionResult {
   traceResult: TraceResult;
   resultValue: SpecValue;
 }
 
-export function executeAlgorithmTrace(traceInput: unknown): ExecutionResult {
-  const traceResult = ToNumberExecutor.execute(traceInput);
-  return {
-    traceResult,
-    resultValue: {
-      type: "Number",
-      value: typeof traceResult.output === "number" ? traceResult.output : NaN,
-    },
-  };
+export async function executeAlgorithmTrace(
+  functionName: string,
+  input: unknown,
+  preferredType?: "string" | "number",
+): Promise<ExecutionResult> {
+  const response = await fetch("/api/trace/execute", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ functionName, input: "1", preferredType }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err?.error ?? `trace-service error ${response.status}`);
+  }
+
+  const data: TraceServiceResponse = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error ?? "trace-service returned failure");
+  }
+
+  const traceResult = traceServiceResponseToTraceResult(data);
+
+  const resultValue: SpecValue =
+    data.resultType === "number"
+      ? { type: "Number", value: Number(data.resultValue) }
+      : data.resultType === "string"
+        ? { type: "String", value: data.resultValue }
+        : data.resultType === "boolean"
+          ? { type: "Boolean", value: data.resultValue === "true" }
+          : { type: "Undefined", value: undefined };
+
+  return { traceResult, resultValue };
 }

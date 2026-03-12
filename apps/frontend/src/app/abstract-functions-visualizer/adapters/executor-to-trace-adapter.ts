@@ -3,8 +3,8 @@
  * This allows new executors to work with existing UI components
  */
 
-import type { ExecutedStep, TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
-import type { TraceStep, SpecValue, NestedTraceInfo } from "@/app/coercion-visualizer/spec-runner";
+import type { ExecutedStep, TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
+import type { TraceStep, SpecValue, NestedTraceInfo } from "@/app/abstract-functions-visualizer/spec-runner";
 
 /**
  * Convert TraceResult to NestedTraceInfo and recursively convert nested steps

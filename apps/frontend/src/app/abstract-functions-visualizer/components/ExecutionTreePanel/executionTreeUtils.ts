@@ -1,5 +1,5 @@
-import type { Instr, SpecValue, TraceStep } from "@/app/coercion-visualizer/spec-runner";
-import type { TraceFrame } from "@/app/coercion-visualizer/traceModel";
+import type { Instr, SpecValue, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
 
 function summarizeInstr(instr?: Instr): string | undefined {
   if (!instr) return undefined;

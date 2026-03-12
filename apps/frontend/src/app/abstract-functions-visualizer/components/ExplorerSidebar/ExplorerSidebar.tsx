@@ -1,9 +1,10 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
-import type { SpecValue } from "@/app/coercion-visualizer/spec-runner";
-import type { TraceFrame } from "@/app/coercion-visualizer/traceModel";
-import type { Algorithm } from "@/app/coercion-visualizer/spec-runner";
+import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
+import type { Algorithm } from "@/app/abstract-functions-visualizer/spec-runner";
+import { Spinner } from "@chakra-ui/react";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { InputOperands } from "./Input/InputOperands";
 import { LiveState } from "./LiveStateSection/LiveState";
@@ -20,6 +21,7 @@ export function ExplorerSidebar({
   traceInputRaw,
   onTraceInputRawChange,
   onTraceInputCommit,
+  isLoading,
 }: {
   error: string | null;
   resultValue?: SpecValue;
@@ -32,6 +34,7 @@ export function ExplorerSidebar({
   traceInputRaw?: string;
   onTraceInputRawChange?: (next: string) => void;
   onTraceInputCommit?: (input: string) => void;
+  isLoading?: boolean;
 }) {
   return (
     <Box
@@ -46,6 +49,12 @@ export function ExplorerSidebar({
       gap={6}
     >
       <ErrorDisplay error={error} />
+
+      {isLoading && (
+        <Box display="flex" alignItems="center" gap={2} opacity={0.6}>
+          <Spinner size="xs" />
+        </Box>
+      )}
 
       <InputOperands
         onTraceInputRawChange={onTraceInputRawChange}

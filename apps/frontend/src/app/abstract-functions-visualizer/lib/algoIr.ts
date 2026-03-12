@@ -1,5 +1,5 @@
-import type { Algorithm, Instr } from "@/app/coercion-visualizer/spec-runner";
-import type { NodePath } from "@/app/coercion-visualizer/traceModel";
+import type { Algorithm, Instr } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { NodePath } from "@/app/abstract-functions-visualizer/traceModel";
 
 export function getInstrAtPath(algo: Algorithm, nodePath?: NodePath): Instr | undefined {
   if (!nodePath?.length) return undefined;

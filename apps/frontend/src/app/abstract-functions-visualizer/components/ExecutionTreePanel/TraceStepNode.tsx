@@ -2,10 +2,10 @@
 
 import { Box, Card, Code, HStack, Tag, Text, VStack } from "@chakra-ui/react";
 
-import type { TraceStep } from "@/app/coercion-visualizer/spec-runner";
-import { formatNodePath, formatSpecValue, type NodePath } from "@/app/coercion-visualizer/traceModel";
-import { getPrimaryEnvDelta } from "@/app/coercion-visualizer/components/ExecutionTreePanel/executionTreeUtils";
-import { StepTransitions } from "@/app/coercion-visualizer/components/ExecutionTreePanel/StepTransitions";
+import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import { formatNodePath, formatSpecValue, type NodePath } from "@/app/abstract-functions-visualizer/traceModel";
+import { getPrimaryEnvDelta } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
+import { StepTransitions } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/StepTransitions";
 
 export function TraceStepNode({
   step,

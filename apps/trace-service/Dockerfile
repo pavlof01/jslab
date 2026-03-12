@@ -16,7 +16,6 @@ ENV NODE_ENV=development
 
 COPY tsconfig.json config.ts ./
 COPY src ./src
-COPY lib ./lib
 
 RUN chown -R 1000:1000 /app
 USER 1000
@@ -30,7 +29,6 @@ CMD ["npm", "run", "dev"]
 FROM deps AS builder
 COPY tsconfig.json config.ts ./
 COPY src ./src
-COPY lib ./lib
 RUN npm run build
 
 ########################

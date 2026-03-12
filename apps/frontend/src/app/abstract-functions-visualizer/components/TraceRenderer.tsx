@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Box, VStack, HStack, Text, Heading, Badge } from "@chakra-ui/react";
-import type { TraceResult } from "@/app/coercion-visualizer/algorithms/executors";
+import type { TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
 import { StepRenderer } from "./StepRenderer";
 
 /**

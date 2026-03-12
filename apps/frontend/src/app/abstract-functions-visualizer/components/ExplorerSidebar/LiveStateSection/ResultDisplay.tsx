@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, Code, Text } from "@chakra-ui/react";
-import type { SpecValue } from "@/app/coercion-visualizer/spec-runner";
-import { formatSpecValue } from "@/app/coercion-visualizer/traceModel";
+import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
+import { formatSpecValue } from "@/app/abstract-functions-visualizer/traceModel";
 
 export function ResultDisplay({ resultValue, traceLength }: { resultValue?: SpecValue; traceLength: number }) {
   return (

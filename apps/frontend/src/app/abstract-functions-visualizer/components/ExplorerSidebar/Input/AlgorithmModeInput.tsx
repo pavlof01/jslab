@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Show } from "@chakra-ui/react";
-import { ValueInput } from "@/app/coercion-visualizer/components/ValueInput";
+import { ValueInput } from "@/app/abstract-functions-visualizer/components/ValueInput";
 
 export function AlgorithmModeInput({
   traceInputRaw,
