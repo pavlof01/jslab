@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { SpecValue, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
-import type { TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
+import { TraceResult } from "../abstract-operations-tracer";
 
 interface TraceState {
   trace: TraceStep[];

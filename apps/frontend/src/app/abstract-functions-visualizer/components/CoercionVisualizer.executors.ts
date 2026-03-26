@@ -1,9 +1,9 @@
 import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
-import type { TraceResult } from "@/app/abstract-functions-visualizer/algorithms/executors";
 import {
   type TraceServiceResponse,
   traceServiceResponseToTraceResult,
 } from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
+import { TraceResult } from "../abstract-operations-tracer";
 
 export interface ExecutionResult {
   traceResult: TraceResult;
