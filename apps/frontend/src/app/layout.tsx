@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "./providers";
+import { HeaderBar } from "@/components/HeaderBar";
 
 export const viewport: Viewport = {
   themeColor: "#111827",
@@ -79,7 +80,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <HeaderBar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

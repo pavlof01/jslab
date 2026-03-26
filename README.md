@@ -48,7 +48,8 @@ Goals:
   ├─ engine-hermes   # hermesc/hermes wrapper HTTP service
   ├─ engine-jsc      # JavaScriptCore (jsc) wrapper HTTP service
   ├─ engine-spidermonkey # SpiderMonkey (js shell) wrapper HTTP service
-  └─ frontend        # existing Next.js UI (code in apps/frontend/src, no UI changes)
+  └─ frontend        # Next.js UI + coercion visualizer
+      └─ src/lib/ecma262  # ECMAScript 262 specification implementation (can be extracted as submodule)
 /infra/k8s           # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
 ```
 
@@ -221,6 +222,42 @@ curl -sS https://jslab.su/api/run \
 - Flamegraph integration
 - WebAssembly comparison layer
 - AI Explain Mode for bytecode and optimization traces
+
+---
+
+## 📦 Packages
+
+### ECMAScript 262 Specification Implementation
+
+The `apps/frontend/src/lib/ecma262` directory contains a complete ECMAScript 262 specification implementation that can be published and used as an independent package.
+
+#### Getting Started
+
+```typescript
+import { ManagedRealm, createTest262Intrinsics } from "@/lib/ecma262";
+
+// Create and evaluate
+const realm = new ManagedRealm();
+const result = realm.evaluateScript("2 + 2"); // 4
+```
+
+#### Publishing as npm Package
+
+To extract ecma262 as an independent package:
+
+1. **Create a GitHub repository** for ecma262-spec
+2. **Add as git submodule**:
+   ```bash
+   git submodule add https://github.com/YOUR_USERNAME/ecma262-spec.git \
+     apps/frontend/src/lib/ecma262
+   ```
+3. **Publish to npm**:
+   ```bash
+   cd apps/frontend/src/lib/ecma262
+   npm publish --access=public
+   ```
+
+For detailed instructions, see [`apps/frontend/src/lib/ecma262/SETUP.md`](apps/frontend/src/lib/ecma262/SETUP.md).
 
 ---
 

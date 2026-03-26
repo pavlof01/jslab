@@ -7,7 +7,6 @@ import { CiPlay1 } from "react-icons/ci";
 import ActionsBarClosedEditor from "@/components/ActionBarClosedEditor";
 import { EditorPanel } from "@/components/EditorPanel";
 import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
-import { HeaderBar } from "@/components/HeaderBar";
 import { OutputsPanel } from "@/components/OutputsPanel";
 import Samples, { samples } from "@/components/Samples";
 import Splitter from "@/components/Splitter";
@@ -102,10 +101,6 @@ export default function PlaygroundClient() {
 
   return (
     <Flex direction="column" maxH="100vh" minH="100vh" bg={pageBg} color={textPrimary}>
-      <Box as="header" px={6} py={4} height="8vh" borderBottom="1px solid" borderColor={borderColor} bg={panelBg}>
-        <HeaderBar status={status} />
-      </Box>
-
       <Flex ref={gridRef} gap={4} flex="1" maxH="92vh" px={6} py={4}>
         <Show when={!editorCollapsed}>
           <Box
@@ -175,7 +170,11 @@ export default function PlaygroundClient() {
               {showDiff ? "Hide Diff" : "Show Diff"}
             </Button>
             <Spacer />
-            <EngineCheckboxSelector selectedEngines={selectedEngines} onEnginesChange={handleEnginesChange} tabs={tabs} />
+            <EngineCheckboxSelector
+              selectedEngines={selectedEngines}
+              onEnginesChange={handleEnginesChange}
+              tabs={tabs}
+            />
           </HStack>
           <Flex flex={1} overflow="scroll">
             <OutputsPanel

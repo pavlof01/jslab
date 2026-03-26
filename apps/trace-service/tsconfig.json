@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "allowJs": true,
+    "lib": ["ES2024"],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "#self": ["./src/index.mts"]
+    }
+  },
+  "include": ["src/**/*.mts", "src/**/*.mjs", "vitest.config.mts"]
+}
