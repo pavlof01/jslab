@@ -1,0 +1,31 @@
+{
+  "name": "@jslab/trace-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#self": "./src/index.mts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server/server.ts",
+    "build": "cp -r src dist && cp -r lib dist/",
+    "start": "node dist/server/server.ts",
+    "lint": "tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest --config vitest.config.mts",
+    "test:api": "vitest --config vitest.config.mts src/server/test/api.test.mts",
+    "test:engine": "vitest --config vitest.config.mts src/trace/test/engine262",
+    "test:type-conversion": "vitest --config vitest.config.mts src/trace/test/type-conversion.test.mts src/trace/test/to-number.test.mts src/trace/test/to-primitive.test.mts src/trace/test/ToNumber.trace.spec.mts"
+  },
+  "dependencies": {
+    "@unicode/unicode-16.0.0": "^1.6.16",
+    "fastify": "^5.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15",
+    "devtools-protocol": "^0.0.1561482",
+    "typescript": "5.8.2",
+    "vitest": "^4.0.16"
+  }
+}
