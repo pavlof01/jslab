@@ -8,6 +8,7 @@ resources:
   - ../base/api-configmap.yaml
   - ../base/redis.yaml
   - ../base/api-deployment.yaml
+  - ../base/trace-service.yaml
   - ../base/engine-v8.yaml
   - ../base/engine-hermes.yaml
   - ../base/engine-jsc.yaml
@@ -18,6 +19,8 @@ images:
   # Make base manifests use local Skaffold artifact image names.
   - name: pavlof01/jslab-api
     newName: jslab-api
+  - name: pavlof01/jslab-trace-service
+    newName: jslab-trace-service
   - name: pavlof01/jslab-engine-v8
     newName: jslab-engine-v8
   - name: pavlof01/jslab-engine-hermes
@@ -31,6 +34,7 @@ images:
 patches:
   - path: frontend-dev.yaml
   - path: api-dev.yaml
+  - path: trace-service-dev.yaml
   - path: engine-v8-dev.yaml
   - path: engine-hermes-dev.yaml
   - path: engine-jsc-dev.yaml

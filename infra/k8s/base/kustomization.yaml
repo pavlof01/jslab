@@ -6,6 +6,7 @@ resources:
   - api-configmap.yaml
   - redis.yaml
   - api-deployment.yaml
+  - trace-service.yaml
   - engine-v8.yaml
   - engine-hermes.yaml
   - engine-jsc.yaml

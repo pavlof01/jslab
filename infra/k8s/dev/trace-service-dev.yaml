@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trace-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trace-service
+  template:
+    metadata:
+      labels:
+        app: trace-service
+    spec:
+      containers:
+        - name: trace-service
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+          securityContext:
+            readOnlyRootFilesystem: false

@@ -27,6 +27,8 @@ spec:
               value: production
             - name: JSLAB_BACKEND_URL
               value: http://api:8080/api/run
+            - name: TRACE_SERVICE_URL
+              value: http://trace-service:8080
           ports:
             - containerPort: 3000
           livenessProbe:

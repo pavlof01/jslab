@@ -32,6 +32,18 @@ build:
           - "src/**/*"
           - "Dockerfile"
 
+    - image: jslab-trace-service
+      context: apps/trace-service
+      docker:
+        dockerfile: Dockerfile
+        target: dev
+      sync:
+        infer:
+          - "src/**/*.ts"
+          - "package.json"
+          - "package-lock.json"
+          - "tsconfig*.json"
+
     - image: jslab-engine-v8
       context: apps/engine-v8
       docker:
@@ -97,6 +109,11 @@ portForward:
     namespace: jslab
     port: 3000
     localPort: 3000
+  - resourceType: service
+    resourceName: trace-service
+    namespace: jslab
+    port: 8080
+    localPort: 8080
   - resourceType: service
     resourceName: api
     namespace: jslab
