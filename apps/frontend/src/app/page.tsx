@@ -1,7 +1,7 @@
-import PlaygroundClient from "./_components/PlaygroundClient";
+import LandingPage from "./(landing)/page";
 
 export const dynamic = "force-static";
 
 export default function Page() {
-  return <PlaygroundClient />;
+  return <LandingPage />;
 }

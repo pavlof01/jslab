@@ -3,7 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "./providers";
-import { HeaderBar } from "@/components/HeaderBar";
+import { Header } from "@/components/Header";
 
 export const viewport: Viewport = {
   themeColor: "#111827",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: "JSLab — Explore JS Engines",
     description:
       "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
-    url: "https://jslab.su",
+    url: "jslab.su",
     siteName: "JSLab",
     type: "website",
     locale: "en_US",
@@ -81,7 +81,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <Providers>
-          <HeaderBar />
+          <Header />
           {children}
         </Providers>
       </body>
