@@ -1,5 +1,3 @@
-import React from "react";
-
 import { Checkbox, CheckboxGroup, Fieldset, For, HStack } from "@chakra-ui/react";
 import { EngineKey, isEngineKey } from "@/lib/types";
 import { useColorModeValue } from "../ui/color-mode";

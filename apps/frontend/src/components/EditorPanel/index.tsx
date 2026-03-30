@@ -56,7 +56,8 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   const decorationsRef = useRef<string[]>([]);
   const completionRef = useRef<any>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
-  const borderColor = useColorModeValue("#e2e8f0", "#334155");
+
+  const borderColor = useColorModeValue("brand.900", "brand.900");
 
   useEffect(() => () => completionRef.current?.dispose?.(), []);
 
@@ -102,7 +103,7 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
           position.lineNumber,
           Math.max(1, word.startColumn - 1),
           position.lineNumber,
-          word.startColumn
+          word.startColumn,
         );
         const beforeWord = model.getValueInRange(beforeWordRange);
         const startColumn = beforeWord === "%" ? Math.max(1, word.startColumn - 1) : word.startColumn;
@@ -124,16 +125,8 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   }, []);
 
   return (
-    <Box
-      flex="1"
-      minH={0}
-      borderTop="1px solid"
-      borderColor={borderColor}
-      position="relative"
-    >
-      {!isEditorReady && (
-        <Skeleton position="absolute" inset={0} borderRadius="md" pointerEvents="none" />
-      )}
+    <Box flex="1" minH={0} position="relative">
+      {!isEditorReady && <Skeleton position="absolute" inset={0} borderRadius="md" pointerEvents="none" />}
       <MonacoEditor
         height="100%"
         defaultLanguage="javascript"
