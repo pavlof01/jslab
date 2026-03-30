@@ -32,7 +32,7 @@ export function OutputsPanel({
     }
   };
 
-  const outputPreBg = useColorModeValue("#f1f5f9", "#111827");
+  const outputPreBg = useColorModeValue("#1e1e1e", "#1e1e1e");
   const activeKey = enabledTabs[activeTabIndex].key || EngineKey.v8;
   const stdout = out?.[activeKey]?.stdout;
   const stderr = out?.[activeKey]?.stderr;
