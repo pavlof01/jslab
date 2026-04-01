@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: "JSLab — Explore JS Engines",
     description:
       "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
-    url: "jslab.su",
+    url: "/",
     siteName: "JSLab",
     type: "website",
     locale: "en_US",
@@ -79,6 +79,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        />
+      </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <Providers>
           <Header />

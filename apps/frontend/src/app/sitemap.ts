@@ -9,6 +9,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
+    {
+      url: "https://jslab.su/playground",
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: "https://jslab.su/abstract-functions-visualizer",
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
   ];
 }
-
