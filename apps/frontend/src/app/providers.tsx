@@ -61,7 +61,6 @@ const buttonRecipe = defineRecipe({
 });
 
 const system = createSystem(defaultConfig, {
-  preflight: false,
   theme: {
     tokens,
     semanticTokens,
