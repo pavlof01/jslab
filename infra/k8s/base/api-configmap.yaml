@@ -9,6 +9,7 @@ data:
   ENGINE_HERMES_URL: http://engine-hermes:8080
   ENGINE_SM_URL: http://engine-spidermonkey:8080
   ENGINE_JSC_URL: http://engine-jsc:8080
+  TRACE_SERVICE_URL: http://trace-service:8080
   REDIS_URL: redis://redis:6379
   CACHE_TTL_SECONDS: "600"
   RATE_LIMIT_PER_MIN: "60"
