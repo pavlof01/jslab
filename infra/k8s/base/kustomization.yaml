@@ -14,4 +14,3 @@ resources:
   - frontend.yaml
   - ingress.yaml
   - networkpolicy.yaml
-  - pdb.yaml

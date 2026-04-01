@@ -1,4 +1,5 @@
 import fastify from "fastify";
+// @ts-ignore
 import apiReference from "@scalar/fastify-api-reference";
 import underPressure from "@fastify/under-pressure";
 import { Redis } from "ioredis";
@@ -25,7 +26,7 @@ const app = fastify({
   // IMPORTANT: enable only if you are actually behind a reverse proxy (Traefik/Nginx).
   // With trustProxy=true, Fastify derives req.ip from X-Forwarded-For *only* from trusted proxies,
   // so we don't have to parse XFF manually (and avoid spoofing).
-  trustProxy: (addr) => addr === "127.0.0.1" || addr === "::1" // или CIDR твоего ingress
+  trustProxy: true
 });
 
 // Under pressure (it's better to set thresholds explicitly)
