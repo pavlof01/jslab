@@ -19,3 +19,5 @@ images:
     newTag: latest
   - name: pavlof01/jslab-frontend
     newTag: latest
+  - name: pavlof01/jslab-trace-service
+    newTag: latest
