@@ -81,26 +81,16 @@ jobs:
           sm_image="${sm_image:-pavlof01/jslab-engine-spidermonkey:latest}"
           frontend_image="${frontend_image:-pavlof01/jslab-frontend:latest}"
 
-          overlay="$(mktemp -d)"
+          overlay="infra/k8s/.deploy-infra-overlay"
+          rm -rf "${overlay}"
+          mkdir -p "${overlay}"
           trap 'rm -rf "${overlay}"' EXIT
-
-          cp -a infra/k8s/prod/. "${overlay}/"
 
           cat > "${overlay}/kustomization.yaml" <<EOF
           apiVersion: kustomize.config.k8s.io/v1beta1
           kind: Kustomization
-          namespace: jslab
           resources:
-            - api-configmap.yaml
-            - redis.yaml
-            - api-deployment.yaml
-            - trace-service.yaml
-            - engine-v8.yaml
-            - engine-hermes.yaml
-            - engine-jsc.yaml
-            - engine-spidermonkey.yaml
-            - frontend.yaml
-            - ingress.yaml
+            - ../prod
           images:
             - name: pavlof01/jslab-api
               newName: ${api_image%:*}
@@ -122,5 +112,14 @@ jobs:
               newTag: ${frontend_image##*:}
           EOF
 
+          echo "Using images:"
+          echo "api=$api_image"
+          echo "v8=$v8_image"
+          echo "hermes=$hermes_image"
+          echo "jsc=$jsc_image"
+          echo "spidermonkey=$sm_image"
+          echo "frontend=$frontend_image"
+
+          kubectl kustomize "${overlay}"
           kubectl apply -k "${overlay}"
           EOSSH
