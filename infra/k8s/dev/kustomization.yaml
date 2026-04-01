@@ -14,7 +14,6 @@ resources:
   - ../base/engine-jsc.yaml
   - ../base/engine-spidermonkey.yaml
   - ../base/frontend.yaml
-  - ../base/pdb.yaml
 images:
   # Make base manifests use local Skaffold artifact image names.
   - name: pavlof01/jslab-api

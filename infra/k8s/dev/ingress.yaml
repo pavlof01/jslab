@@ -4,19 +4,9 @@ kind: Ingress
 metadata:
   name: jslab-api
   namespace: jslab
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.priority: "1000"
-    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
 spec:
-  ingressClassName: traefik
-  tls:
-    - hosts:
-        - jslab.su
-        - www.jslab.su
-      secretName: cloudflare-origin-tls
   rules:
-    - host: jslab.su
+    - host: jslab.dev
       http:
         paths:
           - path: /api
@@ -26,7 +16,7 @@ spec:
                 name: api
                 port:
                   number: 8080
-    - host: www.jslab.su
+    - host: www.jslab.dev
       http:
         paths:
           - path: /api
@@ -43,19 +33,9 @@ kind: Ingress
 metadata:
   name: jslab-frontend
   namespace: jslab
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.priority: "10"
-    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
 spec:
-  ingressClassName: traefik
-  tls:
-    - hosts:
-        - jslab.su
-        - www.jslab.su
-      secretName: cloudflare-origin-tls
   rules:
-    - host: jslab.su
+    - host: jslab.dev
       http:
         paths:
           - path: /
@@ -65,7 +45,7 @@ spec:
                 name: frontend
                 port:
                   number: 3000
-    - host: www.jslab.su
+    - host: www.jslab.dev
       http:
         paths:
           - path: /

@@ -18,12 +18,14 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up SSH
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
@@ -32,55 +34,73 @@ jobs:
 
       - name: Test SSH
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@103.106.2.32 "echo ok"
+          set -euo pipefail
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            root@103.106.2.32 "echo ok"
 
       - name: Deploy
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@103.106.2.32 <<'EOSSH'
-            set -euo pipefail
+          set -euo pipefail
 
-            cd /root/js-engines
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            root@103.106.2.32 <<'EOSSH'
+          set -euo pipefail
 
-            git fetch origin main
-            git checkout -B main origin/main
-            git reset --hard origin/main
-            git clean -fd
+          cd /root/js-engines
 
-            kubectl apply -f infra/k8s/base/namespace.yaml
+          git fetch origin main
+          git checkout -B main origin/main
+          git reset --hard origin/main
+          git clean -fd
 
-            # Preserve already-deployed immutable tags when applying infra changes.
-            # Otherwise, applying `infra/k8s/prod` would reset images back to whatever
-            # tag is checked into git (e.g. `latest` placeholders).
-            NAMESPACE="jslab"
+          kubectl apply -f infra/k8s/base/namespace.yaml
 
-            current_image() {
-              local deployment="$1"
-              kubectl -n "${NAMESPACE}" get deployment "${deployment}" \
-                -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true
-            }
+          NAMESPACE="jslab"
 
-            api_image="$(current_image api)"
-            v8_image="$(current_image engine-v8)"
-            hermes_image="$(current_image engine-hermes)"
-            jsc_image="$(current_image engine-jsc)"
-            sm_image="$(current_image engine-spidermonkey)"
-            frontend_image="$(current_image frontend)"
+          current_image() {
+            local deployment="$1"
+            kubectl -n "${NAMESPACE}" get deployment "${deployment}" \
+              -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true
+          }
 
-            api_image="${api_image:-pavlof01/jslab-api:latest}"
-            v8_image="${v8_image:-pavlof01/jslab-engine-v8:latest}"
-            hermes_image="${hermes_image:-pavlof01/jslab-engine-hermes:latest}"
-            jsc_image="${jsc_image:-pavlof01/jslab-engine-jsc:latest}"
-            sm_image="${sm_image:-pavlof01/jslab-engine-spidermonkey:latest}"
-            frontend_image="${frontend_image:-pavlof01/jslab-frontend:latest}"
+          api_image="$(current_image api)"
+          v8_image="$(current_image engine-v8)"
+          hermes_image="$(current_image engine-hermes)"
+          jsc_image="$(current_image engine-jsc)"
+          sm_image="$(current_image engine-spidermonkey)"
+          frontend_image="$(current_image frontend)"
 
-            overlay="$(mktemp -d)"
-            trap 'rm -rf "${overlay}"' EXIT
+          api_image="${api_image:-pavlof01/jslab-api:latest}"
+          v8_image="${v8_image:-pavlof01/jslab-engine-v8:latest}"
+          hermes_image="${hermes_image:-pavlof01/jslab-engine-hermes:latest}"
+          jsc_image="${jsc_image:-pavlof01/jslab-engine-jsc:latest}"
+          sm_image="${sm_image:-pavlof01/jslab-engine-spidermonkey:latest}"
+          frontend_image="${frontend_image:-pavlof01/jslab-frontend:latest}"
+
+          overlay="$(mktemp -d)"
+          trap 'rm -rf "${overlay}"' EXIT
+
+          cp -a infra/k8s/prod/. "${overlay}/"
 
           cat > "${overlay}/kustomization.yaml" <<EOF
           apiVersion: kustomize.config.k8s.io/v1beta1
           kind: Kustomization
+          namespace: jslab
           resources:
-            - $(pwd)/infra/k8s/prod
+            - api-configmap.yaml
+            - redis.yaml
+            - api-deployment.yaml
+            - trace-service.yaml
+            - engine-v8.yaml
+            - engine-hermes.yaml
+            - engine-jsc.yaml
+            - engine-spidermonkey.yaml
+            - frontend.yaml
+            - ingress.yaml
           images:
             - name: pavlof01/jslab-api
               newName: ${api_image%:*}
@@ -102,5 +122,5 @@ jobs:
               newTag: ${frontend_image##*:}
           EOF
 
-            kubectl kustomize "${overlay}" --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+          kubectl apply -k "${overlay}"
           EOSSH

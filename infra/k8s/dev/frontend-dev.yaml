@@ -21,6 +21,8 @@ spec:
               value: "1"
             - name: TRACE_SERVICE_URL
               value: http://trace-service:8080
+            - name: JSLAB_BACKEND_URL
+              value: http://api:8080
             - name: WATCHPACK_POLLING
               # Polling is sometimes needed in containerized dev setups, but
               # `true` can mean a large default interval. Use a small interval
