@@ -1,20 +1,30 @@
-"use client";
-
-import { Button, Drawer, CloseButton } from "@chakra-ui/react";
-import { IoMenu } from "react-icons/io5";
-import { useState } from "react";
-
+import { Box, Container, Flex, HStack } from "@chakra-ui/react";
 import Logo from "../Logo";
 import Nav from "./Nav";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background-dark/80 backdrop-blur-md px-4 sm:px-6 md:px-20 py-4">
-      <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
-        <Logo />
-
-        <Nav />
-      </div>
-    </header>
+    <Box
+      as="header"
+      position="sticky"
+      top={0}
+      zIndex={50}
+      w="full"
+      borderBottomWidth="1px"
+      borderColor="rgba(255,255,255,0.1)"
+      bg="rgba(35,33,15,0.82)"
+      backdropFilter="blur(16px)"
+      px={{ base: 6, md: 20 }}
+      py={4}
+    >
+      <Container maxW="7xl" px={0}>
+        <Flex align="center" justify="space-between" gap={{ base: 4, md: 8 }}>
+          <HStack gap={{ base: 4, md: 12 }} flex="1" minW={0}>
+            <Logo />
+            <Nav />
+          </HStack>
+        </Flex>
+      </Container>
+    </Box>
   );
 }
