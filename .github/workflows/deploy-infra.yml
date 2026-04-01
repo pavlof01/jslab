@@ -73,6 +73,7 @@ jobs:
           jsc_image="$(current_image engine-jsc)"
           sm_image="$(current_image engine-spidermonkey)"
           frontend_image="$(current_image frontend)"
+          trace_image="$(current_image trace-service)"
 
           api_image="${api_image:-pavlof01/jslab-api:latest}"
           v8_image="${v8_image:-pavlof01/jslab-engine-v8:latest}"
@@ -80,6 +81,7 @@ jobs:
           jsc_image="${jsc_image:-pavlof01/jslab-engine-jsc:latest}"
           sm_image="${sm_image:-pavlof01/jslab-engine-spidermonkey:latest}"
           frontend_image="${frontend_image:-pavlof01/jslab-frontend:latest}"
+          trace_image="${trace_image:-pavlof01/jslab-trace-service:latest}"
 
           overlay="infra/k8s/.deploy-infra-overlay"
           rm -rf "${overlay}"
@@ -109,8 +111,9 @@ jobs:
               newTag: ${sm_image##*:}
             - name: pavlof01/jslab-frontend
               newName: ${frontend_image%:*}
-              newTag: ${frontend_image##*:}
-          EOF
+              newTag: ${frontend_image##*:}            - name: pavlof01/jslab-trace-service
+              newName: ${trace_image%:*}
+              newTag: ${trace_image##*:}          EOF
 
           echo "Using images:"
           echo "api=$api_image"
@@ -119,6 +122,7 @@ jobs:
           echo "jsc=$jsc_image"
           echo "spidermonkey=$sm_image"
           echo "frontend=$frontend_image"
+          echo "trace-service=$trace_image"
 
           kubectl kustomize "${overlay}"
           kubectl apply -k "${overlay}"
