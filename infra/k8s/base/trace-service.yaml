@@ -29,20 +29,10 @@ spec:
               value: "8080"
             - name: HOST
               value: "0.0.0.0"
+            - name: LOG_LEVEL
+              value: "warn"
           ports:
             - containerPort: 8080
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
           resources:
             requests:
               cpu: 500m

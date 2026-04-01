@@ -26,7 +26,7 @@ spec:
             - name: NODE_ENV
               value: production
             - name: JSLAB_BACKEND_URL
-              value: http://api:8080/api/run
+              value: http://api:8080
             - name: TRACE_SERVICE_URL
               value: http://trace-service:8080
           ports:

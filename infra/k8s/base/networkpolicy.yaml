@@ -16,7 +16,9 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
-        - podSelector: {} # allow in-namespace access (frontend pods via cluster DNS)
+        - podSelector:
+            matchLabels:
+              app: frontend
       ports:
         - port: 8080
 ---
