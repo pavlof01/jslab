@@ -1,7 +1,7 @@
 import fastify from "fastify";
 
 import { loadConfig } from "../../config.ts";
-import { ExecuteRequest, IReply } from "./types.ts";
+import { ExecuteRequest } from "./types.ts";
 import { executeECMA262Function } from "./execute/index.ts";
 import { AVAILABLE_FUNCTIONS } from "./execute/helpers.ts";
 
