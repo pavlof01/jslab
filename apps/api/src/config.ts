@@ -8,6 +8,7 @@ const envSchema = z.object({
   ENGINE_HERMES_URL: z.string().default("http://engine-hermes:8080"),
   ENGINE_SM_URL: z.string().default("http://engine-spidermonkey:8080"),
   ENGINE_JSC_URL: z.string().default("http://engine-jsc:8080"),
+  TRACE_SERVICE_URL: z.string().default("http://trace-service:8080"),
   CACHE_TTL_SECONDS: z.coerce.number().default(600),
   RATE_LIMIT_PER_MIN: z.coerce.number().default(60),
   RATE_LIMIT_HEAVY_PER_MIN: z.coerce.number().default(20),

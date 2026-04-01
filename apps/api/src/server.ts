@@ -8,7 +8,7 @@ import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceRateLimit } from "./rateLimit.js";
-import { normalizeFlags, runRequestSchema } from "./schemas.js";
+import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema } from "./schemas.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
 const config = loadConfig();
@@ -88,24 +88,38 @@ function mapEngineErrorToStatus(enginePayload: any): number {
   return 502;
 }
 
-function classifyEngineError(err: any): { kind: string; message: string } {
+function classifyUpstreamError(serviceName: string, err: any): { kind: string; message: string } {
   const code = err?.code;
   if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
-    return { kind: "dns", message: "engine DNS lookup failed" };
+    return { kind: "dns", message: `${serviceName} DNS lookup failed` };
   }
   if (code === "ECONNREFUSED") {
-    return { kind: "connect_refused", message: "engine connection refused" };
+    return { kind: "connect_refused", message: `${serviceName} connection refused` };
   }
   if (code === "UND_ERR_CONNECT_TIMEOUT" || code === "ETIMEDOUT") {
-    return { kind: "connect_timeout", message: "engine connect timeout" };
+    return { kind: "connect_timeout", message: `${serviceName} connect timeout` };
   }
   if (code === "UND_ERR_HEADERS_TIMEOUT") {
-    return { kind: "headers_timeout", message: "engine headers timeout" };
+    return { kind: "headers_timeout", message: `${serviceName} headers timeout` };
   }
   if (code === "UND_ERR_BODY_TIMEOUT") {
-    return { kind: "body_timeout", message: "engine body timeout" };
+    return { kind: "body_timeout", message: `${serviceName} body timeout` };
   }
-  return { kind: "request_error", message: "engine request failed" };
+  return { kind: "request_error", message: `${serviceName} request failed` };
+}
+
+async function readResponseText(body: unknown): Promise<string> {
+  if (typeof (body as any)?.text === "function") {
+    return await (body as any).text();
+  }
+
+  return await new Promise<string>((resolve, reject) => {
+    let data = "";
+    (body as NodeJS.ReadableStream).setEncoding("utf8");
+    (body as NodeJS.ReadableStream).on("data", (chunk) => (data += chunk));
+    (body as NodeJS.ReadableStream).on("end", () => resolve(data));
+    (body as NodeJS.ReadableStream).on("error", reject);
+  });
 }
 
 app.post("/api/run", async (req, reply) => {
@@ -175,17 +189,7 @@ app.post("/api/run", async (req, reply) => {
       headersTimeout: normalized.timeoutMs + 1000,
     });
 
-    // Prefer undici's body.text() if available, fallback to stream read otherwise.
-    const engineText =
-      typeof (engineRes.body as any)?.text === "function"
-        ? await (engineRes.body as any).text()
-        : await new Promise<string>((resolve, reject) => {
-            let data = "";
-            (engineRes.body as NodeJS.ReadableStream).setEncoding("utf8");
-            (engineRes.body as NodeJS.ReadableStream).on("data", (c) => (data += c));
-            (engineRes.body as NodeJS.ReadableStream).on("end", () => resolve(data));
-            (engineRes.body as NodeJS.ReadableStream).on("error", reject);
-          });
+    const engineText = await readResponseText(engineRes.body);
 
     if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
       const msg = engineRes.statusCode === 401 ? "engine auth failed" : "engine returned non-2xx";
@@ -226,8 +230,47 @@ app.post("/api/run", async (req, reply) => {
     await writeCache(redis, key, response, config.CACHE_TTL_SECONDS);
     reply.send(response);
   } catch (err: any) {
-    const classified = classifyEngineError(err);
+    const classified = classifyUpstreamError("engine", err);
     req.log.error({ err, engineUrl, kind: classified.kind }, "engine request failed");
+    reply.code(502).send({ ok: false, error: classified.message });
+  }
+});
+
+app.post("/api/trace/execute", async (req, reply) => {
+  const parsed = traceExecuteRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
+    return;
+  }
+
+  const traceServiceUrl = `${config.TRACE_SERVICE_URL.replace(/\/$/, "")}/execute`;
+
+  try {
+    const traceRes = await request(traceServiceUrl, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      headers: {
+        "content-type": "application/json",
+      },
+      bodyTimeout: config.MAX_TIMEOUT_MS + 1000,
+      headersTimeout: config.MAX_TIMEOUT_MS + 1000,
+    });
+
+    const traceText = await readResponseText(traceRes.body);
+
+    let tracePayload: unknown;
+    try {
+      tracePayload = JSON.parse(traceText);
+    } catch {
+      req.log.error({ status: traceRes.statusCode, sample: traceText.slice(0, 2000) }, "trace-service returned non-json");
+      reply.code(502).send({ ok: false, error: "trace-service returned invalid response" });
+      return;
+    }
+
+    reply.code(traceRes.statusCode).send(tracePayload);
+  } catch (err: any) {
+    const classified = classifyUpstreamError("trace-service", err);
+    req.log.error({ err, traceServiceUrl, kind: classified.kind }, "trace-service request failed");
     reply.code(502).send({ ok: false, error: classified.message });
   }
 });
