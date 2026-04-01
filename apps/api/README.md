@@ -6,6 +6,7 @@ This service is the public API gateway for JSLab. It validates requests, enforce
 
 - `GET /healthz` — health check (+ Redis status).
 - `POST /api/run` — run/bytecode request (see repo root `README.md` for the full contract).
+- `POST /api/trace/execute` — proxy to `trace-service` for abstract operation traces.
 
 ## Local development
 
@@ -24,3 +25,4 @@ All env vars are defined in `apps/api/src/config.ts`. Common ones:
 
 - `REDIS_URL` (default `redis://redis:6379`)
 - `ENGINE_V8_URL`, `ENGINE_HERMES_URL`, `ENGINE_SM_URL`, `ENGINE_JSC_URL` (defaults are Kubernetes service URLs)
+- `TRACE_SERVICE_URL` (default `http://trace-service:8080`; set explicitly for local non-Kubernetes runs)

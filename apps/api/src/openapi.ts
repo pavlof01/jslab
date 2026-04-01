@@ -43,6 +43,30 @@ export const openapiDoc = {
           }
         }
       },
+      TraceExecuteRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["functionName", "input"],
+        properties: {
+          functionName: { type: "string", minLength: 1 },
+          input: {},
+          preferredType: { type: "string", enum: ["string", "number"] }
+        }
+      },
+      TraceExecuteResponse: {
+        type: "object",
+        additionalProperties: true,
+        required: ["success"],
+        properties: {
+          success: { type: "boolean" },
+          functionName: { type: "string" },
+          resultValue: { type: "string" },
+          resultType: { type: "string" },
+          trace: { type: "array", items: { type: "object", additionalProperties: true } },
+          stepCount: { type: "integer" },
+          error: { type: "string" }
+        }
+      },
       Artifact: {
         type: "object",
         additionalProperties: false,
@@ -128,6 +152,35 @@ export const openapiDoc = {
           },
           "504": {
             description: "engine timeout",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/trace/execute": {
+      post: {
+        summary: "Execute abstract operation trace",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteRequest" } }
+          }
+        },
+        responses: {
+          "200": {
+            description: "trace executed",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } } }
+          },
+          "400": {
+            description: "invalid request",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
+          "502": {
+            description: "trace service unavailable",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
+          "503": {
+            description: "trace service unavailable",
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
           }
         }

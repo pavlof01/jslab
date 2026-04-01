@@ -12,7 +12,16 @@ const bodyJsonSchema = {
   type: "object",
   properties: {
     functionName: { type: "string", enum: AVAILABLE_FUNCTIONS },
-    input: { type: "string" },
+    input: {
+      anyOf: [
+        { type: "string" },
+        { type: "number" },
+        { type: "boolean" },
+        { type: "array" },
+        { type: "object" },
+        { type: "null" },
+      ],
+    },
     preferredType: { type: "string", enum: ["string", "number"] },
   },
   required: ["functionName", "input"],
