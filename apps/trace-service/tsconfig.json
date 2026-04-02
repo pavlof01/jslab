@@ -10,10 +10,10 @@
     "allowJs": true,
     "lib": ["ES2024"],
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "#self": ["./src/index.mts"]
     }
   },
+  "files": ["src/engine262.d.ts"],
   "include": ["src/**/*.mts", "src/**/*.mjs", "vitest.config.mts"]
 }
