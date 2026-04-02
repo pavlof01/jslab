@@ -43,7 +43,7 @@ export function OutputsPanel({
 
   return (
     <Tabs.Root value={activeKey} onValueChange={handleTabChange} display="flex" size="sm" variant="line" flex="1">
-      <Stack flex="1" minH={0} w="full">
+      <Stack flex="1" minH="20vh" w="full">
         {/* <Show when={canRenderV8Controls}>
           <V8MenuControls selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
         </Show> */}
@@ -56,7 +56,7 @@ export function OutputsPanel({
           ))}
         </Tabs.List>
 
-        <Tabs.Content value={activeKey} display="flex" flex="1" minH={0}>
+        <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
             <HighlightedCode
               engineKey={activeKey}
