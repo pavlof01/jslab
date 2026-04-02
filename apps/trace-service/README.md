@@ -35,7 +35,7 @@ skaffold dev                       # Development with live reload
 Port forwarding (dev):
 
 ```bash
-skaffold dev --port-forward  # Exposes trace-service on localhost:8081
+skaffold dev --port-forward  # Exposes trace-service on localhost:8085
 ```
 
 ## API

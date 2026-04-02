@@ -112,7 +112,7 @@ portForward:
     resourceName: trace-service
     namespace: jslab
     port: 8080
-    localPort: 8081
+    localPort: 8085
   - resourceType: service
     resourceName: api
     namespace: jslab
