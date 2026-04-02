@@ -55,6 +55,10 @@ jobs:
             context: apps/frontend
             dockerfile: apps/frontend/Dockerfile
             image: jslab-frontend
+          - name: trace-service
+            context: apps/trace-service
+            dockerfile: apps/trace-service/Dockerfile
+            image: jslab-trace-service
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,7 +138,8 @@ jobs:
             pavlof01/jslab-engine-hermes=pavlof01/jslab-engine-hermes:${IMAGE_TAG} \
             pavlof01/jslab-engine-jsc=pavlof01/jslab-engine-jsc:${IMAGE_TAG} \
             pavlof01/jslab-engine-spidermonkey=pavlof01/jslab-engine-spidermonkey:${IMAGE_TAG} \
-            pavlof01/jslab-frontend=pavlof01/jslab-frontend:${IMAGE_TAG}
+            pavlof01/jslab-frontend=pavlof01/jslab-frontend:${IMAGE_TAG} \
+            pavlof01/jslab-trace-service=pavlof01/jslab-trace-service:${IMAGE_TAG}
 
           kustomize build . --load-restrictor LoadRestrictionsNone | kubectl apply -f -
 
@@ -149,3 +154,4 @@ jobs:
           kubectl -n "${NAMESPACE}" rollout status deployment/engine-jsc --timeout=10m
           kubectl -n "${NAMESPACE}" rollout status deployment/engine-spidermonkey --timeout=10m
           kubectl -n "${NAMESPACE}" rollout status deployment/redis --timeout=10m
+          kubectl -n "${NAMESPACE}" rollout status deployment/trace-service --timeout=10m

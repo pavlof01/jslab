@@ -111,9 +111,11 @@ jobs:
               newTag: ${sm_image##*:}
             - name: pavlof01/jslab-frontend
               newName: ${frontend_image%:*}
-              newTag: ${frontend_image##*:}            - name: pavlof01/jslab-trace-service
+              newTag: ${frontend_image##*:}
+            - name: pavlof01/jslab-trace-service
               newName: ${trace_image%:*}
-              newTag: ${trace_image##*:}          EOF
+              newTag: ${trace_image##*:}
+          EOF
 
           echo "Using images:"
           echo "api=$api_image"

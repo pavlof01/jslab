@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/server/server.ts",
-    "build": "cp -r src dist && cp -r lib dist/",
-    "start": "node dist/server/server.ts",
+    "build": "tsc --noEmit",
+    "start": "tsx src/server/server.ts",
     "lint": "tsc -p tsconfig.json --noEmit --skipLibCheck",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest --config vitest.config.mts",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@unicode/unicode-16.0.0": "^1.6.16",
     "fastify": "^5.0.0",
+    "tsx": "^4.19.3",
     "zod": "^3.22.0"
   },
   "devDependencies": {

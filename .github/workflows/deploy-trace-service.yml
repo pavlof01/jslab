@@ -1,0 +1,22 @@
+name: deploy-trace-service
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/trace-service/**"
+      - ".github/workflows/deploy-trace-service.yml"
+      - ".github/workflows/reusable-deploy-service-vps.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy-service-vps.yml
+    with:
+      service: trace
+      context: apps/trace-service
+      dockerfile: apps/trace-service/Dockerfile
+      image: jslab-trace-service
+      deployment: trace-service
+      container: trace-service
+    secrets: inherit
