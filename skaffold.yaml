@@ -7,8 +7,6 @@ build:
   local:
     push: false
     useBuildkit: true
-  platforms:
-    - linux/arm64
   artifacts:
     - image: jslab-api
       context: apps/api
@@ -39,7 +37,8 @@ build:
         target: dev
       sync:
         infer:
-          - "src/**/*.ts"
+          - "src/**/*"
+          - "config.ts"
           - "package.json"
           - "package-lock.json"
           - "tsconfig*.json"
@@ -113,7 +112,7 @@ portForward:
     resourceName: trace-service
     namespace: jslab
     port: 8080
-    localPort: 8080
+    localPort: 8081
   - resourceType: service
     resourceName: api
     namespace: jslab

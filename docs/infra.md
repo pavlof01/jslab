@@ -88,7 +88,7 @@ sequenceDiagram
 - Base (closest to “prod”): `infra/k8s/base` — full set of resources (Ingress/NetworkPolicy/PDB, etc.).
 - Prod overlay: `infra/k8s/prod` — base + CI-injected image tags; secrets managed out-of-band.
 - Dev overlay: `infra/k8s/dev` — rewrites `images:` to local Skaffold names and patches manifests for dev (hot-reload, `readOnlyRootFilesystem: false`), and excludes Traefik CRDs (Ingress/Middleware).
-- Dev loop: `skaffold.yaml` — builds 4 images and deploys `infra/k8s/dev` (with port-forward for `frontend` and `api`).
+- Dev loop: `skaffold.yaml` — builds 7 images and deploys `infra/k8s/dev` (with port-forward for `frontend`, `api`, and `trace-service`).
 
 ## 5) Quick commands
 
