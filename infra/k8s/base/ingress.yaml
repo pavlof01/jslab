@@ -41,6 +41,45 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: jslab-frontend-api
+  namespace: jslab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.priority: "2000"
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - jslab.su
+        - www.jslab.su
+      secretName: cloudflare-origin-tls
+  rules:
+    - host: jslab.su
+      http:
+        paths:
+          - path: /api/trace
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.su
+      http:
+        paths:
+          - path: /api/trace
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: jslab-frontend
   namespace: jslab
   annotations:
