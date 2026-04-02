@@ -12,13 +12,13 @@ export interface ExecutionResult {
 
 export async function executeAlgorithmTrace(
   functionName: string,
-  input: unknown,
+  inputExpression: string,
   preferredType?: "string" | "number",
 ): Promise<ExecutionResult> {
   const response = await fetch("/api/trace/execute", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ functionName, input, preferredType }),
+    body: JSON.stringify({ functionName, input: inputExpression, preferredType }),
   });
 
   if (!response.ok) {

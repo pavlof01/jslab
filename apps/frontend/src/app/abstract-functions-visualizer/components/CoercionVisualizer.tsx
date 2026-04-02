@@ -10,7 +10,6 @@ import { RightPanel } from "@/app/abstract-functions-visualizer/components/Right
 import { useColorModeValue } from "@/components/ui/color-mode";
 import { buildTraceModel } from "@/app/abstract-functions-visualizer/traceModel";
 import { traceResultToTraceSteps } from "@/app/abstract-functions-visualizer/adapters/executor-to-trace-adapter";
-import { parseUserInput } from "@/app/abstract-functions-visualizer/utils/parseUserInput";
 import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
 import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
 
@@ -25,14 +24,13 @@ export function CoercionVisualizer() {
   // Playback state
   const { selectedIndex, isPlaying, setIsPlaying, onSelectIndex, maxIndex } = usePlayback(trace.length);
 
-  // ToNumber input state - separate raw text from parsed value
+  // ToNumber input state - separate live editor text from committed expression text
   const [traceInputRaw, setTraceInputRaw] = React.useState<string>('{ valueOf: () => "1" }');
-  const [traceInput, setTraceInput] = React.useState<unknown>('{ valueOf: () => "1" }');
+  const [traceInputExpression, setTraceInputExpression] = React.useState<string>('{ valueOf: () => "1" }');
 
-  // Handler to parse and commit raw input
+  // Commit the raw expression string so trace-service can evaluate it faithfully.
   const commitTraceInput = React.useCallback((rawInput: string) => {
-    const parsed = parseUserInput(rawInput);
-    setTraceInput(parsed.value);
+    setTraceInputExpression(rawInput);
   }, []);
 
   const [isLoading, setIsLoading] = React.useState(false);
@@ -44,7 +42,7 @@ export function CoercionVisualizer() {
     setError(null);
     setCurrentTraceResult(null);
 
-    executeAlgorithmTrace("ToNumber", traceInput)
+    executeAlgorithmTrace("ToNumber", traceInputExpression)
       .then(({ traceResult, resultValue: result }) => {
         const traceSteps = traceResultToTraceSteps(traceResult);
         setTrace(traceSteps);
@@ -59,7 +57,7 @@ export function CoercionVisualizer() {
         setCurrentTraceResult(null);
       })
       .finally(() => setIsLoading(false));
-  }, [traceInput, setIsPlaying, setError, setCurrentTraceResult, setTrace, setResultValue]);
+  }, [traceInputExpression, setIsPlaying, setError, setCurrentTraceResult, setTrace, setResultValue]);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => runNow(), 150);
