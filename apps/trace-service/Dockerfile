@@ -24,14 +24,6 @@ EXPOSE 8080
 CMD ["npm", "run", "dev"]
 
 ########################
-# builder
-########################
-FROM deps AS builder
-COPY tsconfig.json config.ts ./
-COPY src ./src
-RUN npm run build
-
-########################
 # prod
 ########################
 FROM node:20-bookworm-slim AS prod
@@ -41,7 +33,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/dist ./dist
+COPY tsconfig.json config.ts ./
+COPY src ./src
 
 RUN chown -R 1000:1000 /app
 USER 1000
