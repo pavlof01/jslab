@@ -99,6 +99,30 @@ export function isFunctionNameValid(name: string): boolean {
   return AVAILABLE_FUNCTIONS.includes(name);
 }
 
+function looksLikeEcmaExpression(input: string): boolean {
+  const trimmed = input.trim();
+
+  if (trimmed === "") return false;
+  if (
+    trimmed === "true" ||
+    trimmed === "false" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "NaN" ||
+    trimmed === "Infinity" ||
+    trimmed === "-Infinity"
+  ) {
+    return true;
+  }
+
+  if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+    return true;
+  }
+
+  const firstChar = trimmed[0];
+  return firstChar === "{" || firstChar === "[" || firstChar === "(" || firstChar === "\"" || firstChar === "'";
+}
+
 /**
  * Конвертирует входные данные в строку для realm.evaluateScript
  */
@@ -109,14 +133,13 @@ export function convertInputToString(inputCode: any): string {
     // 2. Valid JS code like "{ x: 1 }" -> use as-is
     // 3. A number string like "42" -> use as-is
     // Try to determine which by attempting to parse as JSON
-    try {
-      JSON.parse(inputCode);
-      // Valid JSON - use as-is (includes strings like "\"abc\"", numbers "42", etc)
-      return inputCode;
-    } catch {
-      // Not valid JSON - treat as literal string and quote it
-      return JSON.stringify(inputCode);
+    const trimmed = inputCode.trim();
+    if (looksLikeEcmaExpression(trimmed)) {
+      return trimmed;
     }
+
+    // Plain unquoted text like hello should be treated as a string literal.
+    return JSON.stringify(inputCode);
   } else if (inputCode === null) {
     // null
     return "null";
