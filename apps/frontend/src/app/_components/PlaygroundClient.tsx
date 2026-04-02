@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Flex, HStack, Splitter } from "@chakra-ui/react";
+import { Button, Flex, HStack, Splitter, useBreakpointValue } from "@chakra-ui/react";
 import { CiPlay1 } from "react-icons/ci";
 
 import { EditorPanel } from "@/components/EditorPanel";
@@ -14,6 +14,7 @@ import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngin
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const DEFAULT_SPLIT = [35, 65];
+const DEFAULT_SPLIT_MOBILE = [20, 80];
 
 const tabs: { key: EngineKey; label: string }[] = [
   { key: EngineKey.v8, label: "V8" },
@@ -35,7 +36,9 @@ export default function PlaygroundClient() {
   const { status, showDiff } = useEngineOutputsState();
   const { runEngines, updateCurrentRunActiveTab, toggleDiff } = useEngineOutputsActions();
   const [activeTab, setActiveTab] = useState<EngineKey>(EngineKey.v8);
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
   const [sizes, setSizes] = useLocalStorage("splitter-sizes", DEFAULT_SPLIT);
+  const [sizesMobile, setSizesMobile] = useLocalStorage("splitter-sizes-mobile", DEFAULT_SPLIT_MOBILE);
   const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
 
   const pageBg = useColorModeValue("brand.800", "brand.800");
@@ -99,12 +102,13 @@ export default function PlaygroundClient() {
   }, []);
 
   return (
-    <Flex direction="column" bg={pageBg} color={textPrimary}>
+    <Flex direction="column" bg={pageBg} color={textPrimary} height="100dvh">
       <Splitter.Root
+        orientation={isMobile ? "vertical" : "horizontal"}
         panels={[{ id: "editor", collapsible: true, collapsedSize: 5, minSize: 25 }, { id: "outputs" }]}
-        defaultSize={sizes}
-        onResizeEnd={(e) => setSizes(e.size)}
-        minH="100vh"
+        defaultSize={isMobile ? sizesMobile : sizes}
+        onResizeEnd={(e) => (isMobile ? setSizesMobile(e.size) : setSizes(e.size))}
+        height="100%"
       >
         <Splitter.Panel id="editor">
           <Flex bg={panelBg} flexDirection="column" height="100%">
