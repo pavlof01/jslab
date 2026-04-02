@@ -125,7 +125,7 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   }, []);
 
   return (
-    <Box flex="1" minH={0} position="relative">
+    <Box flex="1" minH="20vh" position="relative">
       {!isEditorReady && <Skeleton position="absolute" inset={0} borderRadius="md" pointerEvents="none" />}
       <MonacoEditor
         height="100%"
