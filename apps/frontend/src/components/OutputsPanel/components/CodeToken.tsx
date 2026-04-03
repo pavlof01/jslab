@@ -1,5 +1,6 @@
 import { Button, Popover, Portal, Text } from "@chakra-ui/react";
 import type { CSSProperties, ReactNode } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { ThemedToken } from "shiki";
 import { getTokenInfo as getJscTokenInfo } from "../jsc-opcodes";
 import { getTokenInfo as getHermesTokenInfo } from "../hermes-opcodes";
@@ -13,15 +14,22 @@ type Props = {
   engineKey: EngineKey;
 };
 
-function ClickPopoverToken({
-  content,
-  description,
-}: {
-  content: ReactNode;
-  description: string;
-}) {
+function ClickPopoverToken({ content, description }: { content: ReactNode; description: string }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, { passive: true, capture: true });
+    return () => window.removeEventListener("scroll", close, { capture: true });
+  }, [open]);
+
+  const onOpenChange = useCallback((details: { open: boolean }) => {
+    setOpen(details.open);
+  }, []);
+
   return (
-    <Popover.Root lazyMount unmountOnExit>
+    <Popover.Root lazyMount unmountOnExit open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
         <Button as="span" size="2xs" fontSize={14} variant="ghost">
           {content}
