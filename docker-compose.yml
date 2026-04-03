@@ -1,0 +1,235 @@
+services:
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # V8 Engine
+  engine-v8:
+    build:
+      context: ./apps/engine-v8
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "8087:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/engine-v8/src:/app/src
+      - ./apps/engine-v8/tsconfig.json:/app/tsconfig.json
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Hermes Engine
+  engine-hermes:
+    build:
+      context: ./apps/engine-hermes
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "8082:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      HERMES_PATH: /usr/local/bin/hermes
+      HERMESC_PATH: /usr/local/bin/hermesc
+      HBCDUMP_PATH: /usr/local/bin/hbcdump
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/engine-hermes/src:/app/src
+      - ./apps/engine-hermes/tsconfig.json:/app/tsconfig.json
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # SpiderMonkey Engine
+  engine-spidermonkey:
+    build:
+      context: ./apps/engine-spidermonkey
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "8083:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/engine-spidermonkey/src:/app/src
+      - ./apps/engine-spidermonkey/tsconfig.json:/app/tsconfig.json
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # JSC Engine
+  engine-jsc:
+    build:
+      context: ./apps/engine-jsc
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "8084:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/engine-jsc/src:/app/src
+      - ./apps/engine-jsc/tsconfig.json:/app/tsconfig.json
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Trace Service
+  trace-service:
+    build:
+      context: ./apps/trace-service
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "8085:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      LOG_LEVEL: debug
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/trace-service/src:/app/src
+      - ./apps/trace-service/config.ts:/app/config.ts
+      - ./apps/trace-service/tsconfig.json:/app/tsconfig.json
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/healthz').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # API Gateway
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      REDIS_URL: redis://redis:6379
+      ENGINE_V8_URL: http://engine-v8:8080
+      ENGINE_HERMES_URL: http://engine-hermes:8080
+      ENGINE_SM_URL: http://engine-spidermonkey:8080
+      ENGINE_JSC_URL: http://engine-jsc:8080
+      TRACE_SERVICE_URL: http://trace-service:8080
+      LOG_LEVEL: debug
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/api/src:/app/src
+      - ./apps/api/tsconfig.json:/app/tsconfig.json
+    depends_on:
+      redis:
+        condition: service_healthy
+      engine-v8:
+        condition: service_healthy
+      engine-hermes:
+        condition: service_healthy
+      engine-spidermonkey:
+        condition: service_healthy
+      engine-jsc:
+        condition: service_healthy
+      trace-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Frontend
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      JSLAB_BACKEND_URL: http://api:8080
+      TRACE_SERVICE_URL: http://trace-service:8080
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./apps/frontend/src/app:/app/frontend/app
+      - ./apps/frontend/src/components:/app/frontend/components
+      - ./apps/frontend/src/hooks:/app/frontend/hooks
+      - ./apps/frontend/src/lib:/app/frontend/lib
+      - ./apps/frontend/src/next.config.ts:/app/frontend/next.config.ts
+      - ./apps/frontend/src/next-env.d.ts:/app/frontend/next-env.d.ts
+      - ./apps/frontend/src/tsconfig.json:/app/frontend/tsconfig.json
+    depends_on:
+      api:
+        condition: service_healthy
+      trace-service:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: jslab_dev
