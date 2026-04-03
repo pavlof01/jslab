@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { JSX } from "react";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
-import { Box } from "@chakra-ui/react";
+import { Box, BoxProps } from "@chakra-ui/react";
 
 import hermesbc from "./hermes-bytecode.tmLanguage.json";
 import jscbc from "./jsc-bytecode.tmLanguage.json";
@@ -35,6 +35,7 @@ async function getHighlighter() {
         langs: [],
         themes: [THEME],
       });
+
       await Promise.all([
         highlighter.loadLanguage(v8bc),
         highlighter.loadLanguage(jscbc),
@@ -63,14 +64,14 @@ export async function highlight(code: string, lang: BundledLanguage | CustomLang
   const currentRaw = await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME });
 
   if (!prevCode) {
-    return currentRaw;
+    return { tokens: currentRaw, highlighter };
   }
 
   const prevRaw = await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME });
 
   const diffTokens = compareOutputs(prevRaw, currentRaw, { normalizeLine: normalizeForDiff });
 
-  return diffTokens;
+  return { tokens: diffTokens, highlighter };
 }
 
 interface Props {
@@ -80,6 +81,7 @@ interface Props {
   showDiff?: boolean;
   isLoading?: boolean;
   EmptyCodeBlockState?: () => JSX.Element;
+  boxProps?: BoxProps;
 }
 
 export function HighlightedCode({
@@ -89,8 +91,10 @@ export function HighlightedCode({
   isLoading = false,
   showDiff = true,
   EmptyCodeBlockState = DefaultEmptyCodeBlockState,
+  boxProps,
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
+  const [highlighter, setHighlighter] = useState<Highlighter>();
 
   useEffect(() => {
     if (isLoading || !out) {
@@ -101,7 +105,10 @@ export function HighlightedCode({
     const lang = langHighlighterByEngineKey[engineKey];
     let cancelled = false;
     void highlight(out, lang, showDiff ? prev : "").then((node) => {
-      if (!cancelled) setTokens(node);
+      if (!cancelled) {
+        setTokens(node.tokens);
+        setHighlighter(node.highlighter);
+      }
     });
 
     return () => {
@@ -112,7 +119,7 @@ export function HighlightedCode({
   if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
 
   return (
-    <Box>
+    <Box {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
       <CodeDisplay {...tokens} engineKey={engineKey} />
     </Box>
