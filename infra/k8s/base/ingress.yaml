@@ -1,4 +1,4 @@
----
+# ─── jslab-api ────────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -14,6 +14,8 @@ spec:
     - hosts:
         - jslab.su
         - www.jslab.su
+        - jslab.cc
+        - www.jslab.cc
       secretName: cloudflare-origin-tls
   rules:
     - host: jslab.su
@@ -36,8 +38,28 @@ spec:
                 name: api
                 port:
                   number: 8080
-
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
+    - host: www.jslab.cc
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
 ---
+# ─── jslab-frontend-api ───────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -53,6 +75,8 @@ spec:
     - hosts:
         - jslab.su
         - www.jslab.su
+        - jslab.cc
+        - www.jslab.cc
       secretName: cloudflare-origin-tls
   rules:
     - host: jslab.su
@@ -75,8 +99,28 @@ spec:
                 name: frontend
                 port:
                   number: 3000
-
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /api/trace
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.cc
+      http:
+        paths:
+          - path: /api/trace
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
 ---
+# ─── jslab-frontend ───────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -92,6 +136,8 @@ spec:
     - hosts:
         - jslab.su
         - www.jslab.su
+        - jslab.cc
+        - www.jslab.cc
       secretName: cloudflare-origin-tls
   rules:
     - host: jslab.su
@@ -105,6 +151,26 @@ spec:
                 port:
                   number: 3000
     - host: www.jslab.su
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.cc
       http:
         paths:
           - path: /
