@@ -11,12 +11,22 @@ import { FaArrowRight } from "react-icons/fa6";
 export function NestedTraceSection({
   nestedTrace,
   parentNodeDepth,
+  showSkipped = false,
 }: {
   nestedTrace: NestedTraceInfo;
   parentNodeDepth: number;
+  showSkipped?: boolean;
 }) {
   const nestedIndent = parentNodeDepth + 1;
   const steps = nestedTrace.steps;
+  const inputPreview = (() => {
+    try {
+      const raw = (nestedTrace.input as any)?.value ?? nestedTrace.input;
+      return JSON.stringify(raw).slice(0, 30);
+    } catch {
+      return '…';
+    }
+  })();
 
   return (
     <Box>
@@ -34,7 +44,7 @@ export function NestedTraceSection({
             px={3}
           >
             <Text fontSize="xs" fontFamily="mono" fontWeight="500">
-              {nestedTrace.algorithmName}({JSON.stringify(nestedTrace.input.value).slice(0, 30)}...)
+              {nestedTrace.algorithmName}({inputPreview}...)
             </Text>
           </Card.Root>
         </Box>
@@ -49,10 +59,12 @@ export function NestedTraceSection({
           const isIf = step.kind === "if";
 
           if (isIf) {
+            const ifStep = step as Extract<TraceStep, { kind: "if" }>;
+            if (!showSkipped && ifStep.decision?.taken === "else") return null;
             return (
               <React.Fragment key={`nested:${idx}:${step.kind}`}>
                 <BranchNode
-                  step={step as Extract<TraceStep, { kind: "if" }>}
+                  step={ifStep}
                   index={idx}
                   showConnector={!isFirst}
                   nodeDepth={nestedIndent}
@@ -61,7 +73,7 @@ export function NestedTraceSection({
                   onSelectIndex={undefined}
                 />
                 {(step as any).nestedTrace && (
-                  <NestedTraceSection nestedTrace={(step as any).nestedTrace} parentNodeDepth={nestedIndent} />
+                  <NestedTraceSection nestedTrace={(step as any).nestedTrace} parentNodeDepth={nestedIndent} showSkipped={showSkipped} />
                 )}
               </React.Fragment>
             );
@@ -79,7 +91,7 @@ export function NestedTraceSection({
                   onSelectIndex={undefined}
                 />
                 {(step as any).nestedTrace && (
-                  <NestedTraceSection nestedTrace={(step as any).nestedTrace} parentNodeDepth={nestedIndent} />
+                  <NestedTraceSection nestedTrace={(step as any).nestedTrace} parentNodeDepth={nestedIndent} showSkipped={showSkipped} />
                 )}
               </React.Fragment>
             );

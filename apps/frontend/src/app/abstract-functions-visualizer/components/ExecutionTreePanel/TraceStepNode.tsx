@@ -69,7 +69,6 @@ export function TraceStepNode({
   const detail = (() => {
     if (step.kind === "call") return `${step.args.length} arg(s)`;
     if (step.kind === "let") return step.hint ?? formatNodePath(step.nodePath as NodePath);
-    if (step.kind === "return") return step.hint ?? formatSpecValue(step.value, 72);
     return undefined;
   })();
 
@@ -109,6 +108,9 @@ export function TraceStepNode({
               <Tag.Root size="sm" variant={isActive ? "solid" : "outline"} colorPalette={palette}>
                 <Tag.Label fontWeight={isActive ? "600" : "500"}>{title}</Tag.Label>
               </Tag.Root>
+              {step.kind === "return" && step.value.type !== "Undefined" && step.value.type !== "Null" && (
+                <Code fontSize="xs">{formatSpecValue(step.value, 60)}</Code>
+              )}
               <Text fontSize="xs" opacity={0.7} fontFamily="mono">
                 trace <Code>#{index + 1}</Code>
               </Text>
@@ -121,7 +123,7 @@ export function TraceStepNode({
           </HStack>
         </Card.Header>
         <Card.Body pt={0}>
-          {step.kind === "return" ? (
+          {step.kind === "return" && step.value.type !== "Undefined" && step.value.type !== "Null" ? (
             <HStack gap={2} flexWrap="wrap" align="center">
               <Tag.Root size="sm" variant={isActive ? "solid" : "outline"} colorPalette="green">
                 <Tag.Label fontWeight={isActive ? "600" : "500"}>{step.value.type}</Tag.Label>
@@ -144,13 +146,9 @@ export function TraceStepNode({
             </HStack>
           ) : step.kind === "call" ? (
             <Text fontFamily="mono" fontSize="xs" opacity={0.9}>
-              {step.toAlgo}({step.args.map((a) => formatSpecValue(a, 20)).join(", ")})
+              {step.toAlgo}({step.args.map((a) => formatSpecValue(a, 48)).join(", ")})
             </Text>
-          ) : (
-            <Text fontFamily="mono" fontSize="xs" opacity={0.85}>
-              {detail ?? "—"}
-            </Text>
-          )}
+          ) : null}
 
           {step.kind === "let" || step.kind === "return" ? (
             step.transitions?.length ? (

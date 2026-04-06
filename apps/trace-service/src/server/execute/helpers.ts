@@ -38,10 +38,11 @@ import {
  * - "[1, 2, 3]" → ObjectValue (массив)
  */
 export function parseStringToValue(input: string, realm: ManagedRealm) {
-  // Используем realm.evaluateScript для парсинга строки как JS выражения
-  // Это безопасный способ, так как realm имеет свой контекст
+  // Wrap in parens so that `{ ... }` is parsed as an object literal expression,
+  // not as a block statement (which is what the JS parser does at statement level).
+  const expr = `(${input})`;
   try {
-    const result = realm.evaluateScript(input);
+    const result = realm.evaluateScript(expr);
     return result;
   } catch (error) {
     throw new Error(`Failed to parse input "${input}": ${error}`);
@@ -215,24 +216,20 @@ export function callECMA262Function(functionName: string, inputValue: Value, pre
 }
 
 /**
- * Конвертирует результат выполнения в строковое представление
- * Обрабатывает специальные случаи: NaN, Infinity, -Infinity
+ * Конвертирует ECMA262 Value в строковое представление.
+ * execResult — это Value из движка (NumberValue, JSStringValue, etc.)
  */
 export function convertResultToString(execResult: any): string {
-  if (typeof execResult.value === "number") {
-    // Handle special number values: NaN, Infinity, -Infinity
-    return String(execResult.value);
-  } else if (execResult.value === null) {
-    // Explicit null
-    return "null";
-  } else if (execResult.value === undefined) {
-    // Explicit undefined
-    return "undefined";
-  } else if (execResult.value instanceof Object) {
-    // Objects/BigInt - convert to string via constructor or toString
-    return String(execResult.value);
-  } else {
-    // Primitives: string, boolean, bigint
-    return String(execResult.value);
+  if (!execResult || typeof execResult !== "object") {
+    return String(execResult);
+  }
+  switch (execResult.type) {
+    case "Number":  return String(execResult.value);
+    case "String":  return typeof execResult.stringValue === "function" ? execResult.stringValue() : String(execResult.value ?? "");
+    case "Boolean": return execResult === Value.true ? "true" : "false";
+    case "BigInt":  return String(execResult.value);
+    case "Null":    return "null";
+    case "Undefined": return "undefined";
+    default:        return String(execResult);
   }
 }

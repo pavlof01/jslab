@@ -41,57 +41,63 @@ import {
 /** https://tc39.es/ecma262/#sec-toprimitive */
 export function* ToPrimitive(input: Value, preferredType?: 'string' | 'number'): ValueEvaluator<PrimitiveValue> {
   const traceEntry = createTraceEntryFromValue({ argument: input, algoId: 'ToPrimitive' });
-
   // 1. Assert: input is an ECMAScript language value.
   Assert(input instanceof Value);
+  traceEntry({ kind: 'note', hint: 'Step 1: Assert — input is an ECMAScript language value.' });
   // 2. If Type(input) is Object, then
   if (input instanceof ObjectValue) {
-    traceEntry({ kind: 'if', hint: 'If input is Object, try exotic ToPrimitive.' });
+    traceEntry({ kind: 'if', taken: true, hint: 'Step 2: input is an Object — look for @@toPrimitive method.' });
     // a. Let exoticToPrim be ? GetMethod(input, @@toPrimitive).
+    traceEntry({ kind: 'call', hint: 'Step 2a: Let exoticToPrim be ? GetMethod(input, @@toPrimitive).' });
     const exoticToPrim = Q(yield* GetMethod(input, wellKnownSymbols.toPrimitive));
     // b. If exoticToPrim is not undefined, then
     if (exoticToPrim !== Value.undefined) {
-      traceEntry({ kind: 'operation', hint: 'Call exotic @@toPrimitive method.' });
+      traceEntry({ kind: 'if', taken: true, hint: 'Step 2b: exoticToPrim is not undefined — determine hint string.' });
+      // i–iii. Determine hint string.
       let hint;
-      // i. If preferredType is not present, let hint be "default".
       if (preferredType === undefined) {
         hint = Value('default');
-      } else if (preferredType === 'string') { // ii. Else if preferredType is string, let hint be "string".
+        traceEntry({ kind: 'if', taken: true, hint: 'Step 2b-i: preferredType is not present — let hint be "default".' });
+      } else if (preferredType === 'string') {
         hint = Value('string');
-      } else { // iii. Else,
-        // 1. Assert: preferredType is number.
+        traceEntry({ kind: 'if', taken: true, hint: 'Step 2b-ii: preferredType is "string" — let hint be "string".' });
+      } else {
         Assert(preferredType === 'number');
-        // 2. Let hint be "number".
         hint = Value('number');
+        traceEntry({ kind: 'note', hint: 'Step 2b-iii: preferredType is "number" — let hint be "number".' });
       }
       // iv. Let result be ? Call(exoticToPrim, input, « hint »).
+      traceEntry({ kind: 'call', hint: `Step 2b-iv: Let result be ? Call(exoticToPrim, input, « "${(hint as JSStringValue).stringValue()}" »).` });
       const result = Q(yield* Call(exoticToPrim, input, [hint]));
       // v. If Type(result) is not Object, return result.
       if (!(result instanceof ObjectValue)) {
-        traceEntry({ kind: 'return', hint: 'Exotic ToPrimitive returned primitive.' });
+        traceEntry({ kind: 'return', hint: `Step 2b-v: result is not an Object (${result.type}) — return result.` }, result);
         return result;
       }
       // vi. Throw a TypeError exception.
-      traceEntry({ kind: 'throw', hint: 'Exotic ToPrimitive returned object - throw TypeError.' });
+      traceEntry({ kind: 'throw', hint: 'Step 2b-vi: result is an Object — throw TypeError.' });
       return surroundingAgent.Throw('TypeError', 'ObjectToPrimitive');
     }
+    traceEntry({ kind: 'if', taken: false, hint: 'Step 2b: exoticToPrim is undefined — fall back to OrdinaryToPrimitive.' });
     // c. If preferredType is not present, let preferredType be number.
     if (preferredType === undefined) {
       preferredType = 'number';
     }
+    traceEntry({ kind: 'if', taken: true, hint: `Step 2c: preferredType → "${preferredType}" — call OrdinaryToPrimitive.` });
     // d. Return ? OrdinaryToPrimitive(input, preferredType).
-    traceEntry({ kind: 'operation', hint: `Call OrdinaryToPrimitive with hint "${preferredType}".` });
-    return Q(yield* OrdinaryToPrimitive(input, preferredType));
+    traceEntry({ kind: 'call', hint: `Step 2d: Return ? OrdinaryToPrimitive(input, "${preferredType}").` });
+    const primResult = Q(yield* OrdinaryToPrimitive(input, preferredType));
+    traceEntry({ kind: 'return', hint: `Step 2d: OrdinaryToPrimitive returned ${primResult.type}.` }, primResult);
+    return primResult;
   }
   // 3. Return input.
-  traceEntry({ kind: 'return', hint: 'Input is already primitive, return as-is.' });
+  traceEntry({ kind: 'return', hint: 'Step 3: input is already a primitive — return input as-is.' }, input);
   return input;
 }
 
 /** https://tc39.es/ecma262/#sec-ordinarytoprimitive */
 export function* OrdinaryToPrimitive(O: ObjectValue, hint: 'string' | 'number'): ValueEvaluator<PrimitiveValue> {
   const traceEntry = createTraceEntryFromValue({ argument: O, algoId: 'OrdinaryToPrimitive' });
-
   // 1. Assert: Type(O) is Object.
   Assert(O instanceof ObjectValue);
   // 2. Assert: hint is either string or number.
@@ -99,34 +105,38 @@ export function* OrdinaryToPrimitive(O: ObjectValue, hint: 'string' | 'number'):
   let methodNames;
   // 3. If hint is string, then
   if (hint === 'string') {
-    traceEntry({ kind: 'operation', hint: 'Try methods in order: toString, valueOf.' });
     // a. Let methodNames be « "toString", "valueOf" ».
     methodNames = [Value('toString'), Value('valueOf')];
+    traceEntry({ kind: 'if', taken: true, hint: 'Step 3: hint is "string" — methodNames = « "toString", "valueOf" ».' });
   } else { // 4. Else,
-    traceEntry({ kind: 'operation', hint: 'Try methods in order: valueOf, toString.' });
     // a. Let methodNames be « "valueOf", "toString" ».
     methodNames = [Value('valueOf'), Value('toString')];
+    traceEntry({ kind: 'if', taken: true, hint: 'Step 4: hint is "number" — methodNames = « "valueOf", "toString" ».' });
   }
   // 5. For each element name of methodNames, do
   for (const name of methodNames) {
+    const nameStr = (name as JSStringValue).stringValue();
     // a. Let method be ? Get(O, name).
+    traceEntry({ kind: 'call', hint: `Step 5a: Let method be ? Get(O, "${nameStr}").` });
     const method = Q(yield* Get(O, name));
     // b. If IsCallable(method) is true, then
     if (IsCallable(method)) {
-      traceEntry({ kind: 'operation', hint: `Method ${(name as JSStringValue).stringValue()} is callable, calling it.` });
+      traceEntry({ kind: 'if', taken: true, hint: `Step 5b: ${nameStr} is callable.` });
       // i. Let result be ? Call(method, O).
+      traceEntry({ kind: 'call', hint: `Step 5b-i: Let result be ? Call(method, O) — calling ${nameStr}().` });
       const result = Q(yield* Call(method, O));
       // ii. If Type(result) is not Object, return result.
       if (!(result instanceof ObjectValue)) {
-        traceEntry({ kind: 'return', hint: `Method ${(name as JSStringValue).stringValue()} returned primitive.` });
+        traceEntry({ kind: 'return', hint: `Step 5b-ii: ${nameStr}() returned a primitive (${result.type}) — return result.` }, result);
         return result;
       }
+      traceEntry({ kind: 'if', taken: false, hint: `Step 5b-ii: ${nameStr}() returned an Object — try next method.` });
     } else {
-      traceEntry({ kind: 'if', hint: `Method ${(name as JSStringValue).stringValue()} not callable, try next.` });
+      traceEntry({ kind: 'if', taken: false, hint: `Step 5b: ${nameStr} is not callable — skip, try next method.` });
     }
   }
   // 6. Throw a TypeError exception.
-  traceEntry({ kind: 'throw', hint: 'No method returned primitive - throw TypeError.' });
+  traceEntry({ kind: 'throw', hint: 'Step 6: No method returned a primitive — throw TypeError.' });
   return surroundingAgent.Throw('TypeError', 'ObjectToPrimitive');
 }
 
@@ -223,7 +233,7 @@ export function* ToNumeric(value: Value): ValueEvaluator<NumberValue | BigIntVal
   const traceEntry = createTraceEntryFromValue({ argument: value, algoId: 'ToNumeric' });
 
   // 1. Let primValue be ? ToPrimitive(value, number).
-  traceEntry({ kind: 'operation', hint: 'Call ToPrimitive with hint "number".' });
+  traceEntry({ kind: 'call', hint: 'Call ToPrimitive with hint "number".' });
   const primValue = Q(yield* ToPrimitive(value, 'number'));
   // 2. If Type(primValue) is BigInt, return primValue.
   if (primValue instanceof BigIntValue) {
@@ -231,74 +241,86 @@ export function* ToNumeric(value: Value): ValueEvaluator<NumberValue | BigIntVal
     return primValue;
   }
   // 3. Return ? ToNumber(primValue).
-  traceEntry({ kind: 'operation', hint: 'Result is not BigInt, call ToNumber.' });
+  traceEntry({ kind: 'call', hint: 'Result is not BigInt, call ToNumber.' });
   return Q(yield* ToNumber(primValue));
 }
 
 /** https://tc39.es/ecma262/#sec-tonumber */
 export function* ToNumber(argument: Value): ValueEvaluator<NumberValue> {
   const traceEntry = createTraceEntryFromValue({ argument, algoId: 'ToNumber' });
-  
-  if (argument instanceof UndefinedValue) {
-    traceEntry({ kind: 'return', hint: 'If argument is undefined, return NaN.' });
-    return F(NaN);
+
+  if (argument instanceof NumberValue) {
+    traceEntry({ kind: 'return', hint: 'Step 1: argument is a Number — return argument as-is.', specOrder: 1 }, argument);
+    return argument;
   } else {
-    traceEntry({ kind: 'if', hint: 'If argument is undefined, return NaN.' });
+    traceEntry({ kind: 'if', hint: 'Step 1: argument is not a Number — continue.', specOrder: 1 });
+  }
+
+  if (argument instanceof BigIntValue) {
+    traceEntry({ kind: 'throw', hint: 'Step 2: argument is a BigInt — throw TypeError.', specOrder: 2 });
+    return surroundingAgent.Throw('TypeError', 'CannotMixBigInts');
+  } else if (argument instanceof SymbolValue) {
+    traceEntry({ kind: 'throw', hint: 'Step 2: argument is a Symbol — throw TypeError.', specOrder: 2 });
+    return surroundingAgent.Throw('TypeError', 'CannotConvertSymbol', 'number');
+  } else {
+    traceEntry({ kind: 'if', hint: 'Step 2: argument is not a Symbol or BigInt — continue.', specOrder: 2 });
+  }
+
+  if (argument instanceof UndefinedValue) {
+    const nanResult = F(NaN);
+    nanResult.trace = argument.trace;
+    traceEntry({ kind: 'return', hint: 'Step 3: argument is undefined — return NaN.', specOrder: 3 }, nanResult);
+    return nanResult;
+  } else {
+    traceEntry({ kind: 'if', hint: 'Step 3: argument is not undefined — continue.', specOrder: 3 });
   }
 
   if (argument instanceof NullValue) {
-    traceEntry({ kind: 'return', hint: 'If argument is null, return +0.' });
     const result = F(+0);
     result.trace = argument.trace;
+    traceEntry({ kind: 'return', hint: 'Step 4: argument is null — return +0𝔽.', specOrder: 4 }, result);
     return result;
   } else {
-    traceEntry({ kind: 'if', hint: 'If argument is null, return +0.' });
+    traceEntry({ kind: 'if', hint: 'Step 4: argument is not null — continue.', specOrder: 4 });
   }
 
   if (argument instanceof BooleanValue) {
     const boolValue = argument === Value.true ? 1 : 0;
-    traceEntry({ kind: 'return', hint: `If argument is ${argument === Value.true ? 'true' : 'false'}, return ${boolValue}.` });
     const result = F(boolValue);
     result.trace = argument.trace;
+    if (argument === Value.true) {
+      traceEntry({ kind: 'return', hint: 'Step 5: argument is true — return 1𝔽.', specOrder: 5 }, result);
+    } else {
+      traceEntry({ kind: 'return', hint: 'Step 4: argument is false — return +0𝔽.', specOrder: 4 }, result);
+    }
     return result;
   } else {
-    traceEntry({ kind: 'if', hint: 'If argument is boolean, convert to 1 or 0.' });
-  }
-
-  if (argument instanceof NumberValue) {
-    traceEntry({ kind: 'return', hint: 'Argument is already a number, return as-is.' });
-    return argument;
-  } else {
-    traceEntry({ kind: 'if', hint: 'If argument is number, return as-is.' });
+    traceEntry({ kind: 'if', hint: 'Step 4: argument is not false — continue.', specOrder: 4 });
+    traceEntry({ kind: 'if', hint: 'Step 5: argument is not true — continue.', specOrder: 5 });
   }
 
   if (argument instanceof JSStringValue) {
-    traceEntry({ kind: 'operation', hint: `Convert string "${argument.stringValue()}" to number.` });
-    const result = MV_StringNumericLiteral(argument.stringValue());
+    const strVal = argument.stringValue();
+    traceEntry({ kind: 'operation', hint: `Step 6: argument is a String — call StringToNumber("${strVal}").`, specOrder: 6 });
+    const result = MV_StringNumericLiteral(strVal);
     result.trace = argument.trace;
+    traceEntry({ kind: 'return', hint: `Step 6: StringToNumber("${strVal}") = ${R(result)}.`, specOrder: 6 }, result);
     return result;
   } else {
-    traceEntry({ kind: 'if', hint: 'If argument is string, apply MV_StringNumericLiteral.' });
-  }
-
-  if (argument instanceof BigIntValue) {
-    traceEntry({ kind: 'throw', hint: 'Cannot convert BigInt to Number - throw TypeError.' });
-    return surroundingAgent.Throw('TypeError', 'CannotMixBigInts');
-  } else {
-    traceEntry({ kind: 'if', hint: 'If argument is BigInt, throw TypeError.' });
-  }
-
-  if (argument instanceof SymbolValue) {
-    traceEntry({ kind: 'throw', hint: 'Cannot convert Symbol to Number - throw TypeError.' });
-    return surroundingAgent.Throw('TypeError', 'CannotConvertSymbol', 'number');
-  } else {
-    traceEntry({ kind: 'if', hint: 'If argument is Symbol, throw TypeError.' });
+    traceEntry({ kind: 'if', hint: 'Step 6: argument is not a String — continue.', specOrder: 6 });
   }
 
   if (argument instanceof ObjectValue) {
-    traceEntry({ kind: 'operation', hint: 'Convert object to primitive then recurse ToNumber.' });
+    traceEntry({ kind: 'note', hint: 'Step 7: Assert — argument is an Object.', specOrder: 7 });
+    traceEntry({ kind: 'call', hint: 'Step 8: Let primValue be ? ToPrimitive(argument, "number").', specOrder: 8 });
     const primValue = Q(yield* ToPrimitive(argument, 'number'));
-    return Q(yield* ToNumber(primValue));
+    Assert(!(primValue instanceof ObjectValue));
+    traceEntry({ kind: 'note', hint: `Step 9: Assert — primValue is not an Object (type: ${primValue.type}).`, specOrder: 9 });
+    primValue.trace = argument.trace;
+    traceEntry({ kind: 'call', hint: 'Step 10: Return ? ToNumber(primValue).', specOrder: 10 });
+    const finalResult = Q(yield* ToNumber(primValue));
+    traceEntry({ kind: 'return', hint: `Step 10: ToNumber(primValue) = ${R(finalResult)}.`, specOrder: 10 }, finalResult);
+    return finalResult;
   }
 
   throw new OutOfRange('ToNumber', { argument });
@@ -690,101 +712,39 @@ export function* ToString(argument: Value): ValueEvaluator<JSStringValue> {
 
 /** https://tc39.es/ecma262/#sec-toobject */
 export function ToObject(argument: Value): ValueCompletion<ObjectValue> {
-  argument.trace.addEntry({
-    algoId: 'ToObject',
-    kind: 'operation',
-    value: argument.type,
-    type: argument.type,
-    hint: `Convert ${argument.type} to object.`,
-  });
-
+  const traceEntry = createTraceEntryFromValue({ argument, algoId: 'ToObject' });
   if (argument === Value.undefined) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'throw',
-      value: 'undefined',
-      type: 'undefined',
-      hint: 'Cannot convert undefined to object.',
-    });
-    // Throw a TypeError exception.
+    traceEntry({ kind: 'throw', hint: 'Step 1: argument is undefined — throw TypeError.' });
     return surroundingAgent.Throw('TypeError', 'CannotConvertToObject', 'undefined');
   } else if (argument === Value.null) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'throw',
-      value: 'null',
-      type: 'null',
-      hint: 'Cannot convert null to object.',
-    });
-    // Throw a TypeError exception.
+    traceEntry({ kind: 'throw', hint: 'Step 2: argument is null — throw TypeError.' });
     return surroundingAgent.Throw('TypeError', 'CannotConvertToObject', 'null');
   } else if (argument instanceof BooleanValue) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'return',
-      value: 'Boolean object',
-      type: 'object',
-      hint: `Wrap boolean ${argument === Value.true ? 'true' : 'false'} in Boolean object.`,
-    });
-    // Return a new Boolean object whose [[BooleanData]] internal slot is set to argument.
+    traceEntry({ kind: 'return', hint: `Step 3: argument is Boolean — return new Boolean object wrapping ${argument === Value.true ? 'true' : 'false'}.` });
     const obj = OrdinaryObjectCreate(surroundingAgent.intrinsic('%Boolean.prototype%'), ['BooleanData']) as Mutable<BooleanObject>;
     obj.BooleanData = argument;
     return obj;
   } else if (argument instanceof NumberValue) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'return',
-      value: 'Number object',
-      type: 'object',
-      hint: `Wrap number ${R(argument)} in Number object.`,
-    });
-    // Return a new Number object whose [[NumberData]] internal slot is set to argument.
+    traceEntry({ kind: 'return', hint: `Step 4: argument is Number — return new Number object wrapping ${R(argument)}.` });
     const obj = OrdinaryObjectCreate(surroundingAgent.intrinsic('%Number.prototype%'), ['NumberData']) as Mutable<NumberObject>;
     obj.NumberData = argument;
     return obj;
   } else if (argument instanceof JSStringValue) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'return',
-      value: 'String object',
-      type: 'object',
-      hint: `Wrap string "${argument.stringValue()}" in String object.`,
-    });
-    // Return a new String object whose [[StringData]] internal slot is set to argument.
+    traceEntry({ kind: 'return', hint: `Step 5: argument is String — return new String object wrapping "${argument.stringValue()}".` });
     return StringCreate(argument, surroundingAgent.intrinsic('%String.prototype%'));
   } else if (argument instanceof SymbolValue) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'return',
-      value: 'Symbol object',
-      type: 'object',
-      hint: 'Wrap symbol in Symbol object.',
-    });
-    // Return a new Symbol object whose [[SymbolData]] internal slot is set to argument.
+    traceEntry({ kind: 'return', hint: 'Step 6: argument is Symbol — return new Symbol object.' });
     const obj = OrdinaryObjectCreate(surroundingAgent.intrinsic('%Symbol.prototype%'), ['SymbolData']) as Mutable<SymbolObject>;
     obj.SymbolData = argument;
     return obj;
   } else if (argument instanceof BigIntValue) {
-    argument.trace.addEntry({
-      algoId: 'ToObject',
-      kind: 'return',
-      value: 'BigInt object',
-      type: 'object',
-      hint: `Wrap BigInt ${R(argument)} in BigInt object.`,
-    });
-    // Return a new BigInt object whose [[BigIntData]] internal slot is set to argument.
+    traceEntry({ kind: 'return', hint: `Step 7: argument is BigInt — return new BigInt object wrapping ${R(argument)}.` });
     const obj = OrdinaryObjectCreate(surroundingAgent.intrinsic('%BigInt.prototype%'), ['BigIntData']) as Mutable<BigIntObject>;
     obj.BigIntData = argument;
     return obj;
   }
   Assert(argument instanceof ObjectValue);
-  argument.trace.addEntry({
-    algoId: 'ToObject',
-    kind: 'return',
-    value: 'object',
-    type: 'object',
-    hint: 'Argument is already an object, return as-is.',
-  });
+  traceEntry({ kind: 'return', hint: 'Step 8: argument is already an Object — return as-is.' });
   return argument;
 }
 
