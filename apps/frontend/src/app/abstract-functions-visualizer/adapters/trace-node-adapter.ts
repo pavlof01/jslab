@@ -19,7 +19,10 @@ export interface TraceServiceStep {
   hint?: string;
   description?: string;
   value?: string;
+  output?: string;
   type?: string;
+  specOrder?: number;
+  taken?: boolean;
 }
 
 export interface TraceServiceNode {
@@ -81,13 +84,29 @@ function nodeToTraceResult(node: TraceServiceNode, input: unknown): TraceResult 
     }
   });
 
-  const steps: ExecutedStep[] = node.steps.map((s) => {
-    const executed = s.kind !== "if" || s.value !== undefined;
+  // Sort steps by specOrder when present.
+  // Steps without specOrder keep their original position (stable sort).
+  // return/throw always stay at the end regardless of specOrder.
+  const sortedSteps = [...node.steps].sort((a, b) => {
+    const terminal = (s: TraceServiceStep) => s.kind === "return" || s.kind === "throw";
+    if (terminal(a) && !terminal(b)) return 1;
+    if (!terminal(a) && terminal(b)) return -1;
+    if (a.specOrder !== undefined && b.specOrder !== undefined) return a.specOrder - b.specOrder;
+    if (a.specOrder !== undefined) return -1;
+    if (b.specOrder !== undefined) return 1;
+    return 0;
+  });
+
+  const steps: ExecutedStep[] = sortedSteps.map((s) => {
+    // For if-kind steps: use explicit `taken` when present; otherwise fall back
+    // to the old heuristic (value !== undefined means it produced something → executed).
+    const executed = s.kind !== "if"
+      || (s.taken !== undefined ? s.taken : s.value !== undefined);
     const step: ExecutedStep = {
       kind: s.kind,
       description: stepDescription(s),
       executed,
-      result: s.value,
+      result: s.output ?? s.value ?? (s.kind === "return" ? node.output : undefined),
     };
     const nested = childByCallIndex.get(s.step);
     if (nested) step.nestedTrace = nested;

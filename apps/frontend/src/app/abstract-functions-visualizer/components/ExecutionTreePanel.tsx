@@ -12,7 +12,6 @@ import {
   KeyEventAnnotation,
   type KeyEventType,
 } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/KeyEventAnnotation";
-import { NestedTraceSection } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/NestedTraceSection";
 import { TraceStepNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceStepNode";
 import { getDepthForStep } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
 
@@ -24,6 +23,9 @@ export function ExecutionTreePanel({
   entryLabel,
   userInputRaw,
   onSelectIndex,
+  showSkipped = false,
+  onInputChange,
+  onInputCommit,
 }: {
   trace: TraceStep[];
   selectedIndex: number;
@@ -32,6 +34,9 @@ export function ExecutionTreePanel({
   entryLabel: string;
   userInputRaw: string;
   onSelectIndex?: (index: number) => void;
+  showSkipped?: boolean;
+  onInputChange?: (val: string) => void;
+  onInputCommit?: (val: string) => void;
 }) {
   const nodes = React.useMemo(() => {
     const out: Array<{ step: TraceStep; index: number }> = [];
@@ -42,13 +47,21 @@ export function ExecutionTreePanel({
       const step = trace[i];
       if (i === 0 && step.kind === "call") continue; // rendered as Entry Point
       if (step.kind === "ret") continue;
+      // Hide skipped steps (if-else not taken) when showSkipped is false
+      if (!showSkipped && step.kind === "if" && (step as Extract<TraceStep, { kind: "if" }>).decision?.taken === "else") continue;
       out.push({ step, index: i });
     }
     return out;
-  }, [selectedIndex, trace]);
+  }, [selectedIndex, trace, showSkipped]);
 
   const currentStack = framesByStep[selectedIndex] ?? [];
   const depth = Math.max(0, currentStack.length);
+
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    const el = scrollRef.current?.querySelector<HTMLElement>("[data-active='true']");
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [selectedIndex]);
 
   // Helper to detect key events in steps
   function getKeyEvent(step: TraceStep): { type: KeyEventType; text: string } | null {
@@ -85,6 +98,7 @@ export function ExecutionTreePanel({
       <ExecutionTreeHeader depth={depth} />
 
       <Box
+        ref={scrollRef}
         flex="1"
         h="full"
         overflow="auto"
@@ -96,7 +110,13 @@ export function ExecutionTreePanel({
       >
         <Box maxW="4xl" mx="auto">
           <VStack align="stretch" gap={0}>
-            <EntryPointSection entryLabel={entryLabel} userInputRaw={userInputRaw} hasNodes={nodes.length > 0} />
+            <EntryPointSection
+              entryLabel={entryLabel}
+              userInputRaw={userInputRaw}
+              hasNodes={nodes.length > 0}
+              onInputChange={onInputChange}
+              onInputCommit={onInputCommit}
+            />
 
             {nodes.map(({ step, index }, idx) => {
               const stack = framesByStep[index];
@@ -110,7 +130,6 @@ export function ExecutionTreePanel({
                 if (step.kind === "if") {
                   return (
                     <BranchNode
-                      key={`${index}:${step.kind}`}
                       step={step}
                       index={index}
                       showConnector={idx !== 0}
@@ -125,7 +144,6 @@ export function ExecutionTreePanel({
                 if (step.kind === "call" || step.kind === "let" || step.kind === "return") {
                   return (
                     <TraceStepNode
-                      key={`${index}:${step.kind}`}
                       step={step}
                       index={index}
                       showConnector={idx !== 0}
@@ -139,19 +157,21 @@ export function ExecutionTreePanel({
                 return null;
               };
 
-              // Render nested trace if present
-              const nestedTrace = (step as any).nestedTrace;
-
               // Render key event annotation if this step has one
-              const stepWithAnnotation = (
-                <React.Fragment key={`${index}:${step.kind}:withAnnotation`}>
-                  {keyEvent && <KeyEventAnnotation text={keyEvent.text} type={keyEvent.type} nodeDepth={nodeDepth} />}
-                  {renderStep()}
-                  {nestedTrace && <NestedTraceSection nestedTrace={nestedTrace} parentNodeDepth={nodeDepth} />}
-                </React.Fragment>
-              );
+              if (keyEvent) {
+                return (
+                  <Box key={`${index}:${step.kind}:withAnnotation`} data-active={isActive || undefined}>
+                    <KeyEventAnnotation text={keyEvent.text} type={keyEvent.type} nodeDepth={nodeDepth} />
+                    {renderStep()}
+                  </Box>
+                );
+              }
 
-              return nestedTrace ? stepWithAnnotation : keyEvent ? stepWithAnnotation : renderStep();
+              return (
+                <Box key={`${index}:${step.kind}`} data-active={isActive || undefined}>
+                  {renderStep()}
+                </Box>
+              );
             })}
           </VStack>
         </Box>

@@ -36,7 +36,15 @@ export interface TraceStep {
 
   /** Error message if this step threw */
   error?: string;
+
+  /** ECMA spec step order (1-based). When present, UI sorts by this value. */
+  specOrder?: number;
+
+  /** For if-kind steps: true = condition was met (taken), false = not taken (skipped). */
+  taken?: boolean;
 }
+
+
 
 /**
  * TraceNode - represents an operation in the algorithm execution tree
@@ -167,6 +175,8 @@ export class TraceRecord {
       inputs: stepData.inputs,
       output: stepData.output,
       error: stepData.error,
+      specOrder: stepData.specOrder,
+      taken: stepData.taken,
     };
 
     current.steps.push(step);

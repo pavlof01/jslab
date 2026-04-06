@@ -33,13 +33,24 @@ export async function executeECMA262Function(
     const inputValue = (inputResult as NormalCompletion<Value>).Value;
 
     const functionCall = callECMA262Function(functionName, inputValue, preferredType);
-    const execResult = callGenerator(functionCall);
+    const execCompletion = callGenerator(functionCall);
 
+    if (execCompletion instanceof ThrowCompletion) {
+      return {
+        resultValue: String(execCompletion.Value),
+        resultType: "error",
+        trace: inputValue.trace.getEntries(),
+        stepCount: inputValue.trace.getStepCount?.() || 1,
+        error: String(execCompletion.Value),
+      };
+    }
+
+    const execResult = execCompletion as Value;
     const resultValueStr = convertResultToString(execResult);
 
     return {
       resultValue: resultValueStr,
-      resultType: execResult.type,
+      resultType: execResult.type.toLowerCase(),
       trace: inputValue.trace.getEntries(),
       stepCount: inputValue.trace.getStepCount?.() || 1,
     };

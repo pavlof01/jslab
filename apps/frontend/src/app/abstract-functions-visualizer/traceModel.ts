@@ -404,7 +404,10 @@ export function formatSpecValue(value: SpecValue, maxLen = 42): string {
         return `${base}@${value.value.id}`;
       }
       case "Object":
-        return value.value.preview ? `${value.value.class}(${value.value.preview})` : `${value.value.class}#${value.value.id}`;
+        if (value.value.preview) {
+          return value.value.class ? `${value.value.class}(${value.value.preview})` : value.value.preview;
+        }
+        return `${value.value.class}#${value.value.id}`;
       case "Array":
         return JSON.stringify(value.value);
       case "TypeTag":

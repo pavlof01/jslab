@@ -4,6 +4,7 @@ import { loadConfig } from "../../config.ts";
 import { ExecuteRequest } from "./types.ts";
 import { executeECMA262Function } from "./execute/index.ts";
 import { AVAILABLE_FUNCTIONS } from "./execute/helpers.ts";
+import { buildSpecHtmlForFunction, SUPPORTED_SPEC_FUNCTIONS } from "./spec-generator.ts";
 
 const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL } });
@@ -46,6 +47,26 @@ const executeHandler = async (request: { body: ExecuteRequest }, reply: any) => 
 };
 
 app.post<{ Body: ExecuteRequest }>("/execute", { schema: { body: bodyJsonSchema } }, executeHandler);
+
+// GET /spec/:functionName — returns ecmarkup HTML for all algorithms reachable
+// from the given function. Cached after first build.
+app.get<{ Params: { functionName: string } }>("/spec/:functionName", async (request, reply) => {
+  const { functionName } = request.params;
+
+  if (!SUPPORTED_SPEC_FUNCTIONS.includes(functionName)) {
+    return reply.status(404).send({ error: `No spec available for "${functionName}"` });
+  }
+
+  const html = await buildSpecHtmlForFunction(functionName);
+  if (!html) {
+    return reply.status(404).send({ error: `No spec available for "${functionName}"` });
+  }
+
+  return reply
+    .header("Content-Type", "text/html; charset=utf-8")
+    .header("Cache-Control", "public, max-age=3600")
+    .send(html);
+});
 
 const start = async () => {
   try {
