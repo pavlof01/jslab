@@ -1,52 +1,58 @@
 "use client";
 
 import * as React from "react";
-import { Box, Grid } from "@chakra-ui/react";
+import {
+  Box, Grid, IconButton,
+  DrawerRoot, DrawerBackdrop, DrawerPositioner, DrawerContent, DrawerBody, DrawerCloseTrigger,
+} from "@chakra-ui/react";
+import { LuBookOpen, LuX } from "react-icons/lu";
 
-import { ExplorerSidebar } from "@/app/abstract-functions-visualizer/components/ExplorerSidebar";
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { PlaybackDock } from "@/app/abstract-functions-visualizer/components/PlaybackDock";
-import { RightPanel } from "@/app/abstract-functions-visualizer/components/RightPanel";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import { buildTraceModel } from "@/app/abstract-functions-visualizer/traceModel";
 import { traceResultToTraceSteps } from "@/app/abstract-functions-visualizer/adapters/executor-to-trace-adapter";
 import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
 import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
+import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
 
 export function CoercionVisualizer() {
-  // Catalog and algorithms
+  const [specDrawerOpen, setSpecDrawerOpen] = React.useState(false);
   const { algoById } = useAlgorithmCatalog();
 
-  // Trace and execution state
-  const { trace, setTrace, resultValue, setResultValue, error, setError, currentTraceResult, setCurrentTraceResult } =
-    useTraceState();
+  const { trace, setTrace, setResultValue, setError } = useTraceState();
+  const [specHtml, setSpecHtml] = React.useState<string>("");
 
-  // Playback state
   const { selectedIndex, isPlaying, setIsPlaying, onSelectIndex, maxIndex } = usePlayback(trace.length);
 
-  // ToNumber input state - separate live editor text from committed expression text
+  const [showSkipped, setShowSkipped] = React.useState(true);
+
   const [traceInputRaw, setTraceInputRaw] = React.useState<string>('{ valueOf: () => "1" }');
   const [traceInputExpression, setTraceInputExpression] = React.useState<string>('{ valueOf: () => "1" }');
 
-  // Commit the raw expression string so trace-service can evaluate it faithfully.
   const commitTraceInput = React.useCallback((rawInput: string) => {
     setTraceInputExpression(rawInput);
   }, []);
 
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [, setIsLoading] = React.useState(false);
 
-  // Execution
+  // Fetch spec HTML once — it only depends on the function name, not the input
+  React.useEffect(() => {
+    fetch("/api/spec/ToNumber")
+      .then((r) => r.text())
+      .then(setSpecHtml)
+      .catch(() => {});
+  }, []);
+
   const runNow = React.useCallback(() => {
     setIsPlaying(false);
     setIsLoading(true);
     setError(null);
-    setCurrentTraceResult(null);
 
     executeAlgorithmTrace("ToNumber", traceInputExpression)
       .then(({ traceResult, resultValue: result }) => {
         const traceSteps = traceResultToTraceSteps(traceResult);
         setTrace(traceSteps);
-        setCurrentTraceResult(traceResult);
         setResultValue(result);
       })
       .catch((e: unknown) => {
@@ -54,17 +60,15 @@ export function CoercionVisualizer() {
         setError(msg);
         setTrace([]);
         setResultValue(undefined);
-        setCurrentTraceResult(null);
       })
       .finally(() => setIsLoading(false));
-  }, [traceInputExpression, setIsPlaying, setError, setCurrentTraceResult, setTrace, setResultValue]);
+  }, [traceInputExpression, setIsPlaying, setError, setTrace, setResultValue]);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => runNow(), 150);
     return () => window.clearTimeout(t);
   }, [runNow]);
 
-  // Trace model and step navigation
   const traceModel = React.useMemo(
     () =>
       buildTraceModel(trace, {
@@ -74,31 +78,63 @@ export function CoercionVisualizer() {
     [algoById, trace],
   );
 
-  const currentFrames = traceModel.framesByStep[selectedIndex] ?? [];
-
-  // Colors
   const pageBg = useColorModeValue("#f8f8f5", "#0a0a0a");
-  const panelBg = useColorModeValue("#ffffff", "rgba(20,20,20,0.30)");
-  const panelBorder = useColorModeValue("#e2e8f0", "#262626");
-  const softSurfaceBgStrong = useColorModeValue("rgba(255,255,255,0.80)", "rgba(0,0,0,0.18)");
 
   return (
+    <>
+      {/* Mobile FAB — rendered outside overflow:hidden container so fixed positioning works correctly */}
+      <Box
+        display={{ base: "flex", lg: "none" }}
+        position="fixed"
+        top={3}
+        right={3}
+        zIndex={40}
+      >
+        <IconButton
+          aria-label="Open ECMA spec"
+          size="sm"
+          variant="outline"
+          bg="rgba(20,20,20,0.85)"
+          backdropFilter="blur(8px)"
+          borderColor="rgba(255,255,255,0.12)"
+          onClick={() => setSpecDrawerOpen(true)}
+        >
+          <LuBookOpen />
+        </IconButton>
+      </Box>
+
     <Box bg={pageBg} minH="92vh" overflow="hidden">
-      <Grid templateColumns={{ base: "1fr", lg: "320px 1fr 420px" }} h={{ base: "auto", lg: "92vh" }} overflow="hidden">
-        <ExplorerSidebar
-          error={error}
-          resultValue={resultValue}
-          traceLength={trace.length}
-          currentFrames={currentFrames}
-          algoById={algoById}
-          panelBg={panelBg}
-          panelBorder={panelBorder}
-          softSurfaceBgStrong={softSurfaceBgStrong}
-          traceInputRaw={traceInputRaw}
-          onTraceInputRawChange={setTraceInputRaw}
-          onTraceInputCommit={commitTraceInput}
-          isLoading={isLoading}
-        />
+      {/* Mobile drawer for spec panel */}
+      <DrawerRoot
+        open={specDrawerOpen}
+        onOpenChange={(e) => setSpecDrawerOpen(e.open)}
+        placement="start"
+        size="xs"
+      >
+        <DrawerBackdrop />
+        <DrawerPositioner>
+          <DrawerContent>
+            <DrawerBody p={0} display="flex" flexDir="column" h="100%">
+              <Box display="flex" justifyContent="flex-end" p={2}>
+                <DrawerCloseTrigger asChild>
+                  <IconButton aria-label="Close spec panel" size="sm" variant="ghost">
+                    <LuX />
+                  </IconButton>
+                </DrawerCloseTrigger>
+              </Box>
+              <Box flex={1} minH={0} overflow="hidden">
+                <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+              </Box>
+            </DrawerBody>
+          </DrawerContent>
+        </DrawerPositioner>
+      </DrawerRoot>
+
+      <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h={{ base: "auto", lg: "92vh" }} overflow="hidden">
+        {/* Desktop: spec panel in grid */}
+        <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
+          <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+        </Box>
 
         <Box position="relative" minH={0} overflow="hidden">
           <ExecutionTreePanel
@@ -109,6 +145,9 @@ export function CoercionVisualizer() {
             entryLabel="ToNumber"
             userInputRaw={traceInputRaw}
             onSelectIndex={onSelectIndex}
+            showSkipped={showSkipped}
+            onInputChange={setTraceInputRaw}
+            onInputCommit={commitTraceInput}
           />
           <PlaybackDock
             selectedIndex={selectedIndex}
@@ -116,16 +155,12 @@ export function CoercionVisualizer() {
             isPlaying={isPlaying}
             onTogglePlay={() => setIsPlaying((v: boolean) => !v)}
             onSelectIndex={onSelectIndex}
+            showSkipped={showSkipped}
+            onToggleSkipped={() => setShowSkipped((v) => !v)}
           />
         </Box>
-
-        <RightPanel
-          currentTraceResult={currentTraceResult}
-          selectedIndex={selectedIndex}
-          onSelectIndex={onSelectIndex}
-          algoById={algoById}
-        />
       </Grid>
     </Box>
+    </>
   );
 }

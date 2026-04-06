@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Box, HStack, IconButton, Text } from "@chakra-ui/react";
-import { LuChevronLeft, LuChevronRight, LuPause, LuPlay, LuRotateCcw, LuSkipBack, LuSkipForward } from "react-icons/lu";
+import { LuChevronLeft, LuChevronRight, LuPause, LuPlay, LuRotateCcw, LuSkipBack, LuSkipForward, LuEye, LuEyeOff } from "react-icons/lu";
 
 import { Tooltip } from "@/components/ui/tooltip";
 
@@ -12,23 +12,27 @@ export function PlaybackDock({
   isPlaying,
   onTogglePlay,
   onSelectIndex,
+  showSkipped = false,
+  onToggleSkipped,
 }: {
   selectedIndex: number;
   maxIndex: number;
   isPlaying: boolean;
   onTogglePlay: () => void;
   onSelectIndex: (next: number) => void;
+  showSkipped?: boolean;
+  onToggleSkipped?: () => void;
 }) {
   const canBack = selectedIndex > 0;
   const canFwd = selectedIndex < maxIndex;
 
   return (
     <Box
-      position="absolute"
-      bottom={{ base: 4, md: 10 }}
+      position={{ base: "fixed", lg: "absolute" }}
+      bottom={{ base: 4, lg: 10 }}
       left="50%"
       transform="translateX(-50%)"
-      zIndex={3}
+      zIndex={30}
       bg="rgba(20,20,20,0.92)"
       borderWidth="1px"
       borderColor="rgba(255,255,255,0.08)"
@@ -122,6 +126,21 @@ export function PlaybackDock({
             onClick={() => onSelectIndex(0)}
           >
             <LuRotateCcw />
+          </IconButton>
+        </Tooltip>
+
+        <Box w="1px" h="32px" bg="rgba(38,38,38,1)" mx={1} />
+
+        <Tooltip content={<Text fontSize="xs">{showSkipped ? "Hide skipped steps" : "Show skipped steps"}</Text>}>
+          <IconButton
+            aria-label={showSkipped ? "Hide skipped steps" : "Show skipped steps"}
+            size="md"
+            variant="ghost"
+            color={showSkipped ? "rgba(249,227,26,1)" : "rgba(148,163,184,1)"}
+            _hover={{ color: "rgba(249,227,26,1)", bg: "rgba(249,227,26,0.08)" }}
+            onClick={onToggleSkipped}
+          >
+            {showSkipped ? <LuEye /> : <LuEyeOff />}
           </IconButton>
         </Tooltip>
       </HStack>
