@@ -113,6 +113,26 @@
   color: var(--link-hover);
 }
 
+/* ── Spec external link icon in clause h1 (injected server-side) ── */
+:global(.spec-ext-link) {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  color: var(--fg-dim);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  vertical-align: middle;
+  text-decoration: none;
+}
+:global(emu-clause h1:hover .spec-ext-link),
+:global(.spec-ext-link:hover) {
+  opacity: 1;
+  color: var(--link-hover);
+}
+:global(.spec-ext-link-icon) {
+  display: block;
+}
+
 /* ── Active step highlight ── */
 .stepActive {
   background-color: var(--highlight-bg) !important;

@@ -25,6 +25,7 @@ function inlineTrace(
     fromAlgo: parentFrameId,
     toAlgo: trace.algorithmName,
     args: [valueToSpecValue(trace.input)],
+    result: trace.output !== undefined ? valueToSpecValue(trace.output) : undefined,
     stack: [],
     frameId,
     parentFrameId,
@@ -135,6 +136,11 @@ function valueToSpecValue(value: unknown): SpecValue {
     // — render without quotes as an object preview.
     if (value.startsWith("{") && value.endsWith("}")) {
       return { type: "Object", value: { id: "display", class: "", preview: value } };
+    }
+    // valueToDisplayString wraps JS strings in double quotes: "hello" → `"hello"`.
+    // Unwrap to store the raw string value so formatSpecValue can re-wrap cleanly.
+    if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+      return { type: "String", value: value.slice(1, -1) };
     }
     return { type: "String", value };
   }
