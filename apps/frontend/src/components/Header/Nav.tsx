@@ -305,7 +305,7 @@ const Nav = () => {
         </Dialog.Trigger>
 
         <Portal>
-          <Dialog.Backdrop bg="rgba(0,0,0,0.55)" backdropFilter="blur(4px)" />
+          <Dialog.Backdrop bg="rgba(0,0,0,0.6)" />
           <Dialog.Positioner px={4} py={4}>
             <Dialog.Content
               maxW="100%"
@@ -315,6 +315,7 @@ const Nav = () => {
               bg="rgba(35,33,15,0.98)"
               color="white"
               overflow="hidden"
+              animationDuration="0s"
             >
               <Dialog.Header px={4} py={4} borderBottomWidth="1px" borderColor="rgba(255,255,255,0.06)">
                 <HStack justify="space-between" width="full">
