@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head><title>ECMAScript Abstract Operations</title></head>
+<body>
+
+<emu-clause id="ToPrimitive" aoid="ToPrimitive" type="abstract operation">
+  <h1>
+    ToPrimitive (
+      _input_: an ECMAScript language value,
+      optional _preferredType_: ~string~ or ~number~,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _input_ to a non-Object type, optionally preferring _preferredType_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToPrimitive-step-1"] Assert: _input_ is an ECMAScript language value.
+    1. [id="ToPrimitive-step-2"] If _input_ is an Object, then
+      1. [id="ToPrimitive-step-2a"] Let _exoticToPrim_ be ? GetMethod(_input_, %Symbol.toPrimitive%).
+      1. [id="ToPrimitive-step-2b"] If _exoticToPrim_ is not *undefined*, then
+        1. [id="ToPrimitive-step-2b-i"] If _preferredType_ is not present, let _hint_ be *"default"*.
+        1. [id="ToPrimitive-step-2b-ii"] Else if _preferredType_ is ~string~, let _hint_ be *"string"*.
+        1. [id="ToPrimitive-step-2b-iii"] Else,
+          1. Assert: _preferredType_ is ~number~.
+          1. Let _hint_ be *"number"*.
+        1. [id="ToPrimitive-step-2b-iv"] Let _result_ be ? Call(_exoticToPrim_, _input_, « _hint_ »).
+        1. [id="ToPrimitive-step-2b-v"] If _result_ is not an Object, return _result_.
+        1. [id="ToPrimitive-step-2b-vi"] Throw a *TypeError* exception.
+      1. [id="ToPrimitive-step-2c"] If _preferredType_ is not present, let _preferredType_ be ~number~.
+      1. [id="ToPrimitive-step-2d"] Return ? OrdinaryToPrimitive(_input_, _preferredType_).
+    1. [id="ToPrimitive-step-3"] Return _input_.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="OrdinaryToPrimitive" aoid="OrdinaryToPrimitive" type="abstract operation">
+  <h1>
+    OrdinaryToPrimitive (
+      _O_: an Object,
+      _hint_: ~string~ or ~number~,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _O_ to a primitive by calling its *valueOf* or *toString* method based on _hint_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="OrdinaryToPrimitive-step-1"] Assert: _O_ is an ordinary Object.
+    1. [id="OrdinaryToPrimitive-step-2"] Assert: _hint_ is either ~string~ or ~number~.
+    1. [id="OrdinaryToPrimitive-step-3"] If _hint_ is ~string~, then
+      1. Let _methodNames_ be « *"toString"*, *"valueOf"* ».
+    1. [id="OrdinaryToPrimitive-step-4"] Else,
+      1. Let _methodNames_ be « *"valueOf"*, *"toString"* ».
+    1. [id="OrdinaryToPrimitive-step-5"] For each element _name_ of _methodNames_, do
+      1. [id="OrdinaryToPrimitive-step-5a"] Let _method_ be ? Get(_O_, _name_).
+      1. [id="OrdinaryToPrimitive-step-5b"] If IsCallable(_method_) is *true*, then
+        1. [id="OrdinaryToPrimitive-step-5b-i"] Let _result_ be ? Call(_method_, _O_).
+        1. [id="OrdinaryToPrimitive-step-5b-ii"] If _result_ is not an Object, return _result_.
+    1. [id="OrdinaryToPrimitive-step-6"] Throw a *TypeError* exception.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="StringToNumber" aoid="StringToNumber" type="abstract operation">
+  <h1>
+    StringToNumber (
+      _argument_: a String,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts a String to a Number by parsing it as a |StringNumericLiteral|.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="StringToNumber-step-1"] Let _text_ be StringToCodePoints(_argument_).
+    1. [id="StringToNumber-step-2"] Let _literal_ be ParseText(_text_, |StringNumericLiteral|).
+    1. [id="StringToNumber-step-3"] If _literal_ is a List of errors, return *NaN*.
+    1. [id="StringToNumber-step-4"] Let _mv_ be the MV of _literal_.
+    1. [id="StringToNumber-step-5"] Assert: _mv_ is a finite Mathematical value or _mv_ is +∞ or _mv_ is -∞.
+    1. [id="StringToNumber-step-6"] Return 𝔽(_mv_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToNumber" aoid="ToNumber" type="abstract operation">
+  <h1>
+    ToNumber (
+      _argument_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _argument_ to a value of type Number.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToNumber-step-1"] If _argument_ is a Number, return _argument_.
+    1. [id="ToNumber-step-2"] If _argument_ is either a Symbol or a BigInt, throw a *TypeError* exception.
+    1. [id="ToNumber-step-3"] If _argument_ is *undefined*, return *NaN*.
+    1. [id="ToNumber-step-4"] If _argument_ is either *null* or *false*, return *+0*<sub>𝔽</sub>.
+    1. [id="ToNumber-step-5"] If _argument_ is *true*, return *1*<sub>𝔽</sub>.
+    1. [id="ToNumber-step-6"] If _argument_ is a String, return StringToNumber(_argument_).
+    1. [id="ToNumber-step-7"] Assert: _argument_ is an Object.
+    1. [id="ToNumber-step-8"] Let _primValue_ be ? ToPrimitive(_argument_, ~number~).
+    1. [id="ToNumber-step-9"] Assert: _primValue_ is not an Object.
+    1. [id="ToNumber-step-10"] Return ? ToNumber(_primValue_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToString" aoid="ToString" type="abstract operation">
+  <h1>
+    ToString (
+      _argument_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _argument_ to a value of type String.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToString-step-1"] If _argument_ is a String, return _argument_.
+    1. [id="ToString-step-2"] If _argument_ is a Symbol, throw a *TypeError* exception.
+    1. [id="ToString-step-3"] If _argument_ is *undefined*, return *"undefined"*.
+    1. [id="ToString-step-4"] If _argument_ is *null*, return *"null"*.
+    1. [id="ToString-step-5"] If _argument_ is *true*, return *"true"*.
+    1. [id="ToString-step-6"] If _argument_ is *false*, return *"false"*.
+    1. [id="ToString-step-7"] If _argument_ is a Number, return Number::toString(_argument_, 10).
+    1. [id="ToString-step-8"] If _argument_ is a BigInt, return BigInt::toString(_argument_, 10).
+    1. [id="ToString-step-9"] Assert: _argument_ is an Object.
+    1. [id="ToString-step-10"] Let _primValue_ be ? ToPrimitive(_argument_, ~string~).
+    1. [id="ToString-step-11"] Assert: _primValue_ is not an Object.
+    1. [id="ToString-step-12"] Return ? ToString(_primValue_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToBoolean" aoid="ToBoolean" type="abstract operation">
+  <h1>
+    ToBoolean (
+      _argument_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _argument_ to a value of type Boolean.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToBoolean-step-1"] If _argument_ is a Boolean, return _argument_.
+    1. [id="ToBoolean-step-2"] If _argument_ is one of *undefined*, *null*, *+0*<sub>𝔽</sub>, *-0*<sub>𝔽</sub>, *NaN*, *0*<sub>ℤ</sub>, or *""*, return *false*.
+    1. [id="ToBoolean-step-3"] NOTE: This step is replaced in section B.3.6.1.
+    1. [id="ToBoolean-step-4"] Return *true*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToNumeric" aoid="ToNumeric" type="abstract operation">
+  <h1>
+    ToNumeric (
+      _value_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns a Number or BigInt. It converts _value_ to a numeric value of either type.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToNumeric-step-1"] Let _primValue_ be ? ToPrimitive(_value_, ~number~).
+    1. [id="ToNumeric-step-2"] If _primValue_ is a BigInt, return _primValue_.
+    1. [id="ToNumeric-step-3"] Return ? ToNumber(_primValue_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToObject" aoid="ToObject" type="abstract operation">
+  <h1>
+    ToObject (
+      _argument_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _argument_ to a value of type Object.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToObject-step-1"] If _argument_ is *undefined*, throw a *TypeError* exception.
+    1. [id="ToObject-step-2"] If _argument_ is *null*, throw a *TypeError* exception.
+    1. [id="ToObject-step-3"] If _argument_ is a Boolean, return a new Boolean object whose [[BooleanData]] is _argument_.
+    1. [id="ToObject-step-4"] If _argument_ is a Number, return a new Number object whose [[NumberData]] is _argument_.
+    1. [id="ToObject-step-5"] If _argument_ is a String, return a new String object whose [[StringData]] is _argument_.
+    1. [id="ToObject-step-6"] If _argument_ is a Symbol, return a new Symbol object whose [[SymbolData]] is _argument_.
+    1. [id="ToObject-step-7"] If _argument_ is a BigInt, return a new BigInt object whose [[BigIntData]] is _argument_.
+    1. [id="ToObject-step-8"] Assert: _argument_ is an Object. Return _argument_.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToPropertyKey" aoid="ToPropertyKey" type="abstract operation">
+  <h1>
+    ToPropertyKey (
+      _argument_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _argument_ to a value that can be used as a property key.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToPropertyKey-step-1"] Let _key_ be ? ToPrimitive(_argument_, ~string~).
+    1. [id="ToPropertyKey-step-2"] If _key_ is a Symbol, return _key_.
+    1. [id="ToPropertyKey-step-3"] Return ? ToString(_key_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToLength" aoid="ToLength" type="abstract operation">
+  <h1>
+    ToLength (
+      _argument_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _argument_ to an integer suitable for use as the length of an array-like object.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToLength-step-1"] Let _len_ be ? ToIntegerOrInfinity(_argument_).
+    1. [id="ToLength-step-2"] If _len_ ≤ 0, return *+0*<sub>𝔽</sub>.
+    1. [id="ToLength-step-3"] Return 𝔽(min(_len_, 2<sup>53</sup> - 1)).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="ToIndex" aoid="ToIndex" type="abstract operation">
+  <h1>
+    ToIndex (
+      _value_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Converts _value_ to a non-negative integer that can be used as an array index.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ToIndex-step-1"] If _value_ is *undefined*, return 0.
+    1. [id="ToIndex-step-2"] Let _integer_ be ? ToIntegerOrInfinity(_value_).
+    1. [id="ToIndex-step-3"] If _integer_ is not in the inclusive interval from 0 to 2<sup>53</sup> - 1, throw a *RangeError* exception.
+    1. [id="ToIndex-step-4"] Return _integer_.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Get" aoid="Get" type="abstract operation">
+  <h1>
+    Get (
+      _O_: an Object,
+      _P_: a property key,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Retrieves the value of a specific property of an Object.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Get-step-1"] Assert: _O_ is an Object.
+    1. [id="Get-step-2"] Assert: IsPropertyKey(_P_) is *true*.
+    1. [id="Get-step-3"] Return ? _O_.[[Get]](_P_, _O_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="GetV" aoid="GetV" type="abstract operation">
+  <h1>
+    GetV (
+      _V_: an ECMAScript language value,
+      _P_: a property key,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Retrieves the value of property _P_ of _V_, using a wrapper object if _V_ is not an Object.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="GetV-step-1"] Assert: IsPropertyKey(_P_) is *true*.
+    1. [id="GetV-step-2"] Let _O_ be ? ToObject(_V_).
+    1. [id="GetV-step-3"] Return ? _O_.[[Get]](_P_, _V_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="GetMethod" aoid="GetMethod" type="abstract operation">
+  <h1>
+    GetMethod (
+      _V_: an ECMAScript language value,
+      _P_: a property key,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the value of property _P_ of _V_ if it is callable, otherwise *undefined*.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="GetMethod-step-1"] Assert: IsPropertyKey(_P_) is *true*.
+    1. [id="GetMethod-step-2"] Let _func_ be ? GetV(_V_, _P_).
+    1. [id="GetMethod-step-3"] If _func_ is either *undefined* or *null*, return *undefined*.
+    1. [id="GetMethod-step-4"] If IsCallable(_func_) is *false*, throw a *TypeError* exception.
+    1. [id="GetMethod-step-5"] Return _func_.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Call" aoid="Call" type="abstract operation">
+  <h1>
+    Call (
+      _F_: an ECMAScript language value,
+      _V_: an ECMAScript language value,
+      optional _argumentsList_: a List of ECMAScript language values,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Calls the [[Call]] internal method of _F_ with _V_ as the *this* value.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Call-step-1"] If _argumentsList_ is not present, set _argumentsList_ to a new empty List.
+    1. [id="Call-step-2"] If IsCallable(_F_) is *false*, throw a *TypeError* exception.
+    1. [id="Call-step-3"] Return ? _F_.[[Call]](_V_, _argumentsList_).
+  </emu-alg>
+</emu-clause>
+
+</body>
+</html>

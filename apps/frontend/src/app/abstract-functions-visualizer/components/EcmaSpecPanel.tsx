@@ -12,15 +12,25 @@ function extractStepId(hint: string | undefined): string | null {
   return m ? m[1] : null;
 }
 
-function getActiveSteps(trace: TraceStep[], idx: number): Map<string, string> {
-  const result = new Map<string, string>();
+function getActiveSteps(trace: TraceStep[], idx: number): Map<string, string[]> {
+  // Collect the most recent step per algoId up to idx, then also include
+  // every step from the current frame stack so all active algorithms are highlighted.
+  const result = new Map<string, string[]>();
   for (let i = 0; i <= idx; i++) {
     const step = trace[i];
     if (!step || step.kind === "call" || step.kind === "ret") continue;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = step as any;
     const stepId = extractStepId(s.hint);
-    if (s.algoId && stepId) result.set(s.algoId as string, stepId);
+    if (s.algoId && stepId) {
+      const existing = result.get(s.algoId as string);
+      if (existing) {
+        // Keep only the latest step per algo (replace last entry)
+        existing[existing.length - 1] = stepId;
+      } else {
+        result.set(s.algoId as string, [stepId]);
+      }
+    }
   }
   return result;
 }
@@ -50,16 +60,27 @@ export function EcmaSpecPanel({
     const active = getActiveSteps(trace, selectedIndex);
     let lastStepEl: Element | null = null;
 
-    for (const [algoId, stepId] of active.entries()) {
-      // Highlight the step <li>
+    for (const [algoId, stepIds] of active.entries()) {
+      // Highlight clause title
+      const clauseEl = container.querySelector(`#${algoId}`);
+      clauseEl?.classList.add(s.clauseActive);
+      // Highlight the latest active step for this algo (last in array)
+      const stepId = stepIds[stepIds.length - 1];
       const stepEl = container.querySelector(`#${algoId}-step-${stepId}`);
       if (stepEl) {
         stepEl.classList.add(s.stepActive);
-        lastStepEl = stepEl;
+        // Only scroll to the current algo's step (top of call stack = last visited)
+        const currentAlgoId = (() => {
+          for (let i = selectedIndex; i >= 0; i--) {
+            const st = trace[i];
+            if (!st || st.kind === "call" || st.kind === "ret") continue;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (st as any).algoId as string | undefined;
+          }
+          return undefined;
+        })();
+        if (algoId === currentAlgoId) lastStepEl = stepEl;
       }
-      // Highlight the clause title
-      const clauseEl = container.querySelector(`#${algoId}`);
-      clauseEl?.classList.add(s.clauseActive);
     }
 
     // Scroll so the active step is vertically centered in the panel

@@ -3,6 +3,7 @@ import {
   JSStringValue, BooleanValue,
   Value,
   ObjectValue,
+  SymbolValue,
   wellKnownSymbols,
   type PropertyKeyValue,
   UndefinedValue,
@@ -74,11 +75,20 @@ export function MakeBasicObject<const T extends string>(internalSlotsList: reado
   return obj;
 }
 
+function propKeyName(P: PropertyKeyValue): string {
+  if (P instanceof JSStringValue) return P.stringValue();
+  if (P instanceof SymbolValue) {
+    const desc = P.Description;
+    return desc instanceof JSStringValue ? `@@${desc.stringValue().replace(/^Symbol\./, '')}` : '@@Symbol';
+  }
+  return String(P);
+}
+
 /** https://tc39.es/ecma262/#sec-get-o-p */
 export function* Get(O: ObjectValue, P: PropertyKeyValue): ValueEvaluator {
   Assert(O instanceof ObjectValue);
   Assert(IsPropertyKey(P));
-  const propName = P instanceof JSStringValue ? P.stringValue() : String(P);
+  const propName = propKeyName(P);
   const traceEntry = createTraceEntryFromValue({ argument: O, algoId: 'Get' });
   traceEntry({ kind: 'if', taken: true, hint: `Step 3: Return ? O.[[Get]]("${propName}", O).` });
   const result = Q(yield* O.Get(P, O));
@@ -90,7 +100,7 @@ export function* Get(O: ObjectValue, P: PropertyKeyValue): ValueEvaluator {
 /** https://tc39.es/ecma262/#sec-getv */
 export function* GetV(V: Value, P: PropertyKeyValue): ValueEvaluator {
   Assert(IsPropertyKey(P));
-  const propName = P instanceof JSStringValue ? P.stringValue() : String(P);
+  const propName = propKeyName(P);
   const traceEntry = createTraceEntryFromValue({ argument: V, algoId: 'GetV' });
   traceEntry({ kind: 'call', hint: 'Step 2: Let O be ? ToObject(V).' });
   const O = Q(ToObject(V));
@@ -188,7 +198,7 @@ export function* DeletePropertyOrThrow(O: ObjectValue, P: PropertyKeyValue) {
 /** https://tc39.es/ecma262/#sec-getmethod */
 export function* GetMethod(V: Value, P: PropertyKeyValue): ValueEvaluator<UndefinedValue | FunctionObject> {
   Assert(IsPropertyKey(P));
-  const propName = P instanceof JSStringValue ? P.stringValue() : String(P);
+  const propName = propKeyName(P);
   const traceEntry = createTraceEntryFromValue({ argument: V, algoId: 'GetMethod' });
   traceEntry({ kind: 'call', hint: `Step 2: Let func be ? GetV(V, "${propName}").` });
   const func = Q(yield* GetV(V, P));

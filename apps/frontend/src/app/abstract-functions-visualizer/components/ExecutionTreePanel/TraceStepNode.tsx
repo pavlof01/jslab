@@ -5,6 +5,7 @@ import { Box, Card, Code, HStack, Tag, Text, VStack } from "@chakra-ui/react";
 import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
 import { formatNodePath, formatSpecValue, type NodePath } from "@/app/abstract-functions-visualizer/traceModel";
 import { getPrimaryEnvDelta } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
+import { ALGO_SPEC_URL } from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
 import { StepTransitions } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/StepTransitions";
 
 export function TraceStepNode({
@@ -57,9 +58,11 @@ export function TraceStepNode({
 
   const colors = colorMap[palette] || colorMap.blue;
 
-  const title =
+  const algoUrl = step.kind === "call" ? ALGO_SPEC_URL[step.toAlgo] : undefined;
+
+  const titleText =
     step.kind === "call"
-      ? `Call ${step.toAlgo}`
+      ? "Call"
       : step.kind === "let"
         ? "Let"
         : step.kind === "return"
@@ -67,7 +70,12 @@ export function TraceStepNode({
           : "Step";
 
   const detail = (() => {
-    if (step.kind === "call") return `${step.args.length} arg(s)`;
+    if (step.kind === "call") {
+      if (step.result && step.result.type !== "Undefined") {
+        return `→ ${formatSpecValue(step.result, 40)}`;
+      }
+      return `${step.args.length} arg(s)`;
+    }
     if (step.kind === "let") return step.hint ?? formatNodePath(step.nodePath as NodePath);
     return undefined;
   })();
@@ -106,8 +114,27 @@ export function TraceStepNode({
           <HStack justify="space-between" gap={3} flexWrap="wrap">
             <HStack gap={2} flexWrap="wrap">
               <Tag.Root size="sm" variant={isActive ? "solid" : "outline"} colorPalette={palette}>
-                <Tag.Label fontWeight={isActive ? "600" : "500"}>{title}</Tag.Label>
+                <Tag.Label fontWeight={isActive ? "600" : "500"}>{titleText}</Tag.Label>
               </Tag.Root>
+              {step.kind === "call" && (
+                algoUrl ? (
+                  <a
+                    href={algoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Text fontSize="xs" fontFamily="mono" fontWeight="600" color={colors.leftBorder} opacity={0.9} _hover={{ textDecoration: "underline", opacity: 1 }}>
+                      {step.toAlgo}
+                    </Text>
+                  </a>
+                ) : (
+                  <Text fontSize="xs" fontFamily="mono" fontWeight="600" color={colors.leftBorder} opacity={0.9}>
+                    {step.toAlgo}
+                  </Text>
+                )
+              )}
               {step.kind === "return" && step.value.type !== "Undefined" && step.value.type !== "Null" && (
                 <Code fontSize="xs">{formatSpecValue(step.value, 60)}</Code>
               )}

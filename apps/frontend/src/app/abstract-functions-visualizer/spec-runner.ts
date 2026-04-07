@@ -131,6 +131,7 @@ export type TraceStep =
       fromAlgo?: string;
       toAlgo: string;
       args: SpecValue[];
+      result?: SpecValue;
       stack: string[];
       frameId?: string;
       parentFrameId?: string;

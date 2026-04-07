@@ -48,7 +48,7 @@ export interface TraceServiceResponse {
 
 // ─── Spec URLs ───────────────────────────────────────────────────────────────
 
-const SPEC_URL: Record<string, string> = {
+export const ALGO_SPEC_URL: Record<string, string> = {
   ToNumber: "https://262.ecma-international.org/#sec-tonumber",
   ToString: "https://262.ecma-international.org/#sec-tostring",
   ToBoolean: "https://262.ecma-international.org/#sec-toboolean",
@@ -56,7 +56,14 @@ const SPEC_URL: Record<string, string> = {
   OrdinaryToPrimitive: "https://262.ecma-international.org/#sec-ordinarytoprimitive",
   ToNumeric: "https://262.ecma-international.org/#sec-tonumeric",
   ToObject: "https://262.ecma-international.org/#sec-toobject",
+  ToPropertyKey: "https://262.ecma-international.org/#sec-topropertykey",
+  ToLength: "https://262.ecma-international.org/#sec-tolength",
+  ToIndex: "https://262.ecma-international.org/#sec-toindex",
   StringToNumber: "https://262.ecma-international.org/#sec-stringtonumber",
+  GetMethod: "https://262.ecma-international.org/#sec-getmethod",
+  GetV: "https://262.ecma-international.org/#sec-getv",
+  Get: "https://262.ecma-international.org/#sec-get-o-p",
+  Call: "https://262.ecma-international.org/#sec-call",
 };
 
 // ─── Conversion helpers ──────────────────────────────────────────────────────
@@ -117,7 +124,7 @@ function nodeToTraceResult(node: TraceServiceNode, input: unknown): TraceResult 
     algorithmId: node.algoId,
     algorithmName: node.algoId,
     algorithmDescription: `ECMAScript abstract operation ${node.algoId}`,
-    algorithmUrl: SPEC_URL[node.algoId],
+    algorithmUrl: ALGO_SPEC_URL[node.algoId],
     input,
     output: node.output,
     success: !node.error,
@@ -142,7 +149,7 @@ export function traceServiceResponseToTraceResult(response: TraceServiceResponse
       algorithmId: response.functionName,
       algorithmName: response.functionName,
       algorithmDescription: `ECMAScript abstract operation ${response.functionName}`,
-      algorithmUrl: SPEC_URL[response.functionName],
+      algorithmUrl: ALGO_SPEC_URL[response.functionName],
       input: undefined,
       output: response.resultValue,
       success: response.success,
