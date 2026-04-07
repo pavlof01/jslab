@@ -72,10 +72,10 @@ const system = createSystem(defaultConfig, {
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ChakraProvider value={system}>
-      <ColorModeProvider forcedTheme="dark" enableSystem={false}>
+    <ColorModeProvider forcedTheme="dark" enableSystem={false}>
+      <ChakraProvider value={system}>
         {children}
-      </ColorModeProvider>
-    </ChakraProvider>
+      </ChakraProvider>
+    </ColorModeProvider>
   );
 }

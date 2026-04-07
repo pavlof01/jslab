@@ -301,9 +301,8 @@ export function* ToNumber(argument: Value): ValueEvaluator<NumberValue> {
 
   if (argument instanceof JSStringValue) {
     const strVal = argument.stringValue();
-    traceEntry({ kind: 'operation', hint: `Step 6: argument is a String — call StringToNumber("${strVal}").`, specOrder: 6 });
-    const result = MV_StringNumericLiteral(strVal);
-    result.trace = argument.trace;
+    traceEntry({ kind: 'call', hint: `Step 6: argument is a String — call StringToNumber("${strVal}").`, specOrder: 6 });
+    const result = MV_StringNumericLiteral(strVal, argument);
     traceEntry({ kind: 'return', hint: `Step 6: StringToNumber("${strVal}") = ${R(result)}.`, specOrder: 6 }, result);
     return result;
   } else {

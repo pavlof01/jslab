@@ -55,7 +55,6 @@ export function ExecutionTreePanel({
   }, [selectedIndex, trace, showSkipped]);
 
   const currentStack = framesByStep[selectedIndex] ?? [];
-  const depth = Math.max(0, currentStack.length);
 
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
@@ -95,7 +94,7 @@ export function ExecutionTreePanel({
 
   return (
     <Box position="relative" h="full">
-      <ExecutionTreeHeader depth={depth} />
+      <ExecutionTreeHeader stack={currentStack} />
 
       <Box
         ref={scrollRef}

@@ -395,7 +395,7 @@ export function formatSpecValue(value: SpecValue, maxLen = 42): string {
         if (Object.is(value.value, -0)) return "-0";
         return String(value.value);
       case "String":
-        return JSON.stringify(value.value);
+        return `"${value.value}"`;
       case "BigInt":
         return `${value.value}n`;
       case "Symbol": {
