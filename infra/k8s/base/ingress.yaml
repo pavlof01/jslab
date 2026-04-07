@@ -89,10 +89,24 @@ spec:
                 name: frontend
                 port:
                   number: 3000
+          - path: /api/spec
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
     - host: www.jslab.su
       http:
         paths:
           - path: /api/trace
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+          - path: /api/spec
             pathType: Prefix
             backend:
               service:
@@ -109,10 +123,24 @@ spec:
                 name: frontend
                 port:
                   number: 3000
+          - path: /api/spec
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
     - host: www.jslab.cc
       http:
         paths:
           - path: /api/trace
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+          - path: /api/spec
             pathType: Prefix
             backend:
               service:
