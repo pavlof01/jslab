@@ -11,7 +11,7 @@ export type TraceFrame = {
   locals: EnvSnapshot;
 };
 
-export type FlattenedEnvEntry = {
+type FlattenedEnvEntry = {
   key: string; // AlgoId.varName (display key)
   algoId: string;
   frameId: string;
@@ -20,14 +20,14 @@ export type FlattenedEnvEntry = {
   value: SpecValue;
 };
 
-export type FrameTree = {
+type FrameTree = {
   roots: string[];
   parentById: Record<string, string | undefined>;
   childrenById: Record<string, string[]>;
   algoIdByFrameId: Record<string, string>;
 };
 
-export enum TransitionKind {
+enum TransitionKind {
   Coercion = "Coercion",
   Concatenation = "Concatenation",
   NumericAddition = "NumericAddition",
@@ -35,7 +35,7 @@ export enum TransitionKind {
   ReturnValue = "ReturnValue",
 }
 
-export type ExplorerTransition = {
+type ExplorerTransition = {
   id: string;
   kind: TransitionKind;
   label: string;
@@ -334,39 +334,6 @@ export function buildTraceModel(trace: TraceStep[], opts?: BuildTraceModelOpts):
     flattenedEnvByStep,
     transitionsByStep,
   };
-}
-
-export type TraceEnvModel = {
-  snapshots: EnvSnapshot[];
-  diffs: string[][];
-  framesByStep: Array<
-    Array<{
-      algoId: string;
-      args: SpecValue[];
-      params: EnvSnapshot;
-      env: EnvSnapshot;
-    }>
-  >;
-};
-
-export function buildTraceEnvModel(
-  trace: TraceStep[],
-  getAlgoParams?: (algoId: string) => string[] | undefined,
-): TraceEnvModel {
-  // Legacy wrapper for the original Coercion Visualizer UI model.
-  const model = buildTraceModel(trace, { getAlgoParams });
-  const framesByStep = model.framesByStep.map((stack, idx) =>
-    stack.map((f) => ({
-      algoId: f.algoId,
-      args:
-        trace[idx]?.kind === "call" && trace[idx].toAlgo === f.algoId
-          ? trace[idx].args
-          : [],
-      params: cloneEnv(f.params),
-      env: { ...f.params, ...f.locals },
-    })),
-  );
-  return { snapshots: model.visibleEnvByStep, diffs: model.visibleDiffKeysByStep, framesByStep };
 }
 
 export function formatNodePath(nodePath?: NodePath): string {

@@ -2,8 +2,15 @@
 
 import * as React from "react";
 import {
-  Box, Grid, IconButton,
-  DrawerRoot, DrawerBackdrop, DrawerPositioner, DrawerContent, DrawerBody, DrawerCloseTrigger,
+  Box,
+  Grid,
+  IconButton,
+  DrawerRoot,
+  DrawerBackdrop,
+  DrawerPositioner,
+  DrawerContent,
+  DrawerBody,
+  DrawerCloseTrigger,
 } from "@chakra-ui/react";
 import { LuBookOpen, LuX } from "react-icons/lu";
 
@@ -34,8 +41,6 @@ export function CoercionVisualizer() {
     setTraceInputExpression(rawInput);
   }, []);
 
-  const [, setIsLoading] = React.useState(false);
-
   // Fetch spec HTML once — it only depends on the function name, not the input
   React.useEffect(() => {
     fetch("/api/spec/ToNumber")
@@ -46,7 +51,6 @@ export function CoercionVisualizer() {
 
   const runNow = React.useCallback(() => {
     setIsPlaying(false);
-    setIsLoading(true);
     setError(null);
 
     executeAlgorithmTrace("ToNumber", traceInputExpression)
@@ -60,8 +64,7 @@ export function CoercionVisualizer() {
         setError(msg);
         setTrace([]);
         setResultValue(undefined);
-      })
-      .finally(() => setIsLoading(false));
+      });
   }, [traceInputExpression, setIsPlaying, setError, setTrace, setResultValue]);
 
   React.useEffect(() => {
@@ -83,13 +86,7 @@ export function CoercionVisualizer() {
   return (
     <>
       {/* Mobile FAB — rendered outside overflow:hidden container so fixed positioning works correctly */}
-      <Box
-        display={{ base: "flex", lg: "none" }}
-        position="fixed"
-        top={3}
-        right={3}
-        zIndex={40}
-      >
+      <Box display={{ base: "flex", lg: "none" }} position="fixed" top={3} right={3} zIndex={40}>
         <IconButton
           aria-label="Open ECMA spec"
           size="sm"
@@ -103,64 +100,59 @@ export function CoercionVisualizer() {
         </IconButton>
       </Box>
 
-    <Box bg={pageBg} minH="92vh" overflow="hidden">
-      {/* Mobile drawer for spec panel */}
-      <DrawerRoot
-        open={specDrawerOpen}
-        onOpenChange={(e) => setSpecDrawerOpen(e.open)}
-        placement="start"
-        size="xs"
-      >
-        <DrawerBackdrop />
-        <DrawerPositioner>
-          <DrawerContent>
-            <DrawerBody p={0} display="flex" flexDir="column" h="100%">
-              <Box display="flex" justifyContent="flex-end" p={2}>
-                <DrawerCloseTrigger asChild>
-                  <IconButton aria-label="Close spec panel" size="sm" variant="ghost">
-                    <LuX />
-                  </IconButton>
-                </DrawerCloseTrigger>
-              </Box>
-              <Box flex={1} minH={0} overflow="hidden">
-                <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
-              </Box>
-            </DrawerBody>
-          </DrawerContent>
-        </DrawerPositioner>
-      </DrawerRoot>
+      <Box bg={pageBg} minH="92vh" overflow="hidden">
+        {/* Mobile drawer for spec panel */}
+        <DrawerRoot open={specDrawerOpen} onOpenChange={(e) => setSpecDrawerOpen(e.open)} placement="start" size="xs">
+          <DrawerBackdrop />
+          <DrawerPositioner>
+            <DrawerContent>
+              <DrawerBody p={0} display="flex" flexDir="column" h="100%">
+                <Box display="flex" justifyContent="flex-end" p={2}>
+                  <DrawerCloseTrigger asChild>
+                    <IconButton aria-label="Close spec panel" size="sm" variant="ghost">
+                      <LuX />
+                    </IconButton>
+                  </DrawerCloseTrigger>
+                </Box>
+                <Box flex={1} minH={0} overflow="hidden">
+                  <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+                </Box>
+              </DrawerBody>
+            </DrawerContent>
+          </DrawerPositioner>
+        </DrawerRoot>
 
-      <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h={{ base: "auto", lg: "92vh" }} overflow="hidden">
-        {/* Desktop: spec panel in grid */}
-        <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
-          <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
-        </Box>
+        <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h={{ base: "auto", lg: "92vh" }} overflow="hidden">
+          {/* Desktop: spec panel in grid */}
+          <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
+            <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+          </Box>
 
-        <Box position="relative" minH={0} overflow="hidden">
-          <ExecutionTreePanel
-            trace={trace}
-            selectedIndex={selectedIndex}
-            framesByStep={traceModel.framesByStep}
-            algoById={algoById}
-            entryLabel="ToNumber"
-            userInputRaw={traceInputRaw}
-            onSelectIndex={onSelectIndex}
-            showSkipped={showSkipped}
-            onInputChange={setTraceInputRaw}
-            onInputCommit={commitTraceInput}
-          />
-          <PlaybackDock
-            selectedIndex={selectedIndex}
-            maxIndex={maxIndex}
-            isPlaying={isPlaying}
-            onTogglePlay={() => setIsPlaying((v: boolean) => !v)}
-            onSelectIndex={onSelectIndex}
-            showSkipped={showSkipped}
-            onToggleSkipped={() => setShowSkipped((v) => !v)}
-          />
-        </Box>
-      </Grid>
-    </Box>
+          <Box position="relative" minH={0} overflow="hidden">
+            <ExecutionTreePanel
+              trace={trace}
+              selectedIndex={selectedIndex}
+              framesByStep={traceModel.framesByStep}
+              algoById={algoById}
+              entryLabel="ToNumber"
+              userInputRaw={traceInputRaw}
+              onSelectIndex={onSelectIndex}
+              showSkipped={showSkipped}
+              onInputChange={setTraceInputRaw}
+              onInputCommit={commitTraceInput}
+            />
+            <PlaybackDock
+              selectedIndex={selectedIndex}
+              maxIndex={maxIndex}
+              isPlaying={isPlaying}
+              onTogglePlay={() => setIsPlaying((v: boolean) => !v)}
+              onSelectIndex={onSelectIndex}
+              showSkipped={showSkipped}
+              onToggleSkipped={() => setShowSkipped((v) => !v)}
+            />
+          </Box>
+        </Grid>
+      </Box>
     </>
   );
 }
