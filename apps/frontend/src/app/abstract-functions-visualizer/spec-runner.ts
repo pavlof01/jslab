@@ -85,8 +85,6 @@ export type Algorithm = {
   body: Instr[];
 };
 
-export type IntrinsicImpl = (args: SpecValue[]) => SpecValue;
-
 export type Catalog = {
   algorithms: Algorithm[];
   intrinsics: Record<string, { args?: string[]; returns?: string; impl?: string }>;
@@ -116,7 +114,7 @@ export type TraceTransition =
       why: string;
     };
 
-export type NestedTraceInfo = {
+type NestedTraceInfo = {
   algorithmName: string;
   algorithmId: string;
   input: SpecValue;
