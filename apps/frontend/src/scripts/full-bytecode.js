@@ -193,7 +193,7 @@ function errorFlow(x) {
     }
     return "caught:" + String(e);
   } finally {
-    // что-то бесполезное, но чтобы был finally
+    // Something pointless, just so there is a finally block
     x++;
   }
 }

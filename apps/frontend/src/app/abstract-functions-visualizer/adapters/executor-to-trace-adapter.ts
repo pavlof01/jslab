@@ -58,6 +58,7 @@ function inlineTrace(
           kind: "let",
           hint: step.description,
           envDelta: hasResult ? { result: valueToSpecValue(step.result) } : {},
+          varName: step.varName,
         } as TraceStep;
       }
     } else {

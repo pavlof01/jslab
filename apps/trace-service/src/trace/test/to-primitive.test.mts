@@ -1,6 +1,6 @@
 /**
- * Тесты для ToPrimitive преобразования
- * Запуск через npm run test:owned
+ * Tests for ToPrimitive conversion
+ * Run with npm run test:owned
  */
 
 import { describe, it, expect } from 'vitest';
@@ -584,4 +584,3 @@ describe('ToPrimitive - Comprehensive Algorithm Testing', () => {
     });
   });
 });
-

@@ -35,7 +35,11 @@ const socialLinks: Array<{ label: string; href: string; icon: IconType }> = [
   { label: "Email", href: MAILTO_URL, icon: MdMailOutline },
 ];
 
-function WipFooterList({ items }: { items: FooterLink[] }) {
+type Props = {
+  items: FooterLink[];
+};
+
+const WipFooterList: React.FC<Props> = ({ items }) => {
   return (
     <VStack align="start" gap={{ base: 3, md: 4 }}>
       {items.map((item) => (
@@ -70,9 +74,9 @@ function WipFooterList({ items }: { items: FooterLink[] }) {
       ))}
     </VStack>
   );
-}
+};
 
-export function FooterSection() {
+export const FooterSection: React.FC = () => {
   return (
     <Box
       as="footer"
@@ -195,4 +199,4 @@ export function FooterSection() {
       </Container>
     </Box>
   );
-}
+};

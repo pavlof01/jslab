@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 
-# WebKit source (надёжный clone с ретраями + partial clone)
+# WebKit source (reliable clone with retries + partial clone)
 RUN set -eux; \
     git config --global advice.detachedHead false; \
     git config --global http.lowSpeedLimit 1; \
@@ -70,7 +70,7 @@ FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Runtime deps (включая libatomic1!)
+# Runtime deps (including libatomic1!)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libc-bin \
@@ -90,7 +90,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /out/bin/jsc /usr/local/bin/jsc
 COPY --from=builder /out/lib/ /usr/local/lib/
 
-# чтобы динамический линкер находил libJavaScriptCore.so.1
+# Ensure the dynamic linker can find libJavaScriptCore.so.1
 RUN set -eux; \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/webkit.conf; \
     ldconfig; \

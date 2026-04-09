@@ -76,6 +76,9 @@ export interface TraceEntryInput {
 
   /** For if-kind steps: true = condition was met (taken), false = not taken (skipped). */
   taken?: boolean;
+
+  /** Name of the variable this call's result is bound to (e.g. 'exoticToPrim'). */
+  varName?: string;
 }
 
 /**
@@ -121,6 +124,7 @@ export function createTraceEntryFromValue({
       error: step.error,
       specOrder: step.specOrder,
       taken: step.taken,
+      varName: step.varName,
     });
 
     // Auto-close on return

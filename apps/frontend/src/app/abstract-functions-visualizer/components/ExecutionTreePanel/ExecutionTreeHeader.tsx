@@ -5,7 +5,11 @@ import { LuChevronRight } from "react-icons/lu";
 import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
 import { ALGO_SPEC_URL } from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
 
-export function ExecutionTreeHeader({ stack }: { stack: TraceFrame[] }) {
+type Props = {
+  stack: TraceFrame[];
+};
+
+export const ExecutionTreeHeader: React.FC<Props> = ({ stack }) => {
   return (
     <Box position="absolute" top={6} left={8} right={8} zIndex={2} pointerEvents="none">
       <HStack gap={4} align="center" flexWrap="wrap">
@@ -69,4 +73,4 @@ export function ExecutionTreeHeader({ stack }: { stack: TraceFrame[] }) {
       </HStack>
     </Box>
   );
-}
+};

@@ -6,7 +6,7 @@ import { Box, VStack } from "@chakra-ui/react";
 import type { Algorithm, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
 import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
 import { BranchNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/BranchNode";
-import { EntryPointSection } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
+import EntryPointSection from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
 import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
 import {
   KeyEventAnnotation,
@@ -15,18 +15,7 @@ import {
 import { TraceStepNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceStepNode";
 import { getDepthForStep } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
 
-export function ExecutionTreePanel({
-  trace,
-  selectedIndex,
-  framesByStep,
-  algoById,
-  entryLabel,
-  userInputRaw,
-  onSelectIndex,
-  showSkipped = false,
-  onInputChange,
-  onInputCommit,
-}: {
+type Props = {
   trace: TraceStep[];
   selectedIndex: number;
   framesByStep: TraceFrame[][];
@@ -37,19 +26,64 @@ export function ExecutionTreePanel({
   showSkipped?: boolean;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
-}) {
+};
+
+export const ExecutionTreePanel: React.FC<Props> = ({
+  trace,
+  selectedIndex,
+  framesByStep,
+  algoById,
+  entryLabel,
+  userInputRaw,
+  onSelectIndex,
+  showSkipped = false,
+  onInputChange,
+  onInputCommit,
+}) => {
   const nodes = React.useMemo(() => {
-    const out: Array<{ step: TraceStep; index: number }> = [];
+    type NodeEntry = {
+      step: TraceStep;
+      index: number;
+      callStep?: Extract<TraceStep, { kind: "call" }>;
+      callIndex?: number;
+    };
+    const out: NodeEntry[] = [];
     const max = Math.min(trace.length - 1, selectedIndex);
     if (max < 0) return out;
 
-    for (let i = 0; i <= max; i++) {
+    let i = 0;
+    while (i <= max) {
       const step = trace[i];
-      if (i === 0 && step.kind === "call") continue; // rendered as Entry Point
-      if (step.kind === "ret") continue;
+      if (i === 0 && step.kind === "call") {
+        i++;
+        continue;
+      } // rendered as Entry Point
+      if (step.kind === "ret") {
+        i++;
+        continue;
+      }
       // Hide skipped steps (if-else not taken) when showSkipped is false
-      if (!showSkipped && step.kind === "if" && (step as Extract<TraceStep, { kind: "if" }>).decision?.taken === "else") continue;
-      out.push({ step, index: i });
+      if (
+        !showSkipped &&
+        step.kind === "if" &&
+        (step as Extract<TraceStep, { kind: "if" }>).decision?.taken === "else"
+      ) {
+        i++;
+        continue;
+      }
+
+      // Merge a "let" step with the immediately following "call" step only when
+      // the service explicitly marked it as a variable-binding call (varName present).
+      // This avoids false merges between unrelated consecutive let/call steps.
+      const next = i + 1 <= max ? trace[i + 1] : undefined;
+      const letVarName = step.kind === "let" ? (step as Extract<TraceStep, { kind: "let" }>).varName : undefined;
+      if (step.kind === "let" && letVarName && next?.kind === "call") {
+        out.push({ step, index: i, callStep: next as Extract<TraceStep, { kind: "call" }>, callIndex: i + 1 });
+        i += 2;
+      } else {
+        out.push({ step, index: i });
+        i++;
+      }
     }
     return out;
   }, [selectedIndex, trace, showSkipped]);
@@ -117,11 +151,11 @@ export function ExecutionTreePanel({
               onInputCommit={onInputCommit}
             />
 
-            {nodes.map(({ step, index }, idx) => {
+            {nodes.map(({ step, index, callStep, callIndex }, idx) => {
               const stack = framesByStep[index];
               const prevStack = index > 0 ? framesByStep[index - 1] : undefined;
               const nodeDepth = getDepthForStep(step, stack, prevStack);
-              const isActive = index === selectedIndex;
+              const isActive = index === selectedIndex || (callIndex !== undefined && callIndex === selectedIndex);
 
               const keyEvent = getKeyEvent(step);
 
@@ -149,6 +183,7 @@ export function ExecutionTreePanel({
                       nodeDepth={nodeDepth}
                       isActive={isActive}
                       onSelectIndex={onSelectIndex}
+                      callStep={callStep}
                     />
                   );
                 }
@@ -177,4 +212,4 @@ export function ExecutionTreePanel({
       </Box>
     </Box>
   );
-}
+};

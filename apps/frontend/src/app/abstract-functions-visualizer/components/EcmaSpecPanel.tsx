@@ -37,15 +37,13 @@ function getActiveSteps(trace: TraceStep[], idx: number): Map<string, string[]> 
 
 // ── Main panel ───────────────────────────────────────────────────────────────
 
-export function EcmaSpecPanel({
-  trace,
-  selectedIndex,
-  specHtml,
-}: {
+type Props = {
   trace: TraceStep[];
   selectedIndex: number;
   specHtml: string;
-}) {
+};
+
+export const EcmaSpecPanel: React.FC<Props> = ({ trace, selectedIndex, specHtml }) => {
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const specRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -102,4 +100,4 @@ export function EcmaSpecPanel({
       />
     </div>
   );
-}
+};

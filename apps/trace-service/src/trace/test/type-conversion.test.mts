@@ -1,7 +1,7 @@
 /**
- * Тест для vite - запуск через npm run test:owned
+ * Test for Vite - run with npm run test:owned
  *
- * Это использует встроенную систему тестирования engine262
+ * This uses engine262's built-in test system
  */
 
 import { describe, it, expect } from 'vitest';

@@ -200,7 +200,7 @@ export function* GetMethod(V: Value, P: PropertyKeyValue): ValueEvaluator<Undefi
   Assert(IsPropertyKey(P));
   const propName = propKeyName(P);
   const traceEntry = createTraceEntryFromValue({ argument: V, algoId: 'GetMethod' });
-  traceEntry({ kind: 'call', hint: `Step 2: Let func be ? GetV(V, "${propName}").` });
+  traceEntry({ kind: 'call', hint: `Step 2: Let func be ? GetV(V, "${propName}").`, varName: 'func' });
   const func = Q(yield* GetV(V, P));
   if (func === Value.null || func === Value.undefined) {
     traceEntry({ kind: 'return', hint: `GetMethod(V, "${propName}") → undefined (property is null/undefined)` }, Value.undefined);
