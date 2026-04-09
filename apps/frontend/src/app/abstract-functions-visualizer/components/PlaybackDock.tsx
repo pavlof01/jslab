@@ -1,20 +1,21 @@
 "use client";
 
-import * as React from "react";
 import { Box, HStack, IconButton, Text } from "@chakra-ui/react";
-import { LuChevronLeft, LuChevronRight, LuPause, LuPlay, LuRotateCcw, LuSkipBack, LuSkipForward, LuEye, LuEyeOff } from "react-icons/lu";
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuPause,
+  LuPlay,
+  LuRotateCcw,
+  LuSkipBack,
+  LuSkipForward,
+  LuEye,
+  LuEyeOff,
+} from "react-icons/lu";
 
 import { Tooltip } from "@/components/ui/tooltip";
 
-export function PlaybackDock({
-  selectedIndex,
-  maxIndex,
-  isPlaying,
-  onTogglePlay,
-  onSelectIndex,
-  showSkipped = false,
-  onToggleSkipped,
-}: {
+type Props = {
   selectedIndex: number;
   maxIndex: number;
   isPlaying: boolean;
@@ -22,14 +23,24 @@ export function PlaybackDock({
   onSelectIndex: (next: number) => void;
   showSkipped?: boolean;
   onToggleSkipped?: () => void;
-}) {
+};
+
+export const PlaybackDock: React.FC<Props> = ({
+  selectedIndex,
+  maxIndex,
+  isPlaying,
+  onTogglePlay,
+  onSelectIndex,
+  showSkipped = false,
+  onToggleSkipped,
+}) => {
   const canBack = selectedIndex > 0;
   const canFwd = selectedIndex < maxIndex;
 
   return (
     <Box
       position={{ base: "fixed", lg: "absolute" }}
-      bottom={{ base: 4, lg: 10 }}
+      bottom={0}
       left="50%"
       transform="translateX(-50%)"
       zIndex={30}
@@ -146,4 +157,4 @@ export function PlaybackDock({
       </HStack>
     </Box>
   );
-}
+};

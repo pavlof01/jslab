@@ -126,7 +126,7 @@ export function CoercionVisualizer() {
             <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
           </Box>
 
-          <Box position="relative" minH={0} overflow="hidden">
+          <Box position="relative" minH={0} h="100%">
             <ExecutionTreePanel
               trace={trace}
               selectedIndex={selectedIndex}

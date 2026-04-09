@@ -1,6 +1,6 @@
 /**
- * Тесты для ToNumber преобразования
- * Запуск через npm run test:owned
+ * Tests for ToNumber conversion
+ * Run with npm run test:owned
  *
  * ECMAScript Algorithm: ToNumber ( argument )
  * 1. If argument is a Number, return argument.
@@ -684,4 +684,3 @@ describe('ToNumber - Comprehensive Algorithm Testing', () => {
     });
   });
 });
-

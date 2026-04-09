@@ -23,6 +23,7 @@ export interface TraceServiceStep {
   type?: string;
   specOrder?: number;
   taken?: boolean;
+  varName?: string;
 }
 
 export interface TraceServiceNode {
@@ -114,6 +115,7 @@ function nodeToTraceResult(node: TraceServiceNode, input: unknown): TraceResult 
       description: stepDescription(s),
       executed,
       result: s.output ?? s.value ?? (s.kind === "return" ? node.output : undefined),
+      varName: s.varName,
     };
     const nested = childByCallIndex.get(s.step);
     if (nested) step.nestedTrace = nested;

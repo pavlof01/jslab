@@ -8,7 +8,8 @@ export interface ExecutedStep {
   result?: unknown;
   reason?: string;
   subSteps?: ExecutedStep[];
-  nestedTrace?: TraceResult; // Трассировка вложенного алгоритма
+  nestedTrace?: TraceResult; // Trace of the nested algorithm
+  varName?: string; // Name of the variable receiving the call result
 }
 
 export interface TraceResult {

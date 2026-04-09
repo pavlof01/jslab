@@ -5,7 +5,13 @@ import { FaCircleExclamation, FaArrowRight, FaPhone } from "react-icons/fa6";
 
 export type KeyEventType = "assert" | "typeConversion" | "methodCall" | "critical";
 
-export function KeyEventAnnotation({ text, type, nodeDepth }: { text: string; type: KeyEventType; nodeDepth: number }) {
+type Props = {
+  text: string;
+  type: KeyEventType;
+  nodeDepth: number;
+};
+
+export const KeyEventAnnotation: React.FC<Props> = ({ text, type, nodeDepth }) => {
   const typeConfig = {
     assert: {
       icon: FaCircleExclamation,
@@ -61,4 +67,4 @@ export function KeyEventAnnotation({ text, type, nodeDepth }: { text: string; ty
       </HStack>
     </Box>
   );
-}
+};
