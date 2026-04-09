@@ -17,7 +17,6 @@ import {
   Text,
   Presence,
 } from "@chakra-ui/react";
-import { useColorModeValue } from "../ui/color-mode";
 import type { HighlighterGeneric } from "shiki";
 
 export const samples = {
@@ -197,9 +196,6 @@ function Samples({ currentCode, onSelectSample }: Props) {
   const hasChanges = currentCode !== (lastLoadedCodeRef.current ?? "");
   const canSave = currentCode.trim().length > 0 && hasChanges;
 
-  const sectionLabelColor = useColorModeValue("gray.500", "gray.400");
-  const borderColor = useColorModeValue("#e2e8f0", "#334155");
-  const hoverBg = useColorModeValue("gray.100", "gray.800");
 
   const shikiAdapter = useMemo(() => {
     if (!browseOpen) return null;
@@ -298,9 +294,9 @@ function Samples({ currentCode, onSelectSample }: Props) {
           size="sm"
           role="button"
           aria-label={`Select ${title} sample`}
-          _hover={{ backgroundColor: hoverBg, cursor: "pointer" }}
+          _hover={{ backgroundColor: "gray.800", cursor: "pointer" }}
           border="1px solid"
-          borderColor={isActive ? "blue.400" : borderColor}
+          borderColor={isActive ? "blue.400" : "#334155"}
           boxShadow={isActive ? "0 0 0 1px rgba(59, 130, 246, 0.45)" : "none"}
           onClick={onClick}
         >
@@ -337,7 +333,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
         </Card.Root>
       );
     },
-    [activeSampleId, borderColor, hoverBg, shikiAdapter]
+    [activeSampleId, shikiAdapter]
   );
 
   return (
@@ -362,7 +358,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
               <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                  <Dialog.Content borderRadius="xl" border="1px solid" borderColor={borderColor}>
+                  <Dialog.Content borderRadius="xl" border="1px solid" borderColor="#334155">
                     <Dialog.Header>
                       <Dialog.Title>Select a sample</Dialog.Title>
                       <Dialog.CloseTrigger asChild>
@@ -379,7 +375,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
                               fontSize="xs"
                               textTransform="uppercase"
                               fontWeight="semibold"
-                              color={sectionLabelColor}
+                              color="gray.400"
                               mb={2}
                             >
                               Saved samples
@@ -427,7 +423,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
                             fontSize="xs"
                             textTransform="uppercase"
                             fontWeight="semibold"
-                            color={sectionLabelColor}
+                            color="gray.400"
                             mb={2}
                           >
                             Default samples
@@ -446,7 +442,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
                         </Box>
 
                         {customSamples.length === 0 && (
-                          <Text fontSize="sm" color={sectionLabelColor}>
+                          <Text fontSize="sm" color="gray.400">
                             Save your own snippets to access them here quickly.
                           </Text>
                         )}
@@ -486,7 +482,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
-            <Dialog.Content borderRadius="lg" border="1px solid" borderColor={borderColor} maxW="400px">
+            <Dialog.Content borderRadius="lg" border="1px solid" borderColor="#334155" maxW="400px">
               <Dialog.Header>
                 <Dialog.Title>Rename snippet</Dialog.Title>
                 <Dialog.CloseTrigger asChild>
@@ -545,7 +541,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
-            <Dialog.Content borderRadius="lg" border="1px solid" borderColor={borderColor} maxW="400px">
+            <Dialog.Content borderRadius="lg" border="1px solid" borderColor="#334155" maxW="400px">
               <Dialog.Header>
                 <Dialog.Title>Delete snippet</Dialog.Title>
                 <Dialog.CloseTrigger asChild>
@@ -582,7 +578,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
-            <Dialog.Content borderRadius="lg" border="1px solid" borderColor={borderColor} maxW="400px">
+            <Dialog.Content borderRadius="lg" border="1px solid" borderColor="#334155" maxW="400px">
               <Dialog.Header>
                 <Dialog.Title>Save current snippet</Dialog.Title>
                 <Dialog.CloseTrigger asChild>

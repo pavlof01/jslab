@@ -1,5 +1,4 @@
-import { Badge, Box, Button, CloseButton, Dialog, For, Link, Portal, Text, Table, Tabs, Code } from "@chakra-ui/react";
-import { useColorModeValue } from "../ui/color-mode";
+import { Box, Button, CloseButton, Dialog, For, Link, Portal, Text, Table, Tabs, Code } from "@chakra-ui/react";
 import { useMemo } from "react";
 
 type IntrinsicCategory =
@@ -149,10 +148,6 @@ const CATEGORY_ORDER: IntrinsicCategory[] = [
 ];
 
 function V8Intrinsics() {
-  const headerBg = useColorModeValue("gray.50", "gray.700");
-  const borderColor = useColorModeValue("#e2e8f0", "#334155");
-  const dialogBg = useColorModeValue("white", "gray.900");
-
   const groupedByCategory = useMemo(() => {
     const acc: Record<IntrinsicCategory, IntrinsicEntry[]> = {
       "Optimisation (plan/trigger)": [],
@@ -183,8 +178,8 @@ function V8Intrinsics() {
           <Dialog.Content
             borderRadius="2xl"
             border="1px solid"
-            borderColor={borderColor}
-            bg={dialogBg}
+            borderColor="#334155"
+            bg="gray.900"
             boxShadow="xl"
             width="860px"
             maxW="90vw"
@@ -200,7 +195,7 @@ function V8Intrinsics() {
             </Dialog.Header>
 
             <Dialog.Body overflowY="auto" px={4} pb={4}>
-              <Box mb={5} color={useColorModeValue("gray.600", "gray.300")} fontSize="sm" lineHeight="tall">
+              <Box mb={5} color="gray.300" fontSize="sm" lineHeight="tall">
                 <Text mb={1}>
                   Quickly explore V8&apos;s internal helpers grouped by their purpose. Available only with{" "}
                   <Box as="code">--allow-natives-syntax</Box>.
@@ -231,7 +226,7 @@ function V8Intrinsics() {
                     <Tabs.Content key={category} value={category}>
                       <Box overflowX="auto">
                         <Table.Root size="sm" showColumnBorder>
-                          <Table.Header bg={headerBg}>
+                          <Table.Header bg="gray.700">
                             <Table.Row>
                               <Table.ColumnHeader width="20%">Intrinsic</Table.ColumnHeader>
                               <Table.ColumnHeader>Description</Table.ColumnHeader>

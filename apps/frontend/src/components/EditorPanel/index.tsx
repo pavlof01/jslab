@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { Box, Skeleton } from "@chakra-ui/react";
-import { useColorModeValue } from "../ui/color-mode";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -57,7 +56,6 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
   const completionRef = useRef<any>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
 
-  const borderColor = useColorModeValue("brand.900", "brand.900");
 
   useEffect(() => () => completionRef.current?.dispose?.(), []);
 
