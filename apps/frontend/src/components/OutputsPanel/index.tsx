@@ -1,6 +1,5 @@
 import { Flex, Stack, Tabs } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "../../lib/types";
-import { useColorModeValue } from "../ui/color-mode";
 import type { Dispatch, SetStateAction } from "react";
 import { HighlightedCode } from "./CodeBlock";
 import V8MenuControls from "./v8MenuControls";
@@ -32,7 +31,6 @@ export function OutputsPanel({
     }
   };
 
-  const outputPreBg = useColorModeValue("#1e1e1e", "#1e1e1e");
   const activeKey = enabledTabs[activeTabIndex].key || EngineKey.v8;
   const stdout = out?.[activeKey]?.stdout;
   const stderr = out?.[activeKey]?.stderr;
@@ -57,7 +55,7 @@ export function OutputsPanel({
         </Tabs.List>
 
         <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
-          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor={outputPreBg}>
+          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="#1e1e1e">
             <HighlightedCode
               engineKey={activeKey}
               out={stdout}
