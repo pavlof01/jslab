@@ -1,6 +1,6 @@
 /**
- * API Tests для trace-service HTTP endpoints
- * Использует собственные helpers для чистого и выразительного синтаксиса
+ * API tests for trace-service HTTP endpoints
+ * Uses custom helpers for clean and expressive syntax
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';

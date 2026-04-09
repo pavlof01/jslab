@@ -5,7 +5,11 @@ import { HStack, Tag, Text, VStack } from "@chakra-ui/react";
 import type { TraceTransition } from "@/app/abstract-functions-visualizer/spec-runner";
 import { formatSpecValue } from "@/app/abstract-functions-visualizer/traceModel";
 
-export function StepTransitions({ transitions }: { transitions: TraceTransition[] }) {
+type Props = {
+  transitions: TraceTransition[];
+};
+
+export const StepTransitions: React.FC<Props> = ({ transitions }) => {
   return (
     <VStack align="stretch" gap={1} mt={3}>
       {transitions.map((t, ord) => (
@@ -26,5 +30,5 @@ export function StepTransitions({ transitions }: { transitions: TraceTransition[
       ))}
     </VStack>
   );
-}
+};
 

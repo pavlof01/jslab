@@ -11,7 +11,7 @@ BASENAME="$(basename "${JS%.*}")"
 OUT_DIR="out/$BASENAME"
 mkdir -p "$OUT_DIR"
 
-# Определяем арх: x64 или arm64
+# Detect the architecture: x64 or arm64
 uname_m="$(uname -m || true)"
 case "$uname_m" in
   x86_64)   V8_ARCH="x64"   ;;
@@ -19,7 +19,7 @@ case "$uname_m" in
   *)        V8_ARCH="x64"   ;;
 esac
 
-# Если задан V8_D8 — используем его. Иначе ищем debug, затем release.
+# If V8_D8 is set, use it. Otherwise, look for debug, then release.
 if [[ -n "${V8_D8:-}" ]]; then
   D8_BIN="$V8_D8"
 else
@@ -41,10 +41,10 @@ fi
 
 DIS="$OUT_DIR/v8.bytecode.txt"
 
-# Базовые флаги: нативный синтаксис + байткод
+# Base flags: native syntax + bytecode
 V8_FLAGS=( --allow-natives-syntax )
 
-# Можно дополнять через переменную окружения, например:
+# Can be extended via an environment variable, for example:
 # V8_EXTRA_FLAGS="--trace-ic" ./scripts/v8.sh file.js
 if [[ -n "${V8_EXTRA_FLAGS:-}" ]]; then
   # shellcheck disable=SC2206

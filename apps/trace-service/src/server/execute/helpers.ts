@@ -26,16 +26,16 @@ import {
 } from "../../trace/index.mts";
 
 /**
- * Парсит строку и создает соответствующий ECMA262 Value
+ * Parses a string and creates the corresponding ECMA262 Value
  *
- * Примеры:
+ * Examples:
  * - "1" → NumberValue(1)
  * - "'hello'" → JSStringValue("hello")
  * - "true" → BooleanValue(true)
  * - "null" → NullValue
  * - "undefined" → UndefinedValue
- * - "{ toString: () => '99' }" → ObjectValue с методом
- * - "[1, 2, 3]" → ObjectValue (массив)
+ * - "{ toString: () => '99' }" → ObjectValue with a method
+ * - "[1, 2, 3]" → ObjectValue (array)
  */
 export function parseStringToValue(input: string, realm: ManagedRealm) {
   // Wrap in parens so that `{ ... }` is parsed as an object literal expression,
@@ -125,7 +125,7 @@ function looksLikeEcmaExpression(input: string): boolean {
 }
 
 /**
- * Конвертирует входные данные в строку для realm.evaluateScript
+ * Converts input data to a string for realm.evaluateScript
  */
 export function convertInputToString(inputCode: any): string {
   if (typeof inputCode === "string") {
@@ -166,7 +166,7 @@ export function convertInputToString(inputCode: any): string {
 }
 
 /**
- * Вызывает ECMA262 функцию на основе имени
+ * Calls an ECMA262 function by name
  */
 export function callECMA262Function(functionName: string, inputValue: Value, preferredType?: "string" | "number"): any {
   switch (functionName) {
@@ -216,8 +216,8 @@ export function callECMA262Function(functionName: string, inputValue: Value, pre
 }
 
 /**
- * Конвертирует ECMA262 Value в строковое представление.
- * execResult — это Value из движка (NumberValue, JSStringValue, etc.)
+ * Converts an ECMA262 Value to its string representation.
+ * execResult is a Value from the engine (NumberValue, JSStringValue, etc.)
  */
 export function convertResultToString(execResult: any): string {
   if (!execResult || typeof execResult !== "object") {

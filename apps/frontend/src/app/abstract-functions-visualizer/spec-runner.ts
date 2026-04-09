@@ -156,6 +156,7 @@ export type TraceStep =
       stack: string[];
       frameId?: string;
       parentFrameId?: string;
+      varName?: string;
     }
   | {
       stepId: number;

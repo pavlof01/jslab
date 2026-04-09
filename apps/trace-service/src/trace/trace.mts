@@ -42,6 +42,13 @@ export interface TraceStep {
 
   /** For if-kind steps: true = condition was met (taken), false = not taken (skipped). */
   taken?: boolean;
+
+  /**
+   * Name of the variable this call's result is bound to.
+   * Present on `kind: 'call'` steps that correspond to "Let X be ? Algo(...)".
+   * The frontend uses this to merge the let-binding and the nested call into one card.
+   */
+  varName?: string;
 }
 
 
@@ -177,6 +184,7 @@ export class TraceRecord {
       error: stepData.error,
       specOrder: stepData.specOrder,
       taken: stepData.taken,
+      varName: stepData.varName,
     };
 
     current.steps.push(step);

@@ -8,15 +8,7 @@ import { formatNodePath, type NodePath } from "@/app/abstract-functions-visualiz
 import { summarizeBranch } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
 import { FaBan, FaCheck, FaBolt } from "react-icons/fa6";
 
-export function BranchNode({
-  step,
-  index,
-  showConnector,
-  nodeDepth,
-  isActive,
-  algoById,
-  onSelectIndex,
-}: {
+type Props = {
   step: Extract<TraceStep, { kind: "if" }>;
   index: number;
   showConnector: boolean;
@@ -24,7 +16,9 @@ export function BranchNode({
   isActive: boolean;
   algoById: Map<string, Algorithm>;
   onSelectIndex?: (index: number) => void;
-}) {
+};
+
+export const BranchNode: React.FC<Props> = ({ step, index, showConnector, nodeDepth, isActive, algoById, onSelectIndex }) => {
   const clickable = !!onSelectIndex;
 
   const algo = algoById.get(step.algoId);
@@ -178,4 +172,4 @@ export function BranchNode({
       </VStack>
     </Box>
   );
-}
+};

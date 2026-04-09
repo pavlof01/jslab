@@ -3,22 +3,30 @@
 import * as React from "react";
 import { Box, Card, HStack, Input, Text, VStack } from "@chakra-ui/react";
 
-const PRESETS = ["42", '"42"', '"hello"', "true", "false", "null", "undefined", "Symbol()", "42n", "{}",
-  '{ valueOf: () => "1" }', "[]"];
+const PRESETS = [
+  "42",
+  '"42"',
+  '"hello"',
+  "true",
+  "false",
+  "null",
+  "undefined",
+  "Symbol()",
+  "42n",
+  "{}",
+  '{ valueOf: () => "1" }',
+  "[]",
+];
 
-export function EntryPointSection({
-  entryLabel,
-  userInputRaw,
-  hasNodes,
-  onInputChange,
-  onInputCommit,
-}: {
+type Props = {
   entryLabel: string;
   userInputRaw: string;
   hasNodes: boolean;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
-}) {
+};
+
+const EntryPointSection: React.FC<Props> = ({ entryLabel, userInputRaw, hasNodes, onInputChange, onInputCommit }) => {
   const interactive = !!onInputChange;
 
   return (
@@ -45,7 +53,9 @@ export function EntryPointSection({
                 <Input
                   value={userInputRaw}
                   onChange={(e) => onInputChange?.(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") onInputCommit?.(userInputRaw); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onInputCommit?.(userInputRaw);
+                  }}
                   onBlur={() => onInputCommit?.(userInputRaw)}
                   fontFamily="mono"
                   fontSize="sm"
@@ -56,7 +66,9 @@ export function EntryPointSection({
                   _focus={{ borderColor: "rgba(249,227,26,0.6)", boxShadow: "0 0 0 1px rgba(249,227,26,0.3)" }}
                   placeholder='e.g. 42, "hello", {}'
                 />
-                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" opacity={0.7}>)</Text>
+                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" opacity={0.7}>
+                  )
+                </Text>
               </HStack>
               <HStack gap={1} flexWrap="wrap">
                 {PRESETS.map((p) => (
@@ -75,7 +87,10 @@ export function EntryPointSection({
                     cursor="pointer"
                     _hover={{ borderColor: "rgba(249,227,26,0.5)", color: "#f9e31a", bg: "rgba(249,227,26,0.06)" }}
                     transition="all 0.15s"
-                    onClick={() => { onInputChange?.(p); onInputCommit?.(p); }}
+                    onClick={() => {
+                      onInputChange?.(p);
+                      onInputCommit?.(p);
+                    }}
                   >
                     {p}
                   </Box>
@@ -93,4 +108,6 @@ export function EntryPointSection({
       {hasNodes ? <Box w="2px" h={8} bg="rgba(249,227,26,0.55)" boxShadow="0 0 8px rgba(249,227,26,0.35)" /> : null}
     </VStack>
   );
-}
+};
+
+export default EntryPointSection;

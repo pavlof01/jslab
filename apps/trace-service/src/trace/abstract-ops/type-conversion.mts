@@ -48,7 +48,7 @@ export function* ToPrimitive(input: Value, preferredType?: 'string' | 'number'):
   if (input instanceof ObjectValue) {
     traceEntry({ kind: 'if', taken: true, hint: 'Step 2: input is an Object — look for @@toPrimitive method.' });
     // a. Let exoticToPrim be ? GetMethod(input, @@toPrimitive).
-    traceEntry({ kind: 'call', hint: 'Step 2a: Let exoticToPrim be ? GetMethod(input, @@toPrimitive).' });
+    traceEntry({ kind: 'call', hint: 'Step 2a: Let exoticToPrim be ? GetMethod(input, @@toPrimitive).', varName: 'exoticToPrim' });
     const exoticToPrim = Q(yield* GetMethod(input, wellKnownSymbols.toPrimitive));
     // b. If exoticToPrim is not undefined, then
     if (exoticToPrim !== Value.undefined) {
@@ -67,7 +67,7 @@ export function* ToPrimitive(input: Value, preferredType?: 'string' | 'number'):
         traceEntry({ kind: 'note', hint: 'Step 2b-iii: preferredType is "number" — let hint be "number".' });
       }
       // iv. Let result be ? Call(exoticToPrim, input, « hint »).
-      traceEntry({ kind: 'call', hint: `Step 2b-iv: Let result be ? Call(exoticToPrim, input, « "${(hint as JSStringValue).stringValue()}" »).` });
+      traceEntry({ kind: 'call', hint: `Step 2b-iv: Let result be ? Call(exoticToPrim, input, « "${(hint as JSStringValue).stringValue()}" »).`, varName: 'result' });
       const result = Q(yield* Call(exoticToPrim, input, [hint]));
       // v. If Type(result) is not Object, return result.
       if (!(result instanceof ObjectValue)) {
@@ -85,7 +85,7 @@ export function* ToPrimitive(input: Value, preferredType?: 'string' | 'number'):
     }
     traceEntry({ kind: 'if', taken: true, hint: `Step 2c: preferredType → "${preferredType}" — call OrdinaryToPrimitive.` });
     // d. Return ? OrdinaryToPrimitive(input, preferredType).
-    traceEntry({ kind: 'call', hint: `Step 2d: Return ? OrdinaryToPrimitive(input, "${preferredType}").` });
+    traceEntry({ kind: 'call', hint: `Step 2d: Return ? OrdinaryToPrimitive(input, "${preferredType}").`, varName: 'primResult' });
     const primResult = Q(yield* OrdinaryToPrimitive(input, preferredType));
     traceEntry({ kind: 'return', hint: `Step 2d: OrdinaryToPrimitive returned ${primResult.type}.` }, primResult);
     return primResult;
@@ -117,13 +117,13 @@ export function* OrdinaryToPrimitive(O: ObjectValue, hint: 'string' | 'number'):
   for (const name of methodNames) {
     const nameStr = (name as JSStringValue).stringValue();
     // a. Let method be ? Get(O, name).
-    traceEntry({ kind: 'call', hint: `Step 5a: Let method be ? Get(O, "${nameStr}").` });
+    traceEntry({ kind: 'call', hint: `Step 5a: Let method be ? Get(O, "${nameStr}").`, varName: 'method' });
     const method = Q(yield* Get(O, name));
     // b. If IsCallable(method) is true, then
     if (IsCallable(method)) {
       traceEntry({ kind: 'if', taken: true, hint: `Step 5b: ${nameStr} is callable.` });
       // i. Let result be ? Call(method, O).
-      traceEntry({ kind: 'call', hint: `Step 5b-i: Let result be ? Call(method, O) — calling ${nameStr}().` });
+      traceEntry({ kind: 'call', hint: `Step 5b-i: Let result be ? Call(method, O) — calling ${nameStr}().`, varName: 'result' });
       const result = Q(yield* Call(method, O));
       // ii. If Type(result) is not Object, return result.
       if (!(result instanceof ObjectValue)) {
@@ -233,7 +233,7 @@ export function* ToNumeric(value: Value): ValueEvaluator<NumberValue | BigIntVal
   const traceEntry = createTraceEntryFromValue({ argument: value, algoId: 'ToNumeric' });
 
   // 1. Let primValue be ? ToPrimitive(value, number).
-  traceEntry({ kind: 'call', hint: 'Call ToPrimitive with hint "number".' });
+  traceEntry({ kind: 'call', hint: 'Call ToPrimitive with hint "number".', varName: 'primValue' });
   const primValue = Q(yield* ToPrimitive(value, 'number'));
   // 2. If Type(primValue) is BigInt, return primValue.
   if (primValue instanceof BigIntValue) {
@@ -301,7 +301,7 @@ export function* ToNumber(argument: Value): ValueEvaluator<NumberValue> {
 
   if (argument instanceof JSStringValue) {
     const strVal = argument.stringValue();
-    traceEntry({ kind: 'call', hint: `Step 6: argument is a String — call StringToNumber("${strVal}").`, specOrder: 6 });
+    traceEntry({ kind: 'call', hint: `Step 6: argument is a String — call StringToNumber("${strVal}").`, specOrder: 6, varName: 'result' });
     const result = MV_StringNumericLiteral(strVal, argument);
     traceEntry({ kind: 'return', hint: `Step 6: StringToNumber("${strVal}") = ${R(result)}.`, specOrder: 6 }, result);
     return result;
@@ -311,12 +311,12 @@ export function* ToNumber(argument: Value): ValueEvaluator<NumberValue> {
 
   if (argument instanceof ObjectValue) {
     traceEntry({ kind: 'note', hint: 'Step 7: Assert — argument is an Object.', specOrder: 7 });
-    traceEntry({ kind: 'call', hint: 'Step 8: Let primValue be ? ToPrimitive(argument, "number").', specOrder: 8 });
+    traceEntry({ kind: 'call', hint: 'Step 8: Let primValue be ? ToPrimitive(argument, "number").', specOrder: 8, varName: 'primValue' });
     const primValue = Q(yield* ToPrimitive(argument, 'number'));
     Assert(!(primValue instanceof ObjectValue));
     traceEntry({ kind: 'note', hint: `Step 9: Assert — primValue is not an Object (type: ${primValue.type}).`, specOrder: 9 });
     primValue.trace = argument.trace;
-    traceEntry({ kind: 'call', hint: 'Step 10: Return ? ToNumber(primValue).', specOrder: 10 });
+    traceEntry({ kind: 'call', hint: 'Step 10: Return ? ToNumber(primValue).', specOrder: 10, varName: 'finalResult' });
     const finalResult = Q(yield* ToNumber(primValue));
     traceEntry({ kind: 'return', hint: `Step 10: ToNumber(primValue) = ${R(finalResult)}.`, specOrder: 10 }, finalResult);
     return finalResult;
