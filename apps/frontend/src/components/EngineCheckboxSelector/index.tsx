@@ -1,6 +1,5 @@
 import { Checkbox, CheckboxGroup, Fieldset, For, HStack } from "@chakra-ui/react";
 import { EngineKey, isEngineKey } from "@/lib/types";
-import { useColorModeValue } from "../ui/color-mode";
 
 interface HeaderBarProps {
   selectedEngines: EngineKey[];
@@ -9,7 +8,6 @@ interface HeaderBarProps {
 }
 
 function EngineCheckboxSelector({ selectedEngines, onEnginesChange, tabs }: HeaderBarProps) {
-  const checkboxBorderColor = useColorModeValue("#94a3b8", "#64748b");
   return (
     <CheckboxGroup
       value={selectedEngines}
@@ -30,7 +28,7 @@ function EngineCheckboxSelector({ selectedEngines, onEnginesChange, tabs }: Head
                   px={2}
                   py={1}
                   borderRadius="md"
-                  border={`1px solid ${checkboxBorderColor}`}
+                  border="1px solid #64748b"
                 >
                   <Checkbox.HiddenInput />
                   <Checkbox.Control />

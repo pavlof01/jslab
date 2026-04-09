@@ -1,7 +1,6 @@
 import { V8FlagOption } from "@/lib/types";
 import { Box, Button, Checkbox, CheckboxGroup, CloseButton, Dialog, For, Portal, Stack, Text } from "@chakra-ui/react";
-import React, { Dispatch, SetStateAction, useMemo } from "react";
-import { useColorModeValue } from "../ui/color-mode";
+import { Dispatch, SetStateAction, useMemo } from "react";
 
 const v8FlagOptions: V8FlagOption[] = [
   {
@@ -86,8 +85,6 @@ type Props = {
 };
 
 function V8FlagSelector({ selectedV8Flags, setSelectedV8Flags }: Props) {
-  const descriptionColor = useColorModeValue("#64748b", "#94a3b8");
-
   const displayLabel = useMemo(() => {
     if (!selectedV8Flags || selectedV8Flags.length === 0) return "None";
     if (selectedV8Flags.length === 1) return selectedV8Flags[0];
@@ -123,7 +120,7 @@ function V8FlagSelector({ selectedV8Flags, setSelectedV8Flags }: Props) {
                         <Checkbox.Label>
                           <Box>
                             <Text fontWeight="semibold">{option.flag}</Text>
-                            <Text fontSize="sm" color={descriptionColor}>
+                            <Text fontSize="sm" color="#94a3b8">
                               {option.description}
                             </Text>
                           </Box>

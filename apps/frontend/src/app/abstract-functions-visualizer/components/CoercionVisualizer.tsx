@@ -16,7 +16,6 @@ import { LuBookOpen, LuX } from "react-icons/lu";
 
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { PlaybackDock } from "@/app/abstract-functions-visualizer/components/PlaybackDock";
-import { useColorModeValue } from "@/components/ui/color-mode";
 import { buildTraceModel } from "@/app/abstract-functions-visualizer/traceModel";
 import { traceResultToTraceSteps } from "@/app/abstract-functions-visualizer/adapters/executor-to-trace-adapter";
 import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
@@ -81,7 +80,6 @@ export function CoercionVisualizer() {
     [algoById, trace],
   );
 
-  const pageBg = useColorModeValue("#f8f8f5", "#0a0a0a");
 
   return (
     <>
@@ -100,7 +98,7 @@ export function CoercionVisualizer() {
         </IconButton>
       </Box>
 
-      <Box bg={pageBg} minH="92vh" overflow="hidden">
+      <Box bg="#0a0a0a" minH="92vh" overflow="hidden">
         {/* Mobile drawer for spec panel */}
         <DrawerRoot open={specDrawerOpen} onOpenChange={(e) => setSpecDrawerOpen(e.open)} placement="start" size="xs">
           <DrawerBackdrop />

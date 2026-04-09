@@ -218,6 +218,7 @@ services:
       - ./apps/frontend/src/components:/app/frontend/components
       - ./apps/frontend/src/hooks:/app/frontend/hooks
       - ./apps/frontend/src/lib:/app/frontend/lib
+      - ./apps/frontend/src/style:/app/frontend/style
       - ./apps/frontend/src/next.config.ts:/app/frontend/next.config.ts
       - ./apps/frontend/src/next-env.d.ts:/app/frontend/next-env.d.ts
       - ./apps/frontend/src/tsconfig.json:/app/frontend/tsconfig.json
