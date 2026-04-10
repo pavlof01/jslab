@@ -1,0 +1,4 @@
+[submodule "apps/trace-service/engine262"]
+	path = apps/trace-service/engine262
+	url = https://github.com/pavlof01/engine262
+	branch = jslab/trace-instrumentation

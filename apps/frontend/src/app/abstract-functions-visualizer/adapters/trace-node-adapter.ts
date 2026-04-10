@@ -1,7 +1,7 @@
 /**
  * Adapter: trace-service TraceNode[] → frontend TraceResult
  *
- * trace-service returns a tree of TraceNode, where:
+ * trace-service returns a raw tree of TraceNode, where:
  *   - TraceNode.steps  = individual steps inside one algorithm call
  *   - TraceNode.children = nested algorithm calls triggered from within
  *
@@ -10,7 +10,7 @@
  */
 import type { ExecutedStep, TraceResult } from "@/app/abstract-functions-visualizer/abstract-operations-tracer";
 
-// ─── Types mirroring trace-service responses ────────────────────────────────
+// ─── Types mirroring trace-service TraceNode / TraceStep ────────────────────
 
 export interface TraceServiceStep {
   step: number;
@@ -67,20 +67,14 @@ export const ALGO_SPEC_URL: Record<string, string> = {
   Call: "https://262.ecma-international.org/#sec-call",
 };
 
-// ─── Conversion helpers ──────────────────────────────────────────────────────
+// ─── Conversion ──────────────────────────────────────────────────────────────
 
 function stepDescription(s: TraceServiceStep): string {
   return s.hint ?? s.description ?? `Step ${s.step}`;
 }
 
-/**
- * Convert a single TraceNode (one algorithm call) into a TraceResult,
- * recursively handling its children.
- */
 function nodeToTraceResult(node: TraceServiceNode, input: unknown): TraceResult {
-  // Build a map: TraceServiceNode child → which "call" step triggered it.
-  // We match by order: sort call-steps by step number, children are in the
-  // same order they were pushed during execution.
+  // Map nth call-step (by step number order) to nth child node
   const callSteps = node.steps
     .filter((s) => s.kind === "call")
     .sort((a, b) => a.step - b.step);
@@ -106,10 +100,8 @@ function nodeToTraceResult(node: TraceServiceNode, input: unknown): TraceResult 
   });
 
   const steps: ExecutedStep[] = sortedSteps.map((s) => {
-    // For if-kind steps: use explicit `taken` when present; otherwise fall back
-    // to the old heuristic (value !== undefined means it produced something → executed).
-    const executed = s.kind !== "if"
-      || (s.taken !== undefined ? s.taken : s.value !== undefined);
+    const executed =
+      s.kind !== "if" || (s.taken !== undefined ? s.taken : s.value !== undefined);
     const step: ExecutedStep = {
       kind: s.kind,
       description: stepDescription(s),
@@ -137,15 +129,11 @@ function nodeToTraceResult(node: TraceServiceNode, input: unknown): TraceResult 
 }
 
 /**
- * Convert a full trace-service ExecuteResponse into the frontend TraceResult.
- *
- * The root TraceResult wraps the top-level algorithm; nested calls become
- * nestedTrace on the calling step.
+ * Convert a full trace-service response into the frontend TraceResult.
  */
 export function traceServiceResponseToTraceResult(response: TraceServiceResponse): TraceResult {
   const rootNode = response.trace[0];
 
-  // No trace nodes — return a minimal result
   if (!rootNode) {
     return {
       algorithmId: response.functionName,
