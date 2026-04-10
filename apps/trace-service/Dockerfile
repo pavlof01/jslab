@@ -15,6 +15,7 @@ FROM deps AS dev
 ENV NODE_ENV=development
 
 COPY tsconfig.json config.ts ./
+COPY engine262 ./engine262
 COPY src ./src
 
 RUN chown -R 1000:1000 /app
@@ -34,6 +35,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY tsconfig.json config.ts ./
+COPY engine262 ./engine262
 COPY src ./src
 
 RUN chown -R 1000:1000 /app
