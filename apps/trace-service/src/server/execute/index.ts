@@ -36,12 +36,13 @@ export async function executeECMA262Function(
     const execCompletion = callGenerator(functionCall);
 
     if (execCompletion instanceof ThrowCompletion) {
+      const errStr = String(execCompletion.Value);
       return {
-        resultValue: String(execCompletion.Value),
+        resultValue: errStr,
         resultType: "error",
         trace: inputValue.trace.getEntries(),
         stepCount: inputValue.trace.getStepCount?.() || 1,
-        error: String(execCompletion.Value),
+        error: errStr,
       };
     }
 
