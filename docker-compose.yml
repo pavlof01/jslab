@@ -138,6 +138,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./apps/trace-service/src:/app/src
+      - ./apps/trace-service/engine262:/app/engine262
       - ./apps/trace-service/config.ts:/app/config.ts
       - ./apps/trace-service/tsconfig.json:/app/tsconfig.json
     healthcheck:
