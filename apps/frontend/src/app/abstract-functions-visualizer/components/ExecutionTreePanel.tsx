@@ -21,6 +21,8 @@ type Props = {
   framesByStep: TraceFrame[][];
   algoById: Map<string, Algorithm>;
   entryLabel: string;
+  algoOptions?: string[];
+  onAlgoChange?: (val: string) => void;
   userInputRaw: string;
   onSelectIndex?: (index: number) => void;
   showSkipped?: boolean;
@@ -34,6 +36,8 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   framesByStep,
   algoById,
   entryLabel,
+  algoOptions,
+  onAlgoChange,
   userInputRaw,
   onSelectIndex,
   showSkipped = false,
@@ -62,12 +66,8 @@ export const ExecutionTreePanel: React.FC<Props> = ({
         i++;
         continue;
       }
-      // Hide skipped steps (if-else not taken) when showSkipped is false
-      if (
-        !showSkipped &&
-        step.kind === "if" &&
-        (step as Extract<TraceStep, { kind: "if" }>).decision?.taken === "else"
-      ) {
+      // All if-steps are skipped branches — hide them when showSkipped is false
+      if (!showSkipped && step.kind === "if") {
         i++;
         continue;
       }
@@ -145,6 +145,8 @@ export const ExecutionTreePanel: React.FC<Props> = ({
           <VStack align="stretch" gap={0}>
             <EntryPointSection
               entryLabel={entryLabel}
+              algoOptions={algoOptions}
+              onAlgoChange={onAlgoChange}
               userInputRaw={userInputRaw}
               hasNodes={nodes.length > 0}
               onInputChange={onInputChange}

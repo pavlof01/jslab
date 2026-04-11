@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Box, Card, HStack, Input, Text, VStack } from "@chakra-ui/react";
+import { Box, Card, HStack, Input, NativeSelectField, NativeSelectRoot, Text, VStack } from "@chakra-ui/react";
 
 const PRESETS = [
   "42",
@@ -20,13 +20,15 @@ const PRESETS = [
 
 type Props = {
   entryLabel: string;
+  algoOptions?: string[];
+  onAlgoChange?: (val: string) => void;
   userInputRaw: string;
   hasNodes: boolean;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
 };
 
-const EntryPointSection: React.FC<Props> = ({ entryLabel, userInputRaw, hasNodes, onInputChange, onInputCommit }) => {
+const EntryPointSection: React.FC<Props> = ({ entryLabel, algoOptions, onAlgoChange, userInputRaw, hasNodes, onInputChange, onInputCommit }) => {
   const interactive = !!onInputChange;
 
   return (
@@ -47,9 +49,47 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, userInputRaw, hasNodes
           {interactive ? (
             <>
               <HStack gap={2}>
-                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" whiteSpace="nowrap" opacity={0.7}>
-                  {entryLabel}(
-                </Text>
+                {algoOptions && algoOptions.length > 0 ? (
+                  <NativeSelectRoot
+                    size="sm"
+                    variant="plain"
+                    w="auto"
+                    flexShrink={0}
+                    border="1px solid"
+                    borderColor="rgba(249,227,26,0.3)"
+                    borderRadius="md"
+                    px={2}
+                    bg="rgba(249,227,26,0.06)"
+                    _hover={{ borderColor: "rgba(249,227,26,0.6)", bg: "rgba(249,227,26,0.1)" }}
+                    transition="all 0.15s"
+                  >
+                    <NativeSelectField
+                      value={entryLabel}
+                      onChange={(e) => onAlgoChange?.(e.target.value)}
+                      fontFamily="mono"
+                      fontSize="sm"
+                      fontWeight="bold"
+                      color="#f9e31a"
+                      bg="transparent"
+                      border="none"
+                      outline="none"
+                      cursor="pointer"
+                      px={0}
+                      w="auto"
+                    >
+                      {algoOptions.map((opt) => (
+                        <option key={opt} value={opt} style={{ background: "#1a1a1a", color: "#fff" }}>
+                          {opt}
+                        </option>
+                      ))}
+                    </NativeSelectField>
+                  </NativeSelectRoot>
+                ) : (
+                  <Text fontFamily="mono" fontSize="sm" fontWeight="bold" whiteSpace="nowrap" opacity={0.7}>
+                    {entryLabel}
+                  </Text>
+                )}
+                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" whiteSpace="nowrap" opacity={0.7}>(</Text>
                 <Input
                   value={userInputRaw}
                   onChange={(e) => onInputChange?.(e.target.value)}
@@ -61,14 +101,13 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, userInputRaw, hasNodes
                   fontSize="sm"
                   size="sm"
                   flex="1"
+                  minW={0}
                   bg="rgba(0,0,0,0.25)"
                   borderColor="rgba(249,227,26,0.25)"
                   _focus={{ borderColor: "rgba(249,227,26,0.6)", boxShadow: "0 0 0 1px rgba(249,227,26,0.3)" }}
                   placeholder='e.g. 42, "hello", {}'
                 />
-                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" opacity={0.7}>
-                  )
-                </Text>
+                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" opacity={0.7}>)</Text>
               </HStack>
               <HStack gap={1} flexWrap="wrap">
                 {PRESETS.map((p) => (

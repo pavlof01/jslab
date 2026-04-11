@@ -17,10 +17,19 @@ import { LuBookOpen, LuX } from "react-icons/lu";
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { PlaybackDock } from "@/app/abstract-functions-visualizer/components/PlaybackDock";
 import { buildTraceModel } from "@/app/abstract-functions-visualizer/traceModel";
-import { traceResultToTraceSteps } from "@/app/abstract-functions-visualizer/adapters/executor-to-trace-adapter";
 import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
 import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
+
+const ALGO_OPTIONS = [
+  "ToNumber",
+  "ToString",
+  "ToBoolean",
+  "ToPrimitive",
+  "ToObject",
+] as const;
+
+type AlgoOption = (typeof ALGO_OPTIONS)[number];
 
 export function CoercionVisualizer() {
   const [specDrawerOpen, setSpecDrawerOpen] = React.useState(false);
@@ -32,6 +41,7 @@ export function CoercionVisualizer() {
   const { selectedIndex, isPlaying, setIsPlaying, onSelectIndex, maxIndex } = usePlayback(trace.length);
 
   const [showSkipped, setShowSkipped] = React.useState(true);
+  const [selectedAlgo, setSelectedAlgo] = React.useState<AlgoOption>("ToNumber");
 
   const [traceInputRaw, setTraceInputRaw] = React.useState<string>('{ valueOf: () => "1" }');
   const [traceInputExpression, setTraceInputExpression] = React.useState<string>('{ valueOf: () => "1" }');
@@ -40,22 +50,21 @@ export function CoercionVisualizer() {
     setTraceInputExpression(rawInput);
   }, []);
 
-  // Fetch spec HTML once — it only depends on the function name, not the input
+  // Fetch spec HTML when selected algo changes
   React.useEffect(() => {
-    fetch("/api/spec/ToNumber")
+    fetch(`/api/spec/${selectedAlgo}`)
       .then((r) => r.text())
       .then(setSpecHtml)
       .catch(() => {});
-  }, []);
+  }, [selectedAlgo]);
 
   const runNow = React.useCallback(() => {
     setIsPlaying(false);
     setError(null);
 
-    executeAlgorithmTrace("ToNumber", traceInputExpression)
-      .then(({ traceResult, resultValue: result }) => {
-        const traceSteps = traceResultToTraceSteps(traceResult);
-        setTrace(traceSteps);
+    executeAlgorithmTrace(selectedAlgo, traceInputExpression)
+      .then(({ steps, resultValue: result }) => {
+        setTrace(steps);
         setResultValue(result);
       })
       .catch((e: unknown) => {
@@ -64,7 +73,7 @@ export function CoercionVisualizer() {
         setTrace([]);
         setResultValue(undefined);
       });
-  }, [traceInputExpression, setIsPlaying, setError, setTrace, setResultValue]);
+  }, [selectedAlgo, traceInputExpression, setIsPlaying, setError, setTrace, setResultValue]);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => runNow(), 150);
@@ -132,7 +141,9 @@ export function CoercionVisualizer() {
               selectedIndex={selectedIndex}
               framesByStep={traceModel.framesByStep}
               algoById={algoById}
-              entryLabel="ToNumber"
+              entryLabel={selectedAlgo}
+              algoOptions={ALGO_OPTIONS as unknown as string[]}
+              onAlgoChange={(v) => setSelectedAlgo(v as AlgoOption)}
               userInputRaw={traceInputRaw}
               onSelectIndex={onSelectIndex}
               showSkipped={showSkipped}
