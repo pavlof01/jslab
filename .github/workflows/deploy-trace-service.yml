@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "apps/trace-service/**"
+      - ".gitmodules"
       - ".github/workflows/deploy-trace-service.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
