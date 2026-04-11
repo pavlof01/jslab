@@ -15,7 +15,7 @@ const SPEC_FILE = join(__dir, "ecma-spec.html");
 
 // ── Spec URLs for each algorithm ─────────────────────────────────────────────
 
-const ALGO_SPEC_URL: Record<string, string> = {
+export const ALGO_SPEC_URL: Record<string, string> = {
   ToPrimitive:        "https://262.ecma-international.org/#sec-toprimitive",
   OrdinaryToPrimitive:"https://262.ecma-international.org/#sec-ordinarytoprimitive",
   StringToNumber:     "https://262.ecma-international.org/#sec-stringtonumber",

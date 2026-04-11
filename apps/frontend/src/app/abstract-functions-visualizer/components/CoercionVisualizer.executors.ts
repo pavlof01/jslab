@@ -1,12 +1,17 @@
-import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
-import {
-  type TraceServiceResponse,
-  traceServiceResponseToTraceResult,
-} from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
-import { TraceResult } from "../abstract-operations-tracer";
+import type { SpecValue, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+
+interface ExecuteApiResponse {
+  success: boolean;
+  functionName: string;
+  resultValue: string;
+  resultType: string;
+  steps: TraceStep[];
+  stepCount: number;
+  error?: string;
+}
 
 export interface ExecutionResult {
-  traceResult: TraceResult;
+  steps: TraceStep[];
   resultValue: SpecValue;
 }
 
@@ -26,13 +31,11 @@ export async function executeAlgorithmTrace(
     throw new Error(err?.error ?? `trace-service error ${response.status}`);
   }
 
-  const data: TraceServiceResponse = await response.json();
+  const data: ExecuteApiResponse = await response.json();
 
   if (!data.success) {
     throw new Error(data.error ?? "trace-service returned failure");
   }
-
-  const traceResult = traceServiceResponseToTraceResult(data);
 
   const resultValue: SpecValue =
     data.resultType === "number"
@@ -43,5 +46,5 @@ export async function executeAlgorithmTrace(
           ? { type: "Boolean", value: data.resultValue === "true" }
           : { type: "Undefined", value: undefined };
 
-  return { traceResult, resultValue };
+  return { steps: data.steps, resultValue };
 }
