@@ -12,6 +12,7 @@ import {
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
 import { convertInputToString, callECMA262Function, convertResultToString, parseStringToValue } from "./helpers.ts";
+import { buildFlatTrace } from "./flat-trace-builder.ts";
 
 export async function executeECMA262Function(
   functionName: string,
@@ -32,15 +33,18 @@ export async function executeECMA262Function(
 
     const inputValue = (inputResult as NormalCompletion<Value>).Value;
 
-    const functionCall = callECMA262Function(functionName, inputValue, preferredType);
-    const execCompletion = callGenerator(functionCall);
+    const execCompletion = realm.scope(() => {
+      const functionCall = callECMA262Function(functionName, inputValue, preferredType);
+      return callGenerator(functionCall);
+    });
 
     if (execCompletion instanceof ThrowCompletion) {
       const errStr = String(execCompletion.Value);
+      const roots = inputValue.trace.getRoots();
       return {
         resultValue: errStr,
         resultType: "error",
-        trace: inputValue.trace.getEntries(),
+        steps: buildFlatTrace(roots),
         stepCount: inputValue.trace.getStepCount?.() || 1,
         error: errStr,
       };
@@ -48,11 +52,12 @@ export async function executeECMA262Function(
 
     const execResult = execCompletion as Value;
     const resultValueStr = convertResultToString(execResult);
+    const roots = inputValue.trace.getRoots();
 
     return {
       resultValue: resultValueStr,
       resultType: execResult.type.toLowerCase(),
-      trace: inputValue.trace.getEntries(),
+      steps: buildFlatTrace(roots),
       stepCount: inputValue.trace.getStepCount?.() || 1,
     };
   });
@@ -63,21 +68,21 @@ export async function executeECMA262Function(
       functionName,
       resultValue: "",
       resultType: "error",
-      trace: [],
+      steps: [],
       stepCount: 0,
       error: `Execution threw: ${result.Value}`,
     };
   }
 
   const normalResult = result as NormalCompletion<any>;
-  const { resultValue, resultType, trace, stepCount } = normalResult.Value;
+  const { resultValue, resultType, steps, stepCount } = normalResult.Value;
 
   return {
     success: true,
     functionName,
     resultValue,
     resultType,
-    trace,
+    steps,
     stepCount,
   };
 }

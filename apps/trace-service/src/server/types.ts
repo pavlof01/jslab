@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { TraceNode } from "../trace/index.mts";
+import type { FlatStep } from "./execute/flat-trace-builder.ts";
 import { executeRequestSchema } from "./schema.ts";
 
 export type ExecuteRequest = z.infer<typeof executeRequestSchema>;
@@ -9,7 +9,7 @@ export type ExecuteResponse = {
   functionName: string;
   resultValue: string;
   resultType: string;
-  trace: TraceNode[];
+  steps: FlatStep[];
   stepCount: number;
   error?: string;
 };

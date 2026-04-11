@@ -7,6 +7,7 @@ export type TraceFrame = {
   id: string;
   algoId: string;
   parentFrameId?: string;
+  specUrl?: string;
   params: EnvSnapshot;
   locals: EnvSnapshot;
 };
@@ -216,6 +217,7 @@ export function buildTraceModel(trace: TraceStep[], opts?: BuildTraceModelOpts):
         id: frameId,
         algoId: step.toAlgo,
         parentFrameId: parentFrameId ?? undefined,
+        specUrl: step.specUrl,
         params,
         locals,
       });

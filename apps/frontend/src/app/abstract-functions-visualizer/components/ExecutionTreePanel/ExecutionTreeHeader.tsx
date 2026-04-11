@@ -3,7 +3,6 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { LuChevronRight } from "react-icons/lu";
 import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
-import { ALGO_SPEC_URL } from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
 
 type Props = {
   stack: TraceFrame[];
@@ -31,7 +30,7 @@ export const ExecutionTreeHeader: React.FC<Props> = ({ stack }) => {
           >
             {stack.map((frame, i) => {
               const isCurrent = i === stack.length - 1;
-              const specUrl = ALGO_SPEC_URL[frame.algoId];
+              const specUrl = frame.specUrl;
               return (
                 <HStack key={`${frame.id}-${i}`} gap={0} flexShrink={0}>
                   {i > 0 && (

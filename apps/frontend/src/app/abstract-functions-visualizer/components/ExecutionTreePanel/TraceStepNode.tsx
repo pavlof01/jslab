@@ -5,7 +5,6 @@ import { Box, Card, Code, HStack, Tag, Text } from "@chakra-ui/react";
 import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
 import { formatNodePath, formatSpecValue, type NodePath } from "@/app/abstract-functions-visualizer/traceModel";
 import { getPrimaryEnvDelta } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
-import { ALGO_SPEC_URL } from "@/app/abstract-functions-visualizer/adapters/trace-node-adapter";
 import { StepTransitions } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/StepTransitions";
 
 type Props = {
@@ -72,7 +71,7 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
   const colors = colorMap[palette] || colorMap.blue;
 
   const algoName = callStep?.toAlgo ?? (step.kind === "call" ? step.toAlgo : undefined);
-  const algoUrl = algoName ? ALGO_SPEC_URL[algoName] : undefined;
+  const algoUrl = callStep?.specUrl ?? (step.kind === "call" ? step.specUrl : undefined);
 
   const letVarName = step.kind === "let" ? step.varName : undefined;
   const titleText = isAssert
