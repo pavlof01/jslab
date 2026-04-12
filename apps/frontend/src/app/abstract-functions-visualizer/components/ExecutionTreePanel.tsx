@@ -17,7 +17,6 @@ type Props = {
   trace: TraceStep[];
   selectedIndex: number;
   entryLabel: string;
-  algoOptions?: string[];
   onAlgoChange?: (val: string) => void;
   userInputRaw: string;
   onSelectIndex?: (index: number) => void;
@@ -30,7 +29,6 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   trace,
   selectedIndex,
   entryLabel,
-  algoOptions,
   onAlgoChange,
   userInputRaw,
   onSelectIndex,
@@ -134,7 +132,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
           <VStack align="stretch" gap={0}>
             <EntryPointSection
               entryLabel={entryLabel}
-              algoOptions={algoOptions}
+
               onAlgoChange={onAlgoChange}
               userInputRaw={userInputRaw}
               hasNodes={nodes.length > 0}
