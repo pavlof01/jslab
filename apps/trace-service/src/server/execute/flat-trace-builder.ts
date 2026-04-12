@@ -48,7 +48,7 @@ export type FlatStep =
       depth: number; callStack: FrameSnapshot[];
       algoId: string; nodePath: (number | string)[];
       hint?: string; condPretty?: string;
-      decision: { taken: "else"; why: string };
+      isSkipped: boolean;
       stack: string[]; frameId: string; parentFrameId?: string;
     }
   | {
@@ -124,25 +124,14 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, parentAl
   const innerDepth = Math.max(0, _frameStack.length - 1);
   const innerStack = callStack; // same snapshot — frame stack doesn't change for inner steps
 
-  // Sort steps: specOrder ascending, return/throw always last
-  const sorted = [...node.steps].sort((a, b) => {
-    const terminal = (s: EngineStep) => s.kind === "return" || s.kind === "throw";
-    if (terminal(a) && !terminal(b)) return 1;
-    if (!terminal(a) && terminal(b)) return -1;
-    if (a.specOrder !== undefined && b.specOrder !== undefined) return a.specOrder - b.specOrder;
-    if (a.specOrder !== undefined) return -1;
-    if (b.specOrder !== undefined) return 1;
-    return 0;
-  });
-
-  // Map each call-kind engine step (by step#) to its child TraceNode
+    // Map each call-kind engine step (by step#) to its child TraceNode
   const callSteps = node.steps.filter(s => s.kind === "call").sort((a, b) => a.step - b.step);
   const childByStep = new Map<number, TraceNode>();
   node.children.forEach((child, idx) => {
     if (idx < callSteps.length) childByStep.set(callSteps[idx].step, child);
   });
 
-  for (const step of sorted) {
+  for (const step of node.steps) {
     const stepId = _sc++;
     const base = {
       depth: innerDepth,
@@ -155,8 +144,8 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, parentAl
     };
 
     const isSkipped = step.kind === "if" && !(step.taken ?? (step.value !== undefined));
-    if (isSkipped) {
-      out.push({ stepId, kind: "if", ...base, hint: step.hint, condPretty: step.hint, decision: { taken: "else", why: "Condition not met" } });
+    if (step.kind === "if") {
+      out.push({ stepId, kind: "if", ...base, hint: step.hint, condPretty: step.hint, isSkipped });
     } else if (step.kind === "return") {
       out.push({ stepId, kind: "return", ...base, hint: step.hint, value: toValue(step.output ?? step.value ?? node.output) });
     } else {

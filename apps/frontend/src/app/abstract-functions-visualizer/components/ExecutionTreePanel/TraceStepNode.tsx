@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Card, Code, HStack, Tag, Text } from "@chakra-ui/react";
+import { FaBan } from "react-icons/fa6";
 
 import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
 import { formatNodePath, formatSpecValue, type NodePath } from "@/app/abstract-functions-visualizer/traceModel";
@@ -8,7 +9,7 @@ import { getPrimaryEnvDelta } from "@/app/abstract-functions-visualizer/componen
 import { StepTransitions } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/StepTransitions";
 
 type Props = {
-  step: Extract<TraceStep, { kind: "call" | "let" | "return" }>;
+  step: TraceStep;
   index: number;
   showConnector: boolean;
   nodeDepth: number;
@@ -17,12 +18,60 @@ type Props = {
 };
 
 export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nodeDepth, isActive, onSelectIndex }) => {
-  const callStep = step.kind === "let" ? step.callStep : undefined;
   const clickable = !!onSelectIndex;
+
+  if (step.kind === "if") {
+    return (
+      <Box pl={nodeDepth * 12} data-active={isActive || undefined}>
+        {showConnector ? <Box w="2px" h={10} bg={isActive ? "#d4a574" : "#2d2d2d"} mx="auto" opacity={isActive ? 0.8 : 1} /> : null}
+        <Card.Root
+          size="sm"
+          borderWidth="1px"
+          borderColor={isActive ? "#d4a574" : "#3d3d3d"}
+          bg={isActive ? "rgba(212,165,116,0.08)" : "rgba(26,26,26,0.95)"}
+          boxShadow={isActive ? "0 0 20px rgba(212,165,116,0.18)" : undefined}
+          cursor={clickable ? "pointer" : undefined}
+          onClick={clickable ? () => onSelectIndex?.(index) : undefined}
+          w={{ base: "full", md: "520px" }}
+          transition="all 140ms ease"
+          borderLeftWidth="4px"
+          borderLeftColor="#d4a574"
+          borderRadius="0.5rem"
+          _hover={clickable ? { boxShadow: "0 0 16px rgba(212,165,116,0.25)" } : undefined}
+        >
+          <Card.Header pb={2}>
+            <HStack justify="space-between" gap={3} flexWrap="wrap">
+              <HStack gap={2} alignItems="center">
+                <Tag.Root size="sm" variant={isActive ? "solid" : "subtle"} colorPalette="blue">
+                  <Tag.Label fontWeight={isActive ? "600" : "500"}>If</Tag.Label>
+                </Tag.Root>
+                {step.isSkipped && (
+                  <Tag.Root size="sm" variant="outline" colorPalette="orange">
+                    <FaBan size={11} style={{ marginRight: "3px" }} />
+                    <Tag.Label fontWeight="600" fontSize="xs">Skipped</Tag.Label>
+                  </Tag.Root>
+                )}
+              </HStack>
+              <Text fontSize="xs" opacity={0.7} fontFamily="mono">
+                <Code>#{index + 1}</Code>
+              </Text>
+            </HStack>
+          </Card.Header>
+          <Card.Body pt={0}>
+            <Text fontFamily="mono" fontSize="xs" opacity={0.9}>
+              {step.hint ?? step.condPretty ?? `If (${formatNodePath(step.nodePath as NodePath)}) …`}
+            </Text>
+          </Card.Body>
+        </Card.Root>
+      </Box>
+    );
+  }
+
+  const callStep = step.kind === "let" ? step.callStep : undefined;
+  const clickableStep = clickable;
 
   const isAssert = !callStep && step.kind === "let" && !!step.hint && step.hint.includes("Assert");
 
-  // Merged let+call nodes get the "call" orange colour so they visually read as "entering a sub-algo"
   const palette = isAssert
     ? "purple"
     : callStep
@@ -33,8 +82,6 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
           ? step.transitions?.length ? "yellow" : "blue"
           : "green";
 
-
-  // Color mappings for different step types
   const colorMap: Record<string, { border: string; bg: string; shadow: string; leftBorder: string }> = {
     orange: {
       border: isActive ? "#ff9f40" : "#d4a574",
@@ -80,18 +127,13 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
       ? "Call"
       : step.kind === "let"
         ? "Let"
-        : step.kind === "return"
-          ? "Return"
-          : "Step";
+        : "Return";
 
   const detail = (() => {
     if (isAssert) return undefined;
-    // For merged nodes the hint moves into the body — nothing extra in the header
     if (callStep) return undefined;
     if (step.kind === "call") {
-      if (step.result && step.result.type !== "Undefined") {
-        return `→ ${formatSpecValue(step.result, 40)}`;
-      }
+      if (step.result && step.result.type !== "Undefined") return `→ ${formatSpecValue(step.result, 40)}`;
       return `${step.args.length} arg(s)`;
     }
     if (step.kind === "let") return step.hint ?? formatNodePath(step.nodePath as NodePath);
@@ -100,20 +142,15 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
 
   const delta = getPrimaryEnvDelta(step);
 
-  // Hover shadow - enhanced version of the base shadow
   const hoverShadow =
-    palette === "orange"
-      ? "0 0 24px rgba(255,159,64,0.25)"
-      : palette === "yellow"
-        ? "0 0 26px rgba(249,227,26,0.25)"
-        : palette === "blue"
-          ? "0 0 24px rgba(96,165,250,0.25)"
-          : palette === "purple"
-            ? "0 0 24px rgba(167,139,250,0.25)"
-            : "0 0 24px rgba(74,222,128,0.25)";
+    palette === "orange" ? "0 0 24px rgba(255,159,64,0.25)" :
+    palette === "yellow" ? "0 0 26px rgba(249,227,26,0.25)" :
+    palette === "blue"   ? "0 0 24px rgba(96,165,250,0.25)" :
+    palette === "purple" ? "0 0 24px rgba(167,139,250,0.25)" :
+                           "0 0 24px rgba(74,222,128,0.25)";
 
   return (
-    <Box pl={nodeDepth * 12}>
+    <Box pl={nodeDepth * 12} data-active={isActive || undefined}>
       {showConnector ? <Box w="2px" h={10} bg={colors.leftBorder} mx="auto" opacity={isActive ? 0.8 : 0.4} /> : null}
       <Card.Root
         size="sm"
@@ -121,14 +158,14 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
         borderColor={colors.border}
         bg={colors.bg}
         boxShadow={colors.shadow}
-        cursor={clickable ? "pointer" : undefined}
-        onClick={clickable ? () => onSelectIndex?.(index) : undefined}
+        cursor={clickableStep ? "pointer" : undefined}
+        onClick={clickableStep ? () => onSelectIndex?.(index) : undefined}
         w={{ base: "full", md: "520px" }}
         transition="all 140ms ease"
         borderLeftWidth="4px"
         borderLeftColor={colors.leftBorder}
         borderRadius="0.5rem"
-        _hover={clickable ? { boxShadow: hoverShadow } : undefined}
+        _hover={clickableStep ? { boxShadow: hoverShadow } : undefined}
       >
         <Card.Header pb={callStep ? 1 : 2}>
           <HStack justify="space-between" gap={3} flexWrap="wrap">
@@ -146,7 +183,6 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
                 <Tag.Label fontWeight={isActive ? "600" : "500"}>{titleText}</Tag.Label>
               </Tag.Root>
               {callStep ? (
-                // Merged let+call: show "varName = AlgoLink" inline in header
                 <HStack gap={1} fontFamily="mono" fontSize="xs">
                   {letVarName && (
                     <Text fontWeight="600" color={colors.leftBorder} opacity={0.9}>{letVarName}</Text>
@@ -187,9 +223,7 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
               </Text>
             </HStack>
             {detail ? (
-              <Text fontSize="xs" opacity={0.75} fontFamily="mono">
-                {detail}
-              </Text>
+              <Text fontSize="xs" opacity={0.75} fontFamily="mono">{detail}</Text>
             ) : null}
           </HStack>
         </Card.Header>
@@ -199,7 +233,6 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
               {step.hint?.replace(/^Step\s+[\w.]+:\s+Assert\s*[—:]\s*/i, "") ?? step.hint}
             </Text>
           ) : callStep ? (
-            // Merged let+call body: just the args
             <Text fontFamily="mono" fontSize="xs" opacity={0.75}>
               ({callStep.args.map((a) => formatSpecValue(a, 48)).join(", ")})
             </Text>
@@ -212,13 +245,9 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
             </HStack>
           ) : delta ? (
             <HStack gap={2} flexWrap="wrap" align="center">
-              <Text fontSize="xs" opacity={0.7}>
-                set
-              </Text>
+              <Text fontSize="xs" opacity={0.7}>set</Text>
               <Code>{delta.name}</Code>
-              <Text fontSize="xs" opacity={0.7}>
-                ←
-              </Text>
+              <Text fontSize="xs" opacity={0.7}>←</Text>
               <Tag.Root size="sm" variant={isActive ? "solid" : "outline"} colorPalette="blue">
                 <Tag.Label fontWeight={isActive ? "600" : "500"}>{delta.value.type}</Tag.Label>
               </Tag.Root>
