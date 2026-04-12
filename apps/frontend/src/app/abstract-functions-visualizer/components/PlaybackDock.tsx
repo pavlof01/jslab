@@ -14,26 +14,17 @@ import {
 } from "react-icons/lu";
 
 import { Tooltip } from "@/components/ui/tooltip";
+import { useVisualizerStore } from "@/app/abstract-functions-visualizer/store";
 
-type Props = {
-  selectedIndex: number;
-  maxIndex: number;
-  isPlaying: boolean;
-  onTogglePlay: () => void;
-  onSelectIndex: (next: number) => void;
-  showSkipped?: boolean;
-  onToggleSkipped?: () => void;
-};
+export const PlaybackDock: React.FC = () => {
+  const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
+  const isPlaying = useVisualizerStore((s) => s.isPlaying);
+  const setIsPlaying = useVisualizerStore((s) => s.setIsPlaying);
+  const onSelectIndex = useVisualizerStore((s) => s.onSelectIndex);
+  const maxIndex = useVisualizerStore((s) => s.maxIndex)();
+  const showSkipped = useVisualizerStore((s) => s.showSkipped);
+  const setShowSkipped = useVisualizerStore((s) => s.setShowSkipped);
 
-export const PlaybackDock: React.FC<Props> = ({
-  selectedIndex,
-  maxIndex,
-  isPlaying,
-  onTogglePlay,
-  onSelectIndex,
-  showSkipped = false,
-  onToggleSkipped,
-}) => {
   const canBack = selectedIndex > 0;
   const canFwd = selectedIndex < maxIndex;
 
@@ -92,7 +83,7 @@ export const PlaybackDock: React.FC<Props> = ({
               _active={{ transform: "scale(0.96)" }}
               transition="transform 140ms ease"
               disabled={maxIndex <= 0}
-              onClick={onTogglePlay}
+              onClick={() => setIsPlaying((v) => !v)}
             >
               {isPlaying ? <LuPause /> : <LuPlay />}
             </IconButton>
@@ -149,7 +140,7 @@ export const PlaybackDock: React.FC<Props> = ({
             variant="ghost"
             color={showSkipped ? "rgba(249,227,26,1)" : "rgba(148,163,184,1)"}
             _hover={{ color: "rgba(249,227,26,1)", bg: "rgba(249,227,26,0.08)" }}
-            onClick={onToggleSkipped}
+            onClick={() => setShowSkipped(!showSkipped)}
           >
             {showSkipped ? <LuEye /> : <LuEyeOff />}
           </IconButton>
