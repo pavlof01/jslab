@@ -32,7 +32,7 @@ export const ExecutionTreeHeader: React.FC<Props> = ({ stack }) => {
               const isCurrent = i === stack.length - 1;
               const specUrl = frame.specUrl;
               return (
-                <HStack key={`${frame.id}-${i}`} gap={0} flexShrink={0}>
+                <HStack key={i} gap={0} flexShrink={0}>
                   {i > 0 && (
                     <Box color="rgba(255,255,255,0.3)" mx={1} display="flex" alignItems="center">
                       <LuChevronRight size={10} />
