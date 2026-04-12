@@ -7,6 +7,8 @@ import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner"
 import EntryPointSection from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
 import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
 import { TraceStepNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceStepNode";
+import { PlaybackDock } from "./PlaybackDock";
+import { useVisualizerStore } from "@/app/abstract-functions-visualizer/store";
 
 type Props = {
   trace: TraceStep[];
@@ -15,7 +17,6 @@ type Props = {
   onAlgoChange?: (val: string) => void;
   userInputRaw: string;
   onSelectIndex?: (index: number) => void;
-  showSkipped?: boolean;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
 };
@@ -27,13 +28,14 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   onAlgoChange,
   userInputRaw,
   onSelectIndex,
-  showSkipped = false,
   onInputChange,
   onInputCommit,
 }) => {
+  const showSkipped = useVisualizerStore((s) => s.showSkipped);
   const steps = showSkipped
     ? trace.map((step, index) => ({ step, index }))
     : trace.map((step, index) => ({ step, index })).filter(({ step }) => !(step.kind === "if" && step.isSkipped));
+
   const currentCallStack = trace[selectedIndex]?.callStack ?? [];
 
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
@@ -82,6 +84,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
           </VStack>
         </Box>
       </Box>
+      <PlaybackDock />
     </Box>
   );
 };
