@@ -12,5 +12,5 @@ export const executeRequestSchema = z.object({
     z.array(z.any()),
     z.record(z.any())
   ]),
-  preferredType: z.enum(["string", "number"]).optional()
+  preferredType: z.enum(["string", "number"]).optional(),
 });
