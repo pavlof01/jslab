@@ -14,10 +14,10 @@ type Props = {
   nodeDepth: number;
   isActive: boolean;
   onSelectIndex?: (index: number) => void;
-  callStep?: Extract<TraceStep, { kind: "call" }>;
 };
 
-export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nodeDepth, isActive, onSelectIndex, callStep }) => {
+export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nodeDepth, isActive, onSelectIndex }) => {
+  const callStep = step.kind === "let" ? step.callStep : undefined;
   const clickable = !!onSelectIndex;
 
   const isAssert = !callStep && step.kind === "let" && !!step.hint && step.hint.includes("Assert");

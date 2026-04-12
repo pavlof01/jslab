@@ -12,7 +12,31 @@ import {
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
 import { convertInputToString, callECMA262Function, convertResultToString, parseStringToValue } from "./helpers.ts";
-import { buildFlatTrace } from "./flat-trace-builder.ts";
+import { buildFlatTrace, type SerializedValue } from "./flat-trace-builder.ts";
+
+function serializeResult(execResult: Value): SerializedValue {
+  const str = convertResultToString(execResult as any);
+  const type = (execResult as any).type as string;
+  switch (type) {
+    case "Number":
+      if (str === "NaN") return { type: "Number", value: "NaN" };
+      return { type: "Number", value: Number(str) };
+    case "String":
+      return { type: "String", value: str };
+    case "Boolean":
+      return { type: "Boolean", value: str === "true" };
+    case "BigInt":
+      return { type: "BigInt", value: str };
+    case "Null":
+      return { type: "Null", value: null };
+    case "Symbol":
+      return { type: "Symbol", value: { id: "sym" } };
+    case "Object":
+      return { type: "Object", value: { id: "obj", class: "Object" } };
+    default:
+      return { type: "Undefined" };
+  }
+}
 
 export async function executeECMA262Function(
   functionName: string,
@@ -42,8 +66,7 @@ export async function executeECMA262Function(
       const errStr = String(execCompletion.Value);
       const roots = inputValue.trace.getRoots();
       return {
-        resultValue: errStr,
-        resultType: "error",
+        result: { type: "Undefined" } as SerializedValue,
         steps: buildFlatTrace(roots),
         stepCount: inputValue.trace.getStepCount?.() || 1,
         error: errStr,
@@ -51,12 +74,10 @@ export async function executeECMA262Function(
     }
 
     const execResult = execCompletion as Value;
-    const resultValueStr = convertResultToString(execResult);
     const roots = inputValue.trace.getRoots();
 
     return {
-      resultValue: resultValueStr,
-      resultType: execResult.type.toLowerCase(),
+      result: serializeResult(execResult),
       steps: buildFlatTrace(roots),
       stepCount: inputValue.trace.getStepCount?.() || 1,
     };
@@ -66,8 +87,7 @@ export async function executeECMA262Function(
     return {
       success: false,
       functionName,
-      resultValue: "",
-      resultType: "error",
+      result: { type: "Undefined" } as SerializedValue,
       steps: [],
       stepCount: 0,
       error: `Execution threw: ${result.Value}`,
@@ -75,13 +95,12 @@ export async function executeECMA262Function(
   }
 
   const normalResult = result as NormalCompletion<any>;
-  const { resultValue, resultType, steps, stepCount } = normalResult.Value;
+  const { result: execResult, steps, stepCount } = normalResult.Value;
 
   return {
     success: true,
     functionName,
-    resultValue,
-    resultType,
+    result: execResult,
     steps,
     stepCount,
   };

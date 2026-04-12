@@ -141,17 +141,6 @@ export type TraceStep =
     }
   | {
       stepId: number;
-      kind: "ret";
-      depth: number;
-      callStack: CallStackFrame[];
-      fromAlgo: string;
-      value: SpecValue;
-      stack: string[];
-      frameId?: string;
-      parentFrameId?: string;
-    }
-  | {
-      stepId: number;
       kind: "let";
       depth: number;
       callStack: CallStackFrame[];
@@ -166,6 +155,8 @@ export type TraceStep =
       frameId?: string;
       parentFrameId?: string;
       varName?: string;
+      /** Present when this let-step immediately triggers a sub-algorithm call. */
+      callStep?: { toAlgo: string; args: SpecValue[]; specUrl?: string };
     }
   | {
       stepId: number;

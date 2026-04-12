@@ -34,18 +34,14 @@ export type FlatStep =
       stack: string[]; frameId: string; parentFrameId?: string;
     }
   | {
-      stepId: number; kind: "ret";
-      depth: number; callStack: FrameSnapshot[];
-      fromAlgo: string; value: SerializedValue;
-      stack: string[]; frameId: string;
-    }
-  | {
       stepId: number; kind: "let";
       depth: number; callStack: FrameSnapshot[];
       algoId: string; nodePath: (number | string)[];
       hint?: string; envDelta: Record<string, SerializedValue>;
       stack: string[]; frameId: string; parentFrameId?: string;
       varName?: string;
+      /** Present when this let-step immediately triggers a sub-algorithm call. */
+      callStep?: { toAlgo: string; args: SerializedValue[]; specUrl?: string };
     }
   | {
       stepId: number; kind: "if";
@@ -173,30 +169,36 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, parentAl
     if (child) inlineNode(child, frameId, node.algoId, out);
   }
 
-  // Pop frame before emitting the ret step
+  // Pop frame (ret step is no longer emitted — post-processing handles merging)
   _frameStack.pop();
-
-  // depth for ret: back at the frame's own depth level (for connector line)
-  const retDepth = Math.max(0, _frameStack.length);
-
-  // Boundary: leaving algorithm
-  out.push({
-    stepId: _sc++,
-    kind: "ret",
-    depth: retDepth,
-    callStack: [..._frameStack],
-    fromAlgo: node.algoId,
-    value: toValue(node.output),
-    stack: [],
-    frameId,
-  });
 }
 
 export function buildFlatTrace(nodes: TraceNode[]): FlatStep[] {
   _fc = 0;
   _sc = 0;
   _frameStack = [];
+  const raw: FlatStep[] = [];
+  if (nodes.length > 0) inlineNode(nodes[0], undefined, undefined, raw);
+
+  // Strip the entry-point call (always first, rendered as EntryPointSection on frontend)
+  const withoutEntry = raw[0]?.kind === "call" ? raw.slice(1) : raw;
+
+  // Merge consecutive let(varName) + call pairs into a single let step with embedded callStep
   const out: FlatStep[] = [];
-  if (nodes.length > 0) inlineNode(nodes[0], undefined, undefined, out);
+  let i = 0;
+  while (i < withoutEntry.length) {
+    const step = withoutEntry[i];
+    const next = withoutEntry[i + 1];
+    if (step.kind === "let" && step.varName && next?.kind === "call") {
+      out.push({
+        ...step,
+        callStep: { toAlgo: next.toAlgo, args: next.args, specUrl: next.specUrl },
+      });
+      i += 2;
+    } else {
+      out.push(step);
+      i++;
+    }
+  }
   return out;
 }
