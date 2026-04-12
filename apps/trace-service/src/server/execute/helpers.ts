@@ -54,22 +54,7 @@ export const AVAILABLE_FUNCTIONS = [
   "ToString",
   "ToBoolean",
   "ToPrimitive",
-  "ToNumeric",
   "ToObject",
-  "ToPropertyKey",
-  "ToLength",
-  "ToIndex",
-  "ToInt32",
-  "ToUint32",
-  "ToInt8",
-  "ToUint8",
-  "ToUint8Clamp",
-  "ToInt16",
-  "ToUint16",
-  "ToBigInt",
-  "ToBigInt64",
-  "ToBigUint64",
-  "CanonicalNumericIndexString",
 ];
 
 // Mapping of function names to their implementations
