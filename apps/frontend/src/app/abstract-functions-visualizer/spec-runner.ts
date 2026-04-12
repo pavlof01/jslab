@@ -122,10 +122,14 @@ type NestedTraceInfo = {
   steps: TraceStep[];
 };
 
+export type CallStackFrame = { algoId: string; specUrl?: string };
+
 export type TraceStep =
   | {
       stepId: number;
       kind: "call";
+      depth: number;
+      callStack: CallStackFrame[];
       fromAlgo?: string;
       toAlgo: string;
       args: SpecValue[];
@@ -138,6 +142,8 @@ export type TraceStep =
   | {
       stepId: number;
       kind: "ret";
+      depth: number;
+      callStack: CallStackFrame[];
       fromAlgo: string;
       value: SpecValue;
       stack: string[];
@@ -147,6 +153,8 @@ export type TraceStep =
   | {
       stepId: number;
       kind: "let";
+      depth: number;
+      callStack: CallStackFrame[];
       algoId: string;
       nodePath: (number | string)[];
       hint?: string;
@@ -162,6 +170,8 @@ export type TraceStep =
   | {
       stepId: number;
       kind: "if";
+      depth: number;
+      callStack: CallStackFrame[];
       algoId: string;
       nodePath: (number | string)[];
       hint?: string;
@@ -176,6 +186,8 @@ export type TraceStep =
   | {
       stepId: number;
       kind: "return";
+      depth: number;
+      callStack: CallStackFrame[];
       algoId: string;
       nodePath: (number | string)[];
       hint?: string;

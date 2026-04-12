@@ -16,24 +16,16 @@ import { LuBookOpen, LuX } from "react-icons/lu";
 
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { PlaybackDock } from "@/app/abstract-functions-visualizer/components/PlaybackDock";
-import { buildTraceModel } from "@/app/abstract-functions-visualizer/traceModel";
-import { useAlgorithmCatalog, useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
+import { useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
 import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
 
-const ALGO_OPTIONS = [
-  "ToNumber",
-  "ToString",
-  "ToBoolean",
-  "ToPrimitive",
-  "ToObject",
-] as const;
+const ALGO_OPTIONS = ["ToNumber", "ToString", "ToBoolean", "ToPrimitive", "ToObject"] as const;
 
 type AlgoOption = (typeof ALGO_OPTIONS)[number];
 
 export function CoercionVisualizer() {
   const [specDrawerOpen, setSpecDrawerOpen] = React.useState(false);
-  const { algoById } = useAlgorithmCatalog();
 
   const { trace, setTrace, setResultValue, setError } = useTraceState();
   const [specHtml, setSpecHtml] = React.useState<string>("");
@@ -79,16 +71,6 @@ export function CoercionVisualizer() {
     const t = window.setTimeout(() => runNow(), 150);
     return () => window.clearTimeout(t);
   }, [runNow]);
-
-  const traceModel = React.useMemo(
-    () =>
-      buildTraceModel(trace, {
-        getAlgoParams: (algoId) => algoById.get(algoId)?.params,
-        getAlgoLocals: (algoId) => algoById.get(algoId)?.locals,
-      }),
-    [algoById, trace],
-  );
-
 
   return (
     <>
@@ -139,8 +121,6 @@ export function CoercionVisualizer() {
             <ExecutionTreePanel
               trace={trace}
               selectedIndex={selectedIndex}
-              framesByStep={traceModel.framesByStep}
-              algoById={algoById}
               entryLabel={selectedAlgo}
               algoOptions={ALGO_OPTIONS as unknown as string[]}
               onAlgoChange={(v) => setSelectedAlgo(v as AlgoOption)}

@@ -1,9 +1,7 @@
 /**
  * Converts a raw TraceNode tree (from engine262) into a flat array of render-ready steps.
- * This replaces trace-node-adapter.ts + executor-to-trace-adapter.ts on the frontend.
- *
- * The output shape mirrors the TraceStep union type from frontend/spec-runner.ts so the
- * frontend can consume it directly without any transformation.
+ * Each step is self-contained: it carries its own `depth` and `callStack` so the frontend
+ * can render with a simple `.map()` without any additional state or transformations.
  */
 import type { TraceNode, TraceStep as EngineStep } from "../../trace/index.mts";
 import { ALGO_SPEC_URL } from "../spec-generator.ts";
@@ -20,11 +18,16 @@ export type SerializedValue =
   | { type: "BigInt"; value: string }
   | { type: "Object"; value: { id: string; class: string; preview?: string } };
 
-// ─── Flat step (mirrors TraceStep union from frontend/spec-runner.ts) ─────────
+// ─── Call-stack frame (used in breadcrumb header) ─────────────────────────────
+
+export type FrameSnapshot = { algoId: string; specUrl?: string };
+
+// ─── Flat step — each step is self-contained with depth + callStack ───────────
 
 export type FlatStep =
   | {
       stepId: number; kind: "call";
+      depth: number; callStack: FrameSnapshot[];
       fromAlgo?: string; toAlgo: string;
       args: SerializedValue[]; result?: SerializedValue;
       specUrl?: string;
@@ -32,11 +35,13 @@ export type FlatStep =
     }
   | {
       stepId: number; kind: "ret";
+      depth: number; callStack: FrameSnapshot[];
       fromAlgo: string; value: SerializedValue;
       stack: string[]; frameId: string;
     }
   | {
       stepId: number; kind: "let";
+      depth: number; callStack: FrameSnapshot[];
       algoId: string; nodePath: (number | string)[];
       hint?: string; envDelta: Record<string, SerializedValue>;
       stack: string[]; frameId: string; parentFrameId?: string;
@@ -44,6 +49,7 @@ export type FlatStep =
     }
   | {
       stepId: number; kind: "if";
+      depth: number; callStack: FrameSnapshot[];
       algoId: string; nodePath: (number | string)[];
       hint?: string; condPretty?: string;
       decision: { taken: "else"; why: string };
@@ -51,6 +57,7 @@ export type FlatStep =
     }
   | {
       stepId: number; kind: "return";
+      depth: number; callStack: FrameSnapshot[];
       algoId: string; nodePath: (number | string)[];
       hint?: string; value: SerializedValue;
       stack: string[]; frameId: string; parentFrameId?: string;
@@ -88,15 +95,26 @@ function toValue(str: string | undefined): SerializedValue {
 
 let _fc = 0; // frame counter
 let _sc = 0; // step counter
+let _frameStack: FrameSnapshot[] = [];
 
-function inlineNode(node: TraceNode, parentFrameId: string | undefined, out: FlatStep[]): void {
+function inlineNode(node: TraceNode, parentFrameId: string | undefined, parentAlgoId: string | undefined, out: FlatStep[]): void {
   const frameId = `${node.algoId}_${_fc++}`;
+  const frame: FrameSnapshot = { algoId: node.algoId, specUrl: ALGO_SPEC_URL[node.algoId] };
+
+  // Push frame onto stack before emitting the call step
+  _frameStack.push(frame);
+
+  // depth for call: show at caller level (one below current top)
+  const callDepth = Math.max(0, _frameStack.length - 2);
+  const callStack = [..._frameStack];
 
   // Boundary: entering algorithm
   out.push({
     stepId: _sc++,
     kind: "call",
-    fromAlgo: parentFrameId,
+    depth: callDepth,
+    callStack,
+    fromAlgo: parentAlgoId,
     toAlgo: node.algoId,
     args: node.inputs.length > 0 ? [toValue(node.inputs[0])] : [],
     result: node.output !== undefined ? toValue(node.output) : undefined,
@@ -105,6 +123,10 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, out: Fla
     frameId,
     parentFrameId,
   });
+
+  // depth for steps inside this frame
+  const innerDepth = Math.max(0, _frameStack.length - 1);
+  const innerStack = callStack; // same snapshot — frame stack doesn't change for inner steps
 
   // Sort steps: specOrder ascending, return/throw always last
   const sorted = [...node.steps].sort((a, b) => {
@@ -127,6 +149,8 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, out: Fla
   for (const step of sorted) {
     const stepId = _sc++;
     const base = {
+      depth: innerDepth,
+      callStack: innerStack,
       algoId: node.algoId,
       nodePath: [stepId] as (number | string)[],
       stack: [] as string[],
@@ -146,13 +170,21 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, out: Fla
 
     // Inline child algorithm immediately after the step that triggered it
     const child = childByStep.get(step.step);
-    if (child) inlineNode(child, frameId, out);
+    if (child) inlineNode(child, frameId, node.algoId, out);
   }
+
+  // Pop frame before emitting the ret step
+  _frameStack.pop();
+
+  // depth for ret: back at the frame's own depth level (for connector line)
+  const retDepth = Math.max(0, _frameStack.length);
 
   // Boundary: leaving algorithm
   out.push({
     stepId: _sc++,
     kind: "ret",
+    depth: retDepth,
+    callStack: [..._frameStack],
     fromAlgo: node.algoId,
     value: toValue(node.output),
     stack: [],
@@ -163,7 +195,8 @@ function inlineNode(node: TraceNode, parentFrameId: string | undefined, out: Fla
 export function buildFlatTrace(nodes: TraceNode[]): FlatStep[] {
   _fc = 0;
   _sc = 0;
+  _frameStack = [];
   const out: FlatStep[] = [];
-  if (nodes.length > 0) inlineNode(nodes[0], undefined, out);
+  if (nodes.length > 0) inlineNode(nodes[0], undefined, undefined, out);
   return out;
 }
