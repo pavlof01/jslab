@@ -3,8 +3,7 @@
 import * as React from "react";
 import { Box, VStack } from "@chakra-ui/react";
 
-import type { Algorithm, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
-import type { TraceFrame } from "@/app/abstract-functions-visualizer/traceModel";
+import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
 import { BranchNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/BranchNode";
 import EntryPointSection from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
 import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
@@ -13,13 +12,10 @@ import {
   type KeyEventType,
 } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/KeyEventAnnotation";
 import { TraceStepNode } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceStepNode";
-import { getDepthForStep } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/executionTreeUtils";
 
 type Props = {
   trace: TraceStep[];
   selectedIndex: number;
-  framesByStep: TraceFrame[][];
-  algoById: Map<string, Algorithm>;
   entryLabel: string;
   algoOptions?: string[];
   onAlgoChange?: (val: string) => void;
@@ -33,8 +29,6 @@ type Props = {
 export const ExecutionTreePanel: React.FC<Props> = ({
   trace,
   selectedIndex,
-  framesByStep,
-  algoById,
   entryLabel,
   algoOptions,
   onAlgoChange,
@@ -74,7 +68,6 @@ export const ExecutionTreePanel: React.FC<Props> = ({
 
       // Merge a "let" step with the immediately following "call" step only when
       // the service explicitly marked it as a variable-binding call (varName present).
-      // This avoids false merges between unrelated consecutive let/call steps.
       const next = i + 1 <= max ? trace[i + 1] : undefined;
       const letVarName = step.kind === "let" ? (step as Extract<TraceStep, { kind: "let" }>).varName : undefined;
       if (step.kind === "let" && letVarName && next?.kind === "call") {
@@ -88,7 +81,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
     return out;
   }, [selectedIndex, trace, showSkipped]);
 
-  const currentStack = framesByStep[selectedIndex] ?? [];
+  const currentCallStack = trace[selectedIndex]?.callStack ?? [];
 
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
@@ -96,14 +89,11 @@ export const ExecutionTreePanel: React.FC<Props> = ({
     el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [selectedIndex]);
 
-  // Helper to detect key events in steps
   function getKeyEvent(step: TraceStep): { type: KeyEventType; text: string } | null {
     if (step.kind === "let" && step.hint) {
-      // Assertion statements
       if (step.hint.startsWith("Assert:")) {
         return { type: "assert", text: step.hint };
       }
-      // Method calls (toPrimitive, toString, valueOf, etc.)
       if (
         step.hint.includes("toPrimitive") ||
         step.hint.includes("toString") ||
@@ -112,7 +102,6 @@ export const ExecutionTreePanel: React.FC<Props> = ({
       ) {
         return { type: "methodCall", text: step.hint };
       }
-      // Type conversions - look for patterns like "Object → Primitive" or "String to Number"
       if (
         step.hint.includes(" → ") ||
         step.hint.includes("to Number") ||
@@ -128,7 +117,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
 
   return (
     <Box position="relative" h="full">
-      <ExecutionTreeHeader stack={currentStack} />
+      <ExecutionTreeHeader stack={currentCallStack} />
 
       <Box
         ref={scrollRef}
@@ -154,9 +143,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
             />
 
             {nodes.map(({ step, index, callStep, callIndex }, idx) => {
-              const stack = framesByStep[index];
-              const prevStack = index > 0 ? framesByStep[index - 1] : undefined;
-              const nodeDepth = getDepthForStep(step, stack, prevStack);
+              const nodeDepth = step.depth;
               const isActive = index === selectedIndex || (callIndex !== undefined && callIndex === selectedIndex);
 
               const keyEvent = getKeyEvent(step);
@@ -170,7 +157,6 @@ export const ExecutionTreePanel: React.FC<Props> = ({
                       showConnector={idx !== 0}
                       nodeDepth={nodeDepth}
                       isActive={isActive}
-                      algoById={algoById}
                       onSelectIndex={onSelectIndex}
                     />
                   );
@@ -193,7 +179,6 @@ export const ExecutionTreePanel: React.FC<Props> = ({
                 return null;
               };
 
-              // Render key event annotation if this step has one
               if (keyEvent) {
                 return (
                   <Box key={`${index}:${step.kind}:withAnnotation`} data-active={isActive || undefined}>
