@@ -18,7 +18,7 @@ function getActiveSteps(trace: TraceStep[], idx: number): Map<string, string[]> 
   const result = new Map<string, string[]>();
   for (let i = 0; i <= idx; i++) {
     const step = trace[i];
-    if (!step || step.kind === "call" || step.kind === "ret") continue;
+    if (!step || step.kind === "call") continue;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = step as any;
     const stepId = extractStepId(s.hint);
@@ -71,7 +71,7 @@ export const EcmaSpecPanel: React.FC<Props> = ({ trace, selectedIndex, specHtml 
         const currentAlgoId = (() => {
           for (let i = selectedIndex; i >= 0; i--) {
             const st = trace[i];
-            if (!st || st.kind === "call" || st.kind === "ret") continue;
+            if (!st || st.kind === "call") continue;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (st as any).algoId as string | undefined;
           }

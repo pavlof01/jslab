@@ -168,8 +168,7 @@ export type TraceStep =
       hint?: string;
       specStep?: number;
       condPretty?: string;
-      decision: { taken: "then" | "else"; why: string };
-      nestedTrace?: NestedTraceInfo;
+      isSkipped: boolean;
       stack: string[];
       frameId?: string;
       parentFrameId?: string;
