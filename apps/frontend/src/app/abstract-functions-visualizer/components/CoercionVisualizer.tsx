@@ -20,10 +20,6 @@ import { useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/
 import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
 
-const ALGO_OPTIONS = ["ToNumber", "ToString", "ToBoolean", "ToPrimitive", "ToObject"] as const;
-
-type AlgoOption = (typeof ALGO_OPTIONS)[number];
-
 export function CoercionVisualizer() {
   const [specDrawerOpen, setSpecDrawerOpen] = React.useState(false);
 
@@ -33,7 +29,7 @@ export function CoercionVisualizer() {
   const { selectedIndex, isPlaying, setIsPlaying, onSelectIndex, maxIndex } = usePlayback(trace.length);
 
   const [showSkipped, setShowSkipped] = React.useState(true);
-  const [selectedAlgo, setSelectedAlgo] = React.useState<AlgoOption>("ToNumber");
+  const [selectedAlgo, setSelectedAlgo] = React.useState("ToNumber");
 
   const [traceInputRaw, setTraceInputRaw] = React.useState<string>('{ valueOf: () => "1" }');
   const [traceInputExpression, setTraceInputExpression] = React.useState<string>('{ valueOf: () => "1" }');
@@ -122,8 +118,7 @@ export function CoercionVisualizer() {
               trace={trace}
               selectedIndex={selectedIndex}
               entryLabel={selectedAlgo}
-              algoOptions={ALGO_OPTIONS as unknown as string[]}
-              onAlgoChange={(v) => setSelectedAlgo(v as AlgoOption)}
+              onAlgoChange={(v) => setSelectedAlgo(v)}
               userInputRaw={traceInputRaw}
               onSelectIndex={onSelectIndex}
               showSkipped={showSkipped}

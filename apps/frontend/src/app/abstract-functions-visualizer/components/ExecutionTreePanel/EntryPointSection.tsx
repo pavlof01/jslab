@@ -20,7 +20,6 @@ const PRESETS = [
 
 type Props = {
   entryLabel: string;
-  algoOptions?: string[];
   onAlgoChange?: (val: string) => void;
   userInputRaw: string;
   hasNodes: boolean;
@@ -28,8 +27,21 @@ type Props = {
   onInputCommit?: (val: string) => void;
 };
 
-const EntryPointSection: React.FC<Props> = ({ entryLabel, algoOptions, onAlgoChange, userInputRaw, hasNodes, onInputChange, onInputCommit }) => {
+const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInputRaw, hasNodes, onInputChange, onInputCommit }) => {
   const interactive = !!onInputChange;
+
+  const [algoOptions, setAlgoOptions] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/trace/functions")
+      .then((r) => r.json())
+      .then((data: { available_functions?: string[] }) => {
+        if (Array.isArray(data.available_functions)) {
+          setAlgoOptions(data.available_functions);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <VStack align="center" gap={0}>
@@ -49,7 +61,7 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, algoOptions, onAlgoCha
           {interactive ? (
             <>
               <HStack gap={2}>
-                {algoOptions && algoOptions.length > 0 ? (
+                {algoOptions.length > 0 ? (
                   <NativeSelectRoot
                     size="sm"
                     variant="plain"
