@@ -68,11 +68,15 @@ interface TraceNode {
   children?: TraceNode[];
 }
 
+interface SerializedValue {
+  type: string;
+  value?: unknown;
+}
+
 interface ExecuteResponse {
   success: boolean;
   functionName: string;
-  resultValue: string;
-  resultType: string;
+  result: SerializedValue;
   trace: TraceNode[];
   stepCount: number;
   error?: string;
@@ -83,22 +87,7 @@ const AVAILABLE_FUNCTIONS = [
   'ToString',
   'ToBoolean',
   'ToPrimitive',
-  'ToNumeric',
   'ToObject',
-  'ToPropertyKey',
-  'ToLength',
-  'ToIndex',
-  'ToInt32',
-  'ToUint32',
-  'ToInt8',
-  'ToUint8',
-  'ToUint8Clamp',
-  'ToInt16',
-  'ToUint16',
-  'ToBigInt',
-  'ToBigInt64',
-  'ToBigUint64',
-  'CanonicalNumericIndexString',
 ];
 
 const FUNCTION_MAP: Record<string, any> = {
@@ -149,8 +138,7 @@ async function createApp(): Promise<FastifyInstance> {
         return {
           success: false,
           functionName,
-          resultType: 'error',
-          resultValue: '',
+          result: { type: 'Undefined' },
           trace: [],
           stepCount: 0,
           error: `Function "${functionName}" not found`,
@@ -162,8 +150,7 @@ async function createApp(): Promise<FastifyInstance> {
         return {
           success: false,
           functionName,
-          resultType: 'error',
-          resultValue: '',
+          result: { type: 'Undefined' },
           trace: [],
           stepCount: 0,
           error: `Function "${functionName}" not implemented`,
@@ -246,25 +233,10 @@ async function createApp(): Promise<FastifyInstance> {
           }
         }
 
-        const resultValue = String(result);
-        let resultType = 'object';
-        if (result instanceof Value) {
-          resultType = 'object';
-        } else if (typeof result === 'number' || !isNaN(Number(result))) {
-          resultType = 'number';
-        } else if (typeof result === 'boolean') {
-          resultType = 'boolean';
-        } else if (typeof result === 'string') {
-          resultType = 'string';
-        } else if (result === null) {
-          resultType = 'null';
-        }
-
         return {
           success: true,
           functionName,
-          resultValue,
-          resultType,
+          result: { type: 'Undefined' },
           trace,
           stepCount: traceSteps,
         };
@@ -272,8 +244,7 @@ async function createApp(): Promise<FastifyInstance> {
         return {
           success: false,
           functionName,
-          resultType: 'error',
-          resultValue: '',
+          result: { type: 'Undefined' },
           trace: [],
           stepCount: 0,
           error: error.message,
@@ -283,8 +254,7 @@ async function createApp(): Promise<FastifyInstance> {
       return reply.status(400).send({
         success: false,
         functionName: 'unknown',
-        resultType: 'error',
-        resultValue: '',
+        result: { type: 'Undefined' },
         trace: [],
         stepCount: 0,
         error: `Invalid request: ${error.message}`,
@@ -348,12 +318,12 @@ describe('Trace Service API', () => {
       expect(res.body.description).toBeDefined();
     });
 
-    it('should include 20+ functions', async () => {
+    it('should include the 5 coercion functions', async () => {
       const res = await test_get(app, '/functions');
       const funcs = res.body.available_functions;
-      expect(funcs.length).toBeGreaterThanOrEqual(20);
-      expect(funcs).toContain('ToInt32');
-      expect(funcs).toContain('ToBigInt');
+      expect(funcs.length).toBe(5);
+      expect(funcs).toContain('ToBoolean');
+      expect(funcs).toContain('ToPrimitive');
     });
   });
 
@@ -503,8 +473,7 @@ describe('Trace Service API', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('success', true);
       expect(res.body).toHaveProperty('functionName', 'ToNumber');
-      expect(res.body).toHaveProperty('resultValue');
-      expect(res.body).toHaveProperty('resultType');
+      expect(res.body).toHaveProperty('result');
       expect(res.body).toHaveProperty('trace');
       expect(res.body).toHaveProperty('stepCount');
     });
