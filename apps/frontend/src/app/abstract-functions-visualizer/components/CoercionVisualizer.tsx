@@ -17,8 +17,8 @@ import { LuBookOpen, LuX } from "react-icons/lu";
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { PlaybackDock } from "@/app/abstract-functions-visualizer/components/PlaybackDock";
 import { useTraceState, usePlayback } from "@/app/abstract-functions-visualizer/hooks";
-import { executeAlgorithmTrace } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer.executors";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
+import type { SpecValue } from "@/app/abstract-functions-visualizer/spec-runner";
 
 export function CoercionVisualizer() {
   const [specDrawerOpen, setSpecDrawerOpen] = React.useState(false);
@@ -50,10 +50,19 @@ export function CoercionVisualizer() {
     setIsPlaying(false);
     setError(null);
 
-    executeAlgorithmTrace(selectedAlgo, traceInputExpression)
-      .then(({ steps, resultValue: result }) => {
-        setTrace(steps);
-        setResultValue(result);
+    fetch("/api/trace/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ functionName: selectedAlgo, input: traceInputExpression }),
+    })
+      .then((r) => {
+        if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e?.error ?? `trace-service error ${r.status}`)));
+        return r.json();
+      })
+      .then((data) => {
+        if (!data.success) throw new Error(data.error ?? "trace-service returned failure");
+        setTrace(data.steps);
+        setResultValue(data.result as SpecValue);
       })
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : "Unknown executor error";

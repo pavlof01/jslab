@@ -37,46 +37,12 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   onInputCommit,
 }) => {
   const nodes = React.useMemo(() => {
-    type NodeEntry = {
-      step: TraceStep;
-      index: number;
-      callStep?: Extract<TraceStep, { kind: "call" }>;
-      callIndex?: number;
-    };
-    const out: NodeEntry[] = [];
     const max = Math.min(trace.length - 1, selectedIndex);
-    if (max < 0) return out;
-
-    let i = 0;
-    while (i <= max) {
-      const step = trace[i];
-      if (i === 0 && step.kind === "call") {
-        i++;
-        continue;
-      } // rendered as Entry Point
-      if (step.kind === "ret") {
-        i++;
-        continue;
-      }
-      // All if-steps are skipped branches — hide them when showSkipped is false
-      if (!showSkipped && step.kind === "if") {
-        i++;
-        continue;
-      }
-
-      // Merge a "let" step with the immediately following "call" step only when
-      // the service explicitly marked it as a variable-binding call (varName present).
-      const next = i + 1 <= max ? trace[i + 1] : undefined;
-      const letVarName = step.kind === "let" ? (step as Extract<TraceStep, { kind: "let" }>).varName : undefined;
-      if (step.kind === "let" && letVarName && next?.kind === "call") {
-        out.push({ step, index: i, callStep: next as Extract<TraceStep, { kind: "call" }>, callIndex: i + 1 });
-        i += 2;
-      } else {
-        out.push({ step, index: i });
-        i++;
-      }
-    }
-    return out;
+    if (max < 0) return [] as { step: TraceStep; index: number }[];
+    return trace
+      .slice(0, max + 1)
+      .map((step, index) => ({ step, index }))
+      .filter(({ step }) => showSkipped || step.kind !== "if");
   }, [selectedIndex, trace, showSkipped]);
 
   const currentCallStack = trace[selectedIndex]?.callStack ?? [];
@@ -140,9 +106,9 @@ export const ExecutionTreePanel: React.FC<Props> = ({
               onInputCommit={onInputCommit}
             />
 
-            {nodes.map(({ step, index, callStep, callIndex }, idx) => {
+            {nodes.map(({ step, index }, idx) => {
               const nodeDepth = step.depth;
-              const isActive = index === selectedIndex || (callIndex !== undefined && callIndex === selectedIndex);
+              const isActive = index === selectedIndex;
 
               const keyEvent = getKeyEvent(step);
 
@@ -169,7 +135,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
                       nodeDepth={nodeDepth}
                       isActive={isActive}
                       onSelectIndex={onSelectIndex}
-                      callStep={callStep}
+
                     />
                   );
                 }
