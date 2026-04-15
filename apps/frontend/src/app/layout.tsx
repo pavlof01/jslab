@@ -4,6 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import { Providers } from "./providers";
 import { Header } from "@/components/Header";
 
+import "./globals.css";
+
 export const viewport: Viewport = {
   themeColor: "#111827",
   colorScheme: "dark",
