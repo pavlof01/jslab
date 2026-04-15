@@ -38,10 +38,10 @@ export const ExecutionTreePanel: React.FC<Props> = ({
 
   const currentCallStack = trace[selectedIndex]?.callStack ?? [];
 
-  const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     const el = scrollRef.current?.querySelector<HTMLElement>("[data-active='true']");
-    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [selectedIndex]);
 
   return (

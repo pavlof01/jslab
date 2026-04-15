@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Card, Code, HStack, Tag, Text } from "@chakra-ui/react";
+import { Box, Card, Code, HStack, Show, Tag, Text } from "@chakra-ui/react";
 import { FaBan } from "react-icons/fa6";
 
 import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
@@ -23,7 +23,9 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
   if (step.kind === "if") {
     return (
       <Box pl={nodeDepth * 12} data-active={isActive || undefined}>
-        {showConnector ? <Box w="2px" h={10} bg={isActive ? "#d4a574" : "#2d2d2d"} mx="auto" opacity={isActive ? 0.8 : 1} /> : null}
+        {showConnector ? (
+          <Box w="2px" h={10} bg={isActive ? "#d4a574" : "#2d2d2d"} mx="auto" opacity={isActive ? 0.8 : 1} />
+        ) : null}
         <Card.Root
           size="sm"
           borderWidth="1px"
@@ -45,12 +47,14 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
                 <Tag.Root size="sm" variant={isActive ? "solid" : "subtle"} colorPalette="blue">
                   <Tag.Label fontWeight={isActive ? "600" : "500"}>If</Tag.Label>
                 </Tag.Root>
-                {step.isSkipped && (
+                <Show when={step.isSkipped}>
                   <Tag.Root size="sm" variant="outline" colorPalette="orange">
                     <FaBan size={11} style={{ marginRight: "3px" }} />
-                    <Tag.Label fontWeight="600" fontSize="xs">Skipped</Tag.Label>
+                    <Tag.Label fontWeight="600" fontSize="xs">
+                      Skipped
+                    </Tag.Label>
                   </Tag.Root>
-                )}
+                </Show>
               </HStack>
               <Text fontSize="xs" opacity={0.7} fontFamily="mono">
                 <Code>#{index + 1}</Code>
@@ -79,7 +83,9 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
       : step.kind === "call"
         ? "orange"
         : step.kind === "let"
-          ? step.transitions?.length ? "yellow" : "blue"
+          ? step.transitions?.length
+            ? "yellow"
+            : "blue"
           : "green";
 
   const colorMap: Record<string, { border: string; bg: string; shadow: string; leftBorder: string }> = {
@@ -121,13 +127,7 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
   const algoUrl = callStep?.specUrl ?? (step.kind === "call" ? step.specUrl : undefined);
 
   const letVarName = step.kind === "let" ? step.varName : undefined;
-  const titleText = isAssert
-    ? "Assert"
-    : step.kind === "call"
-      ? "Call"
-      : step.kind === "let"
-        ? "Let"
-        : "Return";
+  const titleText = isAssert ? "Assert" : step.kind === "call" ? "Call" : step.kind === "let" ? "Let" : "Return";
 
   const detail = (() => {
     if (isAssert) return undefined;
@@ -143,11 +143,15 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
   const delta = getPrimaryEnvDelta(step);
 
   const hoverShadow =
-    palette === "orange" ? "0 0 24px rgba(255,159,64,0.25)" :
-    palette === "yellow" ? "0 0 26px rgba(249,227,26,0.25)" :
-    palette === "blue"   ? "0 0 24px rgba(96,165,250,0.25)" :
-    palette === "purple" ? "0 0 24px rgba(167,139,250,0.25)" :
-                           "0 0 24px rgba(74,222,128,0.25)";
+    palette === "orange"
+      ? "0 0 24px rgba(255,159,64,0.25)"
+      : palette === "yellow"
+        ? "0 0 26px rgba(249,227,26,0.25)"
+        : palette === "blue"
+          ? "0 0 24px rgba(96,165,250,0.25)"
+          : palette === "purple"
+            ? "0 0 24px rgba(167,139,250,0.25)"
+            : "0 0 24px rgba(74,222,128,0.25)";
 
   return (
     <Box pl={nodeDepth * 12} data-active={isActive || undefined}>
@@ -174,36 +178,68 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
                 size="sm"
                 variant={isActive ? "solid" : "outline"}
                 colorPalette={palette === "purple" ? undefined : palette}
-                style={palette === "purple" ? {
-                  borderColor: "#a78bfa",
-                  color: isActive ? "#fff" : "#a78bfa",
-                  backgroundColor: isActive ? "#7c3aed" : "transparent",
-                } : undefined}
+                style={
+                  palette === "purple"
+                    ? {
+                        borderColor: "#a78bfa",
+                        color: isActive ? "#fff" : "#a78bfa",
+                        backgroundColor: isActive ? "#7c3aed" : "transparent",
+                      }
+                    : undefined
+                }
               >
                 <Tag.Label fontWeight={isActive ? "600" : "500"}>{titleText}</Tag.Label>
               </Tag.Root>
               {callStep ? (
                 <HStack gap={1} fontFamily="mono" fontSize="xs">
                   {letVarName && (
-                    <Text fontWeight="600" color={colors.leftBorder} opacity={0.9}>{letVarName}</Text>
+                    <Text fontWeight="600" color={colors.leftBorder} opacity={0.9}>
+                      {letVarName}
+                    </Text>
                   )}
                   {letVarName && <Text opacity={0.5}>=</Text>}
                   {algoUrl ? (
-                    <a href={algoUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ textDecoration: "none" }}>
-                      <Text fontWeight="600" color={colors.leftBorder} opacity={0.9} _hover={{ textDecoration: "underline", opacity: 1 }}>
+                    <a
+                      href={algoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ textDecoration: "none" }}
+                    >
+                      <Text
+                        fontWeight="600"
+                        color={colors.leftBorder}
+                        opacity={0.9}
+                        _hover={{ textDecoration: "underline", opacity: 1 }}
+                      >
                         {callStep.toAlgo}
                       </Text>
                     </a>
                   ) : (
-                    <Text fontWeight="600" color={colors.leftBorder} opacity={0.9}>{callStep.toAlgo}</Text>
+                    <Text fontWeight="600" color={colors.leftBorder} opacity={0.9}>
+                      {callStep.toAlgo}
+                    </Text>
                   )}
                 </HStack>
               ) : (
                 <>
-                  {algoName && (
-                    algoUrl ? (
-                      <a href={algoUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ textDecoration: "none" }}>
-                        <Text fontSize="xs" fontFamily="mono" fontWeight="600" color={colors.leftBorder} opacity={0.9} _hover={{ textDecoration: "underline", opacity: 1 }}>
+                  {algoName &&
+                    (algoUrl ? (
+                      <a
+                        href={algoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ textDecoration: "none" }}
+                      >
+                        <Text
+                          fontSize="xs"
+                          fontFamily="mono"
+                          fontWeight="600"
+                          color={colors.leftBorder}
+                          opacity={0.9}
+                          _hover={{ textDecoration: "underline", opacity: 1 }}
+                        >
                           {algoName}
                         </Text>
                       </a>
@@ -211,8 +247,7 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
                       <Text fontSize="xs" fontFamily="mono" fontWeight="600" color={colors.leftBorder} opacity={0.9}>
                         {algoName}
                       </Text>
-                    )
-                  )}
+                    ))}
                   {step.kind === "return" && step.value.type !== "Undefined" && step.value.type !== "Null" && (
                     <Code fontSize="xs">{formatSpecValue(step.value, 60)}</Code>
                   )}
@@ -223,7 +258,9 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
               </Text>
             </HStack>
             {detail ? (
-              <Text fontSize="xs" opacity={0.75} fontFamily="mono">{detail}</Text>
+              <Text fontSize="xs" opacity={0.75} fontFamily="mono">
+                {detail}
+              </Text>
             ) : null}
           </HStack>
         </Card.Header>
@@ -245,9 +282,13 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
             </HStack>
           ) : delta ? (
             <HStack gap={2} flexWrap="wrap" align="center">
-              <Text fontSize="xs" opacity={0.7}>set</Text>
+              <Text fontSize="xs" opacity={0.7}>
+                set
+              </Text>
               <Code>{delta.name}</Code>
-              <Text fontSize="xs" opacity={0.7}>←</Text>
+              <Text fontSize="xs" opacity={0.7}>
+                ←
+              </Text>
               <Tag.Root size="sm" variant={isActive ? "solid" : "outline"} colorPalette="blue">
                 <Tag.Label fontWeight={isActive ? "600" : "500"}>{delta.value.type}</Tag.Label>
               </Tag.Root>

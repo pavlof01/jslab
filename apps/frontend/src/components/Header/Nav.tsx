@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  Box,
-  Button,
-  CloseButton,
-  Dialog,
-  HStack,
-  IconButton,
-  Menu,
-  Portal,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Button, CloseButton, Dialog, HStack, IconButton, Menu, Portal, Text, VStack } from "@chakra-ui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -57,11 +46,6 @@ const navSections: NavSection[] = [
       {
         label: "Abstract Functions",
         description: "Trace ECMAScript abstract operations step by step.",
-        href: "/abstract-functions-visualizer",
-      },
-      {
-        label: "ToNumber Visualizer",
-        description: "Follow coercion flow for the ToNumber algorithm.",
         href: "/abstract-functions-visualizer",
       },
       {
