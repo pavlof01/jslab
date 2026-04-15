@@ -48,7 +48,7 @@ Goals:
   ├─ engine-hermes   # hermesc/hermes wrapper HTTP service
   ├─ engine-jsc      # JavaScriptCore (jsc) wrapper HTTP service
   ├─ engine-spidermonkey # SpiderMonkey (js shell) wrapper HTTP service
-  └─ frontend        # Next.js UI + coercion visualizer
+  └─ frontend        # Next.js UI + abstract functions visualizer
       └─ src/lib/ecma262  # ECMAScript 262 specification implementation (can be extracted as submodule)
 /infra/k8s           # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
 ```

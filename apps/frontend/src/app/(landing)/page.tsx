@@ -2,6 +2,7 @@ import { Box } from "@chakra-ui/react";
 import { HeroSection } from "./sections/hero";
 import { MethodologySection } from "./sections/methodology";
 import { BytecodeSection } from "./sections/bytecode";
+import { AbstractFunctionsSection } from "./sections/abstractFunctions";
 import { ReadyToDebugSection } from "./sections/readyToDebug";
 import { FooterSection } from "./sections/footer";
 
@@ -36,6 +37,7 @@ export default function LandingPage() {
       <HeroSection />
       <MethodologySection />
       <BytecodeSection />
+      <AbstractFunctionsSection />
       <ReadyToDebugSection />
       <FooterSection />
     </Box>

@@ -18,7 +18,7 @@ import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/componen
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
 import { useVisualizerStore } from "@/app/abstract-functions-visualizer/store";
 
-export function CoercionVisualizer() {
+export function AbstractFunctionsVisualizer() {
   const trace = useVisualizerStore((s) => s.trace);
   const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
   const isPlaying = useVisualizerStore((s) => s.isPlaying);

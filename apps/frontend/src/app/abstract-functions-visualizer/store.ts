@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import type { SpecValue, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
 
+const DEFAULT_ALGO = "ToNumber";
+const DEFAULT_INPUT = '{ valueOf: () => "1" }';
+
 interface VisualizerStore {
   // ── Trace ──────────────────────────────────────────────────────────────────
   trace: TraceStep[];
@@ -47,26 +50,15 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   showSkipped: true,
   specHtml: "",
   specDrawerOpen: false,
-  selectedAlgo: "ToNumber",
-  traceInputRaw: '{ valueOf: () => "1" }',
-  traceInputExpression: '{ valueOf: () => "1" }',
+  selectedAlgo: DEFAULT_ALGO,
+  traceInputRaw: DEFAULT_INPUT,
+  traceInputExpression: DEFAULT_INPUT,
   selectedIndex: 0,
   isPlaying: false,
 
   maxIndex: () => Math.max(0, get().trace.length - 1),
 
-  setTrace: (trace) => {
-    const { trace: prev, selectedIndex } = get();
-    const prevLen = prev.length;
-    const newLen = trace.length;
-    let nextIndex = 0;
-    if (newLen > 0) {
-      if (prevLen === 0) nextIndex = newLen - 1;
-      else if (selectedIndex === prevLen - 1) nextIndex = newLen - 1;
-      else nextIndex = Math.min(selectedIndex, newLen - 1);
-    }
-    set({ trace, selectedIndex: nextIndex });
-  },
+  setTrace: (trace) => set({ trace, selectedIndex: 0 }),
 
   setResultValue: (resultValue) => set({ resultValue }),
   setError: (error) => set({ error }),

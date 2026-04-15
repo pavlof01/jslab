@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
-import { CoercionVisualizer } from "@/app/abstract-functions-visualizer/components/CoercionVisualizer";
+import { AbstractFunctionsVisualizer } from "@/app/abstract-functions-visualizer/components/AbstractFunctionsVisualizer";
 
 export const metadata: Metadata = {
   title: "ToNumber Algorithm Visualizer",
   description: "Step-by-step visualizer for ECMAScript ToNumber algorithm.",
 };
 
-export default function CoercionVisualizerPage() {
-  return <CoercionVisualizer />;
+export default function AbstractFunctionsVisualizerPage() {
+  return <AbstractFunctionsVisualizer />;
 }

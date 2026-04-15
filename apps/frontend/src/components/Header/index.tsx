@@ -12,7 +12,8 @@ export function Header() {
       w="full"
       borderBottomWidth="1px"
       borderColor="rgba(255,255,255,0.1)"
-      bg="rgba(35,33,15,0.96)"
+      bg="rgba(35,33,15,0.82)"
+      backdropFilter="blur(8px)"
       px={{ base: 6, md: 20 }}
       py={4}
     >
