@@ -10,28 +10,9 @@ export const openapiDoc = {
       RunRequest: {
         type: "object",
         additionalProperties: false,
-        required: ["engine", "task", "sourceText"],
-        properties: {
-          engine: { type: "string", enum: ["v8", "hermes", "sm", "jsc"] },
-          task: { type: "string", enum: ["run", "bytecode"] },
-          sourceText: { type: "string", minLength: 1 },
-          options: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              flags: { type: "array", items: { type: "string" } },
-              timeoutMs: { type: "integer", minimum: 1 }
-            }
-          }
-        }
-      },
-      BytecodeRequest: {
-        type: "object",
-        additionalProperties: false,
         required: ["engine", "sourceText"],
         properties: {
           engine: { type: "string", enum: ["v8", "hermes", "sm", "jsc"] },
-          task: { type: "string", enum: ["bytecode"] },
           sourceText: { type: "string", minLength: 1 },
           options: {
             type: "object",
@@ -43,7 +24,7 @@ export const openapiDoc = {
           }
         }
       },
-      TraceExecuteRequest: {
+TraceExecuteRequest: {
         type: "object",
         additionalProperties: false,
         required: ["functionName", "input"],
@@ -126,7 +107,7 @@ export const openapiDoc = {
     },
     "/run": {
       post: {
-        summary: "Run or bytecode task",
+        summary: "Run code on a JS engine",
         requestBody: {
           required: true,
           content: {

@@ -1,9 +1,7 @@
 export type EngineKind = "v8" | "hermes" | "sm" | "jsc";
-export type TaskKind = "run" | "bytecode";
 
 export type RunRequest = {
   engine: EngineKind;
-  task: TaskKind;
   sourceText: string;
   options?: {
     flags?: string[];
@@ -21,7 +19,6 @@ export type TraceExecuteRequest = {
 
 export type NormalizedRunRequest = {
   engine: EngineKind;
-  task: TaskKind;
   sourceText: string;
   flags: string[];
   timeoutMs: number;

@@ -1,26 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Button, Flex, HStack, Splitter, useBreakpointValue } from "@chakra-ui/react";
 import { CiPlay1 } from "react-icons/ci";
 
 import { EditorPanel } from "@/components/EditorPanel";
 import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
-import { OutputsPanel } from "@/components/OutputsPanel";
-import Samples, { samples } from "@/components/Samples";
+import { OutputsPanel, tabs } from "@/components/OutputsPanel";
+import Samples from "@/components/Samples";
 import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const DEFAULT_SPLIT = [35, 65];
 const DEFAULT_SPLIT_MOBILE = [20, 80];
-
-const tabs: { key: EngineKey; label: string }[] = [
-  { key: EngineKey.v8, label: "V8" },
-  { key: EngineKey.sm, label: "SpiderMonkey" },
-  { key: EngineKey.hermes, label: "Hermes" },
-  { key: EngineKey.jsc, label: "JSC" },
-];
 
 const createEngineSelection = (): Record<EngineKey, boolean> => ({
   [EngineKey.v8]: true,
@@ -30,21 +23,17 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 });
 
 export default function PlaygroundClient() {
-  const [code, setCode] = useState(samples.add);
-  const [engines, setEngines] = useState<Record<EngineKey, boolean>>(() => createEngineSelection());
-  const { status, showDiff } = useEngineOutputsState();
-  const { runEngines, updateCurrentRunActiveTab, toggleDiff } = useEngineOutputsActions();
-  const [activeTab, setActiveTab] = useState<EngineKey>(EngineKey.v8);
+  const { status, showDiff, code, engines, activeTab, selectedV8Flags } = useEngineOutputsState();
+  const { runEngines, updateCurrentRunActiveTab, toggleDiff, setCode, setEngines, setActiveTab } =
+    useEngineOutputsActions();
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
   const [sizes, setSizes] = useLocalStorage("splitter-sizes", DEFAULT_SPLIT);
   const [sizesMobile, setSizesMobile] = useLocalStorage("splitter-sizes-mobile", DEFAULT_SPLIT_MOBILE);
-  const [selectedV8Flags, setSelectedV8Flags] = useState<string[]>(["--print-bytecode"]);
-
 
   const selectedEngines = useMemo(() => ENGINE_KEYS.filter((key) => engines[key]), [engines]);
 
-  const handleEnginesChange = useCallback((values: EngineKey[]) => {
-    setEngines(() => {
+  const handleEnginesChange = useCallback(
+    (values: EngineKey[]) => {
       const normalized = new Set<EngineKey>([EngineKey.v8]);
       values.forEach((value) => {
         if (isEngineKey(value)) {
@@ -55,31 +44,14 @@ export default function PlaygroundClient() {
       ENGINE_KEYS.forEach((engine) => {
         next[engine] = normalized.has(engine);
       });
-      return next;
-    });
-  }, []);
-
-  const enabledTabs = useMemo(() => tabs.filter((tab) => engines[tab.key]), [engines]);
-  const activeTabIndex = useMemo(() => {
-    const idx = enabledTabs.findIndex((tab) => tab.key === activeTab);
-    return idx >= 0 ? idx : 0;
-  }, [enabledTabs, activeTab]);
-
-  useEffect(() => {
-    if (enabledTabs.length === 0) return;
-    if (!enabledTabs.some((tab) => tab.key === activeTab)) {
-      setActiveTab(enabledTabs[0].key);
-    }
-  }, [enabledTabs, activeTab]);
+      setEngines(next);
+    },
+    [setEngines],
+  );
 
   useEffect(() => {
     updateCurrentRunActiveTab(activeTab);
   }, [activeTab, updateCurrentRunActiveTab]);
-
-  const handleEditorChange = useCallback((value?: string) => {
-    const next = value ?? "";
-    setCode(next);
-  }, []);
 
   const run = useCallback(async () => {
     try {
@@ -92,12 +64,30 @@ export default function PlaygroundClient() {
     } catch {}
   }, [runEngines, code, selectedEngines, selectedV8Flags, activeTab]);
 
-  const handleSampleSelect = useCallback((snippet: string) => {
-    setCode(snippet);
-  }, []);
-
   return (
     <Flex direction="column" bg="brand.800" height="100dvh">
+      <Flex
+        height={65}
+        bg="#1e1e1e"
+        borderBottom="1px solid"
+        justifyContent="space-between"
+        alignItems="center"
+        borderColor="#262626"
+        px={4}
+      >
+        <HStack>
+          <Samples currentCode={code} onSelectSample={setCode} />
+        </HStack>
+        <Button size="md" w={120} onClick={run} loading={status === "running"} loadingText="Running">
+          <CiPlay1 /> Run
+        </Button>
+        <HStack>
+          <Button size="sm" variant="surface" colorPalette="white" onClick={toggleDiff}>
+            {showDiff ? "Hide Diff" : "Show Diff"}
+          </Button>
+          <EngineCheckboxSelector selectedEngines={selectedEngines} onEnginesChange={handleEnginesChange} tabs={tabs} />
+        </HStack>
+      </Flex>
       <Splitter.Root
         orientation={isMobile ? "vertical" : "horizontal"}
         panels={[{ id: "editor", collapsible: true, collapsedSize: 5, minSize: 25 }, { id: "outputs" }]}
@@ -107,14 +97,8 @@ export default function PlaygroundClient() {
       >
         <Splitter.Panel id="editor">
           <Flex bg="#1e1e1e" flexDirection="column" height="100%">
-            <HStack height={65} px={4} borderBottom="1px solid" justifyContent="space-between" borderColor="#262626">
-              <Samples currentCode={code} onSelectSample={handleSampleSelect} />
-              <Button size="md" w={120} onClick={run} loading={status === "running"} loadingText="Running">
-                <CiPlay1 /> Run
-              </Button>
-            </HStack>
             <Flex flex={1} overflow="scroll">
-              <EditorPanel code={code} onCodeChange={handleEditorChange} />
+              <EditorPanel code={code} onCodeChange={(value) => setCode(value ?? "")} />
             </Flex>
           </Flex>
         </Splitter.Panel>
@@ -132,25 +116,8 @@ export default function PlaygroundClient() {
 
         <Splitter.Panel id="outputs">
           <Flex bg="#1e1e1e" flexDirection="column" height="100%">
-            <HStack height={65} px={4} borderBottom="1px solid" justify="space-between" borderColor="#262626">
-              <Button size="sm" variant="surface" colorPalette="white" onClick={toggleDiff}>
-                {showDiff ? "Hide Diff" : "Show Diff"}
-              </Button>
-              <EngineCheckboxSelector
-                selectedEngines={selectedEngines}
-                onEnginesChange={handleEnginesChange}
-                tabs={tabs}
-              />
-            </HStack>
             <Flex flex={1} overflow="scroll">
-              <OutputsPanel
-                enabledTabs={enabledTabs}
-                activeTabIndex={activeTabIndex}
-                activeTab={activeTab}
-                onTabChange={(key) => setActiveTab(key)}
-                selectedV8Flags={selectedV8Flags}
-                setSelectedV8Flags={setSelectedV8Flags}
-              />
+              <OutputsPanel />
             </Flex>
           </Flex>
         </Splitter.Panel>

@@ -5,7 +5,6 @@ import type { ApiResponse, NormalizedRunRequest } from "./types.js";
 export function cacheKey(payload: NormalizedRunRequest): string {
   const normalized = {
     engine: payload.engine,
-    task: payload.task,
     sourceText: payload.sourceText,
     flags: payload.flags,
     timeoutBucket: Math.ceil(payload.timeoutMs / 100)

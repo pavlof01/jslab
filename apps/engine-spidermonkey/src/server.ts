@@ -10,14 +10,13 @@ const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL }, bodyLimit: 512 * 1024 });
 
 const requestSchema = z.object({
-  task: z.enum(["run", "bytecode"]),
   sourceText: z.string().min(1),
   options: z
     .object({
       flags: z.array(z.string()).optional(),
-      timeoutMs: z.number().int().positive().optional()
+      timeoutMs: z.number().int().positive().optional(),
     })
-    .optional()
+    .optional(),
 });
 
 const allowedFlags = new Set(["--baseline-eager", "--ion-eager"]);
@@ -145,7 +144,7 @@ app.post("/run", async (req, reply) => {
   await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
 
   try {
-    const args = parsed.task === "bytecode" ? [...flags, "-e", BYTECODE_WRAPPER] : [...flags, scriptPath];
+    const args = [...flags, "-e", BYTECODE_WRAPPER];
     const result = await runCommand(config.SM_PATH, args, { timeoutMs, cwd: tmpDir });
     if (result.timedOut) {
       reply.code(408).send({ ok: false, error: "execution timed out" });
@@ -156,23 +155,12 @@ app.post("/run", async (req, reply) => {
       return;
     }
 
-    const artifacts =
-      parsed.task === "bytecode"
-        ? [
-            {
-              kind: "bytecode" as const,
-              mime: "text/plain",
-              dataBase64: Buffer.from(result.stdout || "", "utf8").toString("base64")
-            }
-          ]
-        : [];
-
     reply.send({
       ok: true,
       stdout: result.stdout,
       stderr: result.stderr,
-      artifacts,
-      meta: { durationMs: Date.now() - start, engine: "sm" }
+      artifacts: [],
+      meta: { durationMs: Date.now() - start, engine: "sm" },
     });
   } catch (err: any) {
     reply.code(500).send({ ok: false, error: err?.message || "execution failed" });
