@@ -10,7 +10,6 @@ const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL }, bodyLimit: 512 * 1024 });
 
 const requestSchema = z.object({
-  task: z.enum(["run", "bytecode"]),
   sourceText: z.string().min(1),
   options: z
     .object({
@@ -50,50 +49,6 @@ function sanitizeFlags(flags: string[] = []): string[] {
   return out;
 }
 
-function ensureBytecodeFlag(flags: string[]): string[] {
-  if (!flags.includes(BYTECODE_FLAG)) {
-    return [...flags, BYTECODE_FLAG];
-  }
-  return flags;
-}
-
-/**
- * Conservative detection of "flag is not supported".
- * We only use this together with `exitCode !== 0` to avoid false positives
- * when JSC prints bytecode or other diagnostics to stderr.
- */
-function looksLikeInvalidOption(stdout: string, stderr: string, flag: string): boolean {
-  const text = (stderr || stdout || "").toLowerCase();
-  const f = flag.toLowerCase();
-
-  const hasInvalidPattern =
-    text.includes("invalid option") ||
-    text.includes("unknown option") ||
-    text.includes("unrecognized option") ||
-    text.includes("illegal option") ||
-    text.includes("unknown command line option") ||
-    text.includes("is not a valid option");
-
-  if (!hasInvalidPattern) return false;
-
-  // Try to ensure it really refers to the exact flag (not just a random "-d" inside other text)
-  return (
-    text.includes(` ${f}`) ||
-    text.includes(`\n${f}`) ||
-    text.includes(`option ${f}`) ||
-    text.includes(`:${f}`) ||
-    text.includes(`'${f}'`) ||
-    text.includes(`"${f}"`)
-  );
-}
-
-/**
- * Bytecode / diagnostics output may appear in stdout and/or stderr.
- * Don't drop stdout just because stderr isn't empty.
- */
-function pickBytecodeOutput(stdout: string, stderr: string): string {
-  return [stdout, stderr].filter(Boolean).join("\n");
-}
 
 async function runCommand(cmd: string, args: string[], opts: { timeoutMs: number }): Promise<RunResult> {
   // JSC parses env vars starting with "JSC_" as VM options (Options.cpp).
@@ -169,10 +124,7 @@ app.post("/run", async (req, reply) => {
 
   const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
 
-  let flags = sanitizeFlags(parsed.options?.flags || []);
-  if (parsed.task === "bytecode") {
-    flags = ensureBytecodeFlag(flags);
-  }
+  const flags = sanitizeFlags(parsed.options?.flags || []);
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "engine-jsc-"));
   const scriptPath = path.join(tmpDir, "snippet.js");
@@ -180,7 +132,7 @@ app.post("/run", async (req, reply) => {
   try {
     await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
 
-    const result = await runCommand(config.JSCSHELL_PATH, [...flags, scriptPath], { timeoutMs });
+    const result = await runCommand(config.JSCSHELL_PATH, [BYTECODE_FLAG, ...flags, scriptPath], { timeoutMs });
 
     if (result.timedOut) {
       reply.code(408).send({ ok: false, error: "execution timed out" });
@@ -191,36 +143,11 @@ app.post("/run", async (req, reply) => {
       return;
     }
 
-    // IMPORTANT: avoid false positives by requiring non-zero exit code
-    if (
-      parsed.task === "bytecode" &&
-      result.exitCode !== 0 &&
-      looksLikeInvalidOption(result.stdout, result.stderr, BYTECODE_FLAG)
-    ) {
-      reply.code(400).send({
-        ok: false,
-        error:
-          "this jsc build does not support bytecode dumping via -d (try rebuilding the base image with debug options)",
-      });
-      return;
-    }
-
-    const artifacts =
-      parsed.task === "bytecode"
-        ? [
-            {
-              kind: "bytecode" as const,
-              mime: "text/plain",
-              dataBase64: Buffer.from(pickBytecodeOutput(result.stdout, result.stderr), "utf8").toString("base64"),
-            },
-          ]
-        : [];
-
     reply.send({
       ok: true,
       stdout: result.stdout,
       stderr: result.stderr,
-      artifacts,
+      artifacts: [],
       meta: { durationMs: Date.now() - start, engine: "jsc" },
     });
   } catch (err: any) {

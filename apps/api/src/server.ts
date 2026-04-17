@@ -66,7 +66,6 @@ function normalizeRequest(body: unknown): NormalizedRunRequest {
 
   return {
     engine: parsed.engine,
-    task: parsed.task,
     sourceText: parsed.sourceText,
     flags,
     timeoutMs,
@@ -138,7 +137,6 @@ app.post("/api/run", async (req, reply) => {
   const rate = await enforceRateLimit(
     redis,
     ip,
-    normalized.task,
     {
       generalLimit: config.RATE_LIMIT_PER_MIN,
       heavyLimit: config.RATE_LIMIT_HEAVY_PER_MIN,
@@ -175,13 +173,11 @@ app.post("/api/run", async (req, reply) => {
   const engineUrl = `${engineBase.replace(/\/$/, "")}/run`;
 
   try {
+    const engineBody = { sourceText: normalized.sourceText, options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs } };
+
     const engineRes = await request(engineUrl, {
       method: "POST",
-      body: JSON.stringify({
-        task: normalized.task,
-        sourceText: normalized.sourceText,
-        options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs },
-      }),
+      body: JSON.stringify(engineBody),
       headers: {
         "content-type": "application/json",
       },

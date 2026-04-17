@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { ENGINE_KEYS, EngineKey, RunStatus, type EngineResult } from "@/lib/types";
+import { samples } from "@/lib/samples";
 
 const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
 
@@ -16,6 +17,13 @@ const cloneOut = (out: Record<EngineKey, EngineResult>): Record<EngineKey, Engin
     EngineKey,
     EngineResult
   >;
+
+const createEngineSelection = (): Record<EngineKey, boolean> => ({
+  [EngineKey.v8]: true,
+  [EngineKey.sm]: false,
+  [EngineKey.hermes]: false,
+  [EngineKey.jsc]: false,
+});
 
 type RunContext = {
   engines: EngineKey[];
@@ -42,6 +50,10 @@ interface EngineOutputsState {
   error?: string;
   previousSnapshot: PreviousRunSnapshot | null;
   currentRun: RunContext | null;
+  code: string;
+  engines: Record<EngineKey, boolean>;
+  activeTab: EngineKey;
+  selectedV8Flags: string[];
 }
 
 interface EngineOutputsActions {
@@ -54,6 +66,10 @@ interface EngineOutputsActions {
   setOut: (next: Record<EngineKey, EngineResult>) => void;
   setMeta: (meta: string) => void;
   setStatus: (status: RunStatus) => void;
+  setCode: (code: string) => void;
+  setEngines: (engines: Record<EngineKey, boolean>) => void;
+  setActiveTab: (activeTab: EngineKey) => void;
+  setSelectedV8Flags: (flags: string[]) => void;
 }
 
 const createInitialState = (): EngineOutputsState => ({
@@ -64,6 +80,10 @@ const createInitialState = (): EngineOutputsState => ({
   error: undefined,
   previousSnapshot: null,
   currentRun: null,
+  code: samples.add,
+  engines: createEngineSelection(),
+  activeTab: EngineKey.v8,
+  selectedV8Flags: [],
 });
 
 type EngineOutputsStore = EngineOutputsState & EngineOutputsActions;
@@ -78,6 +98,10 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
   toggleDiff: () => set((state) => ({ showDiff: !state.showDiff })),
   clearPreviousSnapshot: () => set({ previousSnapshot: null }),
   reset: () => set({ ...createInitialState() }),
+  setCode: (code) => set({ code }),
+  setEngines: (engines) => set({ engines }),
+  setActiveTab: (activeTab) => set({ activeTab }),
+  setSelectedV8Flags: (flags) => set({ selectedV8Flags: flags }),
 
   updateCurrentRunActiveTab: (activeTab) =>
     set((state) => {
@@ -119,7 +143,6 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               engine,
-              task: "bytecode",
               sourceText: code,
               options: engine === EngineKey.v8 ? { flags: v8Flags } : {},
             }),
@@ -206,6 +229,10 @@ export const useEngineOutputsState = () =>
       error: state.error,
       previousSnapshot: state.previousSnapshot,
       currentRun: state.currentRun,
+      code: state.code,
+      engines: state.engines,
+      activeTab: state.activeTab,
+      selectedV8Flags: state.selectedV8Flags,
     }))
   );
 
@@ -221,6 +248,10 @@ export const useEngineOutputsActions = () =>
       setOut: state.setOut,
       setMeta: state.setMeta,
       setStatus: state.setStatus,
+      setCode: state.setCode,
+      setEngines: state.setEngines,
+      setActiveTab: state.setActiveTab,
+      setSelectedV8Flags: state.setSelectedV8Flags,
     }))
   );
 

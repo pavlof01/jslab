@@ -30,11 +30,7 @@ export enum RunStatus {
   done = "done",
   error = "error",
 }
-export type V8FlagOption = {
-  flag: string;
-  label: string;
-  description: string;
-};
+
 export enum DiffKind {
   Keep = "keep",
   Add = "add",
