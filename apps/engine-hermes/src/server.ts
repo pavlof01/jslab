@@ -10,7 +10,6 @@ const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL }, bodyLimit: 512 * 1024 });
 
 const requestSchema = z.object({
-  task: z.enum(["run", "bytecode"]),
   sourceText: z.string().min(1),
   options: z
     .object({
@@ -117,53 +116,7 @@ app.post("/run", async (req, reply) => {
   await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
 
   try {
-    if (parsed.task === "bytecode") {
-      const hbcPath = path.join(tmpDir, "program.hbc");
-      const compile = await runCommand(config.HERMESC_PATH, ["-emit-binary", "-out", hbcPath, ...flags, scriptPath], { timeoutMs });
-      if (compile.timedOut) {
-        reply.code(408).send({ ok: false, error: "bytecode compile timed out" });
-        return;
-      }
-      if (compile.outputTruncated) {
-        reply.code(400).send({ ok: false, error: "compile output exceeded limit" });
-        return;
-      }
-      if (compile.exitCode !== 0) {
-        reply.code(400).send({ ok: false, stdout: compile.stdout, stderr: compile.stderr, artifacts: [] });
-        return;
-      }
-      const dump = await runCommand(config.HBCDUMP_PATH, [hbcPath], { timeoutMs, input: "disassemble\n" });
-      if (dump.timedOut) {
-        reply.code(408).send({ ok: false, error: "hbcdump timed out" });
-        return;
-      }
-      if (dump.outputTruncated) {
-        reply.code(400).send({ ok: false, error: "hbcdump output exceeded limit" });
-        return;
-      }
-      if (dump.exitCode !== 0) {
-        reply.code(400).send({ ok: false, stdout: dump.stdout, stderr: dump.stderr, artifacts: [] });
-        return;
-      }
-
-      const bytecode = await fs.readFile(hbcPath);
-      reply.send({
-        ok: true,
-        stdout: dump.stdout,
-        stderr: dump.stderr,
-        artifacts: [
-          {
-            kind: "bytecode" as const,
-            mime: "application/octet-stream",
-            dataBase64: bytecode.toString("base64")
-          }
-        ],
-        meta: { durationMs: Date.now() - start, engine: "hermes" }
-      });
-      return;
-    }
-
-    const runResult = await runCommand(config.HERMES_PATH, [...flags, scriptPath], { timeoutMs });
+    const runResult = await runCommand(config.HERMES_PATH, ["-dump-bytecode", ...flags, scriptPath], { timeoutMs });
     if (runResult.timedOut) {
       reply.code(408).send({ ok: false, error: "execution timed out" });
       return;

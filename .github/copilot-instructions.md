@@ -53,7 +53,6 @@ See [apps/api/src/types.ts](apps/api/src/types.ts):
 ```typescript
 type RunRequest = {
   engine: "v8" | "hermes" | "sm" | "jsc";
-  task: "run" | "bytecode";
   sourceText: string;
   options?: { flags?: string[]; timeoutMs?: number };
 };
@@ -73,7 +72,7 @@ type ApiResponse = {
 - API → Engine services: POST `/run` (same schema).
 - All engine services must respect `allowedFlags` whitelist (e.g., V8: `--print-bytecode`, `--trace-ignition`; Hermes: `-O`, `-gc-sanitize-handles`). Unsanitized flags are silently dropped.
 - `sourceText` is immutable; flags and timeout are normalized server-side.
-- **Cache key** includes engine, task, sourceText, flags, and a timeout bucket (Math.ceil(timeoutMs/100)) to reduce cache misses on timeout variations.
+- **Cache key** includes engine, sourceText, flags, and a timeout bucket (Math.ceil(timeoutMs/100)) to reduce cache misses on timeout variations.
 
 ## Essential Patterns
 
@@ -82,7 +81,7 @@ type ApiResponse = {
 All engines ([engine-v8](apps/engine-v8/src/server.ts), [engine-hermes](apps/engine-hermes/src/server.ts), etc.):
 
 - Single POST `/run` endpoint accepting `RunRequest`.
-- **Flag sanitization**: Define `allowedFlags` Set, filter/deduplicate client flags.
+- **Flag sanitization**: Define `allowedFlags` Set, filter/deduplicate client flags. For V8, flags drive all behavior (e.g. `--print-bytecode` to get bytecode output).
 - **Process spawning**: Use `child_process.spawn()` with `timeout`, capture stdout/stderr, truncate if >512KB.
 - Return `{ ok: boolean; stdout: string; stderr: string; artifacts: [] }`.
 - No external state—each request is independent.

@@ -1,14 +1,43 @@
 import { z } from "zod";
-import type { EngineKind, RunRequest, TaskKind, TraceExecuteInput, TraceExecuteRequest } from "./types.js";
+import type { EngineKind, RunRequest, TraceExecuteInput, TraceExecuteRequest } from "./types.js";
 
 const engineFlags: Record<EngineKind, readonly string[]> = {
   v8: [
-    "--print-bytecode",
-    "--trace-ignition",
-    "--trace-deopt",
     "--allow-natives-syntax",
     "--no-liftoff",
     "--no-wasm-async-compilation",
+    "--print-all-code",
+    "--print-all-exceptions",
+    "--print-ast",
+    "--print-break-location",
+    "--print-builtin-code",
+    "--print-builtin-size",
+    "--print-bytecode",
+    "--print-code",
+    "--print-code-verbose",
+    "--print-deopt-stress",
+    "--print-flag-values",
+    "--print-maglev-code",
+    "--print-maglev-deopt-verbose",
+    "--print-maglev-graph",
+    "--print-maglev-graphs",
+    "--print-opt-code",
+    "--print-opt-source",
+    "--print-regexp-bytecode",
+    "--print-regexp-code",
+    "--print-regexp-graph",
+    "--print-scopes",
+    "--print-turbolev-frontend",
+    "--print-turbolev-inline-functions",
+    "--print-wasm-code",
+    "--print-wasm-stub-code",
+    "--trace-deopt",
+    "--trace-ic",
+    "--trace-ignition",
+    "--trace-maps",
+    "--trace-maps-details",
+    "--trace-opt",
+    "--trace-opt-verbose",
   ],
   hermes: ["-O", "-gc-sanitize-handles", "-strict"],
   sm: ["--baseline-eager", "--ion-eager"],
@@ -21,7 +50,6 @@ export function allowedFlags(engine: EngineKind): readonly string[] {
 
 export const runRequestSchema: z.ZodType<RunRequest> = z.object({
   engine: z.enum(["v8", "hermes", "sm", "jsc"]),
-  task: z.enum(["run", "bytecode"]),
   sourceText: z.string().min(1),
   options: z
     .object({

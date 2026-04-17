@@ -1,33 +1,38 @@
-import { Flex, Stack, Tabs } from "@chakra-ui/react";
+import { Flex, Show, Stack, Tabs } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "../../lib/types";
-import type { Dispatch, SetStateAction } from "react";
 import { HighlightedCode } from "./CodeBlock";
 import V8MenuControls from "./v8MenuControls";
-import { useEngineOutputsState } from "@/store/useEngineOutputs";
+import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
+import { useEffect, useMemo } from "react";
 
-interface OutputsPanelProps {
-  enabledTabs: { key: EngineKey; label: string }[];
-  activeTabIndex: number;
-  activeTab: EngineKey;
-  onTabChange: (key: EngineKey) => void;
-  selectedV8Flags?: string[];
-  setSelectedV8Flags?: Dispatch<SetStateAction<string[]>>;
-}
+export const tabs: { key: EngineKey; label: string }[] = [
+  { key: EngineKey.v8, label: "V8" },
+  { key: EngineKey.sm, label: "SpiderMonkey" },
+  { key: EngineKey.hermes, label: "Hermes" },
+  { key: EngineKey.jsc, label: "JSC" },
+];
 
-export function OutputsPanel({
-  enabledTabs,
-  activeTabIndex,
-  activeTab,
-  onTabChange,
-  selectedV8Flags,
-  setSelectedV8Flags,
-}: OutputsPanelProps) {
-  const { out, previousSnapshot, showDiff, status } = useEngineOutputsState();
+export function OutputsPanel() {
+  const { out, previousSnapshot, showDiff, status, engines, activeTab } = useEngineOutputsState();
+  const { setActiveTab } = useEngineOutputsActions();
+
+  const enabledTabs = useMemo(() => tabs.filter((tab) => engines[tab.key]), [engines]);
+  const activeTabIndex = useMemo(() => {
+    const idx = enabledTabs.findIndex((tab) => tab.key === activeTab);
+    return idx >= 0 ? idx : 0;
+  }, [enabledTabs, activeTab]);
+
+  useEffect(() => {
+    if (enabledTabs.length === 0) return;
+    if (!enabledTabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab(enabledTabs[0].key);
+    }
+  }, [enabledTabs, activeTab, setActiveTab]);
 
   const handleTabChange = (detail: { value: string | null }) => {
     const next = (detail.value ?? activeKey) as EngineKey;
     if (next !== activeTab) {
-      onTabChange(next);
+      setActiveTab(next);
     }
   };
 
@@ -37,15 +42,11 @@ export function OutputsPanel({
   const stdPrevOut = previousSnapshot?.out?.[activeKey]?.stdout;
   const stdPrevErr = previousSnapshot?.out?.[activeKey]?.stderr;
 
-  const canRenderV8Controls = activeKey === EngineKey.v8 && selectedV8Flags && setSelectedV8Flags;
+  const canRenderV8Controls = activeKey === EngineKey.v8;
 
   return (
     <Tabs.Root value={activeKey} onValueChange={handleTabChange} display="flex" size="sm" variant="line" flex="1">
       <Stack flex="1" minH="20vh" w="full">
-        {/* <Show when={canRenderV8Controls}>
-          <V8MenuControls selectedV8Flags={selectedV8Flags} setSelectedV8Flags={setSelectedV8Flags} />
-        </Show> */}
-
         <Tabs.List w="full" ms="-1" px={4}>
           {enabledTabs.map((tab) => (
             <Tabs.Trigger colorPalette="teal" key={tab.key} value={tab.key} textStyle="xs">
@@ -56,6 +57,9 @@ export function OutputsPanel({
 
         <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="#1e1e1e">
+            <Show when={canRenderV8Controls}>
+              <V8MenuControls />
+            </Show>
             <HighlightedCode
               engineKey={activeKey}
               out={stdout}

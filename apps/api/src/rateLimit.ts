@@ -1,6 +1,5 @@
 import type { FastifyReply } from "fastify";
 import type { Redis } from "ioredis";
-import type { TaskKind } from "./types.js";
 
 export type RateLimitConfig = {
   generalLimit: number;
@@ -33,19 +32,17 @@ async function take(redis: Redis, key: string, limit: number, windowSeconds: num
   return { count, ttl };
 }
 
-export async function enforceRateLimit(redis: Redis, ip: string, task: TaskKind, cfg: RateLimitConfig, reply: FastifyReply): Promise<RateLimitResult> {
+export async function enforceRateLimit(redis: Redis, ip: string, cfg: RateLimitConfig, reply: FastifyReply): Promise<RateLimitResult> {
   const generalKey = windowKey(ip, "general", cfg.windowSeconds);
   const heavyKey = windowKey(ip, "heavy", cfg.windowSeconds);
 
   const [{ count: generalCount, ttl: generalTtl }, { count: heavyCount, ttl: heavyTtl }] = await Promise.all([
     take(redis, generalKey, cfg.generalLimit, cfg.windowSeconds),
-    task === "run" || task === "bytecode"
-      ? take(redis, heavyKey, cfg.heavyLimit, cfg.windowSeconds)
-      : Promise.resolve({ count: 0, ttl: cfg.windowSeconds })
+    take(redis, heavyKey, cfg.heavyLimit, cfg.windowSeconds),
   ]);
 
   const overGeneral = generalCount > cfg.generalLimit;
-  const overHeavy = (task === "run" || task === "bytecode") && heavyCount > cfg.heavyLimit;
+  const overHeavy = heavyCount > cfg.heavyLimit;
   const limited = overGeneral || overHeavy;
   const retryAfter = overHeavy ? heavyTtl : generalTtl;
   const remaining = Math.max(cfg.generalLimit - generalCount, 0);

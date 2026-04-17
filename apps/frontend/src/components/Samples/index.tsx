@@ -18,31 +18,11 @@ import {
   Presence,
 } from "@chakra-ui/react";
 import type { HighlighterGeneric } from "shiki";
+import { samples, sampleCatalog } from "@/lib/samples";
 
-export const samples = {
-  add: `function f(x){ return x + 1 }\nf(41);`,
-  closure: `function f(a){ function g(b){ return a + b } return g(1) }\nf(41);`,
-  loop: `function f(n){ let s=0; for(let i=0;i<n;i++) s+=i; return s }\nf(10);`,
-  try: `function f(){ try { throw 1 } catch(e){ return e + 1 } }\nf();`,
-  d8Native: `function hot(x){ return x + 1; }\nfor (let i = 0; i < 5000; i++) hot(i);\nif (typeof globalThis.d8 !== "undefined") {\n  try { eval('%OptimizeFunctionOnNextCall(hot);'); } catch {}\n}\nprint('hot(41)=', hot(41));`,
-  typedarray: `const buffer = new ArrayBuffer(16);\nconst view = new DataView(buffer);\nview.setUint32(0, 0xdeadbeef, true);\nview.setFloat64(8, Math.PI, true);\nconst bytes = Array.from(new Uint8Array(buffer)).map((b) => b.toString(16).padStart(2, '0'));\nprint('buffer bytes:', bytes.join(' '));\nprint('float64:', view.getFloat64(8, true).toFixed(6));`,
-  asyncFlow: `async function loadUser(id){\n  return { id, name: 'user-' + id };\n}\nasync function main(){\n  const users = await Promise.all([1, 2, 3].map((id) => loadUser(id)));\n  const names = users.map((u) => u.name).join(', ');\n  print('async users:', names);\n}\nmain();`,
-  generator: `function* fibonacci(limit){\n  let a = 0, b = 1;\n  while (limit-- > 0) {\n    yield a;\n    [a, b] = [b, a + b];\n  }\n}\nprint('fib:', [...fibonacci(8)].join(', '));`,
-};
-
+export { samples, sampleCatalog };
 export type SampleKey = keyof typeof samples;
 export type SampleDescriptor = { key: SampleKey; label: string; description: string };
-
-export const sampleCatalog: SampleDescriptor[] = [
-  { key: "add", label: "Add", description: "Minimal function call returning 42." },
-  { key: "closure", label: "Closure", description: "Capturing outer scope and invoking inner function." },
-  { key: "loop", label: "Loop", description: "Simple for-loop summing integer range." },
-  { key: "try", label: "Try/catch", description: "Exception handling flow returning a computed value." },
-  { key: "d8Native", label: "d8 native", description: "Uses V8 % intrinsics to optimise a hot function." },
-  { key: "typedarray", label: "Typed arrays", description: "Manipulates ArrayBuffer via DataView, prints bytes." },
-  { key: "asyncFlow", label: "Async flow", description: "Async/await fetching mock users in parallel." },
-  { key: "generator", label: "Generator", description: "Generates Fibonacci numbers via iterator." },
-];
 
 type CustomSample = {
   id: string;
@@ -89,7 +69,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
             typeof (item as any).id === "string" &&
             typeof (item as any).name === "string" &&
             typeof (item as any).code === "string" &&
-            (typeof (item as any).description === "undefined" || typeof (item as any).description === "string")
+            (typeof (item as any).description === "undefined" || typeof (item as any).description === "string"),
         );
         if (valid.length) {
           setCustomSamples(valid);
@@ -109,7 +89,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
     if (baselineInitialisedRef.current) return;
     baselineInitialisedRef.current = true;
     const defaultMatch = (Object.entries(samples) as [SampleKey, string][]).find(
-      ([, snippet]) => snippet === currentCode
+      ([, snippet]) => snippet === currentCode,
     );
     if (defaultMatch) {
       setActiveSampleId(`default:${defaultMatch[0]}`);
@@ -133,21 +113,21 @@ function Samples({ currentCode, onSelectSample }: Props) {
       onSelectSample(code);
       setBrowseOpen(false);
     },
-    [onSelectSample]
+    [onSelectSample],
   );
 
   const handleSelectDefault = useCallback(
     (key: SampleKey) => {
       handleSelectSample(samples[key], `default:${key}`);
     },
-    [handleSelectSample]
+    [handleSelectSample],
   );
 
   const handleSelectCustom = useCallback(
     (sample: CustomSample) => {
       handleSelectSample(sample.code, sample.id);
     },
-    [handleSelectSample]
+    [handleSelectSample],
   );
 
   const openSaveDialog = useCallback(() => {
@@ -196,7 +176,6 @@ function Samples({ currentCode, onSelectSample }: Props) {
   const hasChanges = currentCode !== (lastLoadedCodeRef.current ?? "");
   const canSave = currentCode.trim().length > 0 && hasChanges;
 
-
   const shikiAdapter = useMemo(() => {
     if (!browseOpen) return null;
     return createShikiAdapter<HighlighterGeneric<any, any>>({
@@ -234,9 +213,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
     }
     const normalized = trimmed.toLowerCase();
     const nameTaken =
-      customSamples.some(
-        (sample) => sample.id !== renameTarget.id && sample.name.toLowerCase() === normalized
-      ) ||
+      customSamples.some((sample) => sample.id !== renameTarget.id && sample.name.toLowerCase() === normalized) ||
       sampleCatalog.some((sample) => sample.label.toLowerCase() === normalized);
     if (nameTaken) {
       setRenameError("A sample with this name already exists.");
@@ -247,8 +224,8 @@ function Samples({ currentCode, onSelectSample }: Props) {
 
     setCustomSamples((prev) =>
       prev.map((sample) =>
-        sample.id === renameTarget.id ? { ...sample, name: trimmed, description: descriptionValue } : sample
-      )
+        sample.id === renameTarget.id ? { ...sample, name: trimmed, description: descriptionValue } : sample,
+      ),
     );
     closeRenameDialog();
   }, [closeRenameDialog, customSamples, renameDescription, renameName, renameTarget]);
@@ -333,11 +310,11 @@ function Samples({ currentCode, onSelectSample }: Props) {
         </Card.Root>
       );
     },
-    [activeSampleId, shikiAdapter]
+    [activeSampleId, shikiAdapter],
   );
 
   return (
-    <Box px={5} pt={4} pb={2} overflowY="auto">
+    <Box overflowY="auto">
       <Stack gap={4} align="flex-start">
         <Box w="full">
           <HStack gap={3} align="center" flexWrap="wrap">
@@ -371,13 +348,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
                         {customSamples.length > 0 && (
                           <Box>
                             <Separator mb={4} />
-                            <Text
-                              fontSize="xs"
-                              textTransform="uppercase"
-                              fontWeight="semibold"
-                              color="gray.400"
-                              mb={2}
-                            >
+                            <Text fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="gray.400" mb={2}>
                               Saved samples
                             </Text>
                             <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
@@ -413,19 +384,13 @@ function Samples({ currentCode, onSelectSample }: Props) {
                                       </Button>
                                     </>
                                   ),
-                                })
+                                }),
                               )}
                             </SimpleGrid>
                           </Box>
                         )}
                         <Box>
-                          <Text
-                            fontSize="xs"
-                            textTransform="uppercase"
-                            fontWeight="semibold"
-                            color="gray.400"
-                            mb={2}
-                          >
+                          <Text fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="gray.400" mb={2}>
                             Default samples
                           </Text>
                           <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
@@ -436,7 +401,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
                                 description,
                                 snippet: samples[key],
                                 onClick: () => handleSelectDefault(key),
-                              })
+                              }),
                             )}
                           </SimpleGrid>
                         </Box>

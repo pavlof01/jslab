@@ -10,7 +10,6 @@ const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL }, bodyLimit: 512 * 1024 });
 
 const requestSchema = z.object({
-  task: z.enum(["run", "bytecode"]),
   sourceText: z.string().min(1),
   options: z
     .object({
@@ -20,7 +19,43 @@ const requestSchema = z.object({
     .optional()
 });
 
-const allowedFlags = new Set(["--print-bytecode", "--trace-ignition", "--trace-deopt", "--allow-natives-syntax", "--no-liftoff", "--no-wasm-async-compilation"]);
+const allowedFlags = new Set([
+  "--allow-natives-syntax",
+  "--no-liftoff",
+  "--no-wasm-async-compilation",
+  "--print-all-code",
+  "--print-all-exceptions",
+  "--print-ast",
+  "--print-break-location",
+  "--print-builtin-code",
+  "--print-builtin-size",
+  "--print-bytecode",
+  "--print-code",
+  "--print-code-verbose",
+  "--print-deopt-stress",
+  "--print-flag-values",
+  "--print-maglev-code",
+  "--print-maglev-deopt-verbose",
+  "--print-maglev-graph",
+  "--print-maglev-graphs",
+  "--print-opt-code",
+  "--print-opt-source",
+  "--print-regexp-bytecode",
+  "--print-regexp-code",
+  "--print-regexp-graph",
+  "--print-scopes",
+  "--print-turbolev-frontend",
+  "--print-turbolev-inline-functions",
+  "--print-wasm-code",
+  "--print-wasm-stub-code",
+  "--trace-deopt",
+  "--trace-ic",
+  "--trace-ignition",
+  "--trace-maps",
+  "--trace-maps-details",
+  "--trace-opt",
+  "--trace-opt-verbose",
+]);
 
 type RunResult = {
   stdout: string;
@@ -73,13 +108,6 @@ function sanitizeFlags(flags: string[] = []): string[] {
   }
   out.sort();
   return out;
-}
-
-function ensureBytecodeFlag(flags: string[]): string[] {
-  if (!flags.includes("--print-bytecode")) {
-    return [...flags, "--print-bytecode"];
-  }
-  return flags;
 }
 
 async function runCommand(cmd: string, args: string[], opts: { timeoutMs: number }): Promise<RunResult> {
@@ -139,10 +167,7 @@ app.post("/run", async (req, reply) => {
   }
 
   const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
-  let flags = sanitizeFlags(parsed.options?.flags || []);
-  if (parsed.task === "bytecode") {
-    flags = ensureBytecodeFlag(flags);
-  }
+  const flags = sanitizeFlags(parsed.options?.flags || []);
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "engine-v8-"));
   const scriptPath = path.join(tmpDir, "snippet.js");
@@ -159,22 +184,11 @@ app.post("/run", async (req, reply) => {
       return;
     }
 
-    const artifacts =
-      parsed.task === "bytecode"
-        ? [
-            {
-              kind: "bytecode" as const,
-              mime: "text/plain",
-              dataBase64: Buffer.from(result.stdout || "", "utf8").toString("base64")
-            }
-          ]
-        : [];
-
     reply.send({
       ok: true,
       stdout: result.stdout,
       stderr: result.stderr,
-      artifacts,
+      artifacts: [],
       meta: { durationMs: Date.now() - start, engine: "v8" }
     });
   } catch (err: any) {

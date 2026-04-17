@@ -1,23 +1,15 @@
-import { Stack, HStack, Text } from "@chakra-ui/react";
-import React, { Dispatch, SetStateAction } from "react";
+import { Stack, HStack } from "@chakra-ui/react";
+import React from "react";
 import V8FlagSelector from "../V8FlagSelector";
 import V8Intrinsics from "../V8Intrinsics";
 
-type Props = {
-  selectedV8Flags?: string[];
-  setSelectedV8Flags?: Dispatch<SetStateAction<string[]>>;
-};
-
-const V8MenuControls: React.FC<Props> = ({ selectedV8Flags, setSelectedV8Flags }) => {
+const V8MenuControls: React.FC = () => {
   return (
-    <Stack gap={2}>
+    <Stack gap={2} px={4}>
       <HStack align="center" gap={2} flexWrap="wrap">
-        <V8FlagSelector selectedV8Flags={selectedV8Flags!} setSelectedV8Flags={setSelectedV8Flags!} />
+        <V8FlagSelector />
         <V8Intrinsics />
       </HStack>
-      <Text fontSize="sm" color="#cbd5f5">
-        {selectedV8Flags?.length ? `Selected: ${selectedV8Flags.join(", ")}` : "Selected: None"}
-      </Text>
     </Stack>
   );
 };

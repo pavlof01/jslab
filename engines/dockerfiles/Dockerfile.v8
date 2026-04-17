@@ -41,11 +41,11 @@ RUN set -eux; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
       OUT=out/release_amd64; \
       CACHE_ID=v8-out-amd64; \
-      GN_ARGS='is_debug=false target_cpu="x64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; \
+      GN_ARGS='is_debug=true is_component_build=false symbol_level=0 target_cpu="x64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; \
     elif [ "${TARGETARCH}" = "arm64" ]; then \
       OUT=out/release_arm64; \
       CACHE_ID=v8-out-arm64; \
-      GN_ARGS='is_debug=false target_cpu="arm64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; \
+      GN_ARGS='is_debug=true is_component_build=false symbol_level=0 target_cpu="arm64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; \
     else \
       echo "Unsupported TARGETARCH=${TARGETARCH}"; exit 1; \
     fi; \
@@ -55,8 +55,8 @@ RUN set -eux; \
 # GN gen (share out/ cache per arch)
 RUN --mount=type=cache,id=v8-out-${TARGETARCH},target=/root/v8/out \
     set -eux; \
-    if [ "${TARGETARCH}" = "amd64" ]; then OUT=out/release_amd64; GN_ARGS='is_debug=false target_cpu="x64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; fi; \
-    if [ "${TARGETARCH}" = "arm64" ]; then OUT=out/release_arm64; GN_ARGS='is_debug=false target_cpu="arm64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; fi; \
+    if [ "${TARGETARCH}" = "amd64" ]; then OUT=out/release_amd64; GN_ARGS='is_debug=true is_component_build=false symbol_level=0 target_cpu="x64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; fi; \
+    if [ "${TARGETARCH}" = "arm64" ]; then OUT=out/release_arm64; GN_ARGS='is_debug=true is_component_build=false symbol_level=0 target_cpu="arm64" v8_enable_i18n_support=false v8_use_external_startup_data=true'; fi; \
     gn gen "${OUT}" --args="${GN_ARGS}"
 
 # Build d8 (use small parallelism to avoid OOM on builders)
