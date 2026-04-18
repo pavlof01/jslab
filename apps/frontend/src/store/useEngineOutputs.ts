@@ -83,7 +83,7 @@ const createInitialState = (): EngineOutputsState => ({
   code: samples.add,
   engines: createEngineSelection(),
   activeTab: EngineKey.v8,
-  selectedV8Flags: [],
+  selectedV8Flags: ["--print-bytecode"],
 });
 
 type EngineOutputsStore = EngineOutputsState & EngineOutputsActions;
@@ -233,7 +233,7 @@ export const useEngineOutputsState = () =>
       engines: state.engines,
       activeTab: state.activeTab,
       selectedV8Flags: state.selectedV8Flags,
-    }))
+    })),
   );
 
 export const useEngineOutputsActions = () =>
@@ -252,7 +252,7 @@ export const useEngineOutputsActions = () =>
       setEngines: state.setEngines,
       setActiveTab: state.setActiveTab,
       setSelectedV8Flags: state.setSelectedV8Flags,
-    }))
+    })),
   );
 
 export type { EngineOutputsState, EngineOutputsActions, RunContext, PreviousRunSnapshot };
