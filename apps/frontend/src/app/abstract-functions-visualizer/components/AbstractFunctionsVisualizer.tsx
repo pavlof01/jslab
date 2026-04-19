@@ -65,7 +65,7 @@ export function AbstractFunctionsVisualizer() {
           aria-label="Open ECMA spec"
           size="sm"
           variant="outline"
-          bg="rgba(20,20,20,0.85)"
+          bg="overlay.100"
           backdropFilter="blur(8px)"
           borderColor="rgba(255,255,255,0.12)"
           onClick={() => setSpecDrawerOpen(true)}
@@ -74,7 +74,7 @@ export function AbstractFunctionsVisualizer() {
         </IconButton>
       </Box>
 
-      <Box bg="#0a0a0a" minH="92vh" overflow="hidden">
+      <Box bg="background.300" minH="92vh" overflow="hidden">
         {/* Mobile drawer for spec panel */}
         <Box display={{ base: "flex", lg: "none" }}>
           <DrawerRoot open={specDrawerOpen} onOpenChange={(e) => setSpecDrawerOpen(e.open)} placement="start" size="xs">

@@ -49,7 +49,7 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInpu
         size="sm"
         borderWidth="2px"
         borderColor="rgba(255,255,255,0.14)"
-        bg="rgba(249,227,26,0.06)"
+        bg="brandAlpha.50"
         w={{ base: "full", md: "480px" }}
       >
         <Card.Header pb={2}>
@@ -71,8 +71,8 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInpu
                     borderColor="rgba(249,227,26,0.3)"
                     borderRadius="md"
                     px={2}
-                    bg="rgba(249,227,26,0.06)"
-                    _hover={{ borderColor: "rgba(249,227,26,0.6)", bg: "rgba(249,227,26,0.1)" }}
+                    bg="brandAlpha.50"
+                    _hover={{ borderColor: "rgba(249,227,26,0.6)", bg: "brandAlpha.100" }}
                     transition="all 0.15s"
                   >
                     <NativeSelectField
@@ -114,7 +114,7 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInpu
                   size="sm"
                   flex="1"
                   minW={0}
-                  bg="rgba(0,0,0,0.25)"
+                  bg="scrim.100"
                   borderColor="rgba(249,227,26,0.25)"
                   _focus={{ borderColor: "rgba(249,227,26,0.6)", boxShadow: "0 0 0 1px rgba(249,227,26,0.3)" }}
                   placeholder='e.g. 42, "hello", {}'
@@ -136,7 +136,7 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInpu
                     fontFamily="mono"
                     color="rgba(249,227,26,0.6)"
                     cursor="pointer"
-                    _hover={{ borderColor: "rgba(249,227,26,0.5)", color: "#f9e31a", bg: "rgba(249,227,26,0.06)" }}
+                    _hover={{ borderColor: "rgba(249,227,26,0.5)", color: "#f9e31a", bg: "brandAlpha.50" }}
                     transition="all 0.15s"
                     onClick={() => {
                       onInputChange?.(p);
@@ -156,7 +156,7 @@ const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInpu
         </Card.Body>
       </Card.Root>
 
-      {hasNodes ? <Box w="2px" h={8} bg="rgba(249,227,26,0.55)" boxShadow="0 0 8px rgba(249,227,26,0.35)" /> : null}
+      {hasNodes ? <Box w="2px" h={8} bg="glow.brand" boxShadow="0 0 8px rgba(249,227,26,0.35)" /> : null}
     </VStack>
   );
 };

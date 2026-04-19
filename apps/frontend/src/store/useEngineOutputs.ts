@@ -27,17 +27,15 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 
 type RunContext = {
   engines: EngineKey[];
-  activeTab: EngineKey;
   code: string;
   v8Flags: string[];
   timestamp: number;
 };
 
 export type RunRequest = {
-  code: string;
-  engines: EngineKey[];
-  v8Flags: string[];
-  activeTab: EngineKey;
+  code?: string;
+  engines?: EngineKey[];
+  v8Flags?: string[];
 };
 
 type PreviousRunSnapshot = RunContext & { out: Record<EngineKey, EngineResult> };
@@ -57,12 +55,11 @@ interface EngineOutputsState {
 }
 
 interface EngineOutputsActions {
-  runEngines: (request: RunRequest) => Promise<void>;
+  runEngines: (request?: RunRequest) => Promise<void>;
   reset: () => void;
   setShowDiff: (value: boolean) => void;
   toggleDiff: () => void;
   clearPreviousSnapshot: () => void;
-  updateCurrentRunActiveTab: (activeTab: EngineKey) => void;
   setOut: (next: Record<EngineKey, EngineResult>) => void;
   setMeta: (meta: string) => void;
   setStatus: (status: RunStatus) => void;
@@ -103,24 +100,18 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
   setSelectedV8Flags: (flags) => set({ selectedV8Flags: flags }),
 
-  updateCurrentRunActiveTab: (activeTab) =>
-    set((state) => {
-      if (!state.currentRun || state.currentRun.activeTab === activeTab) {
-        return state;
-      }
-      return { currentRun: { ...state.currentRun, activeTab } };
-    }),
-
-  runEngines: async ({ code, engines, v8Flags, activeTab }) => {
+  runEngines: async ({ code: codeArg, engines: enginesArg, v8Flags: v8FlagsArg } = {}) => {
     const runTimestamp = Date.now();
     const previousState = get();
+    const code = codeArg ?? previousState.code;
+    const engines = enginesArg ?? Object.entries(previousState.engines).filter(([, v]) => v).map(([k]) => k as EngineKey);
+    const v8Flags = v8FlagsArg ?? previousState.selectedV8Flags;
 
     if (previousState.currentRun) {
       set({
         previousSnapshot: {
           out: cloneOut(previousState.out),
           engines: [...previousState.currentRun.engines],
-          activeTab: previousState.currentRun.activeTab,
           code: previousState.currentRun.code,
           v8Flags: [...previousState.currentRun.v8Flags],
           timestamp: previousState.currentRun.timestamp,
@@ -191,7 +182,6 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
         status: RunStatus.done,
         currentRun: {
           engines: [...engines],
-          activeTab,
           code,
           v8Flags: [...v8Flags],
           timestamp: runTimestamp,
@@ -244,7 +234,6 @@ export const useEngineOutputsActions = () =>
       setShowDiff: state.setShowDiff,
       toggleDiff: state.toggleDiff,
       clearPreviousSnapshot: state.clearPreviousSnapshot,
-      updateCurrentRunActiveTab: state.updateCurrentRunActiveTab,
       setOut: state.setOut,
       setMeta: state.setMeta,
       setStatus: state.setStatus,

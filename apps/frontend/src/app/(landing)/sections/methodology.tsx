@@ -34,7 +34,7 @@ export function MethodologySection() {
       position="relative"
       borderTopWidth="1px"
       borderColor={subtleBorder}
-      bg="rgba(255,255,255,0.02)"
+      bg="surface.100"
       px={{ base: 4, sm: 6, md: 20 }}
       py={{ base: 12, sm: 16, md: 20 }}
     >
@@ -68,7 +68,7 @@ export function MethodologySection() {
                 borderWidth="1px"
                 borderColor={cardBorder}
                 borderRadius="2xl"
-                bg="rgba(255,255,255,0.02)"
+                bg="surface.100"
                 p={{ base: 6, md: 8 }}
                 transition="transform 0.2s ease, border-color 0.2s ease"
                 _hover={{ borderColor: "rgba(249,227,26,0.3)", transform: "translateY(-4px)" }}
@@ -80,7 +80,7 @@ export function MethodologySection() {
                   align="center"
                   justify="center"
                   borderRadius="xl"
-                  bg="rgba(249,227,26,0.1)"
+                  bg="brandAlpha.100"
                   color="brand.300"
                 >
                   <step.icon size={24} />

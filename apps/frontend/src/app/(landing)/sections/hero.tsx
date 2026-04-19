@@ -20,7 +20,7 @@ export function HeroSection() {
           <Box
             borderWidth="1px"
             borderColor="rgba(255,255,255,0.12)"
-            bg="rgba(255,255,255,0.04)"
+            bg="surface.200"
             borderRadius="full"
             px={4}
             py={2}

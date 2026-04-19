@@ -17,6 +17,40 @@ const tokens = defineTokens({
       800: { value: "#23210F" },
       900: { value: "#373525" },
     },
+    background: {
+      100: { value: "#1e1e1e" },
+      200: { value: "#161616" },
+      300: { value: "#0a0a0a" },
+    },
+    surface: {
+      100: { value: "rgba(255,255,255,0.03)" },
+      200: { value: "rgba(255,255,255,0.05)" },
+    },
+    brandAlpha: {
+      50: { value: "rgba(249,227,26,0.06)" },
+      100: { value: "rgba(249,227,26,0.10)" },
+      200: { value: "rgba(249,227,26,0.20)" },
+    },
+    overlay: {
+      100: { value: "rgba(20,20,20,0.90)" },
+    },
+    navSurface: {
+      50: { value: "rgba(35,33,15,0.08)" },
+      100: { value: "rgba(35,33,15,0.82)" },
+      200: { value: "rgba(35,33,15,0.98)" },
+    },
+    scrim: {
+      100: { value: "rgba(0,0,0,0.25)" },
+      200: { value: "rgba(0,0,0,0.60)" },
+    },
+    divider: {
+      100: { value: "rgba(38,38,38,1)" },
+    },
+    glow: {
+      blue: { value: "rgba(96,165,250,0.06)" },
+      orange: { value: "rgba(255,159,64,0.05)" },
+      brand: { value: "rgba(249,227,26,0.55)" },
+    },
   },
 });
 
