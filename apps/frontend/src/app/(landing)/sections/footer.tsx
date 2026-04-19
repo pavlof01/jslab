@@ -60,7 +60,7 @@ const WipFooterList: React.FC<Props> = ({ items }) => {
           </Text>
           <Box
             borderRadius="md"
-            bg="rgba(249,227,26,0.2)"
+            bg="brandAlpha.200"
             px={2}
             py={1}
             color="brand.300"

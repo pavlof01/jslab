@@ -23,9 +23,8 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 });
 
 export default function PlaygroundClient() {
-  const { status, showDiff, code, engines, activeTab, selectedV8Flags } = useEngineOutputsState();
-  const { runEngines, updateCurrentRunActiveTab, toggleDiff, setCode, setEngines, setActiveTab } =
-    useEngineOutputsActions();
+  const { status, showDiff, code, engines } = useEngineOutputsState();
+  const { runEngines, toggleDiff, setCode, setEngines } = useEngineOutputsActions();
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
   const [sizes, setSizes] = useLocalStorage("splitter-sizes", DEFAULT_SPLIT);
   const [sizesMobile, setSizesMobile] = useLocalStorage("splitter-sizes-mobile", DEFAULT_SPLIT_MOBILE);
@@ -49,26 +48,17 @@ export default function PlaygroundClient() {
     [setEngines],
   );
 
-  useEffect(() => {
-    updateCurrentRunActiveTab(activeTab);
-  }, [activeTab, updateCurrentRunActiveTab]);
-
   const run = useCallback(async () => {
     try {
-      await runEngines({
-        code,
-        engines: selectedEngines,
-        v8Flags: selectedV8Flags,
-        activeTab,
-      });
+      await runEngines();
     } catch {}
-  }, [runEngines, code, selectedEngines, selectedV8Flags, activeTab]);
+  }, [runEngines]);
 
   return (
     <Flex direction="column" bg="brand.800" height="100dvh">
       <Flex
         height={65}
-        bg="#1e1e1e"
+        bg="background.100"
         borderBottom="1px solid"
         justifyContent="space-between"
         alignItems="center"
@@ -96,7 +86,7 @@ export default function PlaygroundClient() {
         height="100%"
       >
         <Splitter.Panel id="editor">
-          <Flex bg="#1e1e1e" flexDirection="column" height="100%">
+          <Flex bg="background.100" flexDirection="column" height="100%">
             <Flex flex={1} overflow="scroll">
               <EditorPanel code={code} onCodeChange={(value) => setCode(value ?? "")} />
             </Flex>
@@ -115,7 +105,7 @@ export default function PlaygroundClient() {
         </Splitter.Context>
 
         <Splitter.Panel id="outputs">
-          <Flex bg="#1e1e1e" flexDirection="column" height="100%">
+          <Flex bg="background.100" flexDirection="column" height="100%">
             <Flex flex={1} overflow="scroll">
               <OutputsPanel />
             </Flex>

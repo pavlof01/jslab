@@ -27,7 +27,7 @@ export function ReadyToDebugSection() {
             h="14rem"
             w="14rem"
             borderRadius="full"
-            bg="rgba(35,33,15,0.08)"
+            bg="navSurface.50"
             filter="blur(48px)"
           />
 

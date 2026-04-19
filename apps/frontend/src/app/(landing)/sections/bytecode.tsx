@@ -190,7 +190,7 @@ export function BytecodeSection() {
       position="relative"
       borderTopWidth="1px"
       borderColor={subtleBorder}
-      bg="rgba(249,227,26,0.06)"
+      bg="brandAlpha.50"
       px={{ base: 4, sm: 6, md: 20 }}
       py={{ base: 12, sm: 16, md: 20 }}
     >
@@ -202,7 +202,7 @@ export function BytecodeSection() {
           h="20rem"
           w="20rem"
           borderRadius="full"
-          bg="rgba(249,227,26,0.06)"
+          bg="brandAlpha.50"
           filter="blur(100px)"
         />
       </Box>
@@ -250,7 +250,7 @@ export function BytecodeSection() {
                   py={3}
                   align="center"
                   justify="space-between"
-                  bg="rgba(255,255,255,0.04)"
+                  bg="surface.200"
                   borderBottomWidth="1px"
                   borderColor={cardBorder}
                   flexShrink={0}

@@ -35,7 +35,7 @@ export const PlaybackDock: React.FC = () => {
       left="50%"
       transform="translateX(-50%)"
       zIndex={30}
-      bg="rgba(20,20,20,0.92)"
+      bg="overlay.100"
       borderWidth="1px"
       borderColor="rgba(255,255,255,0.08)"
       backdropFilter="blur(16px)"
@@ -77,7 +77,7 @@ export const PlaybackDock: React.FC = () => {
               aria-label={isPlaying ? "Pause" : "Play"}
               size="lg"
               borderRadius="full"
-              bg="#f9e31a"
+              bg="brand.300"
               color="black"
               _hover={{ transform: "scale(1.05)", bg: "#f9e31a" }}
               _active={{ transform: "scale(0.96)" }}
@@ -116,7 +116,7 @@ export const PlaybackDock: React.FC = () => {
           </IconButton>
         </Tooltip>
 
-        <Box w="1px" h="32px" bg="rgba(38,38,38,1)" mx={1} />
+        <Box w="1px" h="32px" bg="divider.100" mx={1} />
 
         <Tooltip content={<Text fontSize="xs">Restart</Text>}>
           <IconButton
@@ -131,7 +131,7 @@ export const PlaybackDock: React.FC = () => {
           </IconButton>
         </Tooltip>
 
-        <Box w="1px" h="32px" bg="rgba(38,38,38,1)" mx={1} />
+        <Box w="1px" h="32px" bg="divider.100" mx={1} />
 
         <Tooltip content={<Text fontSize="xs">{showSkipped ? "Hide skipped steps" : "Show skipped steps"}</Text>}>
           <IconButton

@@ -1,9 +1,9 @@
-import { Flex, Show, Stack, Tabs } from "@chakra-ui/react";
+import { useMemo } from "react";
+import { Show, Stack, Tabs } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "../../lib/types";
 import { HighlightedCode } from "./CodeBlock";
 import V8MenuControls from "./v8MenuControls";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
-import { useEffect, useMemo } from "react";
 
 export const tabs: { key: EngineKey; label: string }[] = [
   { key: EngineKey.v8, label: "V8" },
@@ -21,13 +21,6 @@ export function OutputsPanel() {
     const idx = enabledTabs.findIndex((tab) => tab.key === activeTab);
     return idx >= 0 ? idx : 0;
   }, [enabledTabs, activeTab]);
-
-  useEffect(() => {
-    if (enabledTabs.length === 0) return;
-    if (!enabledTabs.some((tab) => tab.key === activeTab)) {
-      setActiveTab(enabledTabs[0].key);
-    }
-  }, [enabledTabs, activeTab, setActiveTab]);
 
   const handleTabChange = (detail: { value: string | null }) => {
     const next = (detail.value ?? activeKey) as EngineKey;
@@ -56,7 +49,7 @@ export function OutputsPanel() {
         </Tabs.List>
 
         <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
-          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="#1e1e1e">
+          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="background.200" p={4} overflow="auto">
             <Show when={canRenderV8Controls}>
               <V8MenuControls />
             </Show>

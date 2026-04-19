@@ -51,7 +51,7 @@ function AbstractFunctionsDemo() {
       borderColor={subtleBorder}
       borderRadius="2xl"
       overflow="hidden"
-      bg="#0a0a0a"
+      bg="background.300"
     >
       <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
         <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
@@ -92,7 +92,7 @@ export function AbstractFunctionsSection() {
           h="24rem"
           w="24rem"
           borderRadius="full"
-          bg="rgba(96,165,250,0.06)"
+          bg="glow.blue"
           filter="blur(120px)"
         />
         <Box
@@ -102,7 +102,7 @@ export function AbstractFunctionsSection() {
           h="18rem"
           w="18rem"
           borderRadius="full"
-          bg="rgba(255,159,64,0.05)"
+          bg="glow.orange"
           filter="blur(100px)"
         />
       </Box>
