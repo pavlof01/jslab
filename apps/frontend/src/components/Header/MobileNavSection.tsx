@@ -22,7 +22,7 @@ export const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, on
         borderWidth="1px"
         borderColor="rgba(255,255,255,0.08)"
         borderRadius="xl"
-        bg="rgba(255,255,255,0.02)"
+        bg="surface.100"
         overflow="hidden"
       >
         <Collapsible.Trigger asChild>
@@ -36,7 +36,7 @@ export const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, on
             color={isSectionActive(section) ? "brand.300" : "white"}
             fontSize="sm"
             fontWeight="800"
-            _hover={{ bg: "rgba(255,255,255,0.03)" }}
+            _hover={{ bg: "surface.100" }}
           >
             <HStack justify="space-between" width="full">
               <Text>{section.label}</Text>
@@ -69,7 +69,7 @@ export const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, on
                 px={3}
                 py={3}
                 color="whiteAlpha.900"
-                _hover={{ bg: "rgba(249,227,26,0.08)" }}
+                _hover={{ bg: "brandAlpha.100" }}
               >
                 {item.external ? (
                   <a href={item.href} target="_blank" rel="noreferrer" onClick={onNavigate}>

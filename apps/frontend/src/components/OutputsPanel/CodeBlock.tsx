@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { JSX } from "react";
+import { memo, useEffect, useState } from "react";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
 import { Box, BoxProps } from "@chakra-ui/react";
@@ -10,7 +9,9 @@ import hermesbc from "./hermes-bytecode.tmLanguage.json";
 import jscbc from "./jsc-bytecode.tmLanguage.json";
 import smbc from "./spidermonkey-bytecode.tmLanguage.json";
 import v8bc from "./v8-bytecode.tmLanguage.json";
-import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
+import DefaultEmptyCodeBlockState, {
+  Props as DefaultEmptyCodeBlockStateProps,
+} from "./components/DefaultEmptyCodeBlockState";
 import { EngineKey } from "@/lib/types";
 import CodeDisplay from "./components/Code";
 import { compareOutputs } from "@/utils/diff-bytecode";
@@ -80,11 +81,11 @@ interface Props {
   prev?: string;
   showDiff?: boolean;
   isLoading?: boolean;
-  EmptyCodeBlockState?: () => JSX.Element;
+  EmptyCodeBlockState?: React.ComponentType<DefaultEmptyCodeBlockStateProps>;
   boxProps?: BoxProps;
 }
 
-export function HighlightedCode({
+export const HighlightedCode = memo(function HighlightedCode({
   engineKey,
   out = "",
   prev = "",
@@ -119,9 +120,9 @@ export function HighlightedCode({
   if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
 
   return (
-    <Box {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
+    <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
       <CodeDisplay {...tokens} engineKey={engineKey} />
     </Box>
   );
-}
+});

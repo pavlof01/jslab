@@ -22,7 +22,7 @@ export const ExecutionTreeHeader: React.FC<Props> = ({ stack }) => {
             px={3}
             py={1}
             borderRadius="full"
-            bg="rgba(20,20,20,0.9)"
+            bg="overlay.100"
             borderWidth="1px"
             borderColor="rgba(255,255,255,0.08)"
             flexWrap="wrap"

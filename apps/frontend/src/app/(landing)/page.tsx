@@ -19,7 +19,7 @@ export default function LandingPage() {
           h="26rem"
           w="26rem"
           borderRadius="full"
-          bg="rgba(249,227,26,0.12)"
+          bg="brandAlpha.100"
           filter="blur(110px)"
         />
         <Box
@@ -29,7 +29,7 @@ export default function LandingPage() {
           h="24rem"
           w="24rem"
           borderRadius="full"
-          bg="rgba(255,255,255,0.05)"
+          bg="surface.200"
           filter="blur(140px)"
         />
       </Box>
