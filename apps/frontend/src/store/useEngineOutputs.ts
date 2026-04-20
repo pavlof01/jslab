@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { ENGINE_KEYS, EngineKey, RunStatus, type EngineResult } from "@/lib/types";
+import { runEngine } from "@/lib/api";
 import { samples } from "@/lib/samples";
 
 const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
@@ -128,43 +129,9 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
 
     try {
       const tasks = engines.map(async (engine) => {
-        try {
-          const response = await fetch("/api/run", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              engine,
-              sourceText: code,
-              options: engine === EngineKey.v8 ? { flags: v8Flags } : {},
-            }),
-          });
-
-          const payload = await response.json().catch(() => null);
-          if (!response.ok || !payload?.ok) {
-            return [
-              engine,
-              {
-                exitCode: null,
-                stdout: (payload?.stdout ?? "").trim(),
-                stderr: (payload?.error ?? payload?.stderr ?? `http ${response.status}`).trim(),
-                ms: payload?.meta?.durationMs ?? 0,
-              },
-            ] as const;
-          }
-
-          return [
-            engine,
-            {
-              exitCode: null,
-              stdout: (payload.stdout ?? "").trim(),
-              stderr: (payload.stderr ?? "").trim(),
-              ms: payload.meta?.durationMs ?? 0,
-            },
-          ] as const;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Unknown error";
-          return [engine, { exitCode: null, stdout: "", stderr: message, ms: 0 }] as const;
-        }
+        const options = engine === EngineKey.v8 ? { flags: v8Flags } : {};
+        const result = await runEngine(engine, code, options);
+        return [engine, { exitCode: null, ...result }] as const;
       });
 
       const settled = await Promise.all(tasks);
