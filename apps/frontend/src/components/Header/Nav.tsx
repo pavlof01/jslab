@@ -19,24 +19,9 @@ const navSections: NavSection[] = [
         href: "/playground",
       },
       {
-        label: "V8",
-        description: "Inspect V8 bytecode and runtime output.",
-        href: "/playground",
-      },
-      {
-        label: "SpiderMonkey",
-        description: "Compare Mozilla engine behavior.",
-        href: "/playground",
-      },
-      {
-        label: "Hermes",
-        description: "Check Hermes output for React Native scenarios.",
-        href: "/playground",
-      },
-      {
-        label: "JavaScriptCore",
-        description: "Review JavaScriptCore execution results.",
-        href: "/playground",
+        label: "V8 Pipeline",
+        description: "Trace JavaScript execution through V8's stages.",
+        href: "/v8-pipeline",
       },
     ],
   },
@@ -171,7 +156,7 @@ const Nav: React.FC = () => {
             variant="outline"
             borderColor="rgba(255,255,255,0.12)"
             color="white"
-            bg="rgba(255,255,255,0.03)"
+            bg="surface.100"
             _hover={{ bg: "rgba(255,255,255,0.08)" }}
           >
             <LuMenu size={18} />
@@ -179,14 +164,14 @@ const Nav: React.FC = () => {
         </Dialog.Trigger>
 
         <Portal>
-          <Dialog.Backdrop bg="rgba(0,0,0,0.6)" />
+          <Dialog.Backdrop bg="scrim.200" />
           <Dialog.Positioner px={4} py={4}>
             <Dialog.Content
               maxW="100%"
               borderRadius="2xl"
               borderWidth="1px"
               borderColor="rgba(255,255,255,0.08)"
-              bg="rgba(35,33,15,0.98)"
+              bg="navSurface.200"
               color="white"
               overflow="hidden"
               animationDuration="0s"
