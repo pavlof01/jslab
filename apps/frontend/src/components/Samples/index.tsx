@@ -18,7 +18,8 @@ import {
   Presence,
 } from "@chakra-ui/react";
 import type { HighlighterGeneric } from "shiki";
-import { samples, sampleCatalog } from "@/lib/samples";
+import { samples, sampleCatalog, v8Samples, v8SampleCatalog } from "@/lib/samples";
+import type { V8SampleKey } from "@/lib/samples";
 
 export { samples, sampleCatalog };
 export type SampleKey = keyof typeof samples;
@@ -41,6 +42,7 @@ type Props = {
 
 function Samples({ currentCode, onSelectSample }: Props) {
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [v8BrowseOpen, setV8BrowseOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -96,6 +98,14 @@ function Samples({ currentCode, onSelectSample }: Props) {
       lastLoadedCodeRef.current = defaultMatch[1];
       return;
     }
+    const v8Match = (Object.entries(v8Samples) as [V8SampleKey, string][]).find(
+      ([, snippet]) => snippet === currentCode,
+    );
+    if (v8Match) {
+      setActiveSampleId(`v8:${v8Match[0]}`);
+      lastLoadedCodeRef.current = v8Match[1];
+      return;
+    }
     const customMatch = customSamples.find((item) => item.code === currentCode);
     if (customMatch) {
       setActiveSampleId(customMatch.id);
@@ -112,6 +122,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
       baselineInitialisedRef.current = true;
       onSelectSample(code);
       setBrowseOpen(false);
+      setV8BrowseOpen(false);
     },
     [onSelectSample],
   );
@@ -119,6 +130,13 @@ function Samples({ currentCode, onSelectSample }: Props) {
   const handleSelectDefault = useCallback(
     (key: SampleKey) => {
       handleSelectSample(samples[key], `default:${key}`);
+    },
+    [handleSelectSample],
+  );
+
+  const handleSelectV8 = useCallback(
+    (key: V8SampleKey) => {
+      handleSelectSample(v8Samples[key], `v8:${key}`);
     },
     [handleSelectSample],
   );
@@ -177,7 +195,7 @@ function Samples({ currentCode, onSelectSample }: Props) {
   const canSave = currentCode.trim().length > 0 && hasChanges;
 
   const shikiAdapter = useMemo(() => {
-    if (!browseOpen) return null;
+    if (!browseOpen && !v8BrowseOpen) return null;
     return createShikiAdapter<HighlighterGeneric<any, any>>({
       async load() {
         const { createHighlighter } = await import("shiki");
@@ -331,6 +349,54 @@ function Samples({ currentCode, onSelectSample }: Props) {
                   Browse Samples
                 </Button>
               </Dialog.Trigger>
+
+              <Dialog.Root
+                open={v8BrowseOpen}
+                onOpenChange={(e) => setV8BrowseOpen(e.open)}
+                placement="center"
+                lazyMount
+                size="xl"
+                scrollBehavior="inside"
+              >
+                <Dialog.Trigger asChild>
+                  <Button variant="outline" size="sm" aria-label="Browse V8 internals samples">
+                    V8 Internals
+                  </Button>
+                </Dialog.Trigger>
+
+                <Portal>
+                  <Dialog.Backdrop />
+                  <Dialog.Positioner>
+                    <Dialog.Content borderRadius="xl" border="1px solid" borderColor="#334155">
+                      <Dialog.Header>
+                        <Dialog.Title>V8 Internals</Dialog.Title>
+                        <Dialog.CloseTrigger asChild>
+                          <CloseButton size="sm" aria-label="Close V8 internals dialog" />
+                        </Dialog.CloseTrigger>
+                      </Dialog.Header>
+                      <Dialog.Body>
+                        <Stack gap={4}>
+                          <Text fontSize="sm" color="gray.400">
+                            Examples exploring V8 engine internals: element kinds, hidden classes, inline caches, and
+                            bytecode. Run with <Text as="span" fontFamily="mono" fontSize="xs" color="gray.300">--allow-natives-syntax</Text> or <Text as="span" fontFamily="mono" fontSize="xs" color="gray.300">--print-bytecode</Text> as noted in each sample.
+                          </Text>
+                          <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
+                            {v8SampleCatalog.map(({ key, label, description }) =>
+                              renderSampleCard({
+                                id: `v8:${key}`,
+                                title: label,
+                                description,
+                                snippet: v8Samples[key],
+                                onClick: () => handleSelectV8(key),
+                              }),
+                            )}
+                          </SimpleGrid>
+                        </Stack>
+                      </Dialog.Body>
+                    </Dialog.Content>
+                  </Dialog.Positioner>
+                </Portal>
+              </Dialog.Root>
 
               <Portal>
                 <Dialog.Backdrop />

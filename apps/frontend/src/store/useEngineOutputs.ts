@@ -81,7 +81,7 @@ const createInitialState = (): EngineOutputsState => ({
   code: samples.add,
   engines: createEngineSelection(),
   activeTab: EngineKey.v8,
-  selectedV8Flags: ["--print-bytecode"],
+  selectedV8Flags: ["--print-bytecode", "--allow-natives-syntax"],
 });
 
 type EngineOutputsStore = EngineOutputsState & EngineOutputsActions;
