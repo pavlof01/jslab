@@ -36,11 +36,11 @@ const DefaultEmptyCodeBlockState: React.FC<Props> = ({
           <EmptyState.Title>{title}</EmptyState.Title>
           <EmptyState.Description>{description}</EmptyState.Description>
         </VStack>
-        <Show when={!!onButtonClick || !!runEngines}>
+        {/* <Show when={!!onButtonClick || !!runEngines}>
           <ButtonGroup>
             <Button onClick={handleButtonClick}>{buttonText}</Button>
           </ButtonGroup>
-        </Show>
+        </Show> */}
       </EmptyState.Content>
     </EmptyState.Root>
   );

@@ -5,10 +5,10 @@ import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
 import { Box, BoxProps } from "@chakra-ui/react";
 
-import hermesbc from "./hermes-bytecode.tmLanguage.json";
-import jscbc from "./jsc-bytecode.tmLanguage.json";
-import smbc from "./spidermonkey-bytecode.tmLanguage.json";
-import v8bc from "./v8-bytecode.tmLanguage.json";
+import hermesbc from "./tm/hermes-bytecode.tmLanguage.json";
+import jscbc from "./tm/jsc-bytecode.tmLanguage.json";
+import smbc from "./tm/spidermonkey-bytecode.tmLanguage.json";
+import v8bc from "./tm/v8-bytecode.tmLanguage.json";
 import DefaultEmptyCodeBlockState, {
   Props as DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";
