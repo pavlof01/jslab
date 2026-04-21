@@ -10,10 +10,10 @@ HTTP microservice used by the JSLab API to run V8’s `d8` shell and (optionally
 Request body (engine-internal):
 
 ```json
-{ "task": "run | bytecode", "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
+{ "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
 ```
 
-For `task=bytecode` the service ensures `--print-bytecode` is present.
+Output type is determined by the flags passed (e.g. `--print-bytecode` produces Ignition bytecode).
 
 ## Local development
 
