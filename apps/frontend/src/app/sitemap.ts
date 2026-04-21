@@ -15,9 +15,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: "https://jslab.su/abstract-functions-visualizer",
+      url: "https://jslab.su/v8-pipeline",
       changeFrequency: "weekly",
       priority: 0.9,
+    },
+    {
+      url: "https://jslab.su/abstract-functions-visualizer",
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: "https://jslab.su/type-coercion",
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
   ];
 }
