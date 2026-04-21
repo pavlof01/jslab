@@ -1,3 +1,7 @@
+:root {
+  --header-h: 72px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #23210f;

@@ -40,8 +40,15 @@ export const ExecutionTreePanel: React.FC<Props> = ({
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
-    const el = scrollRef.current?.querySelector<HTMLElement>("[data-active='true']");
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const container = scrollRef.current;
+    if (!container) return;
+    const el = container.querySelector<HTMLElement>("[data-active='true']");
+    if (!el) return;
+    const elRect = el.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const relativeTop = elRect.top - containerRect.top;
+    const target = container.scrollTop + relativeTop - container.clientHeight / 2 + el.offsetHeight / 2;
+    container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [selectedIndex]);
 
   return (
