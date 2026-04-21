@@ -1,6 +1,6 @@
 # 🧩 JSLab — JavaScript Engine Bytecode Explorer
 
-**JSLab.cc** is an experimental platform for visualizing and comparing  
+**JSLab.su** is an experimental platform for visualizing and comparing  
 how different JavaScript engines (V8, SpiderMonkey, JavaScriptCore, Hermes)  
 parse, compile, and optimize your code under the hood.
 
@@ -43,14 +43,15 @@ Goals:
 
 ```
 /apps
-  ├─ api             # Fastify API gateway (rate limit + cache + engine proxy)
-  ├─ engine-v8       # d8 wrapper HTTP service
-  ├─ engine-hermes   # hermesc/hermes wrapper HTTP service
-  ├─ engine-jsc      # JavaScriptCore (jsc) wrapper HTTP service
-  ├─ engine-spidermonkey # SpiderMonkey (js shell) wrapper HTTP service
-  └─ frontend        # Next.js UI + abstract functions visualizer
+  ├─ api                  # Fastify API gateway (rate limit + cache + engine proxy)
+  ├─ engine-v8            # d8 wrapper HTTP service
+  ├─ engine-hermes        # hermesc/hermes wrapper HTTP service
+  ├─ engine-jsc           # JavaScriptCore (jsc) wrapper HTTP service
+  ├─ engine-spidermonkey  # SpiderMonkey (js shell) wrapper HTTP service
+  ├─ trace-service        # ECMAScript abstract operations tracer (engine262-based)
+  └─ frontend             # Next.js UI (playground, V8 pipeline, abstract ops visualizer)
       └─ src/lib/ecma262  # ECMAScript 262 specification implementation (can be extracted as submodule)
-/infra/k8s           # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
+/infra/k8s               # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
 ```
 
 For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/infra.md).
@@ -93,7 +94,7 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
    ```bash
    # Browser/client calls Next.js at /api/run (no auth required).
    curl -k -H "content-type: application/json" \
-     -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
+     -d '{"engine":"v8","sourceText":"1+1"}' \
      https://jslab.local/api/run
    ```
 
@@ -127,7 +128,7 @@ Verify API run request:
 ```bash
 kubectl -n jslab exec -it debug-shell -- \
   curl -sS -H "content-type: application/json" \
-  -d '{"engine":"v8","task":"run","sourceText":"1+1"}' \
+  -d '{"engine":"v8","sourceText":"1+1"}' \
   http://api:8080/api/run
 ```
 
@@ -156,7 +157,6 @@ kubectl -n jslab exec -it debug-shell -- \
 ```json
 {
   "engine": "v8 | hermes | sm | jsc",
-  "task": "bytecode | run",
   "sourceText": "string",
   "options": { "flags": ["..."], "timeoutMs": 2000 }
 }
@@ -174,15 +174,15 @@ kubectl -n jslab exec -it debug-shell -- \
 }
 ```
 
-- Rate limits: 60 req/min per IP + 20 heavy req/min (task=run|bytecode) stored in Redis (`Retry-After` headers on 429).
-- Cache: Redis hash of engine+task+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s).
+- Rate limits: 60 req/min per IP stored in Redis (`Retry-After` headers on 429).
+- Cache: Redis hash of engine+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s).
 
 ### Quick curl example
 
 ```bash
 curl -X POST https://jslab.local/api/run \
   -H "content-type: application/json" \
-  -d '{"engine":"v8","task":"bytecode","sourceText":"function f(){return 1+2};f();","options":{"flags":["--print-bytecode"],"timeoutMs":2000}}'
+  -d '{"engine":"v8","sourceText":"function f(){return 1+2};f();","options":{"flags":["--print-bytecode"],"timeoutMs":2000}}'
 ```
 
 ### Smoke test (bytecode via API)
@@ -190,7 +190,7 @@ curl -X POST https://jslab.local/api/run \
 ```bash
 curl -sS https://jslab.su/api/run \
   -H "content-type: application/json" \
-  -d '{"engine":"v8","task":"bytecode","sourceText":"1+2"}'
+  -d '{"engine":"v8","sourceText":"1+2","options":{"flags":["--print-bytecode"]}}'
 ```
 
 ---
@@ -203,12 +203,13 @@ curl -sS https://jslab.su/api/run \
 - Sandbox API `/api/run`
 - Execution history and “Share session” links
 
-### Phase 2 — Advanced Analysis
+### Phase 2 — Advanced Analysis ✅ (shipped)
 
-- AST tree visualization (`--print-ast`)
-- Bytecode diff viewer (Myers diff + Shiki)
-- TurboFan / Ignition pipeline diagram
-- Hermes IR viewer
+- AST tree visualization (`--print-ast`) ✅
+- Bytecode diff viewer (Myers diff + Shiki) ✅
+- V8 compilation pipeline diagram (Tokens → AST → Ignition → Sparkplug → Maglev → TurboFan) ✅
+- ECMAScript abstract operations step-through visualizer ✅
+- Hermes IR viewer ✅
 
 ### Phase 3 — Community & Docs
 

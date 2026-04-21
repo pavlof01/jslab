@@ -10,10 +10,10 @@ HTTP microservice used by the JSLab API to run Mozilla’s SpiderMonkey shell (`
 Request body (engine-internal):
 
 ```json
-{ "task": "run | bytecode", "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
+{ "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
 ```
 
-For `task=bytecode` the service wraps `sourceText` into `new Function(...)` and calls `dis(fn)` (or `disassemble*` when available).
+The service wraps `sourceText` in `new Function(...)` and calls `dis(fn)` (or `disassemble*` when available) to produce bytecode output.
 
 ## Local `dis()` example
 

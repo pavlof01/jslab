@@ -10,10 +10,10 @@ HTTP microservice used by the JSLab API to run WebKit’s `jsc` and dump bytecod
 Request body (engine-internal):
 
 ```json
-{ "task": "run | bytecode", "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
+{ "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
 ```
 
-For `task=bytecode` the service ensures `-d` is present and returns the bytecode dump as a text artifact.
+When `-d` is present in flags the service returns the LLInt bytecode dump as a text artifact.
 
 ## Local development
 
