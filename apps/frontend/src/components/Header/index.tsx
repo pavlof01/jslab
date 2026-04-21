@@ -10,12 +10,14 @@ export function Header() {
       top={0}
       zIndex={50}
       w="full"
+      h="var(--header-h)"
+      display="flex"
+      alignItems="center"
       borderBottomWidth="1px"
       borderColor="rgba(255,255,255,0.1)"
       bg="navSurface.100"
       backdropFilter="blur(8px)"
       px={{ base: 6, md: 20 }}
-      py={4}
     >
       <Container maxW="7xl" px={0}>
         <Flex align="center" justify="space-between" gap={{ base: 4, md: 8 }}>

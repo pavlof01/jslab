@@ -55,7 +55,7 @@ export default function PlaygroundClient() {
   }, [runEngines]);
 
   return (
-    <Flex direction="column" bg="brand.800" height="100dvh">
+    <Flex direction="column" bg="brand.800" height="calc(100dvh - var(--header-h))">
       <Flex
         height={65}
         bg="background.100"

@@ -124,7 +124,7 @@ export default function PipelineClient() {
   };
 
   return (
-    <Flex direction="column" height="100dvh">
+    <Flex direction="column" height="calc(100dvh - var(--header-h))">
       <Flex
         h={14}
         bg="background.100"
