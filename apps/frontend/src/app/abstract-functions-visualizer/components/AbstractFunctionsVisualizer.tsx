@@ -74,7 +74,7 @@ export function AbstractFunctionsVisualizer() {
         </IconButton>
       </Box>
 
-      <Box bg="background.300" minH="92vh" overflow="hidden">
+      <Box bg="background.300" h="calc(100dvh - var(--header-h))" overflow="hidden">
         {/* Mobile drawer for spec panel */}
         <Box display={{ base: "flex", lg: "none" }}>
           <DrawerRoot open={specDrawerOpen} onOpenChange={(e) => setSpecDrawerOpen(e.open)} placement="start" size="xs">
@@ -98,7 +98,7 @@ export function AbstractFunctionsVisualizer() {
           </DrawerRoot>
         </Box>
 
-        <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h={{ base: "auto", lg: "92vh" }} overflow="hidden">
+        <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
           {/* Desktop: spec panel in grid */}
           <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
             <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />

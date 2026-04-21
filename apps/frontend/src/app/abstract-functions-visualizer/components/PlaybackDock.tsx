@@ -30,7 +30,7 @@ export const PlaybackDock: React.FC = () => {
 
   return (
     <Box
-      position={{ base: "fixed", lg: "absolute" }}
+      position="absolute"
       bottom={0}
       left="50%"
       transform="translateX(-50%)"
