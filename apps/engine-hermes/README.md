@@ -10,10 +10,10 @@ HTTP microservice used by the JSLab API to run Hermes tooling.
 Request body (engine-internal):
 
 ```json
-{ "task": "run | bytecode", "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
+{ "sourceText": "string", "options": { "flags": ["..."], "timeoutMs": 2000 } }
 ```
 
-For `task=bytecode` the service compiles `sourceText` to an `.hbc` file via `hermesc`, then disassembles it via `hbcdump`. The `.hbc` is returned as an artifact.
+When `-dump-bytecode` is present in flags the service compiles `sourceText` to an `.hbc` file via `hermesc`, then disassembles it via `hbcdump`. The `.hbc` binary is returned as an artifact.
 
 ## Local development
 
