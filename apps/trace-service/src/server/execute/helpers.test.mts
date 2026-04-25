@@ -12,12 +12,13 @@ import {
 
 describe("helpers.ts", () => {
   describe("AVAILABLE_FUNCTIONS", () => {
-    it("should contain all 20 ECMA262 conversion functions", () => {
-      expect(AVAILABLE_FUNCTIONS).toHaveLength(20);
+    it("should contain the UI-exposed conversion functions", () => {
+      expect(AVAILABLE_FUNCTIONS).toHaveLength(6);
     });
 
-    it("should include ToNumber, ToString, ToBoolean", () => {
+    it("should include ToNumber, ToNumeric, ToString, ToBoolean", () => {
       expect(AVAILABLE_FUNCTIONS).toContain("ToNumber");
+      expect(AVAILABLE_FUNCTIONS).toContain("ToNumeric");
       expect(AVAILABLE_FUNCTIONS).toContain("ToString");
       expect(AVAILABLE_FUNCTIONS).toContain("ToBoolean");
     });
@@ -99,6 +100,12 @@ describe("helpers.ts", () => {
         expect(convertInputToString("abc")).toBe('"abc"');
         expect(convertInputToString("hello world")).toBe('"hello world"');
         expect(convertInputToString("")).toBe('""');
+      });
+
+      it("should pass BigInt literals through as-is", () => {
+        expect(convertInputToString("42n")).toBe("42n");
+        expect(convertInputToString("0n")).toBe("0n");
+        expect(convertInputToString("-100n")).toBe("-100n");
       });
 
       it("should handle special characters in strings", () => {

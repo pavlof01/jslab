@@ -248,9 +248,6 @@ export const TraceStepNode: React.FC<Props> = ({ step, index, showConnector, nod
                         {algoName}
                       </Text>
                     ))}
-                  {step.kind === "return" && step.value.type !== "Undefined" && step.value.type !== "Null" && (
-                    <Code fontSize="xs">{formatSpecValue(step.value, 60)}</Code>
-                  )}
                 </>
               )}
               <Text fontSize="xs" opacity={0.7} fontFamily="mono">
