@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git submodule:*)",
+      "Bash(docker compose:*)",
+      "Bash(npm run *)",
+      "Bash(node_modules/.bin/vitest --config vitest.config.mts run)",
+      "Bash(./node_modules/.bin/vitest --config vitest.config.mts run)",
+      "Bash(git -C /Users/a.pavlov/js-engines/apps/trace-service/engine262 diff --stat)",
+      "Bash(git -C /Users/a.pavlov/js-engines/apps/trace-service/engine262 status)"
+    ]
+  }
+}

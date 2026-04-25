@@ -76,6 +76,10 @@ function toValue(str: string | undefined): SerializedValue {
   if (str === "Undefined") return { type: "Undefined" };
   if (str === "Symbol") return { type: "Symbol", value: { id: "sym" } };
   if (str === "BigInt") return { type: "BigInt", value: "0" };
+  // BigInt literal — formatValue emits e.g. "42n"
+  if (/^-?\d+n$/.test(str)) {
+    return { type: "BigInt", value: str.slice(0, -1) };
+  }
   // Object / array preview
   if ((str.startsWith("{") && str.endsWith("}")) || (str.startsWith("[") && str.endsWith("]"))) {
     return { type: "Object", value: { id: "display", class: "", preview: str } };

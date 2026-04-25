@@ -51,6 +51,7 @@ export function parseStringToValue(input: string, realm: ManagedRealm) {
 
 export const AVAILABLE_FUNCTIONS = [
   "ToNumber",
+  "ToNumeric",
   "ToString",
   "ToBoolean",
   "ToPrimitive",
@@ -102,6 +103,11 @@ function looksLikeEcmaExpression(input: string): boolean {
   }
 
   if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+    return true;
+  }
+
+  // BigInt literal: optional sign, digits, trailing 'n'
+  if (/^[+-]?\d+n$/.test(trimmed)) {
     return true;
   }
 
