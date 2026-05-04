@@ -61,7 +61,7 @@ function AbstractFunctionsDemo() {
           <ExecutionTreePanel
             trace={trace}
             selectedIndex={selectedIndex}
-            entryLabel={selectedAlgo}
+            selectedAlgo={selectedAlgo}
             onAlgoChange={setSelectedAlgo}
             userInputRaw={traceInputRaw}
             onSelectIndex={onSelectIndex}

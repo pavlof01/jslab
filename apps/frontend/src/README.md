@@ -4,13 +4,12 @@ Next.js 15 App Router application. All routes live under `app/`.
 
 ## Pages
 
-| Route | File | Description |
-|---|---|---|
-| `/` | `app/(landing)/page.tsx` | Landing page with feature sections |
-| `/playground` | `app/playground/page.tsx` | Multi-engine JS playground (V8, SM, Hermes, JSC) |
-| `/v8-pipeline` | `app/v8-pipeline/page.tsx` | V8 compilation pipeline: Tokens → AST → Bytecode → Sparkplug → Maglev → TurboFan |
-| `/abstract-functions-visualizer` | `app/abstract-functions-visualizer/page.tsx` | Step-through ECMAScript abstract operations visualizer |
-| `/type-coercion` | `app/type-coercion/page.tsx` | Type coercion explorer |
+| Route                            | File                                         | Description                                                                      |
+| -------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------- |
+| `/`                              | `app/(landing)/page.tsx`                     | Landing page with feature sections                                               |
+| `/playground`                    | `app/playground/page.tsx`                    | Multi-engine JS playground (V8, SM, Hermes, JSC)                                 |
+| `/v8-pipeline`                   | `app/v8-pipeline/page.tsx`                   | V8 compilation pipeline: Tokens → AST → Bytecode → Sparkplug → Maglev → TurboFan |
+| `/abstract-functions-visualizer` | `app/abstract-functions-visualizer/page.tsx` | Step-through ECMAScript abstract operations visualizer                           |
 
 ## Key directories
 

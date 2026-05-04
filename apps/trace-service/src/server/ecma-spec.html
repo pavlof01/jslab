@@ -68,13 +68,22 @@
     <dt>description</dt><dd>Converts a String to a Number by parsing it as a |StringNumericLiteral|.</dd>
   </dl>
   <emu-alg>
-    1. [id="StringToNumber-step-1"] Let _text_ be StringToCodePoints(_argument_).
-    1. [id="StringToNumber-step-2"] Let _literal_ be ParseText(_text_, |StringNumericLiteral|).
-    1. [id="StringToNumber-step-3"] If _literal_ is a List of errors, return *NaN*.
-    1. [id="StringToNumber-step-4"] Let _mv_ be the MV of _literal_.
-    1. [id="StringToNumber-step-5"] Assert: _mv_ is a finite Mathematical value or _mv_ is +∞ or _mv_ is -∞.
-    1. [id="StringToNumber-step-6"] Return 𝔽(_mv_).
+    1. [id="StringToNumber-step-1"] Let _literal_ be ParseText(_argument_, |StringNumericLiteral|).
+    1. [id="StringToNumber-step-2"] If _literal_ is a List of errors, return *NaN*.
+    1. [id="StringToNumber-step-3"] Return the StringNumericValue of _literal_.
   </emu-alg>
+</emu-clause>
+
+<emu-clause id="StringNumericValue" type="sdo">
+  <h1>
+    Runtime Semantics: StringNumericValue
+  </h1>
+  <dl class="header">
+    <dt>description</dt>
+    <dd>The syntax-directed operation StringNumericValue takes no arguments and returns a Number.</dd>
+  </dl>
+  <emu-note>⚡ This visualizer does not trace StringNumericValue step by step. The result is computed directly as <code>Number(_argument_)</code> and returned as the final value of StringToNumber.</emu-note>
+  <emu-note>The conversion of a <em>StringNumericLiteral</em> to a Number value is similar overall to the determination of the NumericValue of a NumericLiteral, but some of the details are different.</emu-note>
 </emu-clause>
 
 <emu-clause id="ToNumber" aoid="ToNumber" type="abstract operation">

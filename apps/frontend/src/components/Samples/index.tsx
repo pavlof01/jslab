@@ -16,6 +16,7 @@ import {
   Stack,
   Text,
   Presence,
+  Code,
 } from "@chakra-ui/react";
 import type { HighlighterGeneric } from "shiki";
 import { samples, sampleCatalog, v8Samples, v8SampleCatalog } from "@/lib/samples";
@@ -378,7 +379,11 @@ function Samples({ currentCode, onSelectSample }: Props) {
                         <Stack gap={4}>
                           <Text fontSize="sm" color="gray.400">
                             Examples exploring V8 engine internals: element kinds, hidden classes, inline caches, and
-                            bytecode. Run with <Text as="span" fontFamily="mono" fontSize="xs" color="gray.300">--allow-natives-syntax</Text> or <Text as="span" fontFamily="mono" fontSize="xs" color="gray.300">--print-bytecode</Text> as noted in each sample.
+                            bytecode. Run with&nbsp;
+                            <Code>--allow-natives-syntax</Code>
+                            &nbsp;or&nbsp;
+                            <Code>--print-bytecode</Code>
+                            &nbsp;as noted in each sample.
                           </Text>
                           <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
                             {v8SampleCatalog.map(({ key, label, description }) =>
