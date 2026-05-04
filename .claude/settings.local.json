@@ -7,7 +7,17 @@
       "Bash(node_modules/.bin/vitest --config vitest.config.mts run)",
       "Bash(./node_modules/.bin/vitest --config vitest.config.mts run)",
       "Bash(git -C /Users/a.pavlov/js-engines/apps/trace-service/engine262 diff --stat)",
-      "Bash(git -C /Users/a.pavlov/js-engines/apps/trace-service/engine262 status)"
+      "Bash(node_modules/.bin/tsc --noEmit -p tsconfig.json)",
+      "Bash(kubectl config *)",
+      "Bash(kubectl get *)",
+      "Bash(docker version *)",
+      "Bash(docker info *)",
+      "Bash(kubectl version *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[0]['State']['Status'] if d else 'not found'\\)\")",
+      "Bash(docker rm *)",
+      "Bash(docker run *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['scripts']\\)\")",
+      "Bash(git checkout *)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect } from "react";
 import {
   Box,
   Grid,
@@ -37,7 +37,7 @@ export function AbstractFunctionsVisualizer() {
   const runNow = useVisualizerStore((s) => s.runNow);
 
   // Fetch spec HTML when selected algo changes
-  React.useEffect(() => {
+  useEffect(() => {
     fetch(`/api/spec/${selectedAlgo}`)
       .then((r) => r.text())
       .then(setSpecHtml)
@@ -45,13 +45,13 @@ export function AbstractFunctionsVisualizer() {
   }, [selectedAlgo, setSpecHtml]);
 
   // Re-run trace when input or algo changes (debounced)
-  React.useEffect(() => {
+  useEffect(() => {
     const t = window.setTimeout(() => runNow(), 150);
     return () => window.clearTimeout(t);
   }, [selectedAlgo, traceInputExpression, runNow]);
 
   // Playback interval
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isPlaying || trace.length <= 1) return;
     const id = window.setInterval(tickPlayback, 650);
     return () => window.clearInterval(id);
@@ -108,7 +108,7 @@ export function AbstractFunctionsVisualizer() {
             <ExecutionTreePanel
               trace={trace}
               selectedIndex={selectedIndex}
-              entryLabel={selectedAlgo}
+              selectedAlgo={selectedAlgo}
               onAlgoChange={setSelectedAlgo}
               userInputRaw={traceInputRaw}
               onSelectIndex={onSelectIndex}

@@ -32,19 +32,17 @@ export const PlaybackDock: React.FC = () => {
     <Box
       position="absolute"
       bottom={0}
-      left="50%"
-      transform="translateX(-50%)"
+      left={0}
+      right={0}
       zIndex={30}
       bg="overlay.100"
-      borderWidth="1px"
-      borderColor="rgba(255,255,255,0.08)"
+      borderTop="1px solid rgba(255,255,255,0.08)"
       backdropFilter="blur(16px)"
-      px={3}
+      px={4}
       py={2.5}
-      borderRadius="2rem"
-      boxShadow="0 24px 50px rgba(0,0,0,0.45)"
+      boxShadow="0 -8px 32px rgba(0,0,0,0.35)"
     >
-      <HStack gap={2} align="center">
+      <HStack gap={2} align="center" justify="center">
         <Tooltip content={<Text fontSize="xs">To start</Text>}>
           <IconButton
             aria-label="To start"

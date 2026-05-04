@@ -24,6 +24,9 @@ interface VisualizerStore {
   selectedIndex: number;
   isPlaying: boolean;
 
+  // ── Collapse state ─────────────────────────────────────────────────────────
+  collapsedBlocks: Record<number, boolean>;
+
   // ── Derived ────────────────────────────────────────────────────────────────
   maxIndex: () => number;
 
@@ -38,6 +41,7 @@ interface VisualizerStore {
   setTraceInputRaw: (v: string) => void;
   commitTraceInput: (v: string) => void;
   setIsPlaying: (v: boolean | ((prev: boolean) => boolean)) => void;
+  toggleBlock: (callStepIndex: number) => void;
   onSelectIndex: (i: number) => void;
   tickPlayback: () => void;
   runNow: () => void;
@@ -55,10 +59,11 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   traceInputExpression: DEFAULT_INPUT,
   selectedIndex: 0,
   isPlaying: false,
+  collapsedBlocks: {},
 
   maxIndex: () => Math.max(0, get().trace.length - 1),
 
-  setTrace: (trace) => set({ trace, selectedIndex: 0 }),
+  setTrace: (trace) => set({ trace, selectedIndex: 0, collapsedBlocks: {} }),
 
   setResultValue: (resultValue) => set({ resultValue }),
   setError: (error) => set({ error }),
@@ -71,6 +76,14 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
 
   setIsPlaying: (v) =>
     set((s) => ({ isPlaying: typeof v === "function" ? v(s.isPlaying) : v })),
+
+  toggleBlock: (callStepIndex) =>
+    set((s) => ({
+      collapsedBlocks: {
+        ...s.collapsedBlocks,
+        [callStepIndex]: !s.collapsedBlocks[callStepIndex],
+      },
+    })),
 
   onSelectIndex: (i) => {
     const max = get().maxIndex();
