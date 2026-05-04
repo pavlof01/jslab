@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { Box, Card, HStack, Input, NativeSelectField, NativeSelectRoot, Text, VStack } from "@chakra-ui/react";
+import React, { useEffect } from "react";
+import { HStack, Input, NativeSelect, Text, VStack, For, Tag, Button } from "@chakra-ui/react";
 
 const PRESETS = [
   "42",
@@ -19,144 +19,128 @@ const PRESETS = [
 ];
 
 type Props = {
-  entryLabel: string;
+  selectedAlgo: string;
   onAlgoChange?: (val: string) => void;
   userInputRaw: string;
-  hasNodes: boolean;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
 };
 
-const EntryPointSection: React.FC<Props> = ({ entryLabel, onAlgoChange, userInputRaw, hasNodes, onInputChange, onInputCommit }) => {
+const EntryPointSection: React.FC<Props> = ({
+  selectedAlgo,
+  onAlgoChange,
+  userInputRaw,
+  onInputChange,
+  onInputCommit,
+}) => {
   const interactive = !!onInputChange;
-
   const [algoOptions, setAlgoOptions] = React.useState<string[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetch("/api/trace/functions")
       .then((r) => r.json())
       .then((data: { available_functions?: string[] }) => {
-        if (Array.isArray(data.available_functions)) {
-          setAlgoOptions(data.available_functions);
-        }
+        if (Array.isArray(data.available_functions)) setAlgoOptions(data.available_functions);
       })
       .catch(() => {});
   }, []);
 
   return (
-    <VStack align="center" gap={0}>
-      <Card.Root
-        size="sm"
-        borderWidth="2px"
-        borderColor="rgba(255,255,255,0.14)"
-        bg="brandAlpha.50"
-        w={{ base: "full", md: "480px" }}
+    <VStack align="stretch" gap={0} mb={3}>
+      <HStack
+        gap={0}
+        px="6px"
+        py="6px"
+        borderRadius="sm"
+        bg="rgba(249,227,26,0.04)"
+        border="1px solid rgba(249,227,26,0.12)"
+        align="center"
       >
-        <Card.Header pb={2}>
-          <Text fontSize="9px" fontWeight="black" letterSpacing="widest" textTransform="uppercase" color="#f9e31a">
-            Entry Point
-          </Text>
-        </Card.Header>
-        <Card.Body pt={0} gap={3} display="flex" flexDirection="column">
-          {interactive ? (
-            <>
-              <HStack gap={2}>
-                {algoOptions.length > 0 ? (
-                  <NativeSelectRoot
-                    size="sm"
-                    variant="plain"
-                    w="auto"
-                    flexShrink={0}
-                    border="1px solid"
-                    borderColor="rgba(249,227,26,0.3)"
-                    borderRadius="md"
-                    px={2}
-                    bg="brandAlpha.50"
-                    _hover={{ borderColor: "rgba(249,227,26,0.6)", bg: "brandAlpha.100" }}
-                    transition="all 0.15s"
-                  >
-                    <NativeSelectField
-                      value={entryLabel}
-                      onChange={(e) => onAlgoChange?.(e.target.value)}
-                      fontFamily="mono"
-                      fontSize="sm"
-                      fontWeight="bold"
-                      color="#f9e31a"
-                      bg="transparent"
-                      border="none"
-                      outline="none"
-                      cursor="pointer"
-                      px={0}
-                      w="auto"
-                    >
-                      {algoOptions.map((opt) => (
-                        <option key={opt} value={opt} style={{ background: "#1a1a1a", color: "#fff" }}>
-                          {opt}
-                        </option>
-                      ))}
-                    </NativeSelectField>
-                  </NativeSelectRoot>
-                ) : (
-                  <Text fontFamily="mono" fontSize="sm" fontWeight="bold" whiteSpace="nowrap" opacity={0.7}>
-                    {entryLabel}
-                  </Text>
-                )}
-                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" whiteSpace="nowrap" opacity={0.7}>(</Text>
-                <Input
-                  value={userInputRaw}
-                  onChange={(e) => onInputChange?.(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") onInputCommit?.(userInputRaw);
-                  }}
-                  onBlur={() => onInputCommit?.(userInputRaw)}
-                  fontFamily="mono"
-                  fontSize="sm"
-                  size="sm"
-                  flex="1"
-                  minW={0}
-                  bg="scrim.100"
-                  borderColor="rgba(249,227,26,0.25)"
-                  _focus={{ borderColor: "rgba(249,227,26,0.6)", boxShadow: "0 0 0 1px rgba(249,227,26,0.3)" }}
-                  placeholder='e.g. 42, "hello", {}'
-                />
-                <Text fontFamily="mono" fontSize="sm" fontWeight="bold" opacity={0.7}>)</Text>
-              </HStack>
-              <HStack gap={1} flexWrap="wrap">
-                {PRESETS.map((p) => (
-                  <Box
-                    key={p}
-                    as="button"
-                    px={1.5}
-                    py={0.5}
-                    borderRadius="sm"
-                    border="1px solid"
-                    borderColor="rgba(249,227,26,0.15)"
-                    bg="transparent"
-                    fontSize="9px"
-                    fontFamily="mono"
-                    color="rgba(249,227,26,0.6)"
-                    cursor="pointer"
-                    _hover={{ borderColor: "rgba(249,227,26,0.5)", color: "#f9e31a", bg: "brandAlpha.50" }}
-                    transition="all 0.15s"
-                    onClick={() => {
-                      onInputChange?.(p);
-                      onInputCommit?.(p);
-                    }}
-                  >
-                    {p}
-                  </Box>
-                ))}
-              </HStack>
-            </>
-          ) : (
-            <Text fontFamily="mono" fontSize="sm" fontWeight="bold">
-              {entryLabel}({userInputRaw})
-            </Text>
-          )}
-        </Card.Body>
-      </Card.Root>
+        <NativeSelect.Root
+          disabled={algoOptions.length === 0 || !interactive}
+          size="sm"
+          variant="plain"
+          w="auto"
+          flexShrink={0}
+          bg="rgba(249,227,26,0.08)"
+          border="1px solid rgba(249,227,26,0.35)"
+          borderRadius="md"
+          px={2}
+          _hover={{ bg: "rgba(249,227,26,0.13)", borderColor: "rgba(249,227,26,0.6)" }}
+          transition="all 0.15s"
+        >
+          <NativeSelect.Field
+            value={selectedAlgo}
+            onChange={(e) => onAlgoChange?.(e.target.value)}
+            fontWeight="bold"
+            color="#f9e31a"
+            outline="none"
+            cursor="pointer"
+            px={0}
+            w="auto"
+          >
+            {algoOptions.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </NativeSelect.Field>
+        </NativeSelect.Root>
 
-      {hasNodes ? <Box w="2px" h={8} bg="glow.brand" boxShadow="0 0 8px rgba(249,227,26,0.35)" /> : null}
+        <Text fontSize="20px" color="rgba(148,163,184,0.6)" flexShrink={0} mx="4px">
+          (
+        </Text>
+
+        <Input
+          value={userInputRaw}
+          onChange={(e) => onInputChange?.(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onInputCommit?.(userInputRaw);
+          }}
+          onBlur={() => onInputCommit?.(userInputRaw)}
+          fontSize="14px"
+          size="sm"
+          flex="1"
+          minW={0}
+          bg="rgba(255,255,255,0.06)"
+          borderColor="rgba(255,255,255,0.18)"
+          color="rgba(226,232,240,1)"
+          _hover={{ borderColor: "rgba(255,255,255,0.3)" }}
+          _focus={{
+            borderColor: "rgba(249,227,26,0.6)",
+            boxShadow: "0 0 0 1px rgba(249,227,26,0.25)",
+            bg: "rgba(255,255,255,0.08)",
+          }}
+          placeholder='42, "hello", {}'
+        />
+
+        <Text fontSize="20px" color="rgba(148,163,184,0.6)" flexShrink={0} mx="4px">
+          )
+        </Text>
+      </HStack>
+
+      <HStack gap="5px" flexWrap="wrap" px="6px" pt="8px">
+        <Text fontSize="9px" color="rgba(100,116,139,1)" flexShrink={0} mr="2px">
+          examples:
+        </Text>
+        <For each={PRESETS}>
+          {(preset) => (
+            <Tag.Root asChild key={preset}>
+              <Button
+                variant="outline"
+                size="2xs"
+                fontSize="10px"
+                onClick={() => {
+                  onInputChange?.(preset);
+                  onInputCommit?.(preset);
+                }}
+              >
+                <Tag.Label>{preset}</Tag.Label>
+              </Button>
+            </Tag.Root>
+          )}
+        </For>
+      </HStack>
     </VStack>
   );
 };

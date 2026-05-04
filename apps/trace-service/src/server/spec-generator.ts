@@ -16,21 +16,22 @@ const SPEC_FILE = join(__dir, "ecma-spec.html");
 // ── Spec URLs for each algorithm ─────────────────────────────────────────────
 
 export const ALGO_SPEC_URL: Record<string, string> = {
-  ToPrimitive:        "https://262.ecma-international.org/#sec-toprimitive",
-  OrdinaryToPrimitive:"https://262.ecma-international.org/#sec-ordinarytoprimitive",
-  StringToNumber:     "https://262.ecma-international.org/#sec-stringtonumber",
-  ToNumber:           "https://262.ecma-international.org/#sec-tonumber",
-  ToString:           "https://262.ecma-international.org/#sec-tostring",
-  ToBoolean:          "https://262.ecma-international.org/#sec-toboolean",
-  ToNumeric:          "https://262.ecma-international.org/#sec-tonumeric",
-  ToObject:           "https://262.ecma-international.org/#sec-toobject",
-  ToPropertyKey:      "https://262.ecma-international.org/#sec-topropertykey",
-  ToLength:           "https://262.ecma-international.org/#sec-tolength",
-  ToIndex:            "https://262.ecma-international.org/#sec-toindex",
-  Get:                "https://262.ecma-international.org/#sec-get-o-p",
-  GetV:               "https://262.ecma-international.org/#sec-getv",
-  GetMethod:          "https://262.ecma-international.org/#sec-getmethod",
-  Call:               "https://262.ecma-international.org/#sec-call",
+  ToPrimitive: "https://262.ecma-international.org/#sec-toprimitive",
+  OrdinaryToPrimitive: "https://262.ecma-international.org/#sec-ordinarytoprimitive",
+  StringToNumber: "https://262.ecma-international.org/#sec-stringtonumber",
+  StringNumericValue: "https://262.ecma-international.org/#sec-runtime-semantics-stringnumericvalue",
+  ToNumber: "https://262.ecma-international.org/#sec-tonumber",
+  ToString: "https://262.ecma-international.org/#sec-tostring",
+  ToBoolean: "https://262.ecma-international.org/#sec-toboolean",
+  ToNumeric: "https://262.ecma-international.org/#sec-tonumeric",
+  ToObject: "https://262.ecma-international.org/#sec-toobject",
+  ToPropertyKey: "https://262.ecma-international.org/#sec-topropertykey",
+  ToLength: "https://262.ecma-international.org/#sec-tolength",
+  ToIndex: "https://262.ecma-international.org/#sec-toindex",
+  Get: "https://262.ecma-international.org/#sec-get-o-p",
+  GetV: "https://262.ecma-international.org/#sec-getv",
+  GetMethod: "https://262.ecma-international.org/#sec-getmethod",
+  Call: "https://262.ecma-international.org/#sec-call",
 };
 
 // ── External-link SVG icon (inline, 11×11) ────────────────────────────────────
@@ -47,15 +48,66 @@ const LINK_ICON_SVG =
 // Ordered for display (spec reading order).
 
 const FUNCTION_ALGOS: Record<string, string[]> = {
-  ToNumber:      ["ToNumber", "StringToNumber", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
-  ToString:      ["ToString", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
-  ToBoolean:     ["ToBoolean"],
-  ToNumeric:     ["ToNumeric", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call", "ToNumber"],
-  ToPrimitive:   ["ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
-  ToObject:      ["ToObject"],
-  ToPropertyKey: ["ToPropertyKey", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call", "ToString"],
-  ToLength:      ["ToLength", "ToNumber", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
-  ToIndex:       ["ToIndex", "ToNumber", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
+  ToNumber: [
+    "ToNumber",
+    "StringToNumber",
+    "StringNumericValue",
+    "ToPrimitive",
+    "OrdinaryToPrimitive",
+    "GetMethod",
+    "GetV",
+    "ToObject",
+    "Get",
+    "Call",
+  ],
+  ToString: ["ToString", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
+  ToBoolean: ["ToBoolean"],
+  ToNumeric: [
+    "ToNumeric",
+    "ToPrimitive",
+    "OrdinaryToPrimitive",
+    "GetMethod",
+    "GetV",
+    "ToObject",
+    "Get",
+    "Call",
+    "ToNumber",
+  ],
+  ToPrimitive: ["ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
+  ToObject: ["ToObject"],
+  ToPropertyKey: [
+    "ToPropertyKey",
+    "ToPrimitive",
+    "OrdinaryToPrimitive",
+    "GetMethod",
+    "GetV",
+    "ToObject",
+    "Get",
+    "Call",
+    "ToString",
+  ],
+  ToLength: [
+    "ToLength",
+    "ToNumber",
+    "ToPrimitive",
+    "OrdinaryToPrimitive",
+    "GetMethod",
+    "GetV",
+    "ToObject",
+    "Get",
+    "Call",
+  ],
+  ToIndex: [
+    "ToIndex",
+    "ToNumber",
+    "ToPrimitive",
+    "OrdinaryToPrimitive",
+    "GetMethod",
+    "GetV",
+    "ToObject",
+    "Get",
+    "Call",
+  ],
 };
 
 // ── Clause cache: id → rendered outerHTML ────────────────────────────────────
@@ -67,11 +119,11 @@ async function getClauseById(): Promise<Map<string, string>> {
 
   const source = await readFile(SPEC_FILE, "utf-8");
 
-  const spec = await build(
-    "spec.html",
-    async (path: string) => (path === "spec.html" ? source : ""),
-    { assets: "none", toc: false, copyright: false },
-  );
+  const spec = await build("spec.html", async (path: string) => (path === "spec.html" ? source : ""), {
+    assets: "none",
+    toc: false,
+    copyright: false,
+  });
 
   const map = new Map<string, string>();
   for (const el of Array.from(spec.doc.querySelectorAll("emu-clause"))) {
@@ -86,7 +138,7 @@ async function getClauseById(): Promise<Map<string, string>> {
         h1.insertAdjacentHTML(
           "beforeend",
           ` <a class="spec-ext-link" href="${specUrl}" target="_blank" rel="noopener noreferrer" ` +
-          `aria-label="Open ${id} in ECMAScript specification">${LINK_ICON_SVG}</a>`,
+            `aria-label="Open ${id} in ECMAScript specification">${LINK_ICON_SVG}</a>`,
         );
       }
     }

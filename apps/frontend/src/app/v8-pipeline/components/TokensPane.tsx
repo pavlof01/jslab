@@ -27,7 +27,7 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
   }
   return (
     <Box p={4} overflowX="auto">
-      <Box as="table" w="100%" fontFamily="mono" fontSize="12px" style={{ borderCollapse: "collapse" }}>
+      <Box as="table" w="100%" fontSize="12px" style={{ borderCollapse: "collapse" }}>
         <Box as="thead">
           <Box as="tr">
             {["#", "Kind", "Value"].map((h) => (
