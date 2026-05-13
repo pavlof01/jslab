@@ -17,7 +17,13 @@
       "Bash(docker rm *)",
       "Bash(docker run *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['scripts']\\)\")",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git -C apps/trace-service/engine262 branch -f jslab/trace-instrumentation 2220bb41)",
+      "Bash(git -C apps/trace-service/engine262 checkout jslab/trace-instrumentation)",
+      "Bash(git -C apps/trace-service/engine262 log --oneline -3)",
+      "Bash(git -C apps/trace-service/engine262 push --force-with-lease origin jslab/trace-instrumentation)",
+      "Bash(npx tsc *)"
     ]
   }
 }
