@@ -31,9 +31,13 @@ app.get("/functions", async () => ({
 const executeHandler = async (request: FastifyRequest<{ Body: ExecuteRequest }>, reply: FastifyReply) => {
   const { functionName, input, preferredType } = request.body;
 
-  const result = await executeECMA262Function(functionName, input, preferredType);
-
-  return reply.status(result.success ? 200 : 400).send(result);
+  try {
+    const result = await executeECMA262Function(functionName, input, preferredType);
+    return reply.status(result.success ? 200 : 400).send(result);
+  } catch (err: unknown) {
+    request.log.error({ err, functionName }, "executeECMA262Function threw unexpectedly");
+    return reply.status(500).send({ success: false, functionName, error: "internal execution error" });
+  }
 };
 
 app.post<{ Body: ExecuteRequest }>("/execute", { schema: { body: bodyJsonSchema } }, executeHandler);
