@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export interface TraceNode {
-  id: string;
-  name: string;
-  description: string;
-  children?: TraceNode[];
-}
-
 export interface ExecuteResponse {
   success: boolean;
   functionName: string;
-  resultValue: string;
-  resultType: string;
-  trace: TraceNode[];
+  result?: { type: string; value?: unknown };
+  root?: unknown;
   error?: string;
 }
 
