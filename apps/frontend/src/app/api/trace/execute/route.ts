@@ -13,7 +13,6 @@ export interface ExecuteResponse {
   resultValue: string;
   resultType: string;
   trace: TraceNode[];
-  stepCount: number;
   error?: string;
 }
 
@@ -21,7 +20,6 @@ export interface ExecuteResponse {
 const TRACE_SERVICE_URL = process.env.TRACE_SERVICE_URL ?? "http://localhost:8080";
 
 export async function POST(req: NextRequest): Promise<NextResponse<ExecuteResponse | { error: string }>> {
-
   let body: unknown;
 
   try {

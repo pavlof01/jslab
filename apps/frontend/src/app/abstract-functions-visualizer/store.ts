@@ -1,12 +1,14 @@
 import { create } from "zustand";
-import type { SpecValue, TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
+import { flattenTrace, type FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
 
 const DEFAULT_ALGO = "ToNumber";
 const DEFAULT_INPUT = '{ valueOf: () => "1" }';
 
 interface VisualizerStore {
   // ── Trace ──────────────────────────────────────────────────────────────────
-  trace: TraceStep[];
+  root: TraceNode | null;
+  flatEntries: FlatEntry[];
   resultValue: SpecValue | undefined;
   error: string | null;
   showSkipped: boolean;
@@ -24,14 +26,14 @@ interface VisualizerStore {
   selectedIndex: number;
   isPlaying: boolean;
 
-  // ── Collapse state ─────────────────────────────────────────────────────────
-  collapsedBlocks: Record<number, boolean>;
+  // ── Collapse state — keyed by step path ─────────────────────────────────────
+  collapsedBlocks: Record<string, boolean>;
 
   // ── Derived ────────────────────────────────────────────────────────────────
   maxIndex: () => number;
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  setTrace: (trace: TraceStep[]) => void;
+  setRoot: (root: TraceNode | null) => void;
   setResultValue: (v: SpecValue | undefined) => void;
   setError: (e: string | null) => void;
   setShowSkipped: (v: boolean) => void;
@@ -41,14 +43,16 @@ interface VisualizerStore {
   setTraceInputRaw: (v: string) => void;
   commitTraceInput: (v: string) => void;
   setIsPlaying: (v: boolean | ((prev: boolean) => boolean)) => void;
-  toggleBlock: (callStepIndex: number) => void;
+  toggleBlock: (path: string) => void;
   onSelectIndex: (i: number) => void;
+  onSelectPath: (path: string) => void;
   tickPlayback: () => void;
   runNow: () => void;
 }
 
 export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
-  trace: [],
+  root: null,
+  flatEntries: [],
   resultValue: undefined,
   error: null,
   showSkipped: true,
@@ -61,9 +65,15 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   isPlaying: false,
   collapsedBlocks: {},
 
-  maxIndex: () => Math.max(0, get().trace.length - 1),
+  maxIndex: () => Math.max(0, get().flatEntries.length - 1),
 
-  setTrace: (trace) => set({ trace, selectedIndex: 0, collapsedBlocks: {} }),
+  setRoot: (root) =>
+    set({
+      root,
+      flatEntries: root ? flattenTrace(root) : [],
+      selectedIndex: 0,
+      collapsedBlocks: {},
+    }),
 
   setResultValue: (resultValue) => set({ resultValue }),
   setError: (error) => set({ error }),
@@ -77,12 +87,9 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   setIsPlaying: (v) =>
     set((s) => ({ isPlaying: typeof v === "function" ? v(s.isPlaying) : v })),
 
-  toggleBlock: (callStepIndex) =>
+  toggleBlock: (path) =>
     set((s) => ({
-      collapsedBlocks: {
-        ...s.collapsedBlocks,
-        [callStepIndex]: !s.collapsedBlocks[callStepIndex],
-      },
+      collapsedBlocks: { ...s.collapsedBlocks, [path]: !s.collapsedBlocks[path] },
     })),
 
   onSelectIndex: (i) => {
@@ -90,9 +97,15 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
     set({ isPlaying: false, selectedIndex: Math.max(0, Math.min(max, i)) });
   },
 
+  onSelectPath: (path) => {
+    const { flatEntries } = get();
+    const i = flatEntries.findIndex((e) => e.path === path);
+    if (i >= 0) set({ isPlaying: false, selectedIndex: i });
+  },
+
   tickPlayback: () => {
-    const { selectedIndex, trace, setIsPlaying } = get();
-    if (selectedIndex >= trace.length - 1) {
+    const { selectedIndex, flatEntries, setIsPlaying } = get();
+    if (selectedIndex >= flatEntries.length - 1) {
       setIsPlaying(false);
     } else {
       set({ selectedIndex: selectedIndex + 1 });
@@ -100,7 +113,7 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   },
 
   runNow: () => {
-    const { selectedAlgo, traceInputExpression, setIsPlaying, setError, setTrace, setResultValue } = get();
+    const { selectedAlgo, traceInputExpression, setIsPlaying, setError, setRoot, setResultValue } = get();
     setIsPlaying(false);
     setError(null);
 
@@ -115,13 +128,13 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
       })
       .then((data) => {
         if (!data.success) throw new Error(data.error ?? "trace-service returned failure");
-        setTrace(data.steps);
-        setResultValue(data.result as SpecValue);
+        setRoot((data.root as TraceNode | undefined) ?? null);
+        setResultValue(data.result as SpecValue | undefined);
       })
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : "Unknown executor error";
         setError(msg);
-        setTrace([]);
+        setRoot(null);
         setResultValue(undefined);
       });
   },

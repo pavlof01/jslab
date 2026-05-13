@@ -12,7 +12,8 @@ const subtleBorder = "rgba(255,255,255,0.08)";
 const mutedText = "rgba(255,255,255,0.62)";
 
 function AbstractFunctionsDemo() {
-  const trace = useVisualizerStore((s) => s.trace);
+  const root = useVisualizerStore((s) => s.root);
+  const flatEntries = useVisualizerStore((s) => s.flatEntries);
   const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
   const isPlaying = useVisualizerStore((s) => s.isPlaying);
   const selectedAlgo = useVisualizerStore((s) => s.selectedAlgo);
@@ -39,10 +40,10 @@ function AbstractFunctionsDemo() {
   }, [selectedAlgo, traceInputExpression, runNow]);
 
   React.useEffect(() => {
-    if (!isPlaying || trace.length <= 1) return;
+    if (!isPlaying || flatEntries.length <= 1) return;
     const id = window.setInterval(tickPlayback, 650);
     return () => window.clearInterval(id);
-  }, [isPlaying, trace.length, tickPlayback]);
+  }, [isPlaying, flatEntries.length, tickPlayback]);
 
   return (
     <Box
@@ -55,11 +56,12 @@ function AbstractFunctionsDemo() {
     >
       <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
         <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
-          <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+          <EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />
         </Box>
         <Box position="relative" minH={0} h="100%">
           <ExecutionTreePanel
-            trace={trace}
+            root={root}
+            flatEntries={flatEntries}
             selectedIndex={selectedIndex}
             selectedAlgo={selectedAlgo}
             onAlgoChange={setSelectedAlgo}

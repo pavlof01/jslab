@@ -1,4 +1,4 @@
-import fastify from "fastify";
+import fastify, { FastifyReply, FastifyRequest } from "fastify";
 
 import { loadConfig } from "../../config.ts";
 import { ExecuteRequest } from "./types.ts";
@@ -13,22 +13,12 @@ const bodyJsonSchema = {
   type: "object",
   properties: {
     functionName: { type: "string", enum: AVAILABLE_FUNCTIONS },
-    input: {
-      anyOf: [
-        { type: "string" },
-        { type: "number" },
-        { type: "boolean" },
-        { type: "array" },
-        { type: "object" },
-        { type: "null" },
-      ],
-    },
+    input: { type: "string" },
     preferredType: { type: "string", enum: ["string", "number"] },
   },
   required: ["functionName", "input"],
 };
 
-// Routes
 app.get("/healthz", async () => ({ ok: true }));
 
 app.get("/functions", async () => ({
@@ -38,7 +28,7 @@ app.get("/functions", async () => ({
   input_format: "input can be a string, number, boolean, null, undefined, or an object",
 }));
 
-const executeHandler = async (request: { body: ExecuteRequest }, reply: any) => {
+const executeHandler = async (request: FastifyRequest<{ Body: ExecuteRequest }>, reply: FastifyReply) => {
   const { functionName, input, preferredType } = request.body;
 
   const result = await executeECMA262Function(functionName, input, preferredType);
@@ -48,8 +38,6 @@ const executeHandler = async (request: { body: ExecuteRequest }, reply: any) => 
 
 app.post<{ Body: ExecuteRequest }>("/execute", { schema: { body: bodyJsonSchema } }, executeHandler);
 
-// GET /spec/:functionName — returns ecmarkup HTML for all algorithms reachable
-// from the given function. Cached after first build.
 app.get<{ Params: { functionName: string } }>("/spec/:functionName", async (request, reply) => {
   const { functionName } = request.params;
 

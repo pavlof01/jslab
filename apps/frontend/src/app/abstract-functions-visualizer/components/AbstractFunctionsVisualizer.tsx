@@ -19,7 +19,8 @@ import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/Ec
 import { useVisualizerStore } from "@/app/abstract-functions-visualizer/store";
 
 export function AbstractFunctionsVisualizer() {
-  const trace = useVisualizerStore((s) => s.trace);
+  const root = useVisualizerStore((s) => s.root);
+  const flatEntries = useVisualizerStore((s) => s.flatEntries);
   const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
   const isPlaying = useVisualizerStore((s) => s.isPlaying);
   const specHtml = useVisualizerStore((s) => s.specHtml);
@@ -52,10 +53,10 @@ export function AbstractFunctionsVisualizer() {
 
   // Playback interval
   useEffect(() => {
-    if (!isPlaying || trace.length <= 1) return;
+    if (!isPlaying || flatEntries.length <= 1) return;
     const id = window.setInterval(tickPlayback, 650);
     return () => window.clearInterval(id);
-  }, [isPlaying, trace.length, tickPlayback]);
+  }, [isPlaying, flatEntries.length, tickPlayback]);
 
   return (
     <>
@@ -90,7 +91,7 @@ export function AbstractFunctionsVisualizer() {
                     </DrawerCloseTrigger>
                   </Box>
                   <Box flex={1} minH={0} overflow="hidden">
-                    <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+                    <EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />
                   </Box>
                 </DrawerBody>
               </DrawerContent>
@@ -101,12 +102,13 @@ export function AbstractFunctionsVisualizer() {
         <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
           {/* Desktop: spec panel in grid */}
           <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
-            <EcmaSpecPanel trace={trace} selectedIndex={selectedIndex} specHtml={specHtml} />
+            <EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />
           </Box>
 
           <Box position="relative" minH={0} h="100%">
             <ExecutionTreePanel
-              trace={trace}
+              root={root}
+              flatEntries={flatEntries}
               selectedIndex={selectedIndex}
               selectedAlgo={selectedAlgo}
               onAlgoChange={setSelectedAlgo}
