@@ -85,31 +85,21 @@ Response:
   "resultType": "number",
   "trace": [
     {
-      "step": 1,
-      "depth": 0,
       "kind": "operation",
       "hint": "Input string conversion",
-      "value": "\"42\"",
-      "type": "string"
+      "value": "\"42\""
     },
     {
-      "step": 2,
-      "depth": 1,
       "kind": "coercion",
       "hint": "Parse as numeric string",
-      "value": "42",
-      "type": "number"
+      "value": "42"
     },
     {
-      "step": 3,
-      "depth": 0,
       "kind": "result",
       "hint": "Return numeric value",
-      "value": "42",
-      "type": "number"
+      "value": "42"
     }
-  ],
-  "stepCount": 3
+  ]
 }
 ```
 

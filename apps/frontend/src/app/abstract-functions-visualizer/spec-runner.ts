@@ -1,8 +1,6 @@
-// spec-runner.ts (UPDATED)
-// - Adds call-site transitions (so coercion animates at `let ny = ToNumber(y)`)
-// - Emits concat/add transitions for ConcatStrings/AddNumbers at the return site (nice UI)
-//
-// Drop-in replacement for the previous file.
+// Trace types — mirror the SerializedTraceNode/Step shape produced by the
+// trace-service backend. Sub-algorithm invocations are nested inside
+// `kind: "call"` steps via `algoId`, `inputs`, `steps`, `output`, `error`.
 
 export type TypeTag =
   | "Undefined"
@@ -17,7 +15,7 @@ export type TypeTag =
   | "TypeTag";
 
 export type SpecValue =
-  | { type: "Undefined"; value: undefined }
+  | { type: "Undefined"; value?: undefined }
   | { type: "Null"; value: null }
   | { type: "Boolean"; value: boolean }
   | { type: "Number"; value: number | "NaN" }
@@ -31,161 +29,40 @@ export type SpecValue =
   | { type: "Array"; value: unknown[] }
   | { type: "TypeTag"; value: TypeTag };
 
-export type VarExpr = { var: string };
-export type LitExpr = { lit: SpecValue };
-export type OpExpr = { op: string; args?: Expr[] };
-export type CallExpr = { op: "call"; algo: string; args: Expr[] };
-export type IfExpr = { op: "ifExpr"; cond: Expr; then: Expr; else: Expr };
-export type Expr = VarExpr | LitExpr | OpExpr | CallExpr | IfExpr;
+export type TraceStepKind =
+  | "if"
+  | "operation"
+  | "call"
+  | "return"
+  | "throw"
+  | "assert"
+  | "note";
 
-export type UIHint = {
-  markAsCoercion?: boolean;
-  label?: string;
-  explain?: string;
-};
-
-export type InstrMeta = {
-  ui?: UIHint;
-  // Top-level spec step number (e.g. 1..N) for stable mapping to spec reference text.
-  // Optional and backward-compatible: older catalogs simply omit it.
-  specStep?: number;
-};
-
-export type LetInstr = {
-  op: "let";
-  name: string;
-  expr: Expr;
+export interface TraceStep {
+  kind: TraceStepKind;
   hint?: string;
-  meta?: InstrMeta;
-};
-
-export type IfInstr = {
-  op: "if";
-  cond: Expr;
-  then: Instr[];
-  else: Instr[];
-  hint?: string;
-  meta?: InstrMeta;
-};
-
-export type ReturnInstr = {
-  op: "return";
-  expr: Expr;
-  hint?: string;
-  meta?: InstrMeta;
-};
-
-export type Instr = LetInstr | IfInstr | ReturnInstr;
-
-export type Algorithm = {
-  id: string;
-  title?: string;
-  params: string[];
-  locals?: string[];
-  body: Instr[];
-};
-
-export type Catalog = {
-  algorithms: Algorithm[];
-  intrinsics: Record<string, { args?: string[]; returns?: string; impl?: string }>;
-};
-
-export type TraceTransition =
-  | {
-      kind: "coercion";
-      op: string;
-      from: SpecValue;
-      to: SpecValue;
-      why: string;
-      label?: string;
-    }
-  | {
-      kind: "concat";
-      op: "+";
-      from: [SpecValue, SpecValue];
-      to: SpecValue;
-      why: string;
-    }
-  | {
-      kind: "add";
-      op: "+";
-      from: [SpecValue, SpecValue];
-      to: SpecValue;
-      why: string;
-    };
-
-type NestedTraceInfo = {
-  algorithmName: string;
-  algorithmId: string;
-  input: SpecValue;
+  description?: string;
+  taken?: boolean;
+  /** Output of plain steps (let/operation/assert/note). */
+  result?: SpecValue;
+  /** kind === "return" only. */
+  value?: SpecValue;
+  /** kind === "call" only — invoked sub-algorithm metadata. */
+  algoId?: string;
+  inputs?: SpecValue[];
   output?: SpecValue;
+  error?: string;
+  steps?: TraceStep[];
+  specUrl?: string;
+}
+
+export interface TraceNode {
+  algoId: string;
+  inputs: SpecValue[];
+  output?: SpecValue;
+  error?: string;
   steps: TraceStep[];
-};
+  specUrl?: string;
+}
 
 export type CallStackFrame = { algoId: string; specUrl?: string };
-
-export type TraceStep =
-  | {
-      stepId: number;
-      kind: "call";
-      depth: number;
-      callStack: CallStackFrame[];
-      fromAlgo?: string;
-      toAlgo: string;
-      args: SpecValue[];
-      result?: SpecValue;
-      specUrl?: string;
-      stack: string[];
-      frameId?: string;
-      parentFrameId?: string;
-    }
-  | {
-      stepId: number;
-      kind: "let";
-      depth: number;
-      callStack: CallStackFrame[];
-      algoId: string;
-      nodePath: (number | string)[];
-      hint?: string;
-      specStep?: number;
-      envDelta: Record<string, SpecValue>;
-      transitions?: TraceTransition[];
-      nestedTrace?: NestedTraceInfo;
-      stack: string[];
-      frameId?: string;
-      parentFrameId?: string;
-      varName?: string;
-      /** Present when this let-step immediately triggers a sub-algorithm call. */
-      callStep?: { toAlgo: string; args: SpecValue[]; specUrl?: string };
-    }
-  | {
-      stepId: number;
-      kind: "if";
-      depth: number;
-      callStack: CallStackFrame[];
-      algoId: string;
-      nodePath: (number | string)[];
-      hint?: string;
-      specStep?: number;
-      condPretty?: string;
-      isSkipped: boolean;
-      stack: string[];
-      frameId?: string;
-      parentFrameId?: string;
-    }
-  | {
-      stepId: number;
-      kind: "return";
-      depth: number;
-      callStack: CallStackFrame[];
-      algoId: string;
-      nodePath: (number | string)[];
-      hint?: string;
-      specStep?: number;
-      value: SpecValue;
-      transitions?: TraceTransition[];
-      nestedTrace?: NestedTraceInfo;
-      stack: string[];
-      frameId?: string;
-      parentFrameId?: string;
-    };

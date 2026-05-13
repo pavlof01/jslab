@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useMemo, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Box, VStack } from "@chakra-ui/react";
 
-import type { TraceStep } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { CallStackFrame, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
+import type { FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
 import EntryPointSection from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
 import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
 import { CallBlock } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceTree/CallBlock";
-import { buildCallTree } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceTree/treeBuilder";
 import { PlaybackDock } from "./PlaybackDock";
 
 type Props = {
-  trace: TraceStep[];
+  root: TraceNode | null;
+  flatEntries: FlatEntry[];
   selectedIndex: number;
   selectedAlgo: string;
   onAlgoChange?: (val: string) => void;
@@ -22,7 +23,8 @@ type Props = {
 };
 
 export const ExecutionTreePanel: React.FC<Props> = ({
-  trace,
+  root,
+  flatEntries,
   selectedIndex,
   selectedAlgo,
   onAlgoChange,
@@ -31,9 +33,9 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   onInputChange,
   onInputCommit,
 }) => {
-  const currentCallStack = trace[selectedIndex]?.callStack ?? [];
-
-  const tree = useMemo(() => (trace.length > 0 ? buildCallTree(trace) : null), [trace]);
+  const currentEntry = flatEntries[selectedIndex];
+  const currentCallStack: CallStackFrame[] = currentEntry?.callStack ?? [];
+  const activePath = currentEntry?.path ?? null;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,6 +49,12 @@ export const ExecutionTreePanel: React.FC<Props> = ({
     const target = container.scrollTop + relativeTop - container.clientHeight / 2 + el.offsetHeight / 2;
     container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [selectedIndex]);
+
+  const handleSelectPath = (path: string) => {
+    if (!onSelectIndex) return;
+    const i = flatEntries.findIndex((e) => e.path === path);
+    if (i >= 0) onSelectIndex(i);
+  };
 
   return (
     <Box position="relative" h="full">
@@ -62,8 +70,14 @@ export const ExecutionTreePanel: React.FC<Props> = ({
             onInputCommit={onInputCommit}
           />
 
-          {tree && (
-            <CallBlock node={tree} activeIndex={selectedIndex} onSelectIndex={onSelectIndex ?? (() => {})} isRoot />
+          {root && (
+            <CallBlock
+              node={root}
+              pathPrefix=""
+              activePath={activePath}
+              onSelectPath={handleSelectPath}
+              isRoot
+            />
           )}
         </VStack>
       </Box>

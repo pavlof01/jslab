@@ -12,10 +12,7 @@
     "start": "tsx src/server/server.ts",
     "lint": "tsc -p tsconfig.json --noEmit --skipLibCheck",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest --config vitest.config.mts",
-    "test:api": "vitest --config vitest.config.mts src/server/test/api.test.mts",
-    "test:engine": "vitest --config vitest.config.mts src/trace/test/engine262",
-    "test:type-conversion": "vitest --config vitest.config.mts src/trace/test/type-conversion.test.mts src/trace/test/to-number.test.mts src/trace/test/to-primitive.test.mts src/trace/test/ToNumber.trace.spec.mts"
+    "test": "vitest --config vitest.config.mts"
   },
   "dependencies": {
     "@unicode/unicode-16.0.0": "^1.6.16",

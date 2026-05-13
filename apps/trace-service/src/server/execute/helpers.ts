@@ -49,14 +49,7 @@ export function parseStringToValue(input: string, realm: ManagedRealm) {
   }
 }
 
-export const AVAILABLE_FUNCTIONS = [
-  "ToNumber",
-  "ToNumeric",
-  "ToString",
-  "ToBoolean",
-  "ToPrimitive",
-  "ToObject",
-];
+export const AVAILABLE_FUNCTIONS = ["ToNumber", "ToNumeric", "ToString", "ToBoolean", "ToPrimitive", "ToObject"];
 
 // Mapping of function names to their implementations
 export const FUNCTION_MAP: Record<string, any> = {
@@ -86,80 +79,10 @@ export function isFunctionNameValid(name: string): boolean {
   return AVAILABLE_FUNCTIONS.includes(name);
 }
 
-function looksLikeEcmaExpression(input: string): boolean {
-  const trimmed = input.trim();
-
-  if (trimmed === "") return false;
-  if (
-    trimmed === "true" ||
-    trimmed === "false" ||
-    trimmed === "null" ||
-    trimmed === "undefined" ||
-    trimmed === "NaN" ||
-    trimmed === "Infinity" ||
-    trimmed === "-Infinity"
-  ) {
-    return true;
-  }
-
-  if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
-    return true;
-  }
-
-  // BigInt literal: optional sign, digits, trailing 'n'
-  if (/^[+-]?\d+n$/.test(trimmed)) {
-    return true;
-  }
-
-  const firstChar = trimmed[0];
-  return firstChar === "{" || firstChar === "[" || firstChar === "(" || firstChar === "\"" || firstChar === "'";
-}
-
-/**
- * Converts input data to a string for realm.evaluateScript
- */
-export function convertInputToString(inputCode: any): string {
-  if (typeof inputCode === "string") {
-    // String input - could be:
-    // 1. A literal string like "abc" -> need to quote it as "'abc'"
-    // 2. Valid JS code like "{ x: 1 }" -> use as-is
-    // 3. A number string like "42" -> use as-is
-    // Try to determine which by attempting to parse as JSON
-    const trimmed = inputCode.trim();
-    if (looksLikeEcmaExpression(trimmed)) {
-      return trimmed;
-    }
-
-    // Plain unquoted text like hello should be treated as a string literal.
-    return JSON.stringify(inputCode);
-  } else if (inputCode === null) {
-    // null
-    return "null";
-  } else if (inputCode === undefined) {
-    // undefined
-    return "undefined";
-  } else if (typeof inputCode === "number") {
-    // Number - handle special cases
-    if (Number.isNaN(inputCode)) {
-      return "NaN";
-    } else if (!Number.isFinite(inputCode)) {
-      return inputCode > 0 ? "Infinity" : "-Infinity";
-    } else {
-      return String(inputCode);
-    }
-  } else if (typeof inputCode === "boolean") {
-    // Boolean
-    return String(inputCode);
-  } else {
-    // Object, array, or other complex type
-    return JSON.stringify(inputCode);
-  }
-}
-
 /**
  * Calls an ECMA262 function by name
  */
-export function callECMA262Function(functionName: string, inputValue: Value, preferredType?: "string" | "number"): any {
+export function callECMA262Function(functionName: string, inputValue: Value, preferredType?: "string" | "number") {
   switch (functionName) {
     case "ToNumber":
       return ToNumber(inputValue);
@@ -210,17 +133,24 @@ export function callECMA262Function(functionName: string, inputValue: Value, pre
  * Converts an ECMA262 Value to its string representation.
  * execResult is a Value from the engine (NumberValue, JSStringValue, etc.)
  */
-export function convertResultToString(execResult: any): string {
+export function convertResultToString(execResult: Value): string {
   if (!execResult || typeof execResult !== "object") {
     return String(execResult);
   }
   switch (execResult.type) {
-    case "Number":  return String(execResult.value);
-    case "String":  return typeof execResult.stringValue === "function" ? execResult.stringValue() : String(execResult.value ?? "");
-    case "Boolean": return execResult === Value.true ? "true" : "false";
-    case "BigInt":  return String(execResult.value);
-    case "Null":    return "null";
-    case "Undefined": return "undefined";
-    default:        return String(execResult);
+    case "Number":
+      return String(execResult.value);
+    case "String":
+      return typeof execResult.stringValue === "function" ? execResult.stringValue() : String(execResult.value ?? "");
+    case "Boolean":
+      return execResult === Value.true ? "true" : "false";
+    case "BigInt":
+      return String(execResult.value);
+    case "Null":
+      return "null";
+    case "Undefined":
+      return "undefined";
+    default:
+      return String(execResult);
   }
 }
