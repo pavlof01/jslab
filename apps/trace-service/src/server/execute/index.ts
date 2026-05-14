@@ -7,6 +7,7 @@ import {
   ThrowCompletion,
   Agent,
   setSurroundingAgent,
+  type TraceRecord,
   type ValueCompletion,
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
@@ -18,6 +19,7 @@ export async function executeECMA262Function(
   input: string,
   preferredType?: "string" | "number",
 ): Promise<ExecuteResponse> {
+  let inputTrace: TraceRecord | undefined;
   const evalResult = evalQ((_, __) => {
     const agent = new Agent();
     setSurroundingAgent(agent);
@@ -30,6 +32,7 @@ export async function executeECMA262Function(
     }
 
     const inputValue = (inputResult as NormalCompletion<Value>).Value;
+    inputTrace = inputValue.trace;
 
     const raw = realm.scope<ValueCompletion<Value>>(
       () => callGenerator(callECMA262Function(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
@@ -56,7 +59,7 @@ export async function executeECMA262Function(
     };
   }
 
-  const rootNode = execResult.trace.getRoot();
+  const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
   const root = rootNode ? serializeNode(rootNode) : undefined;
   const result = toSerializedValue(convertResultToString(execResult));
 
