@@ -23,7 +23,18 @@
       "Bash(git -C apps/trace-service/engine262 checkout jslab/trace-instrumentation)",
       "Bash(git -C apps/trace-service/engine262 log --oneline -3)",
       "Bash(git -C apps/trace-service/engine262 push --force-with-lease origin jslab/trace-instrumentation)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(curl -s -X POST http://localhost:8085/execute -H 'Content-Type: application/json' -d '{\"functionName\":\"ToPrimitive\",\"input\":\"1\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('keys:',list\\(d.keys\\(\\)\\)\\);print\\('root present:', 'root' in d\\);print\\('steps count:', len\\(d.get\\('root',{}\\).get\\('steps',[]\\)\\)\\)\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('root present:', 'root' in d\\);steps=d.get\\('root',{}\\).get\\('steps',[]\\);print\\('steps:',len\\(steps\\)\\);print\\('has description:', any\\('description' in s for s in steps\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/trace/execute -H 'Content-Type: application/json' -d '{\"functionName\":\"ToPrimitive\",\"input\":\"1\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('keys:',list\\(d.keys\\(\\)\\)\\);print\\('root:', 'root' in d\\);steps=d.get\\('root',{}\\).get\\('steps',[]\\);print\\('steps:',len\\(steps\\)\\);print\\('descs:',sum\\('description' in s for s in steps\\)\\)\")",
+      "Bash(curl -s -X POST https://jslab.su/api/trace/execute -H 'Content-Type: application/json' -d '{\"functionName\":\"ToPrimitive\",\"input\":\"{ valueOf: \\(\\) => \\\\\"1\\\\\" }\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('keys:',list\\(d.keys\\(\\)\\)\\);print\\('root:', 'root' in d\\)\")",
+      "Bash(curl -s -X POST https://jslab.su/api/trace/execute -H 'Content-Type: application/json' -d '{\"functionName\":\"ToPrimitive\",\"input\":\"1\"}')",
+      "Bash(curl -s -X POST http://localhost:8085/execute -H 'Content-Type: application/json' -d '{\"functionName\":\"ToPrimitive\",\"input\":\"{ valueOf: \\(\\) => \\\\\"1\\\\\" }\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('keys:',list\\(d.keys\\(\\)\\)\\);print\\('root:', 'root' in d\\);steps=d.get\\('root',{}\\).get\\('steps',[]\\);print\\('steps:',len\\(steps\\)\\)\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('root:', 'root' in d\\);steps=d.get\\('root',{}\\).get\\('steps',[]\\);print\\('steps:',len\\(steps\\)\\);[print\\(' -',s.get\\('kind'\\),s.get\\('hint',''\\)[:60]\\) for s in steps]\")"
     ]
   }
 }
