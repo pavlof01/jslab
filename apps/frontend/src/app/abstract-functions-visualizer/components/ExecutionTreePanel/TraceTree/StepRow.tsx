@@ -62,7 +62,8 @@ export function StepRow({ step, isActive, onSelect }: Props) {
   const label = KIND_LABEL[step.kind] ?? step.kind.toUpperCase();
   const text = stepText(step);
   const outcome = stepOutcome(step);
-  const hint = isActive && step.kind !== "call" ? step.hint : undefined;
+  const callHint = isActive ? step.hint : undefined;
+  const description = isActive ? step.description : undefined;
   const isSkipped = step.kind === "if" && step.taken === false;
 
   return (
@@ -130,11 +131,13 @@ export function StepRow({ step, isActive, onSelect }: Props) {
         )}
       </HStack>
 
-      {isActive && hint && (
+      {isActive && description && (
         <Box pl="90px" pr="10px" pb="8px">
-          <Text fontSize="11px" color="#6b7280" lineClamp={3}>
-            {hint}
-          </Text>
+          {description && (
+            <Text fontSize="11px" color="#9ca3af" mt={callHint ? "4px" : 0} fontStyle="italic">
+              {description}
+            </Text>
+          )}
         </Box>
       )}
     </Box>
