@@ -22,7 +22,6 @@ spec:
       containers:
         - name: trace-service
           image: pavlof01/jslab-trace-service:latest
-          imagePullPolicy: Always
           env:
             - name: NODE_ENV
               value: production
