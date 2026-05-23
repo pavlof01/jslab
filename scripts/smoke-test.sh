@@ -68,43 +68,47 @@ if grep -Eiq "^server:.*next" "$run_headers"; then
   exit 1
 fi
 
-echo "Checking /api/trace/execute..."
+echo "Checking /api/trace/execute/type-conversion..."
 trace_headers="$tmp_dir/trace.headers"
 trace_body="$tmp_dir/trace.body"
 trace_status="$(curl -sS $CURL_FLAGS -D "$trace_headers" -o "$trace_body" -w "%{http_code}" \
   -H "content-type: application/json" \
   -d '{"functionName":"ToNumber","input":"42"}' \
-  "$BASE_URL/api/trace/execute")"
-expect_status "$trace_status" "200" "/api/trace/execute"
+  "$BASE_URL/api/trace/execute/type-conversion")"
+expect_status "$trace_status" "200" "/api/trace/execute/type-conversion"
 
 if grep -Eiq "^content-type:.*text/html" "$trace_headers"; then
-  echo "/api/trace/execute returned HTML content-type." >&2
+  echo "/api/trace/execute/type-conversion returned HTML content-type." >&2
   exit 1
 fi
 
 if grep -Eiq "<!doctype html|<html" "$trace_body"; then
-  echo "/api/trace/execute returned HTML body (likely routed to frontend)." >&2
+  echo "/api/trace/execute/type-conversion returned HTML body (likely routed to frontend)." >&2
   exit 1
 fi
 
 if ! grep -Eq "\"success\"[[:space:]]*:[[:space:]]*true" "$trace_body"; then
-  echo "/api/trace/execute response did not include success:true." >&2
+  echo "/api/trace/execute/type-conversion response did not include success:true." >&2
   exit 1
 fi
 
 if grep -Eiq "^x-powered-by:.*next\.js" "$trace_headers"; then
-  echo "/api/trace/execute returned Next.js headers." >&2
+  echo "/api/trace/execute/type-conversion returned Next.js headers." >&2
   exit 1
 fi
 
 if grep -Eiq "^x-nextjs-" "$trace_headers"; then
-  echo "/api/trace/execute returned Next.js headers." >&2
+  echo "/api/trace/execute/type-conversion returned Next.js headers." >&2
   exit 1
 fi
 
 if grep -Eiq "^server:.*next" "$trace_headers"; then
-  echo "/api/trace/execute returned Next.js server header." >&2
+  echo "/api/trace/execute/type-conversion returned Next.js server header." >&2
   exit 1
 fi
+
+echo "Checking /api/trace/functions..."
+functions_status="$(curl -sS $CURL_FLAGS -o /dev/null -w "%{http_code}" "$BASE_URL/api/trace/functions")"
+expect_status "$functions_status" "200" "/api/trace/functions"
 
 echo "Smoke tests passed."
