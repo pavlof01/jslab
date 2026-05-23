@@ -27,8 +27,12 @@ export function AbstractFunctionsVisualizer() {
   const setSpecHtml = useVisualizerStore((s) => s.setSpecHtml);
   const specDrawerOpen = useVisualizerStore((s) => s.specDrawerOpen);
   const setSpecDrawerOpen = useVisualizerStore((s) => s.setSpecDrawerOpen);
+  const category = useVisualizerStore((s) => s.category);
+  const setCategory = useVisualizerStore((s) => s.setCategory);
   const selectedAlgo = useVisualizerStore((s) => s.selectedAlgo);
   const setSelectedAlgo = useVisualizerStore((s) => s.setSelectedAlgo);
+  const detectedOperator = useVisualizerStore((s) => s.detectedOperator);
+  const effectiveAlgoId = useVisualizerStore((s) => s.effectiveAlgoId);
   const traceInputRaw = useVisualizerStore((s) => s.traceInputRaw);
   const setTraceInputRaw = useVisualizerStore((s) => s.setTraceInputRaw);
   const traceInputExpression = useVisualizerStore((s) => s.traceInputExpression);
@@ -110,7 +114,11 @@ export function AbstractFunctionsVisualizer() {
               root={root}
               flatEntries={flatEntries}
               selectedIndex={selectedIndex}
+              category={category}
+              onCategoryChange={setCategory}
               selectedAlgo={selectedAlgo}
+              detectedOperator={detectedOperator}
+              effectiveAlgoId={effectiveAlgoId}
               onAlgoChange={setSelectedAlgo}
               userInputRaw={traceInputRaw}
               onSelectIndex={onSelectIndex}
