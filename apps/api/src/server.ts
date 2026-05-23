@@ -8,7 +8,7 @@ import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceRateLimit } from "./rateLimit.js";
-import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema } from "./schemas.js";
+import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema } from "./schemas.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
 const config = loadConfig();
@@ -232,22 +232,19 @@ app.post("/api/run", async (req, reply) => {
   }
 });
 
-app.post("/api/trace/execute", async (req, reply) => {
-  const parsed = traceExecuteRequestSchema.safeParse(req.body);
-  if (!parsed.success) {
-    reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
-    return;
-  }
-
-  const traceServiceUrl = `${config.TRACE_SERVICE_URL.replace(/\/$/, "")}/execute`;
+async function proxyToTraceService(
+  req: any,
+  reply: any,
+  upstreamPath: string,
+  body: unknown,
+) {
+  const traceServiceUrl = `${config.TRACE_SERVICE_URL.replace(/\/$/, "")}${upstreamPath}`;
 
   try {
     const traceRes = await request(traceServiceUrl, {
       method: "POST",
-      body: JSON.stringify(parsed.data),
-      headers: {
-        "content-type": "application/json",
-      },
+      body: JSON.stringify(body),
+      headers: { "content-type": "application/json" },
       bodyTimeout: config.MAX_TIMEOUT_MS + 1000,
       headersTimeout: config.MAX_TIMEOUT_MS + 1000,
     });
@@ -269,6 +266,24 @@ app.post("/api/trace/execute", async (req, reply) => {
     req.log.error({ err, traceServiceUrl, kind: classified.kind }, "trace-service request failed");
     reply.code(502).send({ ok: false, error: classified.message });
   }
+}
+
+app.post("/api/trace/execute/type-conversion", async (req, reply) => {
+  const parsed = traceExecuteRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
+    return;
+  }
+  await proxyToTraceService(req, reply, "/execute/type-conversion", parsed.data);
+});
+
+app.post("/api/trace/execute/equality", async (req, reply) => {
+  const parsed = traceExecuteEqualitySchema.safeParse(req.body);
+  if (!parsed.success) {
+    reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
+    return;
+  }
+  await proxyToTraceService(req, reply, "/execute/equality", parsed.data);
 });
 
 const listen = async () => {

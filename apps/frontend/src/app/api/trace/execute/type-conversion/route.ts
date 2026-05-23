@@ -8,7 +8,6 @@ export interface ExecuteResponse {
   error?: string;
 }
 
-/** Trace service URL - configurable via environment or defaults to localhost */
 const TRACE_SERVICE_URL = process.env.TRACE_SERVICE_URL ?? "http://localhost:8080";
 
 export async function POST(req: NextRequest): Promise<NextResponse<ExecuteResponse | { error: string }>> {
@@ -20,7 +19,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<ExecuteRespon
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // Validate request body shape
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Request body must be an object" }, { status: 400 });
   }
@@ -41,7 +39,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ExecuteRespon
 
   let response: Response;
   try {
-    response = await fetch(`${TRACE_SERVICE_URL}/execute`, {
+    response = await fetch(`${TRACE_SERVICE_URL}/execute/type-conversion`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

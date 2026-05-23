@@ -2,8 +2,16 @@ import { create } from "zustand";
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import { flattenTrace, type FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
 
-const DEFAULT_ALGO = "ToNumber";
-const DEFAULT_INPUT = '{ valueOf: () => "1" }';
+export type AlgoCategory = "typeConversion" | "equality";
+
+const DEFAULTS_BY_CATEGORY: Record<AlgoCategory, { algo: string; input: string }> = {
+  typeConversion: { algo: "ToNumber", input: '{ valueOf: () => "1" }' },
+  equality: { algo: "BinaryExpression", input: "[] == !{}" },
+};
+
+const DEFAULT_CATEGORY: AlgoCategory = "typeConversion";
+const DEFAULT_ALGO = DEFAULTS_BY_CATEGORY[DEFAULT_CATEGORY].algo;
+const DEFAULT_INPUT = DEFAULTS_BY_CATEGORY[DEFAULT_CATEGORY].input;
 
 interface VisualizerStore {
   // ── Trace ──────────────────────────────────────────────────────────────────
@@ -18,7 +26,12 @@ interface VisualizerStore {
   specDrawerOpen: boolean;
 
   // ── Input ──────────────────────────────────────────────────────────────────
+  category: AlgoCategory;
   selectedAlgo: string;
+  /** For equality (BinaryExpression): the spec algorithm actually executed for the current trace. */
+  effectiveAlgoId: string | null;
+  /** For equality (BinaryExpression): the operator parsed from the input. */
+  detectedOperator: string | null;
   traceInputRaw: string;
   traceInputExpression: string;
 
@@ -39,6 +52,7 @@ interface VisualizerStore {
   setShowSkipped: (v: boolean) => void;
   setSpecHtml: (html: string) => void;
   setSpecDrawerOpen: (open: boolean) => void;
+  setCategory: (c: AlgoCategory) => void;
   setSelectedAlgo: (algo: string) => void;
   setTraceInputRaw: (v: string) => void;
   commitTraceInput: (v: string) => void;
@@ -58,7 +72,10 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   showSkipped: true,
   specHtml: "",
   specDrawerOpen: false,
+  category: DEFAULT_CATEGORY,
   selectedAlgo: DEFAULT_ALGO,
+  effectiveAlgoId: null,
+  detectedOperator: null,
   traceInputRaw: DEFAULT_INPUT,
   traceInputExpression: DEFAULT_INPUT,
   selectedIndex: 0,
@@ -80,6 +97,22 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   setShowSkipped: (showSkipped) => set({ showSkipped }),
   setSpecHtml: (specHtml) => set({ specHtml }),
   setSpecDrawerOpen: (specDrawerOpen) => set({ specDrawerOpen }),
+  setCategory: (category) => {
+    const def = DEFAULTS_BY_CATEGORY[category];
+    set({
+      category,
+      selectedAlgo: def.algo,
+      effectiveAlgoId: null,
+      detectedOperator: null,
+      traceInputRaw: def.input,
+      traceInputExpression: def.input,
+      root: null,
+      flatEntries: [],
+      selectedIndex: 0,
+      collapsedBlocks: {},
+      error: null,
+    });
+  },
   setSelectedAlgo: (selectedAlgo) => set({ selectedAlgo }),
   setTraceInputRaw: (traceInputRaw) => set({ traceInputRaw }),
   commitTraceInput: (traceInputExpression) => set({ traceInputExpression }),
@@ -113,14 +146,23 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   },
 
   runNow: () => {
-    const { selectedAlgo, traceInputExpression, setIsPlaying, setError, setRoot, setResultValue } = get();
+    const { category, selectedAlgo, traceInputExpression, setIsPlaying, setError, setRoot, setResultValue } = get();
     setIsPlaying(false);
     setError(null);
 
-    fetch("/api/trace/execute", {
+    const url =
+      category === "equality"
+        ? "/api/trace/execute/equality"
+        : "/api/trace/execute/type-conversion";
+    const body =
+      category === "equality"
+        ? { input: traceInputExpression }
+        : { functionName: selectedAlgo, input: traceInputExpression };
+
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ functionName: selectedAlgo, input: traceInputExpression }),
+      body: JSON.stringify(body),
     })
       .then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e?.error ?? `trace-service error ${r.status}`)));
@@ -130,12 +172,17 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
         if (!data.success) throw new Error(data.error ?? "trace-service returned failure");
         setRoot((data.root as TraceNode | undefined) ?? null);
         setResultValue(data.result as SpecValue | undefined);
+        set({
+          effectiveAlgoId: (data.effectiveAlgoId as string | undefined) ?? null,
+          detectedOperator: (data.detectedOperator as string | undefined) ?? null,
+        });
       })
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : "Unknown executor error";
         setError(msg);
         setRoot(null);
         setResultValue(undefined);
+        set({ effectiveAlgoId: null, detectedOperator: null });
       });
   },
 }));

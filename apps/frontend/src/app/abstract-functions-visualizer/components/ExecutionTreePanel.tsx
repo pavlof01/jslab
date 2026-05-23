@@ -5,7 +5,9 @@ import { Box, VStack } from "@chakra-ui/react";
 
 import type { CallStackFrame, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import type { FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
+import type { AlgoCategory } from "@/app/abstract-functions-visualizer/store";
 import EntryPointSection from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
+import { CategoryTabs } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/CategoryTabs";
 import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
 import { CallBlock } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/TraceTree/CallBlock";
 import { PlaybackDock } from "./PlaybackDock";
@@ -14,7 +16,11 @@ type Props = {
   root: TraceNode | null;
   flatEntries: FlatEntry[];
   selectedIndex: number;
+  category: AlgoCategory;
+  onCategoryChange?: (c: AlgoCategory) => void;
   selectedAlgo: string;
+  detectedOperator: string | null;
+  effectiveAlgoId: string | null;
   onAlgoChange?: (val: string) => void;
   userInputRaw: string;
   onSelectIndex?: (index: number) => void;
@@ -26,7 +32,11 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   root,
   flatEntries,
   selectedIndex,
+  category,
+  onCategoryChange,
   selectedAlgo,
+  detectedOperator,
+  effectiveAlgoId,
   onAlgoChange,
   userInputRaw,
   onSelectIndex,
@@ -62,9 +72,13 @@ export const ExecutionTreePanel: React.FC<Props> = ({
 
       <Box ref={scrollRef} flex="1" h="full" overflow="auto" pt={28} pb={32} px={{ base: 3, md: 6 }}>
         <VStack align="stretch" gap={0}>
+          <CategoryTabs category={category} onChange={onCategoryChange} />
           <EntryPointSection
+            category={category}
             onAlgoChange={onAlgoChange}
             selectedAlgo={selectedAlgo}
+            detectedOperator={detectedOperator}
+            effectiveAlgoId={effectiveAlgoId}
             userInputRaw={userInputRaw}
             onInputChange={onInputChange}
             onInputCommit={onInputCommit}

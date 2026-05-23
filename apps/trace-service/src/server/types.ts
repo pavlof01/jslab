@@ -11,5 +11,9 @@ export type ExecuteResponse = {
   result?: SerializedValue;
   /** Root algorithm invocation tree (when success). Sub-algos nest inside call-kind steps. */
   root?: SerializedTraceNode;
+  /** For BinaryExpression: which spec algorithm was actually executed (e.g. "IsLooselyEqual"). */
+  effectiveAlgoId?: string;
+  /** For BinaryExpression: the operator parsed out of the input ("==", "!==", "<=", etc.). */
+  detectedOperator?: string;
   error?: string;
 };

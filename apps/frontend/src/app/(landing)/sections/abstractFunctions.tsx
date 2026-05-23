@@ -16,7 +16,11 @@ function AbstractFunctionsDemo() {
   const flatEntries = useVisualizerStore((s) => s.flatEntries);
   const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
   const isPlaying = useVisualizerStore((s) => s.isPlaying);
+  const category = useVisualizerStore((s) => s.category);
+  const setCategory = useVisualizerStore((s) => s.setCategory);
   const selectedAlgo = useVisualizerStore((s) => s.selectedAlgo);
+  const detectedOperator = useVisualizerStore((s) => s.detectedOperator);
+  const effectiveAlgoId = useVisualizerStore((s) => s.effectiveAlgoId);
   const traceInputRaw = useVisualizerStore((s) => s.traceInputRaw);
   const traceInputExpression = useVisualizerStore((s) => s.traceInputExpression);
   const setSelectedAlgo = useVisualizerStore((s) => s.setSelectedAlgo);
@@ -63,7 +67,11 @@ function AbstractFunctionsDemo() {
             root={root}
             flatEntries={flatEntries}
             selectedIndex={selectedIndex}
+            category={category}
+            onCategoryChange={setCategory}
             selectedAlgo={selectedAlgo}
+            detectedOperator={detectedOperator}
+            effectiveAlgoId={effectiveAlgoId}
             onAlgoChange={setSelectedAlgo}
             userInputRaw={traceInputRaw}
             onSelectIndex={onSelectIndex}
