@@ -14,9 +14,11 @@ spec:
     - hosts:
         - jslab.su
         - www.jslab.su
+      secretName: cloudflare-origin-tls
+    - hosts:
         - jslab.cc
         - www.jslab.cc
-      secretName: cloudflare-origin-tls
+      secretName: jslab-cc-origin-tls
   rules:
     - host: jslab.su
       http:
@@ -75,9 +77,11 @@ spec:
     - hosts:
         - jslab.su
         - www.jslab.su
+      secretName: cloudflare-origin-tls
+    - hosts:
         - jslab.cc
         - www.jslab.cc
-      secretName: cloudflare-origin-tls
+      secretName: jslab-cc-origin-tls
   rules:
     - host: jslab.su
       http:
@@ -164,9 +168,11 @@ spec:
     - hosts:
         - jslab.su
         - www.jslab.su
+      secretName: cloudflare-origin-tls
+    - hosts:
         - jslab.cc
         - www.jslab.cc
-      secretName: cloudflare-origin-tls
+      secretName: jslab-cc-origin-tls
   rules:
     - host: jslab.su
       http:
