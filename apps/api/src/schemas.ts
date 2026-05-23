@@ -79,6 +79,10 @@ export const traceExecuteRequestSchema: z.ZodType<TraceExecuteRequest> = z.objec
   preferredType: z.enum(["string", "number"]).optional(),
 });
 
+export const traceExecuteEqualitySchema = z.object({
+  input: z.string().min(1),
+});
+
 export function normalizeFlags(engine: EngineKind, flags: string[], maxFlags: number): string[] {
   const allow = new Set(engineFlags[engine]);
   const seen = new Set<string>();
