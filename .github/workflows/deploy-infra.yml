@@ -30,7 +30,7 @@ jobs:
           echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
-          ssh-keyscan -H 103.106.2.32 >> ~/.ssh/known_hosts
+          ssh-keyscan -H 178.105.195.93 >> ~/.ssh/known_hosts
 
       - name: Test SSH
         run: |
@@ -38,7 +38,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
-            root@103.106.2.32 "echo ok"
+            root@178.105.195.93 "echo ok"
 
       - name: Deploy
         run: |
@@ -47,7 +47,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
-            root@103.106.2.32 <<'EOSSH'
+            root@178.105.195.93 <<'EOSSH'
           set -euo pipefail
 
           cd /root/js-engines
