@@ -62,7 +62,7 @@ export function ReadyToDebugSection() {
                 _hover={{ opacity: 0.92 }}
               >
                 <Link
-                  href="/abstract-functions-visualizer"
+                  href="/type-conversion"
                   style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem" }}
                 >
                   Launch Explorer

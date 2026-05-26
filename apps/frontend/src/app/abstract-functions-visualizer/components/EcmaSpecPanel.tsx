@@ -55,10 +55,12 @@ export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, spe
     let lastStepEl: Element | null = null;
 
     for (const [algoId, stepIds] of active.entries()) {
-      const clauseEl = container.querySelector(`#${algoId}`);
+      // CSS.escape so algoIds like `Number::equal` (containing `:`) work in selectors.
+      const escAlgo = CSS.escape(algoId);
+      const clauseEl = container.querySelector(`#${escAlgo}`);
       clauseEl?.classList.add(s.clauseActive);
       const stepId = stepIds[stepIds.length - 1];
-      const stepEl = container.querySelector(`#${algoId}-step-${stepId}`);
+      const stepEl = container.querySelector(`#${escAlgo}-step-${CSS.escape(stepId)}`);
       if (stepEl) {
         stepEl.classList.add(s.stepActive);
         if (algoId === currentAlgoId) lastStepEl = stepEl;

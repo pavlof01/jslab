@@ -4,6 +4,12 @@ import { flattenTrace, type FlatEntry } from "@/app/abstract-functions-visualize
 
 export type AlgoCategory = "typeConversion" | "equality";
 
+/** Each category has its own route. Single source of truth for nav + tabs. */
+export const CATEGORY_ROUTES: Record<AlgoCategory, string> = {
+  typeConversion: "/type-conversion",
+  equality: "/equality",
+};
+
 const DEFAULTS_BY_CATEGORY: Record<AlgoCategory, { algo: string; input: string }> = {
   typeConversion: { algo: "ToNumber", input: '{ valueOf: () => "1" }' },
   equality: { algo: "BinaryExpression", input: "[] == !{}" },

@@ -20,12 +20,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: "https://jslab.su/abstract-functions-visualizer",
+      url: "https://jslab.su/type-conversion",
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: "https://jslab.su/type-coercion",
+      url: "https://jslab.su/equality",
       changeFrequency: "weekly",
       priority: 0.8,
     },

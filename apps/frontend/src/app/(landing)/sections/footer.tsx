@@ -17,7 +17,8 @@ type FooterLink = { label: string; href: string; external?: boolean };
 
 const platformLinks: FooterLink[] = [
   { label: "Interactive Trace", href: "/playground" },
-  { label: "Spec Visualizer", href: "/abstract-functions-visualizer" },
+  { label: "Type Conversion", href: "/type-conversion" },
+  { label: "Equality Operators", href: "/equality" },
   { label: "Repository", href: REPO_URL, external: true },
   { label: "Infra Notes", href: `${REPO_URL}/blob/main/docs/infra.md`, external: true },
 ];
