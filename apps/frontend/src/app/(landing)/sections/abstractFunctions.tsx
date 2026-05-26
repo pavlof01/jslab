@@ -1,88 +1,12 @@
-"use client";
-
-import * as React from "react";
-import { Box, Container, Grid, Heading, Text, VStack } from "@chakra-ui/react";
-
-import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
-import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
-import { useVisualizerStore } from "@/app/abstract-functions-visualizer/store";
+import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react";
+import type { VisualizerInitialData } from "@/app/abstract-functions-visualizer/model";
+import { AbstractFunctionsDemo } from "./AbstractFunctionsDemo";
 
 const displayFont = "'Plus Jakarta Sans', Inter, var(--font-sans), sans-serif";
 const subtleBorder = "rgba(255,255,255,0.08)";
 const mutedText = "rgba(255,255,255,0.62)";
 
-function AbstractFunctionsDemo() {
-  const root = useVisualizerStore((s) => s.root);
-  const flatEntries = useVisualizerStore((s) => s.flatEntries);
-  const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
-  const isPlaying = useVisualizerStore((s) => s.isPlaying);
-  const category = useVisualizerStore((s) => s.category);
-  const selectedAlgo = useVisualizerStore((s) => s.selectedAlgo);
-  const detectedOperator = useVisualizerStore((s) => s.detectedOperator);
-  const effectiveAlgoId = useVisualizerStore((s) => s.effectiveAlgoId);
-  const traceInputRaw = useVisualizerStore((s) => s.traceInputRaw);
-  const traceInputExpression = useVisualizerStore((s) => s.traceInputExpression);
-  const setSelectedAlgo = useVisualizerStore((s) => s.setSelectedAlgo);
-  const setTraceInputRaw = useVisualizerStore((s) => s.setTraceInputRaw);
-  const commitTraceInput = useVisualizerStore((s) => s.commitTraceInput);
-  const onSelectIndex = useVisualizerStore((s) => s.onSelectIndex);
-  const tickPlayback = useVisualizerStore((s) => s.tickPlayback);
-  const runNow = useVisualizerStore((s) => s.runNow);
-  const specHtml = useVisualizerStore((s) => s.specHtml);
-  const setSpecHtml = useVisualizerStore((s) => s.setSpecHtml);
-  React.useEffect(() => {
-    fetch(`/api/spec/${selectedAlgo}`)
-      .then((r) => r.text())
-      .then(setSpecHtml)
-      .catch(() => {});
-  }, [selectedAlgo, setSpecHtml]);
-
-  React.useEffect(() => {
-    const t = window.setTimeout(() => runNow(), 150);
-    return () => window.clearTimeout(t);
-  }, [selectedAlgo, traceInputExpression, runNow]);
-
-  React.useEffect(() => {
-    if (!isPlaying || flatEntries.length <= 1) return;
-    const id = window.setInterval(tickPlayback, 650);
-    return () => window.clearInterval(id);
-  }, [isPlaying, flatEntries.length, tickPlayback]);
-
-  return (
-    <Box
-      h={{ base: "560px", md: "660px" }}
-      borderWidth="1px"
-      borderColor={subtleBorder}
-      borderRadius="2xl"
-      overflow="hidden"
-      bg="background.300"
-    >
-      <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
-        <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
-          <EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />
-        </Box>
-        <Box position="relative" minH={0} h="100%">
-          <ExecutionTreePanel
-            root={root}
-            flatEntries={flatEntries}
-            selectedIndex={selectedIndex}
-            category={category}
-            selectedAlgo={selectedAlgo}
-            detectedOperator={detectedOperator}
-            effectiveAlgoId={effectiveAlgoId}
-            onAlgoChange={setSelectedAlgo}
-            userInputRaw={traceInputRaw}
-            onSelectIndex={onSelectIndex}
-            onInputChange={setTraceInputRaw}
-            onInputCommit={commitTraceInput}
-          />
-        </Box>
-      </Grid>
-    </Box>
-  );
-}
-
-export function AbstractFunctionsSection() {
+export function AbstractFunctionsSection({ initialData }: { initialData?: VisualizerInitialData }) {
   return (
     <Box
       as="section"
@@ -136,7 +60,7 @@ export function AbstractFunctionsSection() {
             </Text>
           </VStack>
 
-          <AbstractFunctionsDemo />
+          <AbstractFunctionsDemo initialData={initialData} />
         </VStack>
       </Container>
     </Box>

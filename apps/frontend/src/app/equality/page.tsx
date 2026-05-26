@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AbstractFunctionsVisualizer } from "@/app/abstract-functions-visualizer/components/AbstractFunctionsVisualizer";
+import { getVisualizerInitialData } from "@/app/abstract-functions-visualizer/server-data";
 
 export const metadata: Metadata = {
   title: "Equality Operators Visualizer",
@@ -11,6 +12,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function EqualityPage() {
-  return <AbstractFunctionsVisualizer initialCategory="equality" />;
+export const dynamic = "force-dynamic";
+
+export default async function EqualityPage() {
+  const initialData = await getVisualizerInitialData("equality");
+
+  return <AbstractFunctionsVisualizer initialCategory="equality" initialData={initialData} />;
 }

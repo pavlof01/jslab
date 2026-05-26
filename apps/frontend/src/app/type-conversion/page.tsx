@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AbstractFunctionsVisualizer } from "@/app/abstract-functions-visualizer/components/AbstractFunctionsVisualizer";
+import { getVisualizerInitialData } from "@/app/abstract-functions-visualizer/server-data";
 
 export const metadata: Metadata = {
   title: "Type Conversion Visualizer",
@@ -11,6 +12,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TypeConversionPage() {
-  return <AbstractFunctionsVisualizer initialCategory="typeConversion" />;
+export const dynamic = "force-dynamic";
+
+export default async function TypeConversionPage() {
+  const initialData = await getVisualizerInitialData("typeConversion");
+
+  return <AbstractFunctionsVisualizer initialCategory="typeConversion" initialData={initialData} />;
 }
