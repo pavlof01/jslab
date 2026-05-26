@@ -22,8 +22,7 @@ export const CategoryTabs: React.FC<Props> = ({ category }) => {
         return (
           <Box
             key={tab.id}
-            as={Link}
-            href={CATEGORY_ROUTES[tab.id]}
+            asChild
             px="14px"
             py="8px"
             cursor="pointer"
@@ -33,15 +32,17 @@ export const CategoryTabs: React.FC<Props> = ({ category }) => {
             borderColor={active ? "#f9e31a" : "transparent"}
             _hover={{ bg: active ? "transparent" : "rgba(255,255,255,0.04)" }}
           >
-            <Text
-              fontSize="11px"
-              fontWeight={active ? "bold" : "medium"}
-              letterSpacing="0.04em"
-              color={active ? "#f9e31a" : "rgba(148,163,184,0.8)"}
-              textTransform="uppercase"
-            >
-              {tab.label}
-            </Text>
+            <Link href={CATEGORY_ROUTES[tab.id]}>
+              <Text
+                fontSize="11px"
+                fontWeight={active ? "bold" : "medium"}
+                letterSpacing="0.04em"
+                color={active ? "#f9e31a" : "rgba(148,163,184,0.8)"}
+                textTransform="uppercase"
+              >
+                {tab.label}
+              </Text>
+            </Link>
           </Box>
         );
       })}
