@@ -214,7 +214,9 @@ async function getClauseById(): Promise<Map<string, string>> {
   });
 
   const map = new Map<string, string>();
-  for (const el of Array.from(spec.doc.querySelectorAll("emu-clause"))) {
+  // ecmarkup's Spec.d.ts omits the public `doc` field (set at runtime to dom.window.document).
+  const doc = (spec as unknown as { doc: Document }).doc;
+  for (const el of Array.from(doc.querySelectorAll("emu-clause"))) {
     const id = (el as Element).getAttribute("id");
     if (!id) continue;
 
