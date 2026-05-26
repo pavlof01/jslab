@@ -37,6 +37,26 @@ export const ALGO_SPEC_URL: Record<string, string> = {
   AbstractRelationalComparison: "https://262.ecma-international.org/#sec-abstract-relational-comparison",
   SameType: "https://262.ecma-international.org/#sec-sametype",
   SameValueNonNumber: "https://262.ecma-international.org/#sec-samevaluenonnumber",
+  "Number::equal": "https://262.ecma-international.org/#sec-numeric-types-number-equal",
+  "Number::lessThan": "https://262.ecma-international.org/#sec-numeric-types-number-lessThan",
+  "Number::sameValue": "https://262.ecma-international.org/#sec-numeric-types-number-sameValue",
+  "Number::sameValueZero": "https://262.ecma-international.org/#sec-numeric-types-number-sameValueZero",
+  "Number::unaryMinus": "https://262.ecma-international.org/#sec-numeric-types-number-unaryMinus",
+  "Number::bitwiseNOT": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseNOT",
+  "Number::exponentiate": "https://262.ecma-international.org/#sec-numeric-types-number-exponentiate",
+  "Number::multiply": "https://262.ecma-international.org/#sec-numeric-types-number-multiply",
+  "Number::divide": "https://262.ecma-international.org/#sec-numeric-types-number-divide",
+  "Number::remainder": "https://262.ecma-international.org/#sec-numeric-types-number-remainder",
+  "Number::add": "https://262.ecma-international.org/#sec-numeric-types-number-add",
+  "Number::subtract": "https://262.ecma-international.org/#sec-numeric-types-number-subtract",
+  "Number::leftShift": "https://262.ecma-international.org/#sec-numeric-types-number-leftShift",
+  "Number::signedRightShift": "https://262.ecma-international.org/#sec-numeric-types-number-signedRightShift",
+  "Number::unsignedRightShift": "https://262.ecma-international.org/#sec-numeric-types-number-unsignedRightShift",
+  "Number::bitwiseAND": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseAND",
+  "Number::bitwiseXOR": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseXOR",
+  "Number::bitwiseOR": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseOR",
+  NumberBitwiseOp: "https://262.ecma-international.org/#sec-numberbitwiseop",
+  "Number::toString": "https://262.ecma-international.org/#sec-numeric-types-number-tostring",
 };
 
 // ── External-link SVG icon (inline, 11×11) ────────────────────────────────────
@@ -65,7 +85,7 @@ const FUNCTION_ALGOS: Record<string, string[]> = {
     "Get",
     "Call",
   ],
-  ToString: ["ToString", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
+  ToString: ["ToString", "Number::toString", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
   ToBoolean: ["ToBoolean"],
   ToNumeric: [
     "ToNumeric",
@@ -90,6 +110,7 @@ const FUNCTION_ALGOS: Record<string, string[]> = {
     "Get",
     "Call",
     "ToString",
+    "Number::toString",
   ],
   ToLength: [
     "ToLength",
@@ -117,6 +138,7 @@ const FUNCTION_ALGOS: Record<string, string[]> = {
     "IsLooselyEqual",
     "IsStrictlyEqual",
     "SameValueNonNumber",
+    "Number::equal",
     "ToNumber",
     "ToPrimitive",
     "OrdinaryToPrimitive",
@@ -126,9 +148,10 @@ const FUNCTION_ALGOS: Record<string, string[]> = {
     "Get",
     "Call",
   ],
-  IsStrictlyEqual: ["IsStrictlyEqual", "SameValueNonNumber"],
+  IsStrictlyEqual: ["IsStrictlyEqual", "SameValueNonNumber", "Number::equal"],
   AbstractRelationalComparison: [
     "AbstractRelationalComparison",
+    "Number::lessThan",
     "ToPrimitive",
     "OrdinaryToPrimitive",
     "GetMethod",
@@ -144,6 +167,22 @@ const FUNCTION_ALGOS: Record<string, string[]> = {
     "IsStrictlyEqual",
     "AbstractRelationalComparison",
     "SameValueNonNumber",
+    "Number::equal",
+    "Number::lessThan",
+    "Number::add",
+    "Number::subtract",
+    "Number::multiply",
+    "Number::divide",
+    "Number::remainder",
+    "Number::exponentiate",
+    "Number::leftShift",
+    "Number::signedRightShift",
+    "Number::unsignedRightShift",
+    "Number::bitwiseAND",
+    "Number::bitwiseXOR",
+    "Number::bitwiseOR",
+    "NumberBitwiseOp",
+    "Number::toString",
     "ToPrimitive",
     "OrdinaryToPrimitive",
     "GetMethod",
@@ -153,15 +192,18 @@ const FUNCTION_ALGOS: Record<string, string[]> = {
     "Call",
     "ToNumeric",
     "ToNumber",
+    "ToString",
   ],
 };
 
 // ── Clause cache: id → rendered outerHTML ────────────────────────────────────
 
+const IS_DEV = process.env.NODE_ENV !== "production";
+
 let _clauseById: Map<string, string> | null = null;
 
 async function getClauseById(): Promise<Map<string, string>> {
-  if (_clauseById) return _clauseById;
+  if (_clauseById && !IS_DEV) return _clauseById;
 
   const source = await readFile(SPEC_FILE, "utf-8");
 
@@ -204,7 +246,7 @@ export async function buildSpecHtmlForFunction(functionName: string): Promise<st
   const algoIds = FUNCTION_ALGOS[functionName];
   if (!algoIds) return null;
 
-  if (_cache.has(functionName)) return _cache.get(functionName)!;
+  if (!IS_DEV && _cache.has(functionName)) return _cache.get(functionName)!;
 
   const clauses = await getClauseById();
   const html = algoIds
@@ -212,7 +254,7 @@ export async function buildSpecHtmlForFunction(functionName: string): Promise<st
     .filter(Boolean)
     .join("\n");
 
-  _cache.set(functionName, html);
+  if (!IS_DEV) _cache.set(functionName, html);
   return html || null;
 }
 

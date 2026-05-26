@@ -29,9 +29,14 @@ const navSections: NavSection[] = [
     label: "ECMA Spec",
     items: [
       {
-        label: "Abstract Functions",
-        description: "Trace ECMAScript abstract operations step by step.",
-        href: "/abstract-functions-visualizer",
+        label: "Type Conversion",
+        description: "Trace ECMAScript type-conversion operations step by step.",
+        href: "/type-conversion",
+      },
+      {
+        label: "Equality Operators",
+        description: "Trace abstract & strict equality comparisons step by step.",
+        href: "/equality",
       },
       {
         label: "ECMA-262",

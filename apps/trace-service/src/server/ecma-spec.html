@@ -413,5 +413,408 @@
   </emu-alg>
 </emu-clause>
 
+<emu-clause id="Number::equal" type="abstract operation">
+  <h1>
+    Number::equal (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Strict equality comparison for two Number values.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::equal-step-1"] If _x_ is *NaN*, return *false*.
+    1. [id="Number::equal-step-2"] If _y_ is *NaN*, return *false*.
+    1. [id="Number::equal-step-3"] If _x_ is the same Number value as _y_, return *true*.
+    1. [id="Number::equal-step-4"] If _x_ is *+0*<sub>𝔽</sub> and _y_ is *-0*<sub>𝔽</sub>, return *true*.
+    1. [id="Number::equal-step-5"] If _x_ is *-0*<sub>𝔽</sub> and _y_ is *+0*<sub>𝔽</sub>, return *true*.
+    1. [id="Number::equal-step-6"] Return *false*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::lessThan" type="abstract operation">
+  <h1>
+    Number::lessThan (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Less-than comparison for two Number values.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::lessThan-step-1"] If _x_ is *NaN*, return *undefined*.
+    1. [id="Number::lessThan-step-2"] If _y_ is *NaN*, return *undefined*.
+    1. [id="Number::lessThan-step-3"] If _x_ is the same Number value as _y_, return *false*.
+    1. [id="Number::lessThan-step-4"] If _x_ is *+0*<sub>𝔽</sub> and _y_ is *-0*<sub>𝔽</sub>, return *false*.
+    1. [id="Number::lessThan-step-5"] If _x_ is *-0*<sub>𝔽</sub> and _y_ is *+0*<sub>𝔽</sub>, return *false*.
+    1. [id="Number::lessThan-step-6"] If _x_ is *+∞*<sub>𝔽</sub>, return *false*.
+    1. [id="Number::lessThan-step-7"] If _y_ is *+∞*<sub>𝔽</sub>, return *true*.
+    1. [id="Number::lessThan-step-8"] If _y_ is *-∞*<sub>𝔽</sub>, return *false*.
+    1. [id="Number::lessThan-step-9"] If _x_ is *-∞*<sub>𝔽</sub>, return *true*.
+    1. [id="Number::lessThan-step-10"] If ℝ(_x_) < ℝ(_y_), return *true*. Otherwise, return *false*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::sameValue" type="abstract operation">
+  <h1>
+    Number::sameValue (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>SameValue comparison for two Number values (treats *NaN* as equal, +0 and -0 as distinct).</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::sameValue-step-1"] If _x_ is *NaN* and _y_ is *NaN*, return *true*.
+    1. [id="Number::sameValue-step-2"] If _x_ is *+0*<sub>𝔽</sub> and _y_ is *-0*<sub>𝔽</sub>, return *false*.
+    1. [id="Number::sameValue-step-3"] If _x_ is *-0*<sub>𝔽</sub> and _y_ is *+0*<sub>𝔽</sub>, return *false*.
+    1. [id="Number::sameValue-step-4"] If _x_ is the same Number value as _y_, return *true*.
+    1. [id="Number::sameValue-step-5"] Return *false*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::sameValueZero" type="abstract operation">
+  <h1>
+    Number::sameValueZero (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>SameValueZero comparison for two Number values (treats *NaN* as equal, +0 and -0 as equal).</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::sameValueZero-step-1"] If _x_ is *NaN* and _y_ is *NaN*, return *true*.
+    1. [id="Number::sameValueZero-step-2"] If _x_ is *+0*<sub>𝔽</sub> and _y_ is *-0*<sub>𝔽</sub>, return *true*.
+    1. [id="Number::sameValueZero-step-3"] If _x_ is *-0*<sub>𝔽</sub> and _y_ is *+0*<sub>𝔽</sub>, return *true*.
+    1. [id="Number::sameValueZero-step-4"] If _x_ is the same Number value as _y_, return *true*.
+    1. [id="Number::sameValueZero-step-5"] Return *false*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::unaryMinus" type="abstract operation">
+  <h1>
+    Number::unaryMinus (
+      _x_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Unary minus on a Number value.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::unaryMinus-step-1"] If _x_ is *NaN*, return *NaN*.
+    1. [id="Number::unaryMinus-step-2"] Return the result of negating _x_; that is, compute a Number with the same magnitude but opposite sign.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::bitwiseNOT" type="abstract operation">
+  <h1>
+    Number::bitwiseNOT (
+      _x_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Bitwise NOT of a Number value.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::bitwiseNOT-step-1"] Let _oldValue_ be ! ToInt32(_x_).
+    1. [id="Number::bitwiseNOT-step-2"] Return the result of performing a bitwise complement of _oldValue_. The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::exponentiate" type="abstract operation">
+  <h1>
+    Number::exponentiate (
+      _base_: a Number,
+      _exponent_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns an implementation-approximated Number value representing the result of raising _base_ to the _exponent_ power.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::exponentiate-step-1"] If _exponent_ is *NaN*, return *NaN*.
+    1. [id="Number::exponentiate-step-2"] If _exponent_ is *+0*<sub>𝔽</sub> or _exponent_ is *-0*<sub>𝔽</sub>, return *1*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-3"] If _base_ is *NaN*, return *NaN*.
+    1. [id="Number::exponentiate-step-4"] If _base_ is *+∞*<sub>𝔽</sub>, then
+      1. [id="Number::exponentiate-step-4a"] If _exponent_ > *+0*<sub>𝔽</sub>, return *+∞*<sub>𝔽</sub>. Otherwise, return *+0*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-5"] If _base_ is *-∞*<sub>𝔽</sub>, then
+      1. [id="Number::exponentiate-step-5a"] If _exponent_ > *+0*<sub>𝔽</sub>, then if _exponent_ is an odd integral Number, return *-∞*<sub>𝔽</sub>; otherwise return *+∞*<sub>𝔽</sub>.
+      1. [id="Number::exponentiate-step-5b"] Else, if _exponent_ is an odd integral Number, return *-0*<sub>𝔽</sub>; otherwise return *+0*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-6"] If _base_ is *+0*<sub>𝔽</sub>, then
+      1. [id="Number::exponentiate-step-6a"] If _exponent_ > *+0*<sub>𝔽</sub>, return *+0*<sub>𝔽</sub>. Otherwise, return *+∞*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-7"] If _base_ is *-0*<sub>𝔽</sub>, then
+      1. [id="Number::exponentiate-step-7a"] If _exponent_ > *+0*<sub>𝔽</sub>, then if _exponent_ is an odd integral Number, return *-0*<sub>𝔽</sub>; otherwise return *+0*<sub>𝔽</sub>.
+      1. [id="Number::exponentiate-step-7b"] Else, if _exponent_ is an odd integral Number, return *-∞*<sub>𝔽</sub>; otherwise return *+∞*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-8"] Assert: _base_ is finite and is neither *+0*<sub>𝔽</sub> nor *-0*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-9"] If _exponent_ is *+∞*<sub>𝔽</sub>, then
+      1. [id="Number::exponentiate-step-9a"] If abs(ℝ(_base_)) > 1, return *+∞*<sub>𝔽</sub>.
+      1. [id="Number::exponentiate-step-9b"] If abs(ℝ(_base_)) = 1, return *NaN*.
+      1. [id="Number::exponentiate-step-9c"] If abs(ℝ(_base_)) < 1, return *+0*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-10"] If _exponent_ is *-∞*<sub>𝔽</sub>, then
+      1. [id="Number::exponentiate-step-10a"] If abs(ℝ(_base_)) > 1, return *+0*<sub>𝔽</sub>.
+      1. [id="Number::exponentiate-step-10b"] If abs(ℝ(_base_)) = 1, return *NaN*.
+      1. [id="Number::exponentiate-step-10c"] If abs(ℝ(_base_)) < 1, return *+∞*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-11"] Assert: _exponent_ is finite and is neither *+0*<sub>𝔽</sub> nor *-0*<sub>𝔽</sub>.
+    1. [id="Number::exponentiate-step-12"] If _base_ < *-0*<sub>𝔽</sub> and _exponent_ is not an integral Number, return *NaN*.
+    1. [id="Number::exponentiate-step-13"] Return an implementation-approximated Number value representing the result of raising ℝ(_base_) to the ℝ(_exponent_) power.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::multiply" type="abstract operation">
+  <h1>
+    Number::multiply (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the Number value that represents the result of multiplying _x_ and _y_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::multiply-step-1"] If _x_ is *NaN* or _y_ is *NaN*, return *NaN*.
+    1. [id="Number::multiply-step-2"] If _x_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, then
+      1. [id="Number::multiply-step-2a"] If _y_ is *+0*<sub>𝔽</sub> or _y_ is *-0*<sub>𝔽</sub>, return *NaN*.
+      1. [id="Number::multiply-step-2b"] If _y_ > *+0*<sub>𝔽</sub>, return _x_.
+      1. [id="Number::multiply-step-2c"] Return -_x_.
+    1. [id="Number::multiply-step-3"] If _y_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, then
+      1. [id="Number::multiply-step-3a"] If _x_ is *+0*<sub>𝔽</sub> or _x_ is *-0*<sub>𝔽</sub>, return *NaN*.
+      1. [id="Number::multiply-step-3b"] If _x_ > *+0*<sub>𝔽</sub>, return _y_.
+      1. [id="Number::multiply-step-3c"] Return -_y_.
+    1. [id="Number::multiply-step-4"] Return 𝔽(ℝ(_x_) × ℝ(_y_)).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::divide" type="abstract operation">
+  <h1>
+    Number::divide (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the Number value that represents the result of dividing _x_ by _y_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::divide-step-1"] If _x_ is *NaN* or _y_ is *NaN*, return *NaN*.
+    1. [id="Number::divide-step-2"] If _x_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, then
+      1. [id="Number::divide-step-2a"] If _y_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return *NaN*.
+      1. [id="Number::divide-step-2b"] If _y_ is *+0*<sub>𝔽</sub> or _y_ > *+0*<sub>𝔽</sub>, return _x_.
+      1. [id="Number::divide-step-2c"] Return -_x_.
+    1. [id="Number::divide-step-3"] If _y_ is *+∞*<sub>𝔽</sub>, then
+      1. [id="Number::divide-step-3a"] If _x_ is *+0*<sub>𝔽</sub> or _x_ > *+0*<sub>𝔽</sub>, return *+0*<sub>𝔽</sub>. Otherwise, return *-0*<sub>𝔽</sub>.
+    1. [id="Number::divide-step-4"] If _y_ is *-∞*<sub>𝔽</sub>, then
+      1. [id="Number::divide-step-4a"] If _x_ is *+0*<sub>𝔽</sub> or _x_ > *+0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>. Otherwise, return *+0*<sub>𝔽</sub>.
+    1. [id="Number::divide-step-5"] If _x_ is *+0*<sub>𝔽</sub> or _x_ is *-0*<sub>𝔽</sub>, then
+      1. [id="Number::divide-step-5a"] If _y_ is *+0*<sub>𝔽</sub> or _y_ is *-0*<sub>𝔽</sub>, return *NaN*.
+      1. [id="Number::divide-step-5b"] If _y_ > *+0*<sub>𝔽</sub>, return _x_.
+      1. [id="Number::divide-step-5c"] Return -_x_.
+    1. [id="Number::divide-step-6"] If _y_ is *+0*<sub>𝔽</sub>, then
+      1. [id="Number::divide-step-6a"] If _x_ > *+0*<sub>𝔽</sub>, return *+∞*<sub>𝔽</sub>. Otherwise, return *-∞*<sub>𝔽</sub>.
+    1. [id="Number::divide-step-7"] If _y_ is *-0*<sub>𝔽</sub>, then
+      1. [id="Number::divide-step-7a"] If _x_ > *+0*<sub>𝔽</sub>, return *-∞*<sub>𝔽</sub>. Otherwise, return *+∞*<sub>𝔽</sub>.
+    1. [id="Number::divide-step-8"] Return 𝔽(ℝ(_x_) / ℝ(_y_)).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::remainder" type="abstract operation">
+  <h1>
+    Number::remainder (
+      _n_: a Number,
+      _d_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the Number value that represents the IEEE 754 remainder of _n_ divided by _d_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::remainder-step-1"] If _n_ is *NaN* or _d_ is *NaN*, return *NaN*.
+    1. [id="Number::remainder-step-2"] If _n_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return *NaN*.
+    1. [id="Number::remainder-step-3"] If _d_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return _n_.
+    1. [id="Number::remainder-step-4"] If _d_ is *+0*<sub>𝔽</sub> or _d_ is *-0*<sub>𝔽</sub>, return *NaN*.
+    1. [id="Number::remainder-step-5"] If _n_ is *+0*<sub>𝔽</sub> or _n_ is *-0*<sub>𝔽</sub>, return _n_.
+    1. [id="Number::remainder-step-6"] Assert: _n_ and _d_ are finite and nonzero.
+    1. [id="Number::remainder-step-7"] Let _q_ be ℝ(_n_) / ℝ(_d_).
+    1. [id="Number::remainder-step-8"] Let _r_ be ℝ(_n_) - (ℝ(_d_) × Q), where Q is an integer that is negative only if _q_ is negative and positive only if _q_ is positive, and whose magnitude is as large as possible without exceeding the magnitude of _q_.
+    1. [id="Number::remainder-step-9"] Return 𝔽(_r_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::add" type="abstract operation">
+  <h1>
+    Number::add (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the Number value that represents the sum of _x_ and _y_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::add-step-1"] If _x_ is *NaN* or _y_ is *NaN*, return *NaN*.
+    1. [id="Number::add-step-2"] If _x_ is *+∞*<sub>𝔽</sub> and _y_ is *-∞*<sub>𝔽</sub>, return *NaN*.
+    1. [id="Number::add-step-3"] If _x_ is *-∞*<sub>𝔽</sub> and _y_ is *+∞*<sub>𝔽</sub>, return *NaN*.
+    1. [id="Number::add-step-4"] If _x_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return _x_.
+    1. [id="Number::add-step-5"] If _y_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return _y_.
+    1. [id="Number::add-step-6"] Assert: _x_ and _y_ are both finite.
+    1. [id="Number::add-step-7"] If _x_ is *-0*<sub>𝔽</sub> and _y_ is *-0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+    1. [id="Number::add-step-8"] Return 𝔽(ℝ(_x_) + ℝ(_y_)).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::subtract" type="abstract operation">
+  <h1>
+    Number::subtract (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the Number value that represents _x_ minus _y_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::subtract-step-1"] Return Number::add(_x_, Number::unaryMinus(_y_)).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::leftShift" type="abstract operation">
+  <h1>
+    Number::leftShift (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Performs a bitwise left shift on _x_ by _y_ positions.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::leftShift-step-1"] Let _lnum_ be ! ToInt32(_x_).
+    1. [id="Number::leftShift-step-2"] Let _rnum_ be ! ToUint32(_y_).
+    1. [id="Number::leftShift-step-3"] Let _shiftCount_ be ℝ(_rnum_) modulo 32.
+    1. [id="Number::leftShift-step-4"] Return the result of left shifting _lnum_ by _shiftCount_ bits. The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::signedRightShift" type="abstract operation">
+  <h1>
+    Number::signedRightShift (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Performs a sign-extending right shift on _x_ by _y_ positions.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::signedRightShift-step-1"] Let _lnum_ be ! ToInt32(_x_).
+    1. [id="Number::signedRightShift-step-2"] Let _rnum_ be ! ToUint32(_y_).
+    1. [id="Number::signedRightShift-step-3"] Let _shiftCount_ be ℝ(_rnum_) modulo 32.
+    1. [id="Number::signedRightShift-step-4"] Return the result of performing a sign-extending right shift of _lnum_ by _shiftCount_ bits. The most significant bit is propagated. The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::unsignedRightShift" type="abstract operation">
+  <h1>
+    Number::unsignedRightShift (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Performs a zero-filling right shift on _x_ by _y_ positions.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::unsignedRightShift-step-1"] Let _lnum_ be ! ToUint32(_x_).
+    1. [id="Number::unsignedRightShift-step-2"] Let _rnum_ be ! ToUint32(_y_).
+    1. [id="Number::unsignedRightShift-step-3"] Let _shiftCount_ be ℝ(_rnum_) modulo 32.
+    1. [id="Number::unsignedRightShift-step-4"] Return the result of performing a zero-filling right shift of _lnum_ by _shiftCount_ bits. Vacated bits are filled with zero. The mathematical value of the result is exactly representable as a 32-bit unsigned bit string.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::bitwiseAND" type="abstract operation">
+  <h1>
+    Number::bitwiseAND (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the result of NumberBitwiseOp(&amp;, _x_, _y_).</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::bitwiseAND-step-1"] Return NumberBitwiseOp(&amp;, _x_, _y_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::bitwiseXOR" type="abstract operation">
+  <h1>
+    Number::bitwiseXOR (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the result of NumberBitwiseOp(^, _x_, _y_).</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::bitwiseXOR-step-1"] Return NumberBitwiseOp(^, _x_, _y_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::bitwiseOR" type="abstract operation">
+  <h1>
+    Number::bitwiseOR (
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the result of NumberBitwiseOp(|, _x_, _y_).</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::bitwiseOR-step-1"] Return NumberBitwiseOp(|, _x_, _y_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="NumberBitwiseOp" type="abstract operation">
+  <h1>
+    NumberBitwiseOp (
+      _op_: &amp;, ^, or |,
+      _x_: a Number,
+      _y_: a Number,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Performs the indicated bitwise operation on _x_ and _y_ after converting them to Int32 values.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="NumberBitwiseOp-step-1"] Let _lnum_ be ! ToInt32(_x_).
+    1. [id="NumberBitwiseOp-step-2"] Let _rnum_ be ! ToInt32(_y_).
+    1. [id="NumberBitwiseOp-step-3"] Return the result of applying the bitwise operator _op_ to _lnum_ and _rnum_. The result is a signed 32-bit integer.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="Number::toString" type="abstract operation">
+  <h1>
+    Number::toString (
+      _x_: a Number,
+      _radix_: an integer in the inclusive interval from 2 to 36,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the String representation of _x_ in the given _radix_.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="Number::toString-step-1"] If _x_ is *NaN*, return *"NaN"*.
+    1. [id="Number::toString-step-2"] If _x_ is *+0*<sub>𝔽</sub> or _x_ is *-0*<sub>𝔽</sub>, return *"0"*.
+    1. [id="Number::toString-step-3"] If _x_ < *-0*<sub>𝔽</sub>, return the string-concatenation of *"-"* and Number::toString(-_x_, _radix_).
+    1. [id="Number::toString-step-4"] If _x_ is *+∞*<sub>𝔽</sub>, return *"Infinity"*.
+    1. [id="Number::toString-step-5"] Otherwise, return an implementation-defined String representation of ℝ(_x_) in radix _radix_, as described in the ECMAScript specification.
+  </emu-alg>
+</emu-clause>
+
 </body>
 </html>

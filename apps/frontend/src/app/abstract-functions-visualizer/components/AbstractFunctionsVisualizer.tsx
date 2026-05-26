@@ -16,9 +16,13 @@ import { LuBookOpen, LuX } from "react-icons/lu";
 
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
-import { useVisualizerStore } from "@/app/abstract-functions-visualizer/store";
+import { useVisualizerStore, type AlgoCategory } from "@/app/abstract-functions-visualizer/store";
 
-export function AbstractFunctionsVisualizer() {
+export function AbstractFunctionsVisualizer({
+  initialCategory = "typeConversion",
+}: {
+  initialCategory?: AlgoCategory;
+}) {
   const root = useVisualizerStore((s) => s.root);
   const flatEntries = useVisualizerStore((s) => s.flatEntries);
   const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
@@ -40,6 +44,14 @@ export function AbstractFunctionsVisualizer() {
   const onSelectIndex = useVisualizerStore((s) => s.onSelectIndex);
   const tickPlayback = useVisualizerStore((s) => s.tickPlayback);
   const runNow = useVisualizerStore((s) => s.runNow);
+
+  // Sync the active tab to the requested category
+  useEffect(() => {
+    if (useVisualizerStore.getState().category !== initialCategory) {
+      setCategory(initialCategory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch spec HTML when selected algo changes
   useEffect(() => {
@@ -115,7 +127,6 @@ export function AbstractFunctionsVisualizer() {
               flatEntries={flatEntries}
               selectedIndex={selectedIndex}
               category={category}
-              onCategoryChange={setCategory}
               selectedAlgo={selectedAlgo}
               detectedOperator={detectedOperator}
               effectiveAlgoId={effectiveAlgoId}

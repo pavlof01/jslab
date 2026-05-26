@@ -17,7 +17,6 @@ type Props = {
   flatEntries: FlatEntry[];
   selectedIndex: number;
   category: AlgoCategory;
-  onCategoryChange?: (c: AlgoCategory) => void;
   selectedAlgo: string;
   detectedOperator: string | null;
   effectiveAlgoId: string | null;
@@ -33,7 +32,6 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   flatEntries,
   selectedIndex,
   category,
-  onCategoryChange,
   selectedAlgo,
   detectedOperator,
   effectiveAlgoId,
@@ -72,7 +70,7 @@ export const ExecutionTreePanel: React.FC<Props> = ({
 
       <Box ref={scrollRef} flex="1" h="full" overflow="auto" pt={28} pb={32} px={{ base: 3, md: 6 }}>
         <VStack align="stretch" gap={0}>
-          <CategoryTabs category={category} onChange={onCategoryChange} />
+          <CategoryTabs category={category} />
           <EntryPointSection
             category={category}
             onAlgoChange={onAlgoChange}
