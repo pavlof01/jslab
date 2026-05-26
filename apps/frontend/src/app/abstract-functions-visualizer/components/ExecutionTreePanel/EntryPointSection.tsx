@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { HStack, Input, NativeSelect, Text, VStack, For, Tag, Button, Box } from "@chakra-ui/react";
-import type { AlgoCategory } from "@/app/abstract-functions-visualizer/store";
+import type { AlgoCategory, FunctionMetaShape } from "@/app/abstract-functions-visualizer/model";
 
 const UNARY_PRESETS = [
   "42",
@@ -83,8 +83,6 @@ function clientDetectOperator(input: string): string | null {
   return null;
 }
 
-type FunctionMetaShape = { category: AlgoCategory; arity: "unary" | "binary"; operator?: string };
-
 type Props = {
   category: AlgoCategory;
   selectedAlgo: string;
@@ -94,6 +92,8 @@ type Props = {
   userInputRaw: string;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
+  functionOptions?: string[];
+  functionMeta?: Record<string, FunctionMetaShape>;
 };
 
 const EntryPointSection: React.FC<Props> = ({
@@ -105,28 +105,21 @@ const EntryPointSection: React.FC<Props> = ({
   userInputRaw,
   onInputChange,
   onInputCommit,
+  functionOptions,
+  functionMeta,
 }) => {
   const interactive = !!onInputChange;
-  const [algoOptions, setAlgoOptions] = React.useState<string[]>([]);
-  const [functionMeta, setFunctionMeta] = React.useState<Record<string, FunctionMetaShape>>({});
-
-  useEffect(() => {
-    fetch("/api/trace/functions")
-      .then((r) => r.json())
-      .then((data: { available_functions?: string[]; function_meta?: Record<string, FunctionMetaShape> }) => {
-        if (Array.isArray(data.available_functions)) setAlgoOptions(data.available_functions);
-        if (data.function_meta) setFunctionMeta(data.function_meta);
-      })
-      .catch(() => {});
-  }, []);
+  // Catalog is owned by the store (SSR-seeded, client fallback in useVisualizerRuntime); read it straight from props.
+  const algoOptions = functionOptions ?? [];
+  const meta = functionMeta ?? {};
 
   const filteredOptions = algoOptions.filter((name) => {
-    const meta = functionMeta[name];
-    if (!meta) return category === "typeConversion";
-    return meta.category === category;
+    const m = meta[name];
+    if (!m) return category === "typeConversion";
+    return m.category === category;
   });
 
-  const currentMeta = functionMeta[selectedAlgo];
+  const currentMeta = meta[selectedAlgo];
   const isBinary = currentMeta?.arity === "binary" || category === "equality";
   const presets = isBinary ? PRESETS_BY_ALGO[selectedAlgo] ?? PRESETS_BY_ALGO.BinaryExpression : UNARY_PRESETS;
   const placeholder = isBinary ? "e.g. {} == ![]   |   1 !== 1n   |   '10' < '9'" : '42, "hello", {}';

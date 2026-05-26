@@ -5,7 +5,7 @@ import { Box, VStack } from "@chakra-ui/react";
 
 import type { CallStackFrame, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import type { FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
-import type { AlgoCategory } from "@/app/abstract-functions-visualizer/store";
+import type { AlgoCategory, FunctionMetaShape } from "@/app/abstract-functions-visualizer/model";
 import EntryPointSection from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/EntryPointSection";
 import { CategoryTabs } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/CategoryTabs";
 import { ExecutionTreeHeader } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel/ExecutionTreeHeader";
@@ -25,6 +25,8 @@ type Props = {
   onSelectIndex?: (index: number) => void;
   onInputChange?: (val: string) => void;
   onInputCommit?: (val: string) => void;
+  functionOptions?: string[];
+  functionMeta?: Record<string, FunctionMetaShape>;
 };
 
 export const ExecutionTreePanel: React.FC<Props> = ({
@@ -40,6 +42,8 @@ export const ExecutionTreePanel: React.FC<Props> = ({
   onSelectIndex,
   onInputChange,
   onInputCommit,
+  functionOptions,
+  functionMeta,
 }) => {
   const currentEntry = flatEntries[selectedIndex];
   const currentCallStack: CallStackFrame[] = currentEntry?.callStack ?? [];
@@ -80,6 +84,8 @@ export const ExecutionTreePanel: React.FC<Props> = ({
             userInputRaw={userInputRaw}
             onInputChange={onInputChange}
             onInputCommit={onInputCommit}
+            functionOptions={functionOptions}
+            functionMeta={functionMeta}
           />
 
           {root && (

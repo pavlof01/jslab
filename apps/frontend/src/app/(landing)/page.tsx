@@ -5,10 +5,13 @@ import { BytecodeSection } from "./sections/bytecode";
 import { AbstractFunctionsSection } from "./sections/abstractFunctions";
 import { ReadyToDebugSection } from "./sections/readyToDebug";
 import { FooterSection } from "./sections/footer";
+import { getVisualizerInitialData } from "@/app/abstract-functions-visualizer/server-data";
 
 const bodyFont = "Inter, var(--font-sans), sans-serif";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const abstractFunctionsInitialData = await getVisualizerInitialData("typeConversion");
+
   return (
     <Box as="main" bg="brand.800" color="white" fontFamily={bodyFont} overflow="hidden" position="relative">
       <Box aria-hidden="true" inset={0} pointerEvents="none" position="absolute">
@@ -37,7 +40,7 @@ export default function LandingPage() {
       <HeroSection />
       <MethodologySection />
       <BytecodeSection />
-      <AbstractFunctionsSection />
+      <AbstractFunctionsSection initialData={abstractFunctionsInitialData} />
       <ReadyToDebugSection />
       <FooterSection />
     </Box>

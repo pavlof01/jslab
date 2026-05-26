@@ -1,19 +1,18 @@
 import { create } from "zustand";
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import { flattenTrace, type FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
+import {
+  CATEGORY_ROUTES,
+  DEFAULTS_BY_CATEGORY,
+  EMPTY_FUNCTION_CATALOG,
+  type AlgoCategory,
+  type FunctionCatalog,
+  type FunctionMetaShape,
+  type VisualizerInitialData,
+} from "./model";
 
-export type AlgoCategory = "typeConversion" | "equality";
-
-/** Each category has its own route. Single source of truth for nav + tabs. */
-export const CATEGORY_ROUTES: Record<AlgoCategory, string> = {
-  typeConversion: "/type-conversion",
-  equality: "/equality",
-};
-
-const DEFAULTS_BY_CATEGORY: Record<AlgoCategory, { algo: string; input: string }> = {
-  typeConversion: { algo: "ToNumber", input: '{ valueOf: () => "1" }' },
-  equality: { algo: "BinaryExpression", input: "[] == !{}" },
-};
+export { CATEGORY_ROUTES, DEFAULTS_BY_CATEGORY };
+export type { AlgoCategory, FunctionCatalog, FunctionMetaShape, VisualizerInitialData };
 
 const DEFAULT_CATEGORY: AlgoCategory = "typeConversion";
 const DEFAULT_ALGO = DEFAULTS_BY_CATEGORY[DEFAULT_CATEGORY].algo;
@@ -30,6 +29,8 @@ interface VisualizerStore {
   // ── Spec panel ─────────────────────────────────────────────────────────────
   specHtml: string;
   specDrawerOpen: boolean;
+  functionOptions: string[];
+  functionMeta: Record<string, FunctionMetaShape>;
 
   // ── Input ──────────────────────────────────────────────────────────────────
   category: AlgoCategory;
@@ -58,6 +59,7 @@ interface VisualizerStore {
   setShowSkipped: (v: boolean) => void;
   setSpecHtml: (html: string) => void;
   setSpecDrawerOpen: (open: boolean) => void;
+  setFunctionCatalog: (catalog: FunctionCatalog) => void;
   setCategory: (c: AlgoCategory) => void;
   setSelectedAlgo: (algo: string) => void;
   setTraceInputRaw: (v: string) => void;
@@ -68,6 +70,7 @@ interface VisualizerStore {
   onSelectPath: (path: string) => void;
   tickPlayback: () => void;
   runNow: () => void;
+  initializeFromServer: (data: VisualizerInitialData) => void;
 }
 
 export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
@@ -78,6 +81,8 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   showSkipped: true,
   specHtml: "",
   specDrawerOpen: false,
+  functionOptions: EMPTY_FUNCTION_CATALOG.available_functions,
+  functionMeta: EMPTY_FUNCTION_CATALOG.function_meta,
   category: DEFAULT_CATEGORY,
   selectedAlgo: DEFAULT_ALGO,
   effectiveAlgoId: null,
@@ -103,6 +108,11 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   setShowSkipped: (showSkipped) => set({ showSkipped }),
   setSpecHtml: (specHtml) => set({ specHtml }),
   setSpecDrawerOpen: (specDrawerOpen) => set({ specDrawerOpen }),
+  setFunctionCatalog: (catalog) =>
+    set({
+      functionOptions: catalog.available_functions,
+      functionMeta: catalog.function_meta,
+    }),
   setCategory: (category) => {
     const def = DEFAULTS_BY_CATEGORY[category];
     set({
@@ -190,5 +200,28 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
         setResultValue(undefined);
         set({ effectiveAlgoId: null, detectedOperator: null });
       });
+  },
+
+  initializeFromServer: (data) => {
+    const root = data.trace.root;
+
+    set({
+      category: data.category,
+      selectedAlgo: data.selectedAlgo,
+      traceInputRaw: data.input,
+      traceInputExpression: data.input,
+      root,
+      flatEntries: root ? flattenTrace(root) : [],
+      resultValue: data.trace.result,
+      error: data.trace.error,
+      specHtml: data.specHtml,
+      functionOptions: data.functionCatalog.available_functions,
+      functionMeta: data.functionCatalog.function_meta,
+      effectiveAlgoId: data.trace.effectiveAlgoId,
+      detectedOperator: data.trace.detectedOperator,
+      selectedIndex: 0,
+      isPlaying: false,
+      collapsedBlocks: {},
+    });
   },
 }));

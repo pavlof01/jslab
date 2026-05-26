@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   Box,
   Grid,
@@ -16,63 +15,17 @@ import { LuBookOpen, LuX } from "react-icons/lu";
 
 import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
-import { useVisualizerStore, type AlgoCategory } from "@/app/abstract-functions-visualizer/store";
+import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
+import type { AlgoCategory, VisualizerInitialData } from "@/app/abstract-functions-visualizer/model";
 
 export function AbstractFunctionsVisualizer({
   initialCategory = "typeConversion",
+  initialData,
 }: {
   initialCategory?: AlgoCategory;
+  initialData?: VisualizerInitialData;
 }) {
-  const root = useVisualizerStore((s) => s.root);
-  const flatEntries = useVisualizerStore((s) => s.flatEntries);
-  const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
-  const isPlaying = useVisualizerStore((s) => s.isPlaying);
-  const specHtml = useVisualizerStore((s) => s.specHtml);
-  const setSpecHtml = useVisualizerStore((s) => s.setSpecHtml);
-  const specDrawerOpen = useVisualizerStore((s) => s.specDrawerOpen);
-  const setSpecDrawerOpen = useVisualizerStore((s) => s.setSpecDrawerOpen);
-  const category = useVisualizerStore((s) => s.category);
-  const setCategory = useVisualizerStore((s) => s.setCategory);
-  const selectedAlgo = useVisualizerStore((s) => s.selectedAlgo);
-  const setSelectedAlgo = useVisualizerStore((s) => s.setSelectedAlgo);
-  const detectedOperator = useVisualizerStore((s) => s.detectedOperator);
-  const effectiveAlgoId = useVisualizerStore((s) => s.effectiveAlgoId);
-  const traceInputRaw = useVisualizerStore((s) => s.traceInputRaw);
-  const setTraceInputRaw = useVisualizerStore((s) => s.setTraceInputRaw);
-  const traceInputExpression = useVisualizerStore((s) => s.traceInputExpression);
-  const commitTraceInput = useVisualizerStore((s) => s.commitTraceInput);
-  const onSelectIndex = useVisualizerStore((s) => s.onSelectIndex);
-  const tickPlayback = useVisualizerStore((s) => s.tickPlayback);
-  const runNow = useVisualizerStore((s) => s.runNow);
-
-  // Sync the active tab to the requested category
-  useEffect(() => {
-    if (useVisualizerStore.getState().category !== initialCategory) {
-      setCategory(initialCategory);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch spec HTML when selected algo changes
-  useEffect(() => {
-    fetch(`/api/spec/${selectedAlgo}`)
-      .then((r) => r.text())
-      .then(setSpecHtml)
-      .catch(() => {});
-  }, [selectedAlgo, setSpecHtml]);
-
-  // Re-run trace when input or algo changes (debounced)
-  useEffect(() => {
-    const t = window.setTimeout(() => runNow(), 150);
-    return () => window.clearTimeout(t);
-  }, [selectedAlgo, traceInputExpression, runNow]);
-
-  // Playback interval
-  useEffect(() => {
-    if (!isPlaying || flatEntries.length <= 1) return;
-    const id = window.setInterval(tickPlayback, 650);
-    return () => window.clearInterval(id);
-  }, [isPlaying, flatEntries.length, tickPlayback]);
+  const visualizer = useVisualizerRuntime(initialCategory, initialData);
 
   return (
     <>
@@ -85,7 +38,7 @@ export function AbstractFunctionsVisualizer({
           bg="overlay.100"
           backdropFilter="blur(8px)"
           borderColor="rgba(255,255,255,0.12)"
-          onClick={() => setSpecDrawerOpen(true)}
+          onClick={() => visualizer.setSpecDrawerOpen(true)}
         >
           <LuBookOpen />
         </IconButton>
@@ -94,7 +47,12 @@ export function AbstractFunctionsVisualizer({
       <Box bg="background.300" h="calc(100dvh - var(--header-h))" overflow="hidden">
         {/* Mobile drawer for spec panel */}
         <Box display={{ base: "flex", lg: "none" }}>
-          <DrawerRoot open={specDrawerOpen} onOpenChange={(e) => setSpecDrawerOpen(e.open)} placement="start" size="xs">
+          <DrawerRoot
+            open={visualizer.specDrawerOpen}
+            onOpenChange={(e) => visualizer.setSpecDrawerOpen(e.open)}
+            placement="start"
+            size="xs"
+          >
             <DrawerBackdrop />
             <DrawerPositioner>
               <DrawerContent>
@@ -107,7 +65,11 @@ export function AbstractFunctionsVisualizer({
                     </DrawerCloseTrigger>
                   </Box>
                   <Box flex={1} minH={0} overflow="hidden">
-                    <EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />
+                    <EcmaSpecPanel
+                      flatEntries={visualizer.flatEntries}
+                      selectedIndex={visualizer.selectedIndex}
+                      specHtml={visualizer.specHtml}
+                    />
                   </Box>
                 </DrawerBody>
               </DrawerContent>
@@ -118,23 +80,29 @@ export function AbstractFunctionsVisualizer({
         <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
           {/* Desktop: spec panel in grid */}
           <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
-            <EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />
+            <EcmaSpecPanel
+              flatEntries={visualizer.flatEntries}
+              selectedIndex={visualizer.selectedIndex}
+              specHtml={visualizer.specHtml}
+            />
           </Box>
 
           <Box position="relative" minH={0} h="100%">
             <ExecutionTreePanel
-              root={root}
-              flatEntries={flatEntries}
-              selectedIndex={selectedIndex}
-              category={category}
-              selectedAlgo={selectedAlgo}
-              detectedOperator={detectedOperator}
-              effectiveAlgoId={effectiveAlgoId}
-              onAlgoChange={setSelectedAlgo}
-              userInputRaw={traceInputRaw}
-              onSelectIndex={onSelectIndex}
-              onInputChange={setTraceInputRaw}
-              onInputCommit={commitTraceInput}
+              root={visualizer.root}
+              flatEntries={visualizer.flatEntries}
+              selectedIndex={visualizer.selectedIndex}
+              category={visualizer.category}
+              selectedAlgo={visualizer.selectedAlgo}
+              detectedOperator={visualizer.detectedOperator}
+              effectiveAlgoId={visualizer.effectiveAlgoId}
+              onAlgoChange={visualizer.setSelectedAlgo}
+              userInputRaw={visualizer.traceInputRaw}
+              onSelectIndex={visualizer.onSelectIndex}
+              onInputChange={visualizer.setTraceInputRaw}
+              onInputCommit={visualizer.commitTraceInput}
+              functionOptions={visualizer.functionOptions}
+              functionMeta={visualizer.functionMeta}
             />
           </Box>
         </Grid>
