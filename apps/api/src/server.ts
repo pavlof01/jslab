@@ -150,8 +150,9 @@ app.post("/api/run", async (req, reply) => {
     return;
   }
 
+  const isDev = process.env.NODE_ENV !== "production";
   const key = cacheKey(normalized);
-  const cached = await readCache(redis, key);
+  const cached = isDev ? null : await readCache(redis, key);
 
   if (cached) {
     const payload: ApiResponse = {
@@ -223,7 +224,7 @@ app.post("/api/run", async (req, reply) => {
       },
     };
 
-    await writeCache(redis, key, response, config.CACHE_TTL_SECONDS);
+    if (!isDev) await writeCache(redis, key, response, config.CACHE_TTL_SECONDS);
     reply.send(response);
   } catch (err: any) {
     const classified = classifyUpstreamError("engine", err);

@@ -2,7 +2,8 @@
 
 import React from "react";
 import { HStack, Box, Text } from "@chakra-ui/react";
-import type { AlgoCategory } from "@/app/abstract-functions-visualizer/store";
+import Link from "next/link";
+import { CATEGORY_ROUTES, type AlgoCategory } from "@/app/abstract-functions-visualizer/store";
 
 const TABS: { id: AlgoCategory; label: string }[] = [
   { id: "typeConversion", label: "Type Conversion" },
@@ -11,10 +12,9 @@ const TABS: { id: AlgoCategory; label: string }[] = [
 
 type Props = {
   category: AlgoCategory;
-  onChange?: (c: AlgoCategory) => void;
 };
 
-export const CategoryTabs: React.FC<Props> = ({ category, onChange }) => {
+export const CategoryTabs: React.FC<Props> = ({ category }) => {
   return (
     <HStack gap="2px" mb={2} borderBottom="1px solid rgba(255,255,255,0.08)">
       {TABS.map((tab) => {
@@ -22,8 +22,8 @@ export const CategoryTabs: React.FC<Props> = ({ category, onChange }) => {
         return (
           <Box
             key={tab.id}
-            as="button"
-            onClick={() => onChange?.(tab.id)}
+            as={Link}
+            href={CATEGORY_ROUTES[tab.id]}
             px="14px"
             py="8px"
             cursor="pointer"

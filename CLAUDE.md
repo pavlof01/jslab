@@ -88,8 +88,8 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 | `/` | `(landing)/page.tsx` | Marketing landing page |
 | `/playground` | `_components/PlaygroundClient.tsx` | Multi-engine code runner |
 | `/v8-pipeline` | `v8-pipeline/components/PipelineClient.tsx` | Stage-by-stage V8 visualization |
-| `/abstract-functions-visualizer` | `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript spec step-through |
-| `/type-coercion` | `type-coercion/` | Type coercion explorer |
+| `/type-conversion` | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
+| `/equality` | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer` | Equality-operator spec step-through (`initialCategory="equality"`) |
 
 **State**: Zustand stores in `store/`. `useEngineOutputs.ts` is the main store for Playground — holds code, engine selection, outputs, status. The abstract-functions visualizer has its own store at `app/abstract-functions-visualizer/store.ts`.
 

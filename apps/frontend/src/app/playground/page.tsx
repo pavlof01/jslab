@@ -4,6 +4,9 @@ export const metadata = {
   title: "JavaScript Playground",
   description:
     "Compare JavaScript engines by writing and executing code. View bytecode across V8, SpiderMonkey, Hermes, and JSC.",
+  alternates: {
+    canonical: "/playground",
+  },
 };
 
 export default function PlaygroundPage() {
