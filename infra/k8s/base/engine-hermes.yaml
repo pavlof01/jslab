@@ -6,6 +6,12 @@ metadata:
     app: engine-hermes
 spec:
   replicas: 1
+  # Single replica on a resource-tight node: recreate (no surge pod) so a
+  # rollout never needs 2x capacity. Avoids old pods getting stuck terminating
+  # when several engines roll at once. Trade-off: a few seconds of downtime
+  # for this engine during its own deploy.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: engine-hermes
@@ -14,6 +20,7 @@ spec:
       labels:
         app: engine-hermes
     spec:
+      terminationGracePeriodSeconds: 15
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
