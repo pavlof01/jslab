@@ -9,6 +9,10 @@ import { loadConfig } from "./config.js";
 const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL }, bodyLimit: 512 * 1024 });
 
+// Per-pod concurrency gate. Each /run spawns a hermes process; without a cap a
+// burst can starve the pod and drop every in-flight request. Excess get 503.
+let inFlight = 0;
+
 const requestSchema = z.object({
   sourceText: z.string().min(1),
   options: z
@@ -111,11 +115,18 @@ app.post("/run", async (req, reply) => {
   const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
   const flags = sanitizeFlags(parsed.options?.flags || []);
 
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "engine-hermes-"));
-  const scriptPath = path.join(tmpDir, "snippet.js");
-  await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
+  if (inFlight >= config.MAX_CONCURRENCY) {
+    reply.code(503).header("Retry-After", "1").send({ ok: false, error: "engine busy" });
+    return;
+  }
+  inFlight++;
 
+  let tmpDir: string | undefined;
   try {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "engine-hermes-"));
+    const scriptPath = path.join(tmpDir, "snippet.js");
+    await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
+
     const runResult = await runCommand(config.HERMES_PATH, ["-dump-bytecode", ...flags, scriptPath], { timeoutMs });
     if (runResult.timedOut) {
       reply.code(408).send({ ok: false, error: "execution timed out" });
@@ -136,7 +147,8 @@ app.post("/run", async (req, reply) => {
   } catch (err: any) {
     reply.code(500).send({ ok: false, error: err?.message || "execution failed" });
   } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    inFlight--;
+    if (tmpDir) await fs.rm(tmpDir, { recursive: true, force: true });
   }
 });
 

@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apps:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "" }
+          - { name: engine-v8,            dir: apps/engine-v8,            typecheck: "npm run lint",  test: "" }
+          - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "" }
+          - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "" }
+          - { name: engine-spidermonkey,  dir: apps/engine-spidermonkey,  typecheck: "npm run lint",  test: "" }
+          - { name: trace-service,        dir: apps/trace-service,        typecheck: "npm run typecheck", test: "npm test" }
+          - { name: frontend,             dir: apps/frontend/src,         typecheck: "npx --no-install tsc --noEmit -p tsconfig.json", test: "npm test" }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # trace-service vendors engine262 as a submodule; its tests need it.
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.dir }}/package-lock.json
+      - name: Install
+        working-directory: ${{ matrix.dir }}
+        run: npm ci
+      - name: Typecheck
+        working-directory: ${{ matrix.dir }}
+        run: ${{ matrix.typecheck }}
+      - name: Test
+        if: ${{ matrix.test != '' }}
+        working-directory: ${{ matrix.dir }}
+        # CI=true (set by GitHub) makes vitest/jest run once instead of watching.
+        run: ${{ matrix.test }}
+
+  manifests:
+    name: k8s-manifests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup kustomize
+        uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.5.0"
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          ver="v0.6.7"
+          curl -sSLo /tmp/kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${ver}/kubeconform-linux-amd64.tar.gz"
+          sudo tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
+      - name: Build + validate overlays
+        run: |
+          set -euo pipefail
+          validate() {
+            echo "== $1 =="
+            kustomize build ${2:-} "$1" \
+              | kubeconform -strict -summary -ignore-missing-schemas \
+                  -schema-location default
+          }
+          validate infra/k8s/base
+          validate infra/k8s/prod
+          validate infra/k8s/dev "--load-restrictor=LoadRestrictionsNone"
+          for svc in api trace frontend engine-v8 engine-hermes engine-jsc engine-spidermonkey; do
+            validate "infra/k8s/prod/services/${svc}" "--load-restrictor=LoadRestrictionsNone"
+          done
+
+  # NOTE: infra/policy/ingress.rego is intentionally not run here. One of its
+  # deny rules checks that every ingress TLS secret has a Secret/Certificate in
+  # the same namespace, but those are provisioned out-of-band (see infra/README),
+  # so it can only pass against a live cluster. Run it in a cluster-aware job.
