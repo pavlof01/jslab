@@ -6,6 +6,12 @@ metadata:
     app: trace-service
 spec:
   replicas: 1
+  # Single replica on a resource-tight node: recreate (no surge pod) so a
+  # rollout never needs 2x capacity. Avoids the pod getting stuck terminating
+  # when several services roll at once. Trade-off: a few seconds of downtime
+  # during its own deploy.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: trace-service
@@ -14,6 +20,7 @@ spec:
       labels:
         app: trace-service
     spec:
+      terminationGracePeriodSeconds: 15
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
