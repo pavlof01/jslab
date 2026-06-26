@@ -190,10 +190,15 @@ jobs:
         run: |
           set -euo pipefail
 
+          # ServerAliveInterval keeps the session alive while `rollout status`
+          # waits silently (no output for minutes), so the VPS sshd does not drop
+          # the connection as idle and fail the step before the rollout finishes.
           ssh -i ~/.ssh/id_deploy \
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=20 \
             -p "${SSH_PORT}" \
             "${SSH_USER}@${SSH_HOST}" \
             "kubectl apply -f - && kubectl -n \"${NAMESPACE}\" rollout status \"deployment/${DEPLOYMENT_NAME}\" --timeout=10m" \
