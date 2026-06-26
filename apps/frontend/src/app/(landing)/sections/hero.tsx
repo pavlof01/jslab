@@ -10,7 +10,7 @@ export function HeroSection() {
     <Box
       as="section"
       position="relative"
-      px={{ base: 4, sm: 6, md: 20 }}
+      px={{ base: 4, sm: 6, md: 8 }}
       pt={{ base: 12, sm: 16, md: 24 }}
       pb={{ base: 16, sm: 20, md: 24 }}
       textAlign="center"
@@ -40,11 +40,12 @@ export function HeroSection() {
           <Heading
             as="h1"
             fontFamily={displayFont}
-            fontSize={{ base: "2.75rem", sm: "3.5rem", md: "5.5rem", xl: "6.25rem" }}
+            fontSize={{ base: "2.75rem", sm: "3.5rem", md: "clamp(3.5rem, 7.3vw, 12rem)" }}
             fontWeight="900"
             letterSpacing="-0.05em"
             lineHeight={{ base: "0.98", md: "1.02" }}
             maxW="full"
+            width="full"
           >
             Understand the Engine.
             <br />
