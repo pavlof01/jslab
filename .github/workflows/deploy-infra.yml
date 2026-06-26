@@ -23,31 +23,62 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up SSH
+      - name: Setup SSH (known_hosts + key)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
         run: |
           set -euo pipefail
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
-          ssh-keyscan -H 178.105.195.93 >> ~/.ssh/known_hosts
 
-      - name: Test SSH
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/id_ed25519 \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            root@178.105.195.93 "echo ok"
+          mkdir -p ~/.ssh
+          key_path="$HOME/.ssh/id_deploy"
+          raw_tmp="$(mktemp)"
+          b64_tmp="$(mktemp)"
+          trap 'rm -f "${raw_tmp}" "${b64_tmp}"' EXIT
+
+          # Accept both raw multi-line keys and base64-encoded keys.
+          printf '%s\n' "${SSH_KEY}" | tr -d '\r' > "${raw_tmp}"
+          if ssh-keygen -y -f "${raw_tmp}" </dev/null >/dev/null 2>&1; then
+            mv "${raw_tmp}" "${key_path}"
+          elif printf '%s' "${SSH_KEY}" | base64 --decode 2>/dev/null | tr -d '\r' > "${b64_tmp}" \
+            && ssh-keygen -y -f "${b64_tmp}" </dev/null >/dev/null 2>&1; then
+            mv "${b64_tmp}" "${key_path}"
+          else
+            echo "SSH_KEY secret is not a valid private key (raw PEM/OpenSSH or base64-encoded)." >&2
+            exit 1
+          fi
+          chmod 600 "${key_path}"
+
+          hostkeys="$(mktemp)"
+          ssh-keyscan -p "${SSH_PORT}" -H "${SSH_HOST}" > "${hostkeys}" 2>/dev/null
+
+          if [ -n "${SSH_FINGERPRINT:-}" ]; then
+            if ! ssh-keygen -lf "${hostkeys}" | grep -Fq "${SSH_FINGERPRINT}"; then
+              echo "SSH host key fingerprint mismatch for ${SSH_HOST}." >&2
+              ssh-keygen -lf "${hostkeys}" >&2 || true
+              exit 1
+            fi
+          fi
+
+          cat "${hostkeys}" >> ~/.ssh/known_hosts
+          rm -f "${hostkeys}"
 
       - name: Deploy
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
         run: |
           set -euo pipefail
 
-          ssh -i ~/.ssh/id_ed25519 \
+          ssh -i ~/.ssh/id_deploy \
+            -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
-            root@178.105.195.93 <<'EOSSH'
+            -p "${SSH_PORT}" \
+            "${SSH_USER}@${SSH_HOST}" <<'EOSSH'
           set -euo pipefail
 
           cd /root/js-engines
