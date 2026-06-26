@@ -15,7 +15,7 @@ export function HeroSection() {
       pb={{ base: 16, sm: 20, md: 24 }}
       textAlign="center"
     >
-      <Container maxW="4xl" px={0}>
+      <Container maxW="full" px={0}>
         <VStack gap={{ base: 8, md: 10 }}>
           <Box
             borderWidth="1px"
@@ -44,7 +44,7 @@ export function HeroSection() {
             fontWeight="900"
             letterSpacing="-0.05em"
             lineHeight={{ base: "0.98", md: "1.02" }}
-            maxW="5xl"
+            maxW="full"
           >
             Understand the Engine.
             <br />
