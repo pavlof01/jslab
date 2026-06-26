@@ -1,0 +1,30 @@
+# Security-headers middleware referenced by all ingresses as
+#   traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
+# (namespace "jslab" + name "jslab-security-headers").
+#
+# RECONCILE BEFORE FIRST APPLY: if a middleware of this name already
+# exists on the cluster (it was previously applied out-of-band), diff it
+#   kubectl -n jslab get middleware jslab-security-headers -o yaml
+# against this file so CI does not clobber a tuned config. CSP is left
+# out on purpose — add one only after verifying it against the app.
+#
+# apiVersion is Traefik v3 (traefik.io). For Traefik v2 use
+# traefik.containo.us/v1alpha1.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jslab-security-headers
+  namespace: jslab
+spec:
+  headers:
+    contentTypeNosniff: true
+    frameDeny: true
+    browserXssFilter: true
+    referrerPolicy: strict-origin-when-cross-origin
+    stsSeconds: 63072000
+    stsIncludeSubdomains: true
+    stsPreload: true
+    forceSTSHeader: true
+    customResponseHeaders:
+      Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+      X-Permitted-Cross-Domain-Policies: "none"
