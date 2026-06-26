@@ -12,5 +12,6 @@ resources:
   - engine-jsc.yaml
   - engine-spidermonkey.yaml
   - frontend.yaml
+  - middleware.yaml
   - ingress.yaml
   - networkpolicy.yaml

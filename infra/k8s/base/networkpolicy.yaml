@@ -1,3 +1,64 @@
+# ─────────────────────────────────────────────────────────────
+# Default deny (ingress + egress) for every pod in the namespace.
+# Everything below is an additive allowlist on top of this.
+# Probe replies are permitted: NetworkPolicy is stateful, so the
+# response to an allowed inbound kubelet probe is not blocked by
+# the egress deny.
+# ─────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# DNS egress for all pods (CoreDNS lives in kube-system).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+# ─────────────────────────────────────────────────────────────
+# Ingress allowlists
+# ─────────────────────────────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 3000
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -16,6 +77,30 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 8080
+---
+# trace-service is reached by both the API gateway and the frontend
+# (SSR initial data). It runs engine262 over untrusted input, so lock
+# its sources and (via default-deny) its egress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trace-service-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: trace-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api
         - podSelector:
             matchLabels:
               app: frontend
@@ -111,3 +196,65 @@ spec:
               app: api
       ports:
         - port: 6379
+# ─────────────────────────────────────────────────────────────
+# Egress allowlists
+# Engines and trace-service get NO egress allow here — default-deny
+# (plus DNS only) keeps untrusted JS from making outbound calls.
+# ─────────────────────────────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: engine-v8
+        - podSelector:
+            matchLabels:
+              app: engine-hermes
+        - podSelector:
+            matchLabels:
+              app: engine-jsc
+        - podSelector:
+            matchLabels:
+              app: engine-spidermonkey
+        - podSelector:
+            matchLabels:
+              app: trace-service
+      ports:
+        - port: 8080
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - port: 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api
+        - podSelector:
+            matchLabels:
+              app: trace-service
+      ports:
+        - port: 8080
