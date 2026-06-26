@@ -131,7 +131,10 @@ app.post("/run", async (req, reply) => {
   const flags = sanitizeFlags(parsed.options?.flags || []);
 
   if (inFlight >= config.MAX_CONCURRENCY) {
-    reply.code(503).header("Retry-After", "1").send({ ok: false, error: "engine busy" });
+    // 429 (not 503): the api gateway maps engine 5xx to a generic 502, which
+    // would hide the backpressure signal and drop Retry-After. 429 is passed
+    // through so clients can back off and retry.
+    reply.code(429).header("Retry-After", "1").send({ ok: false, error: "engine busy" });
     return;
   }
   inFlight++;
@@ -142,6 +145,12 @@ app.post("/run", async (req, reply) => {
     const scriptPath = path.join(tmpDir, "snippet.js");
     await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
 
+    // NOTE: jsc EXECUTES the script (the -d flag dumps bytecode but the file
+    // still runs), unlike sm/hermes which only compile + disassemble. jsc has
+    // no portable per-process heap cap (cf. d8's --max-old-space-size), so a
+    // single greedy script is bounded only by the concurrency gate + the pod
+    // memory limit. A JSC_ heap option could tighten this, but needs testing
+    // against the binary first.
     const result = await runCommand(config.JSCSHELL_PATH, [BYTECODE_FLAG, ...flags, scriptPath], { timeoutMs });
 
     if (result.timedOut) {
