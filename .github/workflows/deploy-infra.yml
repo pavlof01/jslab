@@ -77,6 +77,8 @@ jobs:
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=20 \
             -p "${SSH_PORT}" \
             "${SSH_USER}@${SSH_HOST}" <<'EOSSH'
           set -euo pipefail
