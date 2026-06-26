@@ -116,7 +116,10 @@ app.post("/run", async (req, reply) => {
   const flags = sanitizeFlags(parsed.options?.flags || []);
 
   if (inFlight >= config.MAX_CONCURRENCY) {
-    reply.code(503).header("Retry-After", "1").send({ ok: false, error: "engine busy" });
+    // 429 (not 503): the api gateway maps engine 5xx to a generic 502, which
+    // would hide the backpressure signal and drop Retry-After. 429 is passed
+    // through so clients can back off and retry.
+    reply.code(429).header("Retry-After", "1").send({ ok: false, error: "engine busy" });
     return;
   }
   inFlight++;

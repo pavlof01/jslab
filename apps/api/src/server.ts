@@ -193,6 +193,22 @@ app.post("/api/run", async (req, reply) => {
       req.log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, msg);
     }
 
+    // Engine signals backpressure (its per-pod concurrency cap) with 429.
+    // Propagate it verbatim with Retry-After so clients can back off, instead
+    // of letting the 5xx branch below collapse it into a generic 502.
+    if (engineRes.statusCode === 429) {
+      const retryAfter = engineRes.headers["retry-after"];
+      if (retryAfter) reply.header("retry-after", String(retryAfter));
+      let payload: unknown;
+      try {
+        payload = JSON.parse(engineText);
+      } catch {
+        payload = { ok: false, error: "engine busy" };
+      }
+      reply.code(429).send(payload);
+      return;
+    }
+
     // 5xx from the engine => treat as Bad Gateway
     if (engineRes.statusCode >= 500) {
       reply.code(502).send({ ok: false, error: `engine unavailable (${engineRes.statusCode})` });
