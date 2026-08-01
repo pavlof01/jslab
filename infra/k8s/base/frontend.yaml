@@ -8,6 +8,13 @@ spec:
   # Two replicas + the PDB below so a node drain or rollout keeps one pod
   # serving instead of a full outage (was replicas: 1).
   replicas: 2
+  # Avoid a temporary third pod competing with an engine on the single,
+  # resource-constrained node. One frontend replica remains available via PDB.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: frontend
@@ -47,8 +54,10 @@ spec:
             periodSeconds: 15
           resources:
             requests:
-              cpu: 150m
-              memory: 256Mi
+              # Two idle Next.js replicas do not need to reserve engine-sized
+              # capacity. Limits below retain headroom for builds/page bursts.
+              cpu: 50m
+              memory: 128Mi
             limits:
               cpu: 500m
               memory: 512Mi
