@@ -8,6 +8,7 @@ import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceLimit } from "./rateLimit.js";
+import { extractApiKey, issueApiKey, lookupApiKey } from "./apiKeys.js";
 import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema } from "./schemas.js";
 import { registry, runsTotal, cacheEvents, rateLimited, runDuration } from "./metrics.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
@@ -58,6 +59,38 @@ function clientIp(req: any): string {
   // With trustProxy=true, Fastify will compute req.ip correctly behind trusted proxies.
   // Do not parse x-forwarded-for manually to avoid letting clients spoof it.
   return req.ip;
+}
+
+type Budget = {
+  id: string;
+  generalSuffix: string;
+  heavySuffix: string;
+  generalLimit: number;
+  heavyLimit: number;
+};
+
+/**
+ * Determines which rate-limit budget applies to a request. A valid API key is
+ * limited by key at the higher key tier; anonymous requests keep the IP limit.
+ * Sends 401 and returns null when a key is present but invalid.
+ */
+async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
+  const key = extractApiKey(req.headers ?? {});
+  if (key) {
+    const record = await lookupApiKey(redis, key, req.log);
+    if (!record) {
+      reply.code(401).send({ ok: false, error: "invalid API key" });
+      return null;
+    }
+    return { id: key, generalSuffix: "key-general", heavySuffix: "key-heavy", generalLimit: record.rpm, heavyLimit: record.rpm };
+  }
+  return {
+    id: clientIp(req),
+    generalSuffix: "general",
+    heavySuffix: "heavy",
+    generalLimit: config.RATE_LIMIT_PER_MIN,
+    heavyLimit: config.RATE_LIMIT_HEAVY_PER_MIN,
+  };
 }
 
 function normalizeRequest(body: unknown): NormalizedRunRequest {
@@ -234,11 +267,12 @@ app.post("/api/run", async (req, reply) => {
     return;
   }
 
-  const ip = clientIp(req);
+  const budget = await resolveBudget(req, reply);
+  if (!budget) return; // invalid API key → 401 already sent
 
-  const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
+  const general = await enforceLimit(redis, budget.id, budget.generalSuffix, budget.generalLimit, 60, reply, req.log);
   if (general.limited) {
-    rateLimited.inc({ budget: "general" });
+    rateLimited.inc({ budget: budget.generalSuffix });
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return;
   }
@@ -263,9 +297,9 @@ app.post("/api/run", async (req, reply) => {
 
   // Only cache misses spawn an engine process, so only they consume the
   // (stricter) heavy budget. Cache hits stay cheap for the client.
-  const heavy = await enforceLimit(redis, ip, "heavy", config.RATE_LIMIT_HEAVY_PER_MIN, 60, reply, req.log);
+  const heavy = await enforceLimit(redis, budget.id, budget.heavySuffix, budget.heavyLimit, 60, reply, req.log);
   if (heavy.limited) {
-    rateLimited.inc({ budget: "heavy" });
+    rateLimited.inc({ budget: budget.heavySuffix });
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
     return;
   }
@@ -334,22 +368,48 @@ async function proxyToTraceService(
 }
 
 // Trace executions run engine262 over user input, so they are as heavy as an
-// engine run and must be metered. They share the same general + heavy IP
-// budgets as /api/run so a client can't dodge the limit by switching endpoints.
+// engine run and must be metered. They share the same budget resolution as
+// /api/run (API key or IP) so a client can't dodge the limit by switching
+// endpoints. Returns true if the request was rate-limited or rejected (401).
 async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
-  const ip = clientIp(req);
-  const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
+  const budget = await resolveBudget(req, reply);
+  if (!budget) return true; // invalid API key → 401 already sent
+  const general = await enforceLimit(redis, budget.id, budget.generalSuffix, budget.generalLimit, 60, reply, req.log);
   if (general.limited) {
+    rateLimited.inc({ budget: budget.generalSuffix });
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return true;
   }
-  const heavy = await enforceLimit(redis, ip, "heavy", config.RATE_LIMIT_HEAVY_PER_MIN, 60, reply, req.log);
+  const heavy = await enforceLimit(redis, budget.id, budget.heavySuffix, budget.heavyLimit, 60, reply, req.log);
   if (heavy.limited) {
+    rateLimited.inc({ budget: budget.heavySuffix });
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
     return true;
   }
   return false;
 }
+
+// Self-service public-API key issuance. No accounts: anyone can mint a key,
+// but issuance is IP-limited to curb abuse. A key raises the request quota.
+app.post("/api/keys", async (req, reply) => {
+  const ip = clientIp(req);
+  const issue = await enforceLimit(redis, ip, "key-issue", config.API_KEY_ISSUE_PER_HOUR, 3600, reply, req.log);
+  if (issue.limited) {
+    reply.code(429).send({ ok: false, error: "key issuance limit reached", meta: { retryAfter: issue.retryAfter } });
+    return;
+  }
+  const key = await issueApiKey(redis, config.API_KEY_RATE_LIMIT_PER_MIN, Date.now(), req.log);
+  if (!key) {
+    reply.code(503).send({ ok: false, error: "could not issue key" });
+    return;
+  }
+  reply.code(201).send({
+    ok: true,
+    apiKey: key,
+    rateLimitPerMin: config.API_KEY_RATE_LIMIT_PER_MIN,
+    usage: "Send the key as an 'x-api-key' header or 'Authorization: Bearer <key>' on /api/run and /api/trace/*.",
+  });
+});
 
 app.post("/api/trace/execute/type-conversion", async (req, reply) => {
   const parsed = traceExecuteRequestSchema.safeParse(req.body);
