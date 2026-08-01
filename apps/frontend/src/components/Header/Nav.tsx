@@ -23,6 +23,11 @@ const navSections: NavSection[] = [
         description: "Trace JavaScript execution through V8's stages.",
         href: "/v8-pipeline",
       },
+      {
+        label: "v8.log Viewer",
+        description: "Upload a --prof log and see the hottest functions.",
+        href: "/v8-log",
+      },
     ],
   },
   {
@@ -43,6 +48,16 @@ const navSections: NavSection[] = [
         description: "Open the official ECMAScript specification.",
         href: "https://tc39.es/ecma262/",
         external: true,
+      },
+    ],
+  },
+  {
+    label: "Learn",
+    items: [
+      {
+        label: "Coercion Quiz",
+        description: "Predict what tricky expressions print, then see why.",
+        href: "/quiz",
       },
     ],
   },
