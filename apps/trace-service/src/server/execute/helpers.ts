@@ -46,6 +46,11 @@ export const FUNCTION_META: Record<string, FunctionMeta> = {
   ToBoolean: { category: "typeConversion", arity: "unary" },
   ToPrimitive: { category: "typeConversion", arity: "unary" },
   ToObject: { category: "typeConversion", arity: "unary" },
+  // Below already have both spec HTML (FUNCTION_ALGOS in spec-generator) and
+  // execution (callECMA262Function); they were just never surfaced.
+  ToPropertyKey: { category: "typeConversion", arity: "unary" },
+  ToLength: { category: "typeConversion", arity: "unary" },
+  ToIndex: { category: "typeConversion", arity: "unary" },
 };
 
 /**
@@ -191,6 +196,9 @@ export const AVAILABLE_FUNCTIONS = [
   "ToBoolean",
   "ToPrimitive",
   "ToObject",
+  "ToPropertyKey",
+  "ToLength",
+  "ToIndex",
 ];
 
 // Mapping of function names to their implementations
