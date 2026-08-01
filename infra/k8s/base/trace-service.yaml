@@ -54,8 +54,12 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: 500m
-              memory: 512Mi
+              # engine262 traces are short and bursty, so reserve for the idle
+              # baseline rather than the peak — the node is shared and a 500m
+              # reservation here was enough to leave engine-jsc unschedulable.
+              # Bursts are still covered by the limits below.
+              cpu: 250m
+              memory: 384Mi
             limits:
               cpu: "2"
               memory: 1Gi
