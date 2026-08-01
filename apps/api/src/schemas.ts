@@ -84,6 +84,19 @@ export const traceExecuteEqualitySchema = z.object({
 });
 
 /**
+ * Clamp a caller-supplied timeout into the range the engines can actually
+ * honour. The upper bound protects the pod; the lower bound protects the
+ * caller from asking for a run that can only ever time out.
+ */
+export function clampTimeout(
+  requested: number | undefined,
+  bounds: { min: number; max: number; fallback: number },
+): number {
+  const wanted = requested ?? bounds.fallback;
+  return Math.min(Math.max(wanted, bounds.min), bounds.max);
+}
+
+/**
  * Client-facing message for a rejected payload. A ZodError's own `message` is
  * the JSON dump of its issue list, which is useless to a caller and exposes the
  * schema's shape, so report the first issue prefixed with its field instead.
