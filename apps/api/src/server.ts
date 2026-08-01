@@ -1,4 +1,4 @@
-import fastify from "fastify";
+import fastify, { type FastifyBaseLogger } from "fastify";
 // @ts-ignore
 import apiReference from "@scalar/fastify-api-reference";
 import underPressure from "@fastify/under-pressure";
@@ -121,6 +121,102 @@ async function readResponseText(body: unknown): Promise<string> {
   });
 }
 
+type RunResult = {
+  status: number;
+  body: ApiResponse | EngineResponse | { ok: false; error: string };
+  // How to cache this outcome: "positive" = full TTL, "negative" = short TTL
+  // (deterministic failures only), "none" = don't cache (transient/backpressure).
+  cache: "positive" | "negative" | "none";
+  retryAfter?: string;
+};
+
+// In-process single-flight: concurrent identical requests coalesce onto one
+// engine execution instead of each spawning a process. Without this, a burst
+// on one cold-but-popular snippet fills the engine's concurrency gate and
+// everyone gets 429, when a single run could have served them all.
+const inFlight = new Map<string, Promise<RunResult>>();
+
+const engineBaseByKind = {
+  v8: () => config.ENGINE_V8_URL,
+  hermes: () => config.ENGINE_HERMES_URL,
+  sm: () => config.ENGINE_SM_URL,
+  jsc: () => config.ENGINE_JSC_URL,
+} as const;
+
+async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogger): Promise<RunResult> {
+  const start = Date.now();
+  const engineUrl = `${engineBaseByKind[normalized.engine]().replace(/\/$/, "")}/run`;
+
+  try {
+    const engineBody = { sourceText: normalized.sourceText, options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs } };
+
+    const engineRes = await request(engineUrl, {
+      method: "POST",
+      body: JSON.stringify(engineBody),
+      headers: { "content-type": "application/json" },
+      bodyTimeout: normalized.timeoutMs + 1000,
+      headersTimeout: normalized.timeoutMs + 1000,
+    });
+
+    const engineText = await readResponseText(engineRes.body);
+
+    if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
+      const msg = engineRes.statusCode === 401 ? "engine auth failed" : "engine returned non-2xx";
+      log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, msg);
+    }
+
+    // Engine signals backpressure (its per-pod concurrency cap) with 429.
+    // Propagate it verbatim with Retry-After; never cache it.
+    if (engineRes.statusCode === 429) {
+      let body: any;
+      try {
+        body = JSON.parse(engineText);
+      } catch {
+        body = { ok: false, error: "engine busy" };
+      }
+      const retryAfter = engineRes.headers["retry-after"];
+      return { status: 429, body, cache: "none", retryAfter: retryAfter ? String(retryAfter) : undefined };
+    }
+
+    // 5xx from the engine => transient; treat as Bad Gateway, don't cache.
+    if (engineRes.statusCode >= 500) {
+      return { status: 502, body: { ok: false, error: `engine unavailable (${engineRes.statusCode})` }, cache: "none" };
+    }
+
+    let enginePayload: EngineResponse;
+    try {
+      enginePayload = JSON.parse(engineText) as EngineResponse;
+    } catch {
+      log.error({ status: engineRes.statusCode, sample: engineText.slice(0, 2000) }, "engine returned non-json");
+      return { status: 502, body: { ok: false, error: "engine returned invalid response" }, cache: "none" };
+    }
+
+    if (!enginePayload.ok) {
+      const status = mapEngineErrorToStatus(enginePayload as any);
+      // Bad input (400) and engine-reported timeout (504) are deterministic for
+      // a given snippet, so cache them briefly to stop re-burning engine slots.
+      // Everything else (502/429/…) is transient and stays uncached.
+      const cache = status === 400 || status === 504 ? "negative" : "none";
+      return { status, body: enginePayload, cache };
+    }
+
+    const response: ApiResponse = {
+      ...enginePayload,
+      meta: {
+        ...(enginePayload.meta || {}),
+        durationMs: Date.now() - start,
+        engine: normalized.engine,
+        cacheHit: false,
+      },
+    };
+    return { status: 200, body: response, cache: "positive" };
+  } catch (err: any) {
+    const classified = classifyUpstreamError("engine", err);
+    log.error({ err, engineUrl, kind: classified.kind }, "engine request failed");
+    return { status: 502, body: { ok: false, error: classified.message }, cache: "none" };
+  }
+}
+
 app.post("/api/run", async (req, reply) => {
   const start = Date.now();
 
@@ -142,14 +238,16 @@ app.post("/api/run", async (req, reply) => {
 
   const isDev = process.env.NODE_ENV !== "production";
   const key = cacheKey(normalized);
-  const cached = isDev ? null : await readCache(redis, key);
+  const cached = isDev ? null : await readCache(redis, key, req.log);
 
   if (cached) {
-    const payload: ApiResponse = {
-      ...cached,
-      meta: { ...cached.meta, cacheHit: true, durationMs: Date.now() - start },
-    };
-    reply.send(payload);
+    // Replay the cached status. For a 200 ApiResponse, refresh the per-request
+    // meta so cacheHit/durationMs reflect this request, not the cached one.
+    const body =
+      cached.status === 200 && cached.body && "meta" in cached.body
+        ? { ...(cached.body as ApiResponse), meta: { ...(cached.body as ApiResponse).meta, cacheHit: true, durationMs: Date.now() - start } }
+        : cached.body;
+    reply.code(cached.status).send(body);
     return;
   }
 
@@ -161,90 +259,27 @@ app.post("/api/run", async (req, reply) => {
     return;
   }
 
-  const engineBaseByKind = {
-    v8: config.ENGINE_V8_URL,
-    hermes: config.ENGINE_HERMES_URL,
-    sm: config.ENGINE_SM_URL,
-    jsc: config.ENGINE_JSC_URL,
-  } as const;
-
-  const engineBase = engineBaseByKind[normalized.engine];
-  const engineUrl = `${engineBase.replace(/\/$/, "")}/run`;
-
-  try {
-    const engineBody = { sourceText: normalized.sourceText, options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs } };
-
-    const engineRes = await request(engineUrl, {
-      method: "POST",
-      body: JSON.stringify(engineBody),
-      headers: {
-        "content-type": "application/json",
-      },
-      bodyTimeout: normalized.timeoutMs + 1000,
-      headersTimeout: normalized.timeoutMs + 1000,
-    });
-
-    const engineText = await readResponseText(engineRes.body);
-
-    if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
-      const msg = engineRes.statusCode === 401 ? "engine auth failed" : "engine returned non-2xx";
-      req.log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, msg);
-    }
-
-    // Engine signals backpressure (its per-pod concurrency cap) with 429.
-    // Propagate it verbatim with Retry-After so clients can back off, instead
-    // of letting the 5xx branch below collapse it into a generic 502.
-    if (engineRes.statusCode === 429) {
-      const retryAfter = engineRes.headers["retry-after"];
-      if (retryAfter) reply.header("retry-after", String(retryAfter));
-      let payload: unknown;
-      try {
-        payload = JSON.parse(engineText);
-      } catch {
-        payload = { ok: false, error: "engine busy" };
-      }
-      reply.code(429).send(payload);
-      return;
-    }
-
-    // 5xx from the engine => treat as Bad Gateway
-    if (engineRes.statusCode >= 500) {
-      reply.code(502).send({ ok: false, error: `engine unavailable (${engineRes.statusCode})` });
-      return;
-    }
-
-    let enginePayload: EngineResponse;
+  let result: RunResult;
+  const existing = inFlight.get(key);
+  if (existing) {
+    // Coalesce onto the in-flight execution; followers don't re-run or re-cache.
+    result = await existing;
+  } else {
+    const p = executeRun(normalized, req.log);
+    inFlight.set(key, p);
     try {
-      enginePayload = JSON.parse(engineText) as EngineResponse;
-    } catch (e) {
-      req.log.error({ status: engineRes.statusCode, sample: engineText.slice(0, 2000) }, "engine returned non-json");
-      reply.code(502).send({ ok: false, error: "engine returned invalid response" });
-      return;
+      result = await p;
+    } finally {
+      inFlight.delete(key);
     }
-
-    if (!enginePayload.ok) {
-      const status = mapEngineErrorToStatus(enginePayload as any);
-      reply.code(status).send(enginePayload);
-      return;
+    if (!isDev && result.cache !== "none") {
+      const ttl = result.cache === "positive" ? config.CACHE_TTL_SECONDS : config.NEGATIVE_CACHE_TTL_SECONDS;
+      await writeCache(redis, key, { status: result.status, body: result.body }, ttl, req.log);
     }
-
-    const response: ApiResponse = {
-      ...enginePayload,
-      meta: {
-        ...(enginePayload.meta || {}),
-        durationMs: Date.now() - start,
-        engine: normalized.engine,
-        cacheHit: false,
-      },
-    };
-
-    if (!isDev) await writeCache(redis, key, response, config.CACHE_TTL_SECONDS);
-    reply.send(response);
-  } catch (err: any) {
-    const classified = classifyUpstreamError("engine", err);
-    req.log.error({ err, engineUrl, kind: classified.kind }, "engine request failed");
-    reply.code(502).send({ ok: false, error: classified.message });
   }
+
+  if (result.retryAfter) reply.header("retry-after", result.retryAfter);
+  reply.code(result.status).send(result.body);
 });
 
 async function proxyToTraceService(

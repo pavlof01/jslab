@@ -10,6 +10,9 @@ const envSchema = z.object({
   ENGINE_JSC_URL: z.string().default("http://engine-jsc:8080"),
   TRACE_SERVICE_URL: z.string().default("http://trace-service:8080"),
   CACHE_TTL_SECONDS: z.coerce.number().default(600),
+  // Short TTL for deterministic failures (bad input, engine-reported timeout)
+  // so a snippet that reliably fails doesn't re-burn an engine slot every hit.
+  NEGATIVE_CACHE_TTL_SECONDS: z.coerce.number().default(30),
   RATE_LIMIT_PER_MIN: z.coerce.number().default(60),
   RATE_LIMIT_HEAVY_PER_MIN: z.coerce.number().default(20),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
