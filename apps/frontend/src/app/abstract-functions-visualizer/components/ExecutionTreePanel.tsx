@@ -14,6 +14,7 @@ import { PlaybackDock } from "./PlaybackDock";
 
 type Props = {
   root: TraceNode | null;
+  error?: string | null;
   flatEntries: FlatEntry[];
   selectedIndex: number;
   category: AlgoCategory;
@@ -31,6 +32,7 @@ type Props = {
 
 export const ExecutionTreePanel: React.FC<Props> = ({
   root,
+  error,
   flatEntries,
   selectedIndex,
   category,
@@ -87,6 +89,23 @@ export const ExecutionTreePanel: React.FC<Props> = ({
             functionOptions={functionOptions}
             functionMeta={functionMeta}
           />
+
+          {error && !root && (
+            <Box
+              role="alert"
+              mt={4}
+              px={4}
+              py={3}
+              bg="red.950"
+              border="1px solid"
+              borderColor="red.800"
+              rounded="md"
+              color="red.300"
+              fontSize="sm"
+            >
+              Couldn’t compute the trace: {error}
+            </Box>
+          )}
 
           {root && (
             <CallBlock

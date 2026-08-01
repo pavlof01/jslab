@@ -73,10 +73,38 @@ function stripDiagnostics(text: string): string {
     .trim();
 }
 
+// Error banner for a stage whose engine run failed (stderr present, no stdout).
+// Without this the content panels only read stdout, so an errored stage would
+// render blank with no indication of what went wrong.
+function StageError({ stage }: { stage: StageData }) {
+  const msg = stripDiagnostics(stage.stderr);
+  if (!msg || stage.stdout) return null;
+  return (
+    <Box
+      role="alert"
+      mx={4}
+      my={2}
+      px={3}
+      py={2}
+      bg="red.950"
+      border="1px solid"
+      borderColor="red.800"
+      rounded="md"
+      color="red.300"
+      fontSize="xs"
+      fontFamily="mono"
+      whiteSpace="pre-wrap"
+    >
+      {msg}
+    </Box>
+  );
+}
+
 export default function PipelineClient() {
   const [code, setCode] = useState(SAMPLE);
   const [active, setActive] = useState<StageId>("tokens");
   const [hasRun, setHasRun] = useState(false);
+  const [running, setRunning] = useState(false);
   const [tokens, setTokens] = useState<Token[]>([]);
   const [stages, setStages] = useState<Record<ApiStageId, StageData>>({
     ast: EMPTY_STAGE,
@@ -93,21 +121,35 @@ export default function PipelineClient() {
   }, []);
 
   const analyze = useCallback(async () => {
+    setRunning(true);
     setHasRun(true);
     setTokens(tokenize(code));
 
     for (const s of API_STAGES) patchStage(s.id, { loading: true, stdout: "", stderr: "" });
 
-    await Promise.all(
-      API_STAGES.map(async ({ id, flags }) => {
-        const res = await runEngine(EngineKey.v8, code, { flags });
-        patchStage(id, {
-          loading: false,
-          stdout: stripDiagnostics(res.stdout),
-          stderr: stripDiagnostics(res.stderr),
-        });
-      }),
-    );
+    try {
+      await Promise.all(
+        API_STAGES.map(async ({ id, flags }) => {
+          const res = await runEngine(EngineKey.v8, code, { flags });
+          patchStage(id, {
+            loading: false,
+            stdout: stripDiagnostics(res.stdout),
+            stderr: stripDiagnostics(res.stderr),
+          });
+        }),
+      );
+    } finally {
+      // Defensive: clear the spinner on any stage still marked loading so an
+      // unexpected throw can't leave a tab spinning forever.
+      setStages((prev) => {
+        const next = { ...prev };
+        for (const s of API_STAGES) {
+          if (next[s.id].loading) next[s.id] = { ...next[s.id], loading: false };
+        }
+        return next;
+      });
+      setRunning(false);
+    }
   }, [code, patchStage]);
 
   const visibleTokens = useMemo(() => tokens.filter((t) => t.kind !== "Whitespace"), [tokens]);
@@ -137,7 +179,7 @@ export default function PipelineClient() {
         <Text fontSize="sm" fontWeight="700" color="whiteAlpha.500" letterSpacing="0.04em">
           V8 Compilation Pipeline
         </Text>
-        <Button size="sm" w={28} onClick={analyze}>
+        <Button size="sm" w={28} onClick={analyze} loading={running} loadingText="Running" disabled={running}>
           <CiPlay1 /> Run
         </Button>
       </Flex>
@@ -212,26 +254,31 @@ export default function PipelineClient() {
               {hasRun ? <TokensPane tokens={visibleTokens} /> : <DefaultEmptyCodeBlockState />}
             </Tabs.Content>
 
-            <Tabs.Content value="ast" overflow="auto" display="flex" flex="1">
+            <Tabs.Content value="ast" overflow="auto" flexDirection="column" display="flex" flex="1">
+              <StageError stage={stages.ast} />
               <HighlightedCode engineKey={EngineKey.v8} out={stages.ast.stdout} showDiff={false} />
             </Tabs.Content>
 
-            <Tabs.Content value="bytecode" overflow="auto" display="flex" flex="1">
+            <Tabs.Content value="bytecode" overflow="auto" flexDirection="column" display="flex" flex="1">
+              <StageError stage={stages.bytecode} />
               <HighlightedCode engineKey={EngineKey.v8} out={stages.bytecode.stdout} showDiff={false} />
             </Tabs.Content>
 
             <Tabs.Content value="sparkplug" overflow="auto" flexDirection="column" display="flex" flex="1" pt={0}>
               <Hint stageId="sparkplug" />
+              <StageError stage={stages.sparkplug} />
               <CodeBlockShiki code={stages.sparkplug.stdout} />
             </Tabs.Content>
 
             <Tabs.Content value="maglev" overflow="auto" flexDirection="column" display="flex" flex="1" pt={0}>
               <Hint stageId="maglev" />
+              <StageError stage={stages.maglev} />
               <CodeBlockShiki code={stages.maglev.stdout} />
             </Tabs.Content>
 
             <Tabs.Content value="turbofan" overflow="auto" flexDirection="column" display="flex" flex="1" pt={0}>
               <Hint stageId="turbofan" />
+              <StageError stage={stages.turbofan} />
               <CodeBlockShiki code={stages.turbofan.stdout} />
             </Tabs.Content>
           </Tabs.Root>

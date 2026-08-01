@@ -1,3 +1,4 @@
+import { describe, it, expect } from "@jest/globals";
 import { compareOutputs } from "./diff-bytecode";
 import { DiffKind } from "@/lib/types";
 import type { TokensResult, ThemedToken } from "shiki";

@@ -1,3 +1,4 @@
+import { describe, it, expect } from "@jest/globals";
 import { flattenTrace } from "./flatten";
 import type { TraceNode } from "./spec-runner";
 

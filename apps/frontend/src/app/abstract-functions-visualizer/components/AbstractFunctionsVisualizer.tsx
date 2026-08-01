@@ -90,6 +90,7 @@ export function AbstractFunctionsVisualizer({
           <Box position="relative" minH={0} h="100%">
             <ExecutionTreePanel
               root={visualizer.root}
+              error={visualizer.error}
               flatEntries={visualizer.flatEntries}
               selectedIndex={visualizer.selectedIndex}
               category={visualizer.category}

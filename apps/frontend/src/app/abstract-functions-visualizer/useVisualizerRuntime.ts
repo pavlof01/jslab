@@ -38,6 +38,7 @@ export function useVisualizerRuntime(initialCategory: AlgoCategory, initialData?
   const initialTraceKeyRef = useRef<string | null>(initialKey);
 
   const root = useVisualizerStore((s) => s.root);
+  const error = useVisualizerStore((s) => s.error);
   const flatEntries = useVisualizerStore((s) => s.flatEntries);
   const selectedIndex = useVisualizerStore((s) => s.selectedIndex);
   const isPlaying = useVisualizerStore((s) => s.isPlaying);
@@ -89,9 +90,11 @@ export function useVisualizerRuntime(initialCategory: AlgoCategory, initialData?
     initialSpecKeyRef.current = null;
 
     fetch(`/api/spec/${selectedAlgo}`)
-      .then((r) => r.text())
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`spec ${r.status}`))))
       .then(setSpecHtml)
-      .catch(() => {});
+      // Non-fatal: the trace still renders without the spec panel. Don't inject
+      // an error body into the panel as if it were HTML.
+      .catch(() => setSpecHtml(""));
   }, [clientReady, initialKey, resolvedInitialData.selectedAlgo, resolvedInitialData.specHtml, selectedAlgo, setSpecHtml]);
 
   useEffect(() => {
@@ -133,7 +136,7 @@ export function useVisualizerRuntime(initialCategory: AlgoCategory, initialData?
     if (!clientReady || functionOptions.length > 0) return;
 
     fetch("/api/trace/functions")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`functions ${r.status}`))))
       .then((data: { available_functions?: string[]; function_meta?: typeof functionMeta }) => {
         if (Array.isArray(data.available_functions) && data.available_functions.length > 0) {
           setFunctionCatalog({
@@ -147,6 +150,7 @@ export function useVisualizerRuntime(initialCategory: AlgoCategory, initialData?
 
   return {
     root: clientReady ? root : resolvedInitialData.trace.root,
+    error: clientReady ? error : resolvedInitialData.trace.error,
     flatEntries: clientReady ? flatEntries : initialFlatEntries,
     selectedIndex: clientReady ? selectedIndex : 0,
     specHtml: clientReady ? specHtml : resolvedInitialData.specHtml,

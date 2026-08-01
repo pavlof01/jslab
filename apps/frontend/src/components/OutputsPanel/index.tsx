@@ -29,7 +29,10 @@ export function OutputsPanel() {
     }
   };
 
-  const activeKey = enabledTabs[activeTabIndex].key || EngineKey.v8;
+  // Guard the empty case: with every engine deselected enabledTabs is [], so
+  // enabledTabs[activeTabIndex] is undefined — index into it directly and .key
+  // throws. Optional chaining makes the EngineKey.v8 fallback actually reachable.
+  const activeKey = enabledTabs[activeTabIndex]?.key || EngineKey.v8;
   const stdout = out?.[activeKey]?.stdout;
   const stderr = out?.[activeKey]?.stderr;
   const stdPrevOut = previousSnapshot?.out?.[activeKey]?.stdout;
