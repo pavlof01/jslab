@@ -9,6 +9,7 @@ import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceLimit } from "./rateLimit.js";
 import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema } from "./schemas.js";
+import { registry, runsTotal, cacheEvents, rateLimited, runDuration } from "./metrics.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
 const config = loadConfig();
@@ -38,6 +39,12 @@ app.register(underPressure, {
 });
 
 app.get("/healthz", async () => ({ ok: true, redis: redis.status }));
+
+app.get("/metrics", async (_req, reply) => {
+  reply.header("Content-Type", registry.contentType);
+  return registry.metrics();
+});
+
 app.get("/api/openapi.json", async () => openapiDoc);
 
 app.register(apiReference, {
@@ -231,6 +238,7 @@ app.post("/api/run", async (req, reply) => {
 
   const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
   if (general.limited) {
+    rateLimited.inc({ budget: "general" });
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return;
   }
@@ -240,6 +248,8 @@ app.post("/api/run", async (req, reply) => {
   const cached = isDev ? null : await readCache(redis, key, req.log);
 
   if (cached) {
+    cacheEvents.inc({ result: "hit" });
+    runsTotal.inc({ engine: normalized.engine, outcome: "cache_hit" });
     // Replay the cached status. For a 200 ApiResponse, refresh the per-request
     // meta so cacheHit/durationMs reflect this request, not the cached one.
     const body =
@@ -249,11 +259,13 @@ app.post("/api/run", async (req, reply) => {
     reply.code(cached.status).send(body);
     return;
   }
+  if (!isDev) cacheEvents.inc({ result: "miss" });
 
   // Only cache misses spawn an engine process, so only they consume the
   // (stricter) heavy budget. Cache hits stay cheap for the client.
   const heavy = await enforceLimit(redis, ip, "heavy", config.RATE_LIMIT_HEAVY_PER_MIN, 60, reply, req.log);
   if (heavy.limited) {
+    rateLimited.inc({ budget: "heavy" });
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
     return;
   }
@@ -276,6 +288,10 @@ app.post("/api/run", async (req, reply) => {
       await writeCache(redis, key, { status: result.status, body: result.body }, ttl, req.log);
     }
   }
+
+  const outcome = result.status === 200 ? "ok" : result.status === 429 ? "engine_busy" : "error";
+  runsTotal.inc({ engine: normalized.engine, outcome });
+  runDuration.observe({ engine: normalized.engine, outcome }, (Date.now() - start) / 1000);
 
   if (result.retryAfter) reply.header("retry-after", result.retryAfter);
   reply.code(result.status).send(result.body);

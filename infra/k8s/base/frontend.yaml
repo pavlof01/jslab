@@ -5,7 +5,9 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 1
+  # Two replicas + the PDB below so a node drain or rollout keeps one pod
+  # serving instead of a full outage (was replicas: 1).
+  replicas: 2
   selector:
     matchLabels:
       app: frontend
@@ -80,3 +82,15 @@ spec:
   ports:
     - port: 3000
       targetPort: 3000
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: frontend

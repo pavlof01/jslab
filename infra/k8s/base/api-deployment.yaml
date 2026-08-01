@@ -5,7 +5,9 @@ metadata:
   labels:
     app: api
 spec:
-  replicas: 1
+  # Two replicas + the PDB below so a node drain or rollout evicts one pod at a
+  # time while the other keeps serving, instead of a full outage (was replicas: 1).
+  replicas: 2
   selector:
     matchLabels:
       app: api
@@ -79,3 +81,15 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api
