@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Providers } from "./providers";
-import { Header } from "@/components/Header";
+import { ConditionalHeader } from "@/components/ConditionalHeader";
 
 import "./globals.css";
 
@@ -91,7 +91,7 @@ export default function RootLayout({
       </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <Providers>
-          <Header />
+          <ConditionalHeader />
           {children}
         </Providers>
       </body>
