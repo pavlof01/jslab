@@ -20,4 +20,5 @@ jobs:
       image: jslab-trace-service
       deployment: trace-service
       container: trace-service
+      verify_command: npm run typecheck
     secrets: inherit

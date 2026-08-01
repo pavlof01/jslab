@@ -51,6 +51,16 @@ on:
         required: false
         default: ""
         type: string
+      verify_dir:
+        description: "Directory to run verification (npm ci + typecheck/tests) in; defaults to the build context"
+        required: false
+        default: ""
+        type: string
+      verify_command:
+        description: "Verification command run before build; empty string skips verification"
+        required: false
+        default: "npm run lint"
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -78,7 +88,36 @@ env:
   DEPLOYMENT_NAME: ${{ inputs.deployment }}
 
 jobs:
+  # Gate: nothing is built or pushed unless the service verifies (typecheck +
+  # tests). Without this, a push to main used to deploy in parallel with CI,
+  # so a red typecheck could still reach production.
+  verify:
+    if: ${{ inputs.verify_command != '' }}
+    runs-on: ubuntu-24.04
+    env:
+      VERIFY_DIR: ${{ inputs.verify_dir != '' && inputs.verify_dir || inputs.context }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ env.VERIFY_DIR }}/package-lock.json
+      - name: Install
+        working-directory: ${{ env.VERIFY_DIR }}
+        run: npm ci
+      - name: Verify
+        working-directory: ${{ env.VERIFY_DIR }}
+        run: ${{ inputs.verify_command }}
+
   build-and-deploy:
+    needs: verify
+    # needs + if together: run after verify passes, or immediately when
+    # verification is explicitly disabled (verify is then skipped).
+    if: ${{ !cancelled() && (needs.verify.result == 'success' || inputs.verify_command == '') }}
     runs-on: ubuntu-24.04
     concurrency:
       group: deploy-${{ inputs.service }}

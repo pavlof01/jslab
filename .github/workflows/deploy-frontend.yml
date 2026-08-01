@@ -19,4 +19,6 @@ jobs:
       image: jslab-frontend
       deployment: frontend
       container: frontend
+      verify_dir: apps/frontend/src
+      verify_command: npx --no-install tsc --noEmit -p tsconfig.json && npm test
     secrets: inherit
