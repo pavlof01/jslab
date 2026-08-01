@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Button, Flex, Link, Text } from "@chakra-ui/react";
 import { CiPlay1 } from "react-icons/ci";
 import { LuExternalLink } from "react-icons/lu";
@@ -28,9 +28,12 @@ export default function EmbedPlaygroundClient() {
     } catch {}
   }, [runEngines]);
 
-  const openInJslab = useCallback(() => {
+  // Origin-relative on purpose: this runs during render, including the build-time
+  // prerender where `window` doesn't exist. The embed is served from the same
+  // origin as the full app, so the browser resolves it to the same URL.
+  const openInJslabHref = useMemo(() => {
     const state = { code, engines: ENGINE_KEYS.filter((k) => engines[k]), v8Flags: selectedV8Flags };
-    return buildShareUrl(window.location.origin, "/playground", state);
+    return buildShareUrl("", "/playground", state);
   }, [code, engines, selectedV8Flags]);
 
   return (
@@ -52,7 +55,7 @@ export default function EmbedPlaygroundClient() {
             <CiPlay1 /> Run
           </Button>
           <Link
-            href={openInJslab()}
+            href={openInJslabHref}
             target="_blank"
             rel="noopener noreferrer"
             fontSize="xs"
