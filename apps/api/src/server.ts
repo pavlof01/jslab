@@ -9,7 +9,14 @@ import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceLimit } from "./rateLimit.js";
 import { extractApiKey, issueApiKey, lookupApiKey } from "./apiKeys.js";
-import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema, validationMessage } from "./schemas.js";
+import {
+  normalizeFlags,
+  runRequestSchema,
+  traceExecuteRequestSchema,
+  traceExecuteEqualitySchema,
+  validationMessage,
+  clampTimeout,
+} from "./schemas.js";
 import { registry, runsTotal, cacheEvents, rateLimited, runDuration } from "./metrics.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
@@ -96,7 +103,11 @@ async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
 function normalizeRequest(body: unknown): NormalizedRunRequest {
   const parsed = runRequestSchema.parse(body);
 
-  const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
+  const timeoutMs = clampTimeout(parsed.options?.timeoutMs, {
+    min: config.MIN_TIMEOUT_MS,
+    max: config.MAX_TIMEOUT_MS,
+    fallback: config.DEFAULT_TIMEOUT_MS,
+  });
 
   const flags = normalizeFlags(parsed.engine, parsed.options?.flags ?? [], config.MAX_FLAGS);
 

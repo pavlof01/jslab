@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeFlags, allowedFlags, runRequestSchema, validationMessage } from "./schemas.js";
+import { normalizeFlags, allowedFlags, runRequestSchema, validationMessage, clampTimeout } from "./schemas.js";
 
 describe("normalizeFlags", () => {
   it("drops flags not on the per-engine allowlist", () => {
@@ -51,6 +51,31 @@ describe("runRequestSchema", () => {
 
   it("rejects empty sourceText", () => {
     expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "" })).toThrow();
+  });
+});
+
+describe("clampTimeout", () => {
+  const bounds = { min: 250, max: 5000, fallback: 2000 };
+
+  it("raises a timeout that is too small to ever succeed", () => {
+    // A caller asking for 1ms used to reach the engine unchanged and come back
+    // as a 504 "execution timed out" — a 5xx caused purely by the request.
+    expect(clampTimeout(1, bounds)).toBe(250);
+    expect(clampTimeout(249, bounds)).toBe(250);
+  });
+
+  it("caps a timeout above the ceiling", () => {
+    expect(clampTimeout(60_000, bounds)).toBe(5000);
+  });
+
+  it("passes an in-range timeout through", () => {
+    expect(clampTimeout(250, bounds)).toBe(250);
+    expect(clampTimeout(3000, bounds)).toBe(3000);
+    expect(clampTimeout(5000, bounds)).toBe(5000);
+  });
+
+  it("falls back to the default when no timeout is given", () => {
+    expect(clampTimeout(undefined, bounds)).toBe(2000);
   });
 });
 

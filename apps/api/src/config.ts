@@ -19,6 +19,10 @@ const envSchema = z.object({
   API_KEY_RATE_LIMIT_PER_MIN: z.coerce.number().default(240),
   API_KEY_ISSUE_PER_HOUR: z.coerce.number().default(5),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
+  // Floor for a caller-supplied timeout. Below this even a trivial snippet
+  // cannot finish (spawning the engine binary alone costs tens of ms), so the
+  // run would always report a timeout — a 5xx caused purely by the request.
+  MIN_TIMEOUT_MS: z.coerce.number().default(250),
   DEFAULT_TIMEOUT_MS: z.coerce.number().default(2000),
   MAX_FLAGS: z.coerce.number().default(10),
   MAX_SOURCE_LENGTH: z.coerce.number().default(20000),

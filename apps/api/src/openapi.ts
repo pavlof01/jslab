@@ -35,7 +35,12 @@ export const openapiDoc = {
             additionalProperties: false,
             properties: {
               flags: { type: "array", items: { type: "string" } },
-              timeoutMs: { type: "integer", minimum: 1 }
+              timeoutMs: {
+                type: "integer",
+                minimum: 1,
+                description:
+                  "Wall-clock budget for the run. Clamped to 250–5000 ms: a smaller value cannot outlast the engine's own startup and would always time out.",
+              }
             }
           }
         }
