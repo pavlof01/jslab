@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeFlags, allowedFlags, runRequestSchema } from "./schemas.js";
+import { normalizeFlags, allowedFlags, runRequestSchema, validationMessage } from "./schemas.js";
 
 describe("normalizeFlags", () => {
   it("drops flags not on the per-engine allowlist", () => {
@@ -51,5 +51,45 @@ describe("runRequestSchema", () => {
 
   it("rejects empty sourceText", () => {
     expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "" })).toThrow();
+  });
+});
+
+describe("validationMessage", () => {
+  function messageFor(body: unknown): string {
+    try {
+      runRequestSchema.parse(body);
+      throw new Error("expected the schema to reject this payload");
+    } catch (err) {
+      return validationMessage(err);
+    }
+  }
+
+  it("names the offending field instead of dumping the issue list", () => {
+    const message = messageFor({ engine: "v8", sourceText: "" });
+    expect(message).toMatch(/^sourceText: /);
+    // The raw ZodError message is a JSON array of issues; never surface that.
+    expect(message).not.toContain("[");
+    expect(message).not.toContain("too_small");
+  });
+
+  it("names the field for an unknown engine and lists the accepted ones", () => {
+    const message = messageFor({ engine: "quickjs", sourceText: "1" });
+    expect(message).toMatch(/^engine: /);
+    expect(message).toContain("'v8'");
+  });
+
+  it("reports a missing field", () => {
+    expect(messageFor({ engine: "v8" })).toBe("sourceText: Required");
+  });
+
+  it("passes through a plain Error message", () => {
+    expect(validationMessage(new Error("sourceText exceeds limit (20000 chars)"))).toBe(
+      "sourceText exceeds limit (20000 chars)",
+    );
+  });
+
+  it("falls back to a generic message for anything else", () => {
+    expect(validationMessage(undefined)).toBe("invalid payload");
+    expect(validationMessage(new Error(""))).toBe("invalid payload");
   });
 });

@@ -9,7 +9,7 @@ import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceLimit } from "./rateLimit.js";
 import { extractApiKey, issueApiKey, lookupApiKey } from "./apiKeys.js";
-import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema } from "./schemas.js";
+import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema, validationMessage } from "./schemas.js";
 import { registry, runsTotal, cacheEvents, rateLimited, runDuration } from "./metrics.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
@@ -262,8 +262,8 @@ app.post("/api/run", async (req, reply) => {
   let normalized: NormalizedRunRequest;
   try {
     normalized = normalizeRequest(req.body);
-  } catch (err: any) {
-    reply.code(400).send({ ok: false, error: err?.message || "invalid payload" });
+  } catch (err: unknown) {
+    reply.code(400).send({ ok: false, error: validationMessage(err) });
     return;
   }
 
