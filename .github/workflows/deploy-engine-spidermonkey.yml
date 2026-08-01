@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "apps/engine-spidermonkey/**"
+      - "packages/engine-runtime/**"
       - ".github/workflows/deploy-engine-spidermonkey.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
@@ -14,8 +15,9 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-service-vps.yml
     with:
       service: engine-spidermonkey
-      context: apps/engine-spidermonkey
+      context: .
       dockerfile: apps/engine-spidermonkey/Dockerfile
+      verify_dir: apps/engine-spidermonkey
       image: jslab-engine-spidermonkey
       deployment: engine-spidermonkey
       container: engine-spidermonkey

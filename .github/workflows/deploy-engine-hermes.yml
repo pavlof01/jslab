@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "apps/engine-hermes/**"
+      - "packages/engine-runtime/**"
       - ".github/workflows/deploy-engine-hermes.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
@@ -14,8 +15,9 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-service-vps.yml
     with:
       service: engine-hermes
-      context: apps/engine-hermes
+      context: .
       dockerfile: apps/engine-hermes/Dockerfile
+      verify_dir: apps/engine-hermes
       image: jslab-engine-hermes
       deployment: engine-hermes
       container: engine-hermes

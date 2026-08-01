@@ -15,8 +15,8 @@ services:
   # V8 Engine
   engine-v8:
     build:
-      context: ./apps/engine-v8
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/engine-v8/Dockerfile
       target: dev
     ports:
       - "8087:8080"
@@ -43,8 +43,8 @@ services:
   # Hermes Engine
   engine-hermes:
     build:
-      context: ./apps/engine-hermes
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/engine-hermes/Dockerfile
       target: dev
     ports:
       - "8082:8080"
@@ -74,8 +74,8 @@ services:
   # SpiderMonkey Engine
   engine-spidermonkey:
     build:
-      context: ./apps/engine-spidermonkey
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/engine-spidermonkey/Dockerfile
       target: dev
     ports:
       - "8083:8080"
@@ -102,8 +102,8 @@ services:
   # JSC Engine
   engine-jsc:
     build:
-      context: ./apps/engine-jsc
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/engine-jsc/Dockerfile
       target: dev
     ports:
       - "8084:8080"
