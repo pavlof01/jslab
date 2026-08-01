@@ -19,4 +19,5 @@ jobs:
       image: jslab-api
       deployment: api
       container: api
+      verify_command: npm run lint && npm test
     secrets: inherit
