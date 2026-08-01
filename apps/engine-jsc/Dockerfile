@@ -13,10 +13,12 @@ COPY --from=node-tooling /usr/local/lib/node_modules /usr/local/lib/node_modules
 RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
  && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
-# Shared engine runtime — its prepare script builds dist during npm ci, and
-# install-links (apps/engine-jsc/.npmrc) copies it as a real dir so the
-# multi-stage runner COPY of node_modules stays intact.
+# Shared engine runtime. install-links (apps/engine-jsc/.npmrc) copies it into
+# node_modules as a real dir — so the multi-stage runner COPY of node_modules
+# stays intact — but that copy only carries what is already on disk, so dist has
+# to be built here, before the app install.
 COPY packages/engine-runtime /packages/engine-runtime
+RUN cd /packages/engine-runtime && npm ci && npm run build
 COPY apps/engine-jsc/package.json apps/engine-jsc/package-lock.json apps/engine-jsc/.npmrc ./
 RUN npm ci
 

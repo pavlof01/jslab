@@ -61,6 +61,11 @@ on:
         required: false
         default: "npm run lint"
         type: string
+      needs_engine_runtime:
+        description: "Build packages/engine-runtime before verifying (engine services depend on it as a file: dependency)"
+        required: false
+        default: false
+        type: boolean
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -106,6 +111,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: ${{ env.VERIFY_DIR }}/package-lock.json
+      # npm copies a file: dependency into node_modules as-is, so the shared
+      # runtime's dist has to exist before the service installs.
+      - name: Build shared engine runtime
+        if: ${{ inputs.needs_engine_runtime }}
+        working-directory: packages/engine-runtime
+        run: npm ci && npm run build
       - name: Install
         working-directory: ${{ env.VERIFY_DIR }}
         run: npm ci

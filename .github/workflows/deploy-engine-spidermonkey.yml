@@ -18,6 +18,7 @@ jobs:
       context: .
       dockerfile: apps/engine-spidermonkey/Dockerfile
       verify_dir: apps/engine-spidermonkey
+      needs_engine_runtime: true
       image: jslab-engine-spidermonkey
       deployment: engine-spidermonkey
       container: engine-spidermonkey
