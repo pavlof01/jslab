@@ -83,6 +83,21 @@ export const traceExecuteEqualitySchema = z.object({
   input: z.string().min(1),
 });
 
+/**
+ * Client-facing message for a rejected payload. A ZodError's own `message` is
+ * the JSON dump of its issue list, which is useless to a caller and exposes the
+ * schema's shape, so report the first issue prefixed with its field instead.
+ */
+export function validationMessage(err: unknown): string {
+  if (err instanceof z.ZodError) {
+    const issue = err.issues[0];
+    if (!issue) return "invalid payload";
+    const path = issue.path.join(".");
+    return path ? `${path}: ${issue.message}` : issue.message;
+  }
+  return (err instanceof Error && err.message) || "invalid payload";
+}
+
 export function normalizeFlags(engine: EngineKind, flags: string[], maxFlags: number): string[] {
   const allow = new Set(engineFlags[engine]);
   const seen = new Set<string>();

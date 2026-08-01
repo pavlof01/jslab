@@ -108,6 +108,13 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
     const engines = enginesArg ?? Object.entries(previousState.engines).filter(([, v]) => v).map(([k]) => k as EngineKey);
     const v8Flags = v8FlagsArg ?? previousState.selectedV8Flags;
 
+    // The API rejects an empty sourceText with a 400; say so here instead of
+    // spending a request (and a rate-limit slot) to be told.
+    if (!code.trim()) {
+      set({ status: RunStatus.error, meta: "", error: "Nothing to run — the editor is empty." });
+      return;
+    }
+
     if (previousState.currentRun) {
       set({
         previousSnapshot: {
