@@ -8,6 +8,17 @@ spec:
   # Two replicas + the PDB below so a node drain or rollout evicts one pod at a
   # time while the other keeps serving, instead of a full outage (was replicas: 1).
   replicas: 2
+  # No surge pod: the node is sized so that the steady-state set of pods barely
+  # fits (engines request 1Gi each and roll with strategy: Recreate for the same
+  # reason). The default 25% maxSurge would need a third api pod's worth of
+  # capacity, which leaves the rollout stuck Pending — and a pending pod then
+  # competes for whatever an engine frees during its own deploy. Replacing one
+  # pod at a time keeps the other serving, matching the PDB below.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: api
