@@ -11,6 +11,8 @@ import Samples from "@/components/Samples";
 import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import ShareButton from "@/app/_components/ShareButton";
+import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
 
 const DEFAULT_SPLIT = [35, 65];
 const DEFAULT_SPLIT_MOBILE = [20, 80];
@@ -25,6 +27,7 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 export default function PlaygroundClient() {
   const { status, showDiff, code, engines } = useEngineOutputsState();
   const { runEngines, toggleDiff, setCode, setEngines } = useEngineOutputsActions();
+  useSharedStateRestore();
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
   const [sizes, setSizes] = useLocalStorage("splitter-sizes", DEFAULT_SPLIT);
   const [sizesMobile, setSizesMobile] = useLocalStorage("splitter-sizes-mobile", DEFAULT_SPLIT_MOBILE);
@@ -72,6 +75,7 @@ export default function PlaygroundClient() {
           <CiPlay1 /> Run
         </Button>
         <HStack>
+          <ShareButton />
           <Button size="sm" variant="surface" colorPalette="white" onClick={toggleDiff}>
             {showDiff ? "Hide Diff" : "Show Diff"}
           </Button>
