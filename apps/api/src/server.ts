@@ -161,8 +161,7 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
     const engineText = await readResponseText(engineRes.body);
 
     if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
-      const msg = engineRes.statusCode === 401 ? "engine auth failed" : "engine returned non-2xx";
-      log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, msg);
+      log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, "engine returned non-2xx");
     }
 
     // Engine signals backpressure (its per-pod concurrency cap) with 429.

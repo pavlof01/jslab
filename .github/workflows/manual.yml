@@ -3,7 +3,6 @@ name: deploy-all
 # Required GitHub secrets:
 # - DOCKERHUB_USERNAME / DOCKERHUB_TOKEN: push images to Docker Hub
 # - KUBECONFIG_BASE64: base64-encoded kubeconfig with cluster access
-# - API_KEY / ENGINE_SHARED_SECRET: runtime credentials for jslab services
 
 on:
   workflow_dispatch:
@@ -110,19 +109,8 @@ jobs:
           printf '%s' "$KUBECONFIG_BASE64" | base64 --decode > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Create/update runtime secrets
-        env:
-          API_KEY: ${{ secrets.API_KEY }}
-          ENGINE_SHARED_SECRET: ${{ secrets.ENGINE_SHARED_SECRET }}
-        run: |
-          set -euo pipefail
-
-          kubectl apply -f infra/k8s/base/namespace.yaml
-
-          kubectl -n "${NAMESPACE}" create secret generic api-secrets \
-            --from-literal=API_KEY="${API_KEY}" \
-            --from-literal=ENGINE_SHARED_SECRET="${ENGINE_SHARED_SECRET}" \
-            --dry-run=client -o yaml | kubectl apply -f -
+      - name: Ensure namespace
+        run: kubectl apply -f infra/k8s/base/namespace.yaml
 
       - name: Deploy manifests (kustomize)
         run: |
