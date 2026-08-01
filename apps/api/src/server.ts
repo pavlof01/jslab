@@ -7,7 +7,7 @@ import { request } from "undici";
 import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
-import { enforceRateLimit } from "./rateLimit.js";
+import { enforceLimit } from "./rateLimit.js";
 import { normalizeFlags, runRequestSchema, traceExecuteRequestSchema, traceExecuteEqualitySchema } from "./schemas.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
@@ -134,19 +134,9 @@ app.post("/api/run", async (req, reply) => {
 
   const ip = clientIp(req);
 
-  const rate = await enforceRateLimit(
-    redis,
-    ip,
-    {
-      generalLimit: config.RATE_LIMIT_PER_MIN,
-      heavyLimit: config.RATE_LIMIT_HEAVY_PER_MIN,
-      windowSeconds: 60,
-    },
-    reply
-  );
-
-  if (rate.limited) {
-    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: rate.retryAfter } });
+  const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
+  if (general.limited) {
+    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return;
   }
 
@@ -160,6 +150,14 @@ app.post("/api/run", async (req, reply) => {
       meta: { ...cached.meta, cacheHit: true, durationMs: Date.now() - start },
     };
     reply.send(payload);
+    return;
+  }
+
+  // Only cache misses spawn an engine process, so only they consume the
+  // (stricter) heavy budget. Cache hits stay cheap for the client.
+  const heavy = await enforceLimit(redis, ip, "heavy", config.RATE_LIMIT_HEAVY_PER_MIN, 60, reply, req.log);
+  if (heavy.limited) {
+    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
     return;
   }
 
@@ -285,12 +283,31 @@ async function proxyToTraceService(
   }
 }
 
+// Trace executions run engine262 over user input, so they are as heavy as an
+// engine run and must be metered. They share the same general + heavy IP
+// budgets as /api/run so a client can't dodge the limit by switching endpoints.
+async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
+  const ip = clientIp(req);
+  const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
+  if (general.limited) {
+    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
+    return true;
+  }
+  const heavy = await enforceLimit(redis, ip, "heavy", config.RATE_LIMIT_HEAVY_PER_MIN, 60, reply, req.log);
+  if (heavy.limited) {
+    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
+    return true;
+  }
+  return false;
+}
+
 app.post("/api/trace/execute/type-conversion", async (req, reply) => {
   const parsed = traceExecuteRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
     return;
   }
+  if (await enforceTraceRateLimit(req, reply)) return;
   await proxyToTraceService(req, reply, "/execute/type-conversion", parsed.data);
 });
 
@@ -300,6 +317,7 @@ app.post("/api/trace/execute/equality", async (req, reply) => {
     reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
     return;
   }
+  if (await enforceTraceRateLimit(req, reply)) return;
   await proxyToTraceService(req, reply, "/execute/equality", parsed.data);
 });
 
