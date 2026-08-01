@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "export REDIS_URL=redis://localhost:6379 node dist/server.js",
-    "lint": "tsc --noEmit"
+    "start": "node dist/server.js",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fastify/under-pressure": "^8.2.0",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^20.12.11",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.10"
   }
 }

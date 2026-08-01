@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "" }
+          - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "npm test" }
           - { name: engine-v8,            dir: apps/engine-v8,            typecheck: "npm run lint",  test: "" }
           - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "" }
           - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "" }
