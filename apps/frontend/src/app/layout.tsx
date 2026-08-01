@@ -11,7 +11,7 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale: pinning it to 1 blocks pinch-zoom, a WCAG 1.4.4 failure.
 };
 
 export const metadata: Metadata = {
