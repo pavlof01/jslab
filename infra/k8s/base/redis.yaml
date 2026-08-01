@@ -27,6 +27,14 @@ spec:
             - ""
             - "--appendonly"
             - "no"
+            # Cap memory below the 256Mi pod limit (headroom for Redis overhead
+            # and fragmentation) and evict under pressure. Without a policy Redis
+            # defaults to noeviction, so a full instance rejects writes with OOM —
+            # which silently breaks cache writes AND the rate limiter's INCR.
+            - "--maxmemory"
+            - "200mb"
+            - "--maxmemory-policy"
+            - "allkeys-lru"
           ports:
             - containerPort: 6379
           resources:
