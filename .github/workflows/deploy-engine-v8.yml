@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "apps/engine-v8/**"
+      - "packages/engine-runtime/**"
       - ".github/workflows/deploy-engine-v8.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
@@ -14,8 +15,9 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-service-vps.yml
     with:
       service: engine-v8
-      context: apps/engine-v8
+      context: .
       dockerfile: apps/engine-v8/Dockerfile
+      verify_dir: apps/engine-v8
       image: jslab-engine-v8
       deployment: engine-v8
       container: engine-v8

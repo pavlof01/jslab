@@ -12,7 +12,8 @@
   "dependencies": {
     "fastify": "^4.27.2",
     "pino": "^8.20.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@jslab/engine-runtime": "file:../../packages/engine-runtime"
   },
   "devDependencies": {
     "@types/node": "^20.12.11",
@@ -20,4 +21,3 @@
     "typescript": "^5.4.5"
   }
 }
-

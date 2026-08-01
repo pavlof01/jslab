@@ -44,52 +44,52 @@ build:
           - "tsconfig*.json"
 
     - image: jslab-engine-v8
-      context: apps/engine-v8
+      context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: apps/engine-v8/Dockerfile
         target: dev
       sync:
         infer:
-          - "src/**/*.ts"
-          - "package.json"
-          - "package-lock.json"
-          - "tsconfig*.json"
+          - "apps/engine-v8/src/**/*.ts"
+          - "apps/engine-v8/package.json"
+          - "apps/engine-v8/package-lock.json"
+          - "apps/engine-v8/tsconfig*.json"
 
     - image: jslab-engine-hermes
-      context: apps/engine-hermes
+      context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: apps/engine-hermes/Dockerfile
         target: dev
       sync:
         infer:
-          - "src/**/*.ts"
-          - "package.json"
-          - "package-lock.json"
-          - "tsconfig*.json"
+          - "apps/engine-hermes/src/**/*.ts"
+          - "apps/engine-hermes/package.json"
+          - "apps/engine-hermes/package-lock.json"
+          - "apps/engine-hermes/tsconfig*.json"
 
     - image: jslab-engine-jsc
-      context: apps/engine-jsc
+      context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: apps/engine-jsc/Dockerfile
         target: dev
       sync:
         infer:
-          - "src/**/*.ts"
-          - "package.json"
-          - "package-lock.json"
-          - "tsconfig*.json"
+          - "apps/engine-jsc/src/**/*.ts"
+          - "apps/engine-jsc/package.json"
+          - "apps/engine-jsc/package-lock.json"
+          - "apps/engine-jsc/tsconfig*.json"
 
     - image: jslab-engine-spidermonkey
-      context: apps/engine-spidermonkey
+      context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: apps/engine-spidermonkey/Dockerfile
         target: dev
       sync:
         infer:
-          - "src/**/*.ts"
-          - "package.json"
-          - "package-lock.json"
-          - "tsconfig*.json"
+          - "apps/engine-spidermonkey/src/**/*.ts"
+          - "apps/engine-spidermonkey/package.json"
+          - "apps/engine-spidermonkey/package-lock.json"
+          - "apps/engine-spidermonkey/tsconfig*.json"
 
 manifests:
   kustomize:

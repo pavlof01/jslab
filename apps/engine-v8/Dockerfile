@@ -13,7 +13,11 @@ FROM --platform=$TARGETPLATFORM ${V8_BASE_IMAGE} AS v8-binary
 ########################
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+# Shared engine runtime — its prepare script builds dist during npm ci, and
+# install-links (apps/engine-v8/.npmrc) copies it as a real dir so the
+# multi-stage runner COPY of node_modules stays intact.
+COPY packages/engine-runtime /packages/engine-runtime
+COPY apps/engine-v8/package.json apps/engine-v8/package-lock.json apps/engine-v8/.npmrc ./
 RUN npm ci
 
 ########################
@@ -22,8 +26,8 @@ RUN npm ci
 FROM deps AS dev
 ENV NODE_ENV=development
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY apps/engine-v8/tsconfig.json ./
+COPY apps/engine-v8/src ./src
 
 # Keep V8 layout identical to base image
 RUN mkdir -p /opt/v8
@@ -51,8 +55,8 @@ CMD ["npm", "run", "dev"]
 FROM deps AS builder
 ENV NODE_ENV=production
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY apps/engine-v8/tsconfig.json ./
+COPY apps/engine-v8/src ./src
 
 RUN npm run build
 RUN npm prune --omit=dev
