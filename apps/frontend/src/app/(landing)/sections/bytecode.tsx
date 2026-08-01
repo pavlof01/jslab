@@ -223,7 +223,7 @@ export function BytecodeSection() {
               Same Code. Different Bytecode.
             </Heading>
             <Text color={mutedText} fontSize="base" lineHeight="1.8" maxW="2xl">
-              Every JavaScript engine compiles your code differently. Here's how{" "}
+              Every JavaScript engine compiles your code differently. Here&apos;s how{" "}
               <Text as="span" color="white" fontWeight="600">
                 function f(x){" {"} return x + 1 {"}"}
               </Text>{" "}
