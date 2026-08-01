@@ -13,10 +13,12 @@ FROM --platform=$TARGETPLATFORM ${V8_BASE_IMAGE} AS v8-binary
 ########################
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app
-# Shared engine runtime — its prepare script builds dist during npm ci, and
-# install-links (apps/engine-v8/.npmrc) copies it as a real dir so the
-# multi-stage runner COPY of node_modules stays intact.
+# Shared engine runtime. install-links (apps/engine-v8/.npmrc) copies it into
+# node_modules as a real dir — so the multi-stage runner COPY of node_modules
+# stays intact — but that copy only carries what is already on disk, so dist has
+# to be built here, before the app install.
 COPY packages/engine-runtime /packages/engine-runtime
+RUN cd /packages/engine-runtime && npm ci && npm run build
 COPY apps/engine-v8/package.json apps/engine-v8/package-lock.json apps/engine-v8/.npmrc ./
 RUN npm ci
 

@@ -18,6 +18,7 @@ jobs:
       context: .
       dockerfile: apps/engine-hermes/Dockerfile
       verify_dir: apps/engine-hermes
+      needs_engine_runtime: true
       image: jslab-engine-hermes
       deployment: engine-hermes
       container: engine-hermes

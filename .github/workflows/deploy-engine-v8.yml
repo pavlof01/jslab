@@ -18,6 +18,7 @@ jobs:
       context: .
       dockerfile: apps/engine-v8/Dockerfile
       verify_dir: apps/engine-v8
+      needs_engine_runtime: true
       image: jslab-engine-v8
       deployment: engine-v8
       container: engine-v8

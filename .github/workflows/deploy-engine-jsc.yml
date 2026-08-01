@@ -18,6 +18,7 @@ jobs:
       context: .
       dockerfile: apps/engine-jsc/Dockerfile
       verify_dir: apps/engine-jsc
+      needs_engine_runtime: true
       image: jslab-engine-jsc
       deployment: engine-jsc
       container: engine-jsc

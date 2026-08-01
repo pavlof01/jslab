@@ -22,10 +22,10 @@ jobs:
         include:
           - { name: engine-runtime,       dir: packages/engine-runtime,   typecheck: "npm run lint",  test: "" }
           - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "npm test" }
-          - { name: engine-v8,            dir: apps/engine-v8,            typecheck: "npm run lint",  test: "" }
-          - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "" }
-          - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "" }
-          - { name: engine-spidermonkey,  dir: apps/engine-spidermonkey,  typecheck: "npm run lint",  test: "" }
+          - { name: engine-v8,            dir: apps/engine-v8,            typecheck: "npm run lint",  test: "", runtime: true }
+          - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "", runtime: true }
+          - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "", runtime: true }
+          - { name: engine-spidermonkey,  dir: apps/engine-spidermonkey,  typecheck: "npm run lint",  test: "", runtime: true }
           # trace-service test sources are not committed (only gitignored dist/
           # build output + the engine262 submodule), so `npm test` finds nothing
           # in a clean checkout. Typecheck only until the suite is committed.
@@ -41,6 +41,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: ${{ matrix.dir }}/package-lock.json
+      # Engines consume @jslab/engine-runtime as a file: dependency, and npm
+      # copies it into node_modules as-is — dist has to exist beforehand.
+      - name: Build shared engine runtime
+        if: ${{ matrix.runtime }}
+        working-directory: packages/engine-runtime
+        run: npm ci && npm run build
       - name: Install
         working-directory: ${{ matrix.dir }}
         run: npm ci
