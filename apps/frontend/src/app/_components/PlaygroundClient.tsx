@@ -12,7 +12,9 @@ import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import ShareButton from "@/app/_components/ShareButton";
+import RunHistory from "@/app/_components/RunHistory";
 import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
+import { pushHistory } from "@/lib/runHistory";
 
 const DEFAULT_SPLIT = [35, 65];
 const DEFAULT_SPLIT_MOBILE = [20, 80];
@@ -25,7 +27,7 @@ const createEngineSelection = (): Record<EngineKey, boolean> => ({
 });
 
 export default function PlaygroundClient() {
-  const { status, showDiff, code, engines } = useEngineOutputsState();
+  const { status, showDiff, code, engines, selectedV8Flags } = useEngineOutputsState();
   const { runEngines, toggleDiff, setCode, setEngines } = useEngineOutputsActions();
   useSharedStateRestore();
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
@@ -54,8 +56,14 @@ export default function PlaygroundClient() {
   const run = useCallback(async () => {
     try {
       await runEngines();
+      // Record the run so the history drawer can restore it later.
+      pushHistory(
+        { code, engines: ENGINE_KEYS.filter((k) => engines[k]), v8Flags: selectedV8Flags },
+        () => crypto.randomUUID(),
+        Date.now(),
+      );
     } catch {}
-  }, [runEngines]);
+  }, [runEngines, code, engines, selectedV8Flags]);
 
   return (
     <Flex direction="column" bg="brand.800" height="calc(100dvh - var(--header-h))">
@@ -75,6 +83,7 @@ export default function PlaygroundClient() {
           <CiPlay1 /> Run
         </Button>
         <HStack>
+          <RunHistory />
           <ShareButton />
           <Button size="sm" variant="surface" colorPalette="white" onClick={toggleDiff}>
             {showDiff ? "Hide Diff" : "Show Diff"}
