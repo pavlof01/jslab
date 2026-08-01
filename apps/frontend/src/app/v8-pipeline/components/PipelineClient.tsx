@@ -13,6 +13,7 @@ import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/Def
 import TokensPane from "./TokensPane";
 import Hint from "./Hint";
 import CodeBlockShiki from "@/components/OutputsPanel/CodeBlockShiki";
+import DeoptView from "./DeoptView";
 
 const SAMPLE = `function add(a, b) {
   return a + b;
@@ -33,7 +34,7 @@ for (let i = 0; i < 400; i++) add(i, i + 1);
 
 // add(1, 2)`;
 
-type ApiStageId = "ast" | "bytecode" | "sparkplug" | "maglev" | "turbofan";
+type ApiStageId = "ast" | "bytecode" | "sparkplug" | "maglev" | "turbofan" | "deopt";
 export type StageId = "tokens" | ApiStageId;
 
 interface StageData {
@@ -51,6 +52,7 @@ const STAGE_META: { id: StageId; label: string; tier: string }[] = [
   { id: "sparkplug", label: "Sparkplug", tier: "Baseline JIT" },
   { id: "maglev", label: "Maglev", tier: "Mid-tier JIT" },
   { id: "turbofan", label: "TurboFan", tier: "Opt JIT" },
+  { id: "deopt", label: "Deopts", tier: "Runtime" },
 ];
 
 const API_STAGES: { id: ApiStageId; flags: string[] }[] = [
@@ -59,6 +61,8 @@ const API_STAGES: { id: ApiStageId; flags: string[] }[] = [
   { id: "sparkplug", flags: ["--print-code", "--allow-natives-syntax"] },
   { id: "maglev", flags: ["--print-maglev-code", "--allow-natives-syntax"] },
   { id: "turbofan", flags: ["--print-opt-code", "--allow-natives-syntax"] },
+  // Runtime optimization/deopt trace — rendered as a structured event list.
+  { id: "deopt", flags: ["--trace-opt", "--trace-deopt", "--allow-natives-syntax"] },
 ];
 
 // V8 informational messages printed to stderr when tracing flags are active.
@@ -112,6 +116,7 @@ export default function PipelineClient() {
     sparkplug: EMPTY_STAGE,
     maglev: EMPTY_STAGE,
     turbofan: EMPTY_STAGE,
+    deopt: EMPTY_STAGE,
   });
 
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
@@ -280,6 +285,11 @@ export default function PipelineClient() {
               <Hint stageId="turbofan" />
               <StageError stage={stages.turbofan} />
               <CodeBlockShiki code={stages.turbofan.stdout} />
+            </Tabs.Content>
+
+            <Tabs.Content value="deopt" overflow="auto" flexDirection="column" display="flex" flex="1" pt={0}>
+              <StageError stage={stages.deopt} />
+              <DeoptView output={`${stages.deopt.stdout}\n${stages.deopt.stderr}`} />
             </Tabs.Content>
           </Tabs.Root>
         </Splitter.Panel>
