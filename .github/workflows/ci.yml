@@ -29,7 +29,7 @@ jobs:
           # build output + the engine262 submodule), so `npm test` finds nothing
           # in a clean checkout. Typecheck only until the suite is committed.
           - { name: trace-service,        dir: apps/trace-service,        typecheck: "npm run typecheck", test: "" }
-          - { name: frontend,             dir: apps/frontend/src,         typecheck: "npx --no-install tsc --noEmit -p tsconfig.json", test: "npm test" }
+          - { name: frontend,             dir: apps/frontend/src,         typecheck: "npx --no-install tsc --noEmit -p tsconfig.json && npm run lint", test: "npm test" }
     steps:
       - uses: actions/checkout@v4
         with:

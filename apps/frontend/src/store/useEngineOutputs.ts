@@ -7,7 +7,7 @@ import { samples } from "@/lib/samples";
 
 const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
 
-export const createEmptyOut = (): Record<EngineKey, EngineResult> =>
+const createEmptyOut = (): Record<EngineKey, EngineResult> =>
   Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...DEFAULT_ENGINE_OUT }])) as Record<
     EngineKey,
     EngineResult
@@ -166,15 +166,6 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
     }
   },
 }));
-
-export const engineOutputsSelectors = {
-  out: (state: EngineOutputsState) => state.out,
-  status: (state: EngineOutputsState) => state.status,
-  meta: (state: EngineOutputsState) => state.meta,
-  error: (state: EngineOutputsState) => state.error,
-  previousSnapshot: (state: EngineOutputsState) => state.previousSnapshot,
-  currentRun: (state: EngineOutputsState) => state.currentRun,
-};
 
 export const useEngineOutputsState = () =>
   useEngineOutputsStore(
