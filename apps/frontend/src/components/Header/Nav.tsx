@@ -59,6 +59,12 @@ const navSections: NavSection[] = [
         description: "Predict what tricky expressions print, then see why.",
         href: "/quiz",
       },
+      {
+        label: "Public API",
+        description: "Run engines programmatically — issue a key and read the docs.",
+        href: "/api/docs",
+        external: true,
+      },
     ],
   },
 ];

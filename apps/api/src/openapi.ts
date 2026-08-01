@@ -5,8 +5,24 @@ export const openapiDoc = {
     version: "1.0.0"
   },
   servers: [{ url: "/api" }],
+  security: [{}, { ApiKeyHeader: [] }, { BearerAuth: [] }],
   components: {
+    securitySchemes: {
+      ApiKeyHeader: { type: "apiKey", in: "header", name: "x-api-key" },
+      BearerAuth: { type: "http", scheme: "bearer" }
+    },
     schemas: {
+      KeyResponse: {
+        type: "object",
+        additionalProperties: true,
+        required: ["ok", "apiKey", "rateLimitPerMin"],
+        properties: {
+          ok: { type: "boolean" },
+          apiKey: { type: "string" },
+          rateLimitPerMin: { type: "integer" },
+          usage: { type: "string" }
+        }
+      },
       RunRequest: {
         type: "object",
         additionalProperties: false,
@@ -91,6 +107,28 @@ TraceExecuteRequest: {
     }
   },
   paths: {
+    "/keys": {
+      post: {
+        summary: "Issue a public API key",
+        description:
+          "Self-service key issuance (no account needed). Issuance is IP-rate-limited. A key raises the request quota; send it as an 'x-api-key' header or 'Authorization: Bearer <key>'.",
+        security: [],
+        responses: {
+          "201": {
+            description: "key issued",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/KeyResponse" } } }
+          },
+          "429": {
+            description: "issuance rate limited",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
+          "503": {
+            description: "could not issue key",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
     "/healthz": {
       get: {
         summary: "Health check",

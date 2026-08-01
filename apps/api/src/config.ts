@@ -15,6 +15,9 @@ const envSchema = z.object({
   NEGATIVE_CACHE_TTL_SECONDS: z.coerce.number().default(30),
   RATE_LIMIT_PER_MIN: z.coerce.number().default(60),
   RATE_LIMIT_HEAVY_PER_MIN: z.coerce.number().default(20),
+  // Public API keys: quota for a valid key, and how many keys one IP may mint per hour.
+  API_KEY_RATE_LIMIT_PER_MIN: z.coerce.number().default(240),
+  API_KEY_ISSUE_PER_HOUR: z.coerce.number().default(5),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
   DEFAULT_TIMEOUT_MS: z.coerce.number().default(2000),
   MAX_FLAGS: z.coerce.number().default(10),
