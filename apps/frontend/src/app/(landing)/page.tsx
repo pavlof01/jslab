@@ -1,6 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import { HeroSection } from "./sections/hero";
 import { MethodologySection } from "./sections/methodology";
+import { ToolsSection } from "./sections/tools";
 import { BytecodeSection } from "./sections/bytecode";
 import { AbstractFunctionsSection } from "./sections/abstractFunctions";
 import { ReadyToDebugSection } from "./sections/readyToDebug";
@@ -38,6 +39,7 @@ export default async function LandingPage() {
       </Box>
 
       <HeroSection />
+      <ToolsSection />
       <MethodologySection />
       <BytecodeSection />
       <AbstractFunctionsSection initialData={abstractFunctionsInitialData} />

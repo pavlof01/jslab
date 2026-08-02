@@ -1,5 +1,7 @@
 import { Checkbox, CheckboxGroup, Fieldset, For, HStack } from "@chakra-ui/react";
 import { EngineKey, isEngineKey } from "@/lib/types";
+import { ENGINE_CAPABILITIES } from "@/lib/engineCapabilities";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface HeaderBarProps {
   selectedEngines: EngineKey[];
@@ -22,18 +24,25 @@ function EngineCheckboxSelector({ selectedEngines, onEnginesChange, tabs }: Head
           <HStack flexWrap="wrap" gap={3}>
             <For each={tabs}>
               {(tab) => (
-                <Checkbox.Root
+                <Tooltip
                   key={tab.key}
-                  value={tab.key}
-                  px={2}
-                  py={1}
-                  borderRadius="md"
-                  border="1px solid #64748b"
+                  openDelay={200}
+                  closeDelay={80}
+                  content={ENGINE_CAPABILITIES[tab.key].summary}
+                  contentProps={{ maxW: "16rem", fontSize: "xs" }}
                 >
-                  <Checkbox.HiddenInput />
-                  <Checkbox.Control />
-                  <Checkbox.Label>{tab.label}</Checkbox.Label>
-                </Checkbox.Root>
+                  <Checkbox.Root
+                    value={tab.key}
+                    px={2}
+                    py={1}
+                    borderRadius="md"
+                    border="1px solid #64748b"
+                  >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control />
+                    <Checkbox.Label>{tab.label}</Checkbox.Label>
+                  </Checkbox.Root>
+                </Tooltip>
               )}
             </For>
           </HStack>

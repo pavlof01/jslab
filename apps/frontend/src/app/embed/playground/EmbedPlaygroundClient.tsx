@@ -71,10 +71,10 @@ export default function EmbedPlaygroundClient() {
 
       <Flex flex="1" minH={0} direction={{ base: "column", md: "row" }}>
         <Flex flex="1" minH={0} borderRight={{ md: "1px solid #262626" }}>
-          <EditorPanel code={code} onCodeChange={(v) => setCode(v ?? "")} />
+          <EditorPanel code={code} onCodeChange={(v) => setCode(v ?? "")} onRun={run} />
         </Flex>
         <Flex flex="1" minH={0} overflow="auto">
-          <OutputsPanel />
+          <OutputsPanel compact />
         </Flex>
       </Flex>
     </Flex>

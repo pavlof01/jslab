@@ -9,7 +9,7 @@ export type Props = {
 
 const DefaultEmptyCodeBlockState: React.FC<Props> = ({
   title = "No output yet",
-  description = "Run an engine to generate bytecode or smth else",
+  description = "Run an engine to generate bytecode or program output",
 }) => {
   return (
     <EmptyState.Root>

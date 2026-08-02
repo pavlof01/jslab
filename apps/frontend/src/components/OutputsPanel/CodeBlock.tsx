@@ -3,7 +3,7 @@
 import { memo, useEffect, useState } from "react";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
-import { Box, BoxProps } from "@chakra-ui/react";
+import { Box, BoxProps, Skeleton, Stack } from "@chakra-ui/react";
 
 import hermesbc from "./tm/hermes-bytecode.tmLanguage.json";
 import jscbc from "./tm/jsc-bytecode.tmLanguage.json";
@@ -75,6 +75,9 @@ export async function highlight(code: string, lang: BundledLanguage | CustomLang
   return { tokens: diffTokens, highlighter };
 }
 
+// Ragged widths so the placeholder reads as lines of disassembly, not a block.
+const SKELETON_LINE_WIDTHS = ["45%", "72%", "60%", "80%", "38%", "66%"];
+
 interface Props {
   engineKey: EngineKey;
   out?: string;
@@ -116,6 +119,18 @@ export const HighlightedCode = memo(function HighlightedCode({
       cancelled = true;
     };
   }, [engineKey, out, prev, showDiff, isLoading]);
+
+  // While a run is in flight the effect above clears the tokens, so without this
+  // the pane would fall through to the "no output yet" empty state mid-run.
+  if (isLoading) {
+    return (
+      <Stack flex={1} gap={2} p={4} aria-busy="true" aria-label="Running engine">
+        {SKELETON_LINE_WIDTHS.map((width) => (
+          <Skeleton key={width} height="12px" width={width} />
+        ))}
+      </Stack>
+    );
+  }
 
   if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
 

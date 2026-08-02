@@ -62,3 +62,15 @@ export function decodeShareState(param: string): ShareState | null {
 export function buildShareUrl(origin: string, path: string, state: ShareState): string {
   return `${origin}${path}?${SHARE_PARAM}=${encodeShareState(state)}`;
 }
+
+/** Path of the chrome-free playground built for iframes. */
+export const EMBED_PATH = "/embed/playground";
+
+/**
+ * Ready-to-paste iframe snippet for the embeddable playground. The src is
+ * absolute because the snippet is pasted on someone else's site.
+ */
+export function buildEmbedSnippet(origin: string, state: ShareState, height = 520): string {
+  const src = buildShareUrl(origin, EMBED_PATH, state);
+  return `<iframe src="${src}" width="100%" height="${height}" style="border:0;border-radius:8px" title="JSLab playground" loading="lazy"></iframe>`;
+}

@@ -13,6 +13,7 @@ import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngin
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import ShareButton from "@/app/_components/ShareButton";
 import RunHistory from "@/app/_components/RunHistory";
+import RunStatusBar from "@/app/_components/RunStatusBar";
 import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
 import { pushHistory } from "@/lib/runHistory";
 
@@ -91,6 +92,7 @@ export default function PlaygroundClient() {
           <EngineCheckboxSelector selectedEngines={selectedEngines} onEnginesChange={handleEnginesChange} tabs={tabs} />
         </HStack>
       </Flex>
+      <RunStatusBar />
       <Splitter.Root
         orientation={isMobile ? "vertical" : "horizontal"}
         panels={[{ id: "editor", collapsible: true, collapsedSize: 5, minSize: 25 }, { id: "outputs" }]}
@@ -101,7 +103,7 @@ export default function PlaygroundClient() {
         <Splitter.Panel id="editor">
           <Flex bg="background.100" flexDirection="column" height="100%">
             <Flex flex={1} overflow="scroll">
-              <EditorPanel code={code} onCodeChange={(value) => setCode(value ?? "")} />
+              <EditorPanel code={code} onCodeChange={(value) => setCode(value ?? "")} onRun={run} />
             </Flex>
           </Flex>
         </Splitter.Panel>
