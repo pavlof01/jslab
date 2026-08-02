@@ -13,7 +13,10 @@ const BYTECODE_FLAG = "-d" as const;
 // assignment on purpose: jsc's -d dumps bytecode for every script it loads, and
 // this one has to stay a footnote above the snippet's own dump. `??=` leaves a
 // host-provided console (future jsc builds) alone.
-const CONSOLE_SHIM = `globalThis.console ??= { log: print, info: print, warn: print, error: print, debug: print };\n`;
+// `void` on purpose: jsc prints each script's completion value as "End: <value>",
+// so a bare assignment would put "End: [object Object]" above the snippet's own
+// output on every single run.
+const CONSOLE_SHIM = `void (globalThis.console ??= { log: print, info: print, warn: print, error: print, debug: print });\n`;
 const CONSOLE_SHIM_FILE = "console-shim.js";
 
 // JSC parses env vars starting with "JSC_" as VM options (Options.cpp).
