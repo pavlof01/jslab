@@ -9,6 +9,12 @@ on:
       - ".github/workflows/deploy-engine-v8.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Roll back: redeploy an image tag that already exists (e.g. an earlier commit SHA) instead of building this ref"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy:
@@ -22,4 +28,10 @@ jobs:
       image: jslab-engine-v8
       deployment: engine-v8
       container: engine-v8
+      image_tag: ${{ github.event.inputs.image_tag || '' }}
+      # d8 runs the snippet, so the smoke check asserts on real engine output:
+      # a missing or unusable binary cannot produce 42.
+      smoke_path: /run
+      smoke_body: '{"sourceText":"print(6*7)"}'
+      smoke_expect: "42"
     secrets: inherit

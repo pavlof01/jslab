@@ -8,6 +8,12 @@ on:
       - ".github/workflows/deploy-frontend.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Roll back: redeploy an image tag that already exists (e.g. an earlier commit SHA) instead of building this ref"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy:
@@ -21,4 +27,10 @@ jobs:
       container: frontend
       verify_dir: apps/frontend/src
       verify_command: npx --no-install tsc --noEmit -p tsconfig.json && npm run lint && npm test
+      image_tag: ${{ github.event.inputs.image_tag || '' }}
+      # Next.js listens on 3000 and has no health route, so the smoke check
+      # asks for the landing document: it only renders if the build is intact.
+      smoke_port: 3000
+      smoke_path: /
+      smoke_expect: "<html"
     secrets: inherit

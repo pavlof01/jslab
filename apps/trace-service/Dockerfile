@@ -3,7 +3,7 @@
 ########################
 # deps
 ########################
-FROM node:20-bookworm-slim AS deps
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -27,7 +27,7 @@ CMD ["npm", "run", "dev"]
 ########################
 # prod
 ########################
-FROM node:20-bookworm-slim AS prod
+FROM node:22-bookworm-slim AS prod
 ENV NODE_ENV=production
 WORKDIR /app
 

@@ -9,6 +9,12 @@ on:
       - ".github/workflows/deploy-engine-jsc.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Roll back: redeploy an image tag that already exists (e.g. an earlier commit SHA) instead of building this ref"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy:
@@ -22,4 +28,10 @@ jobs:
       image: jslab-engine-jsc
       deployment: engine-jsc
       container: engine-jsc
+      image_tag: ${{ github.event.inputs.image_tag || '' }}
+      # jsc executes the script even under -d (see apps/engine-jsc/src/server.ts),
+      # so 42 is printed alongside the bytecode dump.
+      smoke_path: /run
+      smoke_body: '{"sourceText":"print(6*7)"}'
+      smoke_expect: "42"
     secrets: inherit

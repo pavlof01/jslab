@@ -20,16 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: engine-runtime,       dir: packages/engine-runtime,   typecheck: "npm run lint",  test: "" }
+          - { name: engine-runtime,       dir: packages/engine-runtime,   typecheck: "npm run lint",  test: "npm test" }
           - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "npm test" }
           - { name: engine-v8,            dir: apps/engine-v8,            typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-spidermonkey,  dir: apps/engine-spidermonkey,  typecheck: "npm run lint",  test: "", runtime: true }
-          # trace-service test sources are not committed (only gitignored dist/
-          # build output + the engine262 submodule), so `npm test` finds nothing
-          # in a clean checkout. Typecheck only until the suite is committed.
-          - { name: trace-service,        dir: apps/trace-service,        typecheck: "npm run typecheck", test: "" }
+          - { name: trace-service,        dir: apps/trace-service,        typecheck: "npm run typecheck", test: "npm test" }
           - { name: frontend,             dir: apps/frontend/src,         typecheck: "npx --no-install tsc --noEmit -p tsconfig.json && npm run lint", test: "npm test" }
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +35,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: ${{ matrix.dir }}/package-lock.json
       # Engines consume @jslab/engine-runtime as a file: dependency, and npm

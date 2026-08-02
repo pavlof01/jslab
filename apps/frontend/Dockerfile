@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:20-bookworm-slim AS deps
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app/frontend
 COPY src/package.json src/package-lock.json ./
 RUN npm ci
@@ -18,7 +18,7 @@ COPY src ./
 RUN npm run build
 RUN npm prune --omit=dev
 
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app/frontend
 ENV NODE_ENV=production
 RUN groupadd -r app && useradd -r -g app app

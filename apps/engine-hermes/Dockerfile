@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 ARG HERMES_BASE_IMAGE=pavlof01/hermes:latest
 
-FROM node:20-bookworm-slim AS node-tooling
+FROM node:22-bookworm-slim AS node-tooling
 
 FROM ${HERMES_BASE_IMAGE} AS deps
 WORKDIR /app
