@@ -3,6 +3,8 @@ import { Show, Stack, Tabs } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "../../lib/types";
 import { HighlightedCode } from "./CodeBlock";
 import V8MenuControls from "./v8MenuControls";
+import BytecodeLegend from "./components/BytecodeLegend";
+import EngineHint from "./components/EngineHint";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
 
 export const tabs: { key: EngineKey; label: string }[] = [
@@ -12,7 +14,12 @@ export const tabs: { key: EngineKey; label: string }[] = [
   { key: EngineKey.jsc, label: "JSC" },
 ];
 
-export function OutputsPanel() {
+type OutputsPanelProps = {
+  /** Trims the explanatory chrome for the iframe embed, which is height-boxed. */
+  compact?: boolean;
+};
+
+export function OutputsPanel({ compact = false }: OutputsPanelProps = {}) {
   const { out, previousSnapshot, showDiff, status, engines, activeTab } = useEngineOutputsState();
   const { setActiveTab } = useEngineOutputsActions();
 
@@ -55,6 +62,10 @@ export function OutputsPanel() {
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="background.200" p={4} overflow="auto">
             <Show when={canRenderV8Controls}>
               <V8MenuControls />
+            </Show>
+            <EngineHint engineKey={activeKey} compact={compact} />
+            <Show when={canRenderV8Controls && !compact}>
+              <BytecodeLegend />
             </Show>
             <HighlightedCode
               engineKey={activeKey}

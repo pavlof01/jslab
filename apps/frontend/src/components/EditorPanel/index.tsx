@@ -47,15 +47,23 @@ const v8NativeIntrinsics = [
 interface EditorPanelProps {
   code: string;
   onCodeChange: (value?: string) => void;
+  /** Triggered by Cmd/Ctrl+Enter inside the editor. */
+  onRun?: () => void;
 }
 
-export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
+export function EditorPanel({ code, onCodeChange, onRun }: EditorPanelProps) {
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationsRef = useRef<string[]>([]);
   const completionRef = useRef<any>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
 
+  // Monaco commands are registered once on mount and capture their closure, so
+  // read the handler through a ref to avoid firing a stale run.
+  const onRunRef = useRef(onRun);
+  useEffect(() => {
+    onRunRef.current = onRun;
+  }, [onRun]);
 
   useEffect(() => () => completionRef.current?.dispose?.(), []);
 
@@ -87,6 +95,7 @@ export function EditorPanel({ code, onCodeChange }: EditorPanelProps) {
     editorRef.current = editor;
     monacoRef.current = monaco;
     setIsEditorReady(true);
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current?.());
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: false,
       noSyntaxValidation: false,

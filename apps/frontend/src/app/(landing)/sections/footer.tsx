@@ -5,6 +5,7 @@ import { LuGlobe } from "react-icons/lu";
 import { MdMailOutline } from "react-icons/md";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { tools } from "@/lib/tools";
 
 const displayFont = "'Plus Jakarta Sans', Inter, var(--font-sans), sans-serif";
 
@@ -16,9 +17,7 @@ const MAILTO_URL = "mailto:pavlof01@gmail.com";
 type FooterLink = { label: string; href: string; external?: boolean };
 
 const platformLinks: FooterLink[] = [
-  { label: "Interactive Trace", href: "/playground" },
-  { label: "Type Conversion", href: "/type-conversion" },
-  { label: "Equality Operators", href: "/equality" },
+  ...tools.map((tool) => ({ label: tool.label, href: tool.href })),
   { label: "Repository", href: REPO_URL, external: true },
   { label: "Infra Notes", href: `${REPO_URL}/blob/main/docs/infra.md`, external: true },
 ];
@@ -40,38 +39,33 @@ type Props = {
   items: FooterLink[];
 };
 
-const WipFooterList: React.FC<Props> = ({ items }) => {
+// Every entry points at a shipped page, so these are real links. The previous
+// WIP treatment (pointer-events: none) made launched tools unreachable.
+const FooterList: React.FC<Props> = ({ items }) => {
   return (
     <VStack align="start" gap={{ base: 3, md: 4 }}>
       {items.map((item) => (
-        <Flex
+        <Button
           key={item.label}
-          align={{ base: "flex-start", sm: "center" }}
-          gap={2}
-          wrap="wrap"
-          width="full"
+          asChild
+          variant="plain"
+          px={0}
+          h="auto"
+          minW="auto"
+          justifyContent="flex-start"
           color="whiteAlpha.500"
-          cursor="not-allowed"
-          opacity={0.6}
-          pointerEvents="none"
-          userSelect="none"
+          fontSize="sm"
+          fontWeight="500"
+          _hover={{ color: "brand.300" }}
         >
-          <Text fontSize="sm" fontWeight="500">
-            {item.label}
-          </Text>
-          <Box
-            borderRadius="md"
-            bg="brandAlpha.200"
-            px={2}
-            py={1}
-            color="brand.300"
-            fontSize="xs"
-            fontWeight="700"
-            lineHeight="1"
-          >
-            WIP
-          </Box>
-        </Flex>
+          {item.external ? (
+            <Link href={item.href} target="_blank" rel="noreferrer">
+              {item.label}
+            </Link>
+          ) : (
+            <Link href={item.href}>{item.label}</Link>
+          )}
+        </Button>
       ))}
     </VStack>
   );
@@ -134,7 +128,7 @@ export const FooterSection: React.FC = () => {
             >
               Platform
             </Text>
-            <WipFooterList items={platformLinks} />
+            <FooterList items={platformLinks} />
           </GridItem>
 
           <GridItem>
@@ -149,7 +143,7 @@ export const FooterSection: React.FC = () => {
             >
               Community
             </Text>
-            <WipFooterList items={communityLinks} />
+            <FooterList items={communityLinks} />
           </GridItem>
         </Grid>
 

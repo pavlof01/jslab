@@ -29,5 +29,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: "https://jslab.su/quiz",
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
+      url: "https://jslab.su/v8-log",
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
   ];
 }

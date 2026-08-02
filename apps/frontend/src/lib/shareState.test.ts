@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { encodeShareState, decodeShareState, buildShareUrl } from "./shareState";
+import { encodeShareState, decodeShareState, buildShareUrl, buildEmbedSnippet, SHARE_PARAM } from "./shareState";
 import { EngineKey } from "@/lib/types";
 
 const state = {
@@ -43,5 +43,14 @@ describe("shareState", () => {
     const url = buildShareUrl("https://jslab.su", "/playground", state);
     expect(url).toMatch(/^https:\/\/jslab\.su\/playground\?s=/);
     expect(decodeShareState(new URL(url).searchParams.get("s")!)).toEqual(state);
+  });
+
+  it("builds an embed snippet pointing at the embed playground", () => {
+    const snippet = buildEmbedSnippet("https://jslab.su", state);
+    const src = snippet.match(/src="([^"]+)"/)?.[1];
+
+    expect(src).toMatch(/^https:\/\/jslab\.su\/embed\/playground\?s=/);
+    expect(decodeShareState(new URL(src!).searchParams.get(SHARE_PARAM)!)).toEqual(state);
+    expect(snippet).toContain('loading="lazy"');
   });
 });

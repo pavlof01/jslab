@@ -8,7 +8,7 @@ import { EditorPanel } from "@/components/EditorPanel";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import { EngineKey } from "@/lib/types";
 import { tokenize, type Token } from "../lib/tokenize";
-import { runEngine } from "@/lib/api";
+import { describeRunFailure, runEngine, type RunFailure } from "@/lib/api";
 import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
 import TokensPane from "./TokensPane";
 import Hint from "./Hint";
@@ -109,6 +109,7 @@ export default function PipelineClient() {
   const [active, setActive] = useState<StageId>("tokens");
   const [hasRun, setHasRun] = useState(false);
   const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState<string>("");
   const [tokens, setTokens] = useState<Token[]>([]);
   const [stages, setStages] = useState<Record<ApiStageId, StageData>>({
     ast: EMPTY_STAGE,
@@ -128,14 +129,20 @@ export default function PipelineClient() {
   const analyze = useCallback(async () => {
     setRunning(true);
     setHasRun(true);
+    setRunError("");
     setTokens(tokenize(code));
 
     for (const s of API_STAGES) patchStage(s.id, { loading: true, stdout: "", stderr: "" });
 
     try {
+      // One Run fans out to six /api/run calls, so an anonymous visitor burns
+      // through the 60/min budget in ten clicks — surface that as one readable
+      // banner instead of six red status dots.
+      const failures: RunFailure[] = [];
       await Promise.all(
         API_STAGES.map(async ({ id, flags }) => {
           const res = await runEngine(EngineKey.v8, code, { flags });
+          if (res.failure) failures.push(res.failure);
           patchStage(id, {
             loading: false,
             stdout: stripDiagnostics(res.stdout),
@@ -143,6 +150,8 @@ export default function PipelineClient() {
           });
         }),
       );
+      const failure = failures.find((f) => f.status === 429) ?? failures[0];
+      if (failure) setRunError(describeRunFailure(failure));
     } finally {
       // Defensive: clear the spinner on any stage still marked loading so an
       // unexpected throw can't leave a tab spinning forever.
@@ -189,6 +198,22 @@ export default function PipelineClient() {
         </Button>
       </Flex>
 
+      {runError && (
+        <Box
+          role="alert"
+          px={4}
+          py={2}
+          bg="red.950"
+          borderBottom="1px solid"
+          borderColor="red.800"
+          color="red.200"
+          fontSize="xs"
+          flexShrink={0}
+        >
+          {runError}
+        </Box>
+      )}
+
       <Splitter.Root
         orientation={isMobile ? "vertical" : "horizontal"}
         panels={[
@@ -201,7 +226,7 @@ export default function PipelineClient() {
       >
         <Splitter.Panel id="editor">
           <Flex h="100%" bg="background.100" overflow="hidden">
-            <EditorPanel code={code} onCodeChange={(v) => setCode(v ?? "")} />
+            <EditorPanel code={code} onCodeChange={(v) => setCode(v ?? "")} onRun={analyze} />
           </Flex>
         </Splitter.Panel>
 
