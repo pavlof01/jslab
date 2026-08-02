@@ -3,8 +3,6 @@ import { loadConfig } from "./config.js";
 
 const config = loadConfig();
 
-const allowedFlags = new Set(["--baseline-eager", "--ion-eager"]);
-
 const BYTECODE_WRAPPER = String.raw`(() => {
   const readFile = typeof read === "function" ? read : null;
   const disFn =
@@ -40,7 +38,6 @@ const BYTECODE_WRAPPER = String.raw`(() => {
 
 startEngineServer({
   engine: "sm",
-  allowedFlags,
   tmpPrefix: "engine-sm-",
   config,
   // The wrapper reads "snippet.js" relative to cwd, so run from the temp dir.

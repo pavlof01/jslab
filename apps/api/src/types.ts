@@ -22,6 +22,11 @@ export type NormalizedRunRequest = {
   sourceText: string;
   flags: string[];
   timeoutMs: number;
+  /**
+   * Flags the allowlist rejected. Reported back to the caller but deliberately
+   * kept out of the cache key: the run is identical whatever junk was dropped.
+   */
+  droppedFlags: string[];
 };
 
 export type Artifact = {

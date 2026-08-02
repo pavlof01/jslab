@@ -19,7 +19,7 @@ export const runsTotal = new Counter({
 
 export const cacheEvents = new Counter({
   name: "jslab_api_cache_events_total",
-  help: "Cache lookups by result (hit/miss)",
+  help: "Cache events by result (hit/miss/skip_too_large)",
   labelNames: ["result"] as const,
   registers: [registry],
 });

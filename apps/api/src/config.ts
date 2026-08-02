@@ -15,6 +15,10 @@ const envSchema = z.object({
   NEGATIVE_CACHE_TTL_SECONDS: z.coerce.number().default(30),
   RATE_LIMIT_PER_MIN: z.coerce.number().default(60),
   RATE_LIMIT_HEAVY_PER_MIN: z.coerce.number().default(20),
+  // Traces run engine262, not an engine binary: cheaper per call but issued in
+  // bursts as a user steps through the spec visualizer. They get their own
+  // bucket so a visualizer session cannot 429 the playground, or vice versa.
+  TRACE_RATE_LIMIT_PER_MIN: z.coerce.number().default(30),
   // Public API keys: quota for a valid key, and how many keys one IP may mint per hour.
   API_KEY_RATE_LIMIT_PER_MIN: z.coerce.number().default(240),
   API_KEY_ISSUE_PER_HOUR: z.coerce.number().default(5),

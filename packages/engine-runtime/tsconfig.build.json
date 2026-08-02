@@ -1,0 +1,8 @@
+{
+  // Build config. Identical to tsconfig.json except that the vitest suite is
+  // excluded: tests must be typechecked (that is tsconfig.json's job, used by
+  // `npm run lint`) but must never be emitted into dist/, which the engine
+  // services consume as a file: dependency.
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/*.test.ts"]
+}
