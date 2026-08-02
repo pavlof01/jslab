@@ -1,30 +1,58 @@
-import fastify, { FastifyReply, FastifyRequest } from "fastify";
+import fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 
 import { loadConfig } from "../../config.ts";
-import { executeUnaryConversion, executeBinaryExpression } from "./execute/index.ts";
 import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS } from "./execute/helpers.ts";
+import { BudgetExceededError, SandboxBusyError, TraceSandbox, type SandboxTask } from "./execute/sandbox.ts";
+import { buildEqualityBodySchema, buildTypeConversionBodySchema } from "./schema.ts";
 import { buildSpecHtmlForFunction, SUPPORTED_SPEC_FUNCTIONS } from "./spec-generator.ts";
 
 const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL } });
 
-const typeConversionBodySchema = {
-  type: "object",
-  properties: {
-    functionName: { type: "string", enum: AVAILABLE_FUNCTIONS },
-    input: { type: "string" },
-    preferredType: { type: "string", enum: ["string", "number"] },
-  },
-  required: ["functionName", "input"],
-};
+// Traces never run on this thread — see execute/sandbox.ts for why.
+const sandbox = new TraceSandbox({ budgetMs: config.MAX_TIMEOUT_MS });
+app.addHook("onClose", () => sandbox.close());
 
-const equalityBodySchema = {
-  type: "object",
-  properties: {
-    input: { type: "string", minLength: 1 },
-  },
-  required: ["input"],
-};
+const typeConversionBodySchema = buildTypeConversionBodySchema(AVAILABLE_FUNCTIONS, config.MAX_SOURCE_LENGTH);
+const equalityBodySchema = buildEqualityBodySchema(config.MAX_SOURCE_LENGTH);
+
+/**
+ * Runs a task in the sandbox and turns every failure mode into a JSON error.
+ */
+async function runTask(request: FastifyRequest, reply: FastifyReply, functionName: string, task: SandboxTask) {
+  try {
+    const result = await sandbox.run(task);
+    return reply.status(result.success ? 200 : 400).send(result);
+  } catch (error) {
+    if (error instanceof BudgetExceededError) {
+      // The budget is a deterministic property of the submitted input, so this is
+      // a client error and a retry would burn the same CPU again — 400, like every
+      // other input the service cannot execute.
+      return reply.status(400).send({
+        success: false,
+        functionName,
+        code: "execution_budget_exceeded",
+        error: error.message,
+      });
+    }
+    if (error instanceof SandboxBusyError) {
+      // Same backpressure contract the engine services use: 429 + Retry-After.
+      return reply.header("retry-after", "1").status(429).send({
+        success: false,
+        functionName,
+        code: "trace_worker_busy",
+        error: error.message,
+      });
+    }
+    request.log.error({ err: error }, "trace worker failed");
+    return reply.status(500).send({
+      success: false,
+      functionName,
+      code: "internal_error",
+      error: "Trace execution failed",
+    });
+  }
+}
 
 app.get("/healthz", async () => ({ ok: true }));
 
@@ -47,8 +75,7 @@ app.post<{ Body: UnaryBody }>(
   { schema: { body: typeConversionBodySchema } },
   async (request: FastifyRequest<{ Body: UnaryBody }>, reply: FastifyReply) => {
     const { functionName, input, preferredType } = request.body;
-    const result = await executeUnaryConversion(functionName, input, preferredType);
-    return reply.status(result.success ? 200 : 400).send(result);
+    return runTask(request, reply, functionName, { kind: "unary", functionName, input, preferredType });
   },
 );
 
@@ -57,8 +84,7 @@ app.post<{ Body: BinaryBody }>(
   { schema: { body: equalityBodySchema } },
   async (request: FastifyRequest<{ Body: BinaryBody }>, reply: FastifyReply) => {
     const { input } = request.body;
-    const result = await executeBinaryExpression(input);
-    return reply.status(result.success ? 200 : 400).send(result);
+    return runTask(request, reply, "BinaryExpression", { kind: "binary", input });
   },
 );
 
@@ -84,6 +110,7 @@ app.get<{ Params: { functionName: string } }>("/spec/:functionName", async (requ
 
 const start = async () => {
   try {
+    sandbox.warm();
     await app.listen({ port: config.PORT, host: config.HOST });
     console.log(`trace-service started on ${config.HOST}:${config.PORT}`);
   } catch (err) {

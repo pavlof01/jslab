@@ -8,12 +8,18 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "allowJs": true,
-    "lib": ["ES2024"],
+    // DOM is here for the types only: spec-generator walks the jsdom Document
+    // ecmarkup hands back, so Document/Element are real types in this service
+    // even though nothing browser-side ever runs.
+    "lib": ["ES2024", "DOM"],
     "skipLibCheck": true,
     "paths": {
       "#self": ["./src/index.mts"]
     }
   },
   "files": ["src/engine262.d.ts"],
-  "include": ["src/**/*.mts", "src/**/*.mjs", "vitest.config.mts"]
+  // The service ships as TypeScript run through tsx (no build step), so every
+  // source extension has to be in here — .ts was missing, which left server.ts,
+  // the sandbox and the worker entirely untypechecked.
+  "include": ["src/**/*.mts", "src/**/*.mjs", "src/**/*.ts", "test/**/*.ts", "vitest.config.mts"]
 }
