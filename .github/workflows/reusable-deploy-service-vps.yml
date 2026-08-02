@@ -47,7 +47,12 @@ on:
         default: pavlof01
         type: string
       image_tag:
-        description: "Optional image tag override (defaults to commit SHA)"
+        description: "Optional image tag override (defaults to commit SHA). Set it to redeploy an image that already exists (rollback): verification and build/push are then skipped and only the manifests are re-applied. Manifests are then rendered from the commit that tag names, not from this ref — see manifest_ref."
+        required: false
+        default: ""
+        type: string
+      manifest_ref:
+        description: "Git ref whose manifests are rendered and applied. Only honoured together with image_tag, and only needed when that tag is not a 40-char commit SHA (a SHA-shaped tag is used as the ref automatically). Ignored on a normal build-and-deploy, which always applies its own commit."
         required: false
         default: ""
         type: string
@@ -66,6 +71,29 @@ on:
         required: false
         default: false
         type: boolean
+      # The smoke_* values are interpolated into the command sent over SSH,
+      # where they end up inside single quotes — they must not contain single
+      # quotes themselves.
+      smoke_port:
+        description: "Container port the post-deploy smoke check connects to"
+        required: false
+        default: 8080
+        type: number
+      smoke_path:
+        description: "HTTP path for the post-deploy smoke check; empty string opts out of the check (and of its automatic rollback)"
+        required: false
+        default: "/healthz"
+        type: string
+      smoke_body:
+        description: "JSON body for the smoke check; when set the request is a POST instead of a GET"
+        required: false
+        default: ""
+        type: string
+      smoke_expect:
+        description: "Substring the smoke response body must contain (checked on top of the 2xx status)"
+        required: false
+        default: ""
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -96,8 +124,10 @@ jobs:
   # Gate: nothing is built or pushed unless the service verifies (typecheck +
   # tests). Without this, a push to main used to deploy in parallel with CI,
   # so a red typecheck could still reach production.
+  # A pinned image_tag deploys an artifact that was already built and verified
+  # from another commit, so verifying this checkout would say nothing about it.
   verify:
-    if: ${{ inputs.verify_command != '' }}
+    if: ${{ inputs.verify_command != '' && inputs.image_tag == '' }}
     runs-on: ubuntu-24.04
     env:
       VERIFY_DIR: ${{ inputs.verify_dir != '' && inputs.verify_dir || inputs.context }}
@@ -108,7 +138,7 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: ${{ env.VERIFY_DIR }}/package-lock.json
       # npm copies a file: dependency into node_modules as-is, so the shared
@@ -124,14 +154,21 @@ jobs:
         working-directory: ${{ env.VERIFY_DIR }}
         run: ${{ inputs.verify_command }}
 
-  build-and-deploy:
+  # Build and deploy are separate jobs only because they need opposite
+  # concurrency semantics: superseded builds should be cancelled, queued
+  # rollouts must not be.
+  build:
     needs: verify
     # needs + if together: run after verify passes, or immediately when
-    # verification is explicitly disabled (verify is then skipped).
-    if: ${{ !cancelled() && (needs.verify.result == 'success' || inputs.verify_command == '') }}
+    # verification is skipped (disabled, or a pinned image_tag).
+    if: ${{ !cancelled() && (needs.verify.result == 'success' || inputs.verify_command == '' || inputs.image_tag != '') }}
     runs-on: ubuntu-24.04
+    # Per service, newest wins: a second push for the same service makes the
+    # in-flight build's image obsolete before it is pushed, and cancelling is
+    # free because nothing has touched the node yet. This is the group that
+    # used to cover the apply as well.
     concurrency:
-      group: deploy-${{ inputs.service }}
+      group: build-${{ inputs.service }}
       cancel-in-progress: true
 
     steps:
@@ -140,16 +177,25 @@ jobs:
         with:
           submodules: true
 
+      # Build steps are skipped for a pinned image_tag: the image is already in
+      # the registry, and rebuilding this checkout under that tag would either
+      # overwrite it or (for a rollback) republish the code being rolled back.
+      # `:latest` is deliberately left alone for the same reason — the
+      # Deployment pins the exact tag, and deploy-infra re-applies whatever tag
+      # is running (its current_image helper), so a rollback survives it.
       - name: Set up Docker Buildx
+        if: ${{ inputs.image_tag == '' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
+        if: ${{ inputs.image_tag == '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push ${{ inputs.service }}
+        if: ${{ inputs.image_tag == '' }}
         uses: docker/build-push-action@v6
         with:
           context: ${{ inputs.context }}
@@ -160,6 +206,71 @@ jobs:
             ${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha,scope=${{ inputs.service }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service }}
+
+  deploy:
+    needs: build
+    # Plain success gating: skipped/failed/cancelled build => no rollout.
+    runs-on: ubuntu-24.04
+    # Per-service, and deliberately NOT a shared group across services. A
+    # single shared group would serialise the fan-out this workflow's own path
+    # filter creates (touching this file starts all seven services) — but a
+    # GitHub concurrency group only holds one running plus one pending entry,
+    # and every further arrival CANCELS the pending one. With seven services
+    # that silently drops most rollouts, leaving engines running mismatched
+    # builds of the shared runtime, which is far worse than pulling seven
+    # images at once. Node-side headroom is handled where it belongs: the
+    # kubelet image-GC thresholds and prune timer in infra/node/.
+    #
+    # cancel-in-progress: false is the point of the per-service group — the
+    # default (true) would kill a rollout mid-apply, leaving a half-updated
+    # Deployment nobody rolls back. A superseding run for the SAME service
+    # queues behind it instead.
+    concurrency:
+      group: vps-rollout-${{ inputs.service }}
+      cancel-in-progress: false
+
+    steps:
+      # A pinned image_tag redeploys an image built from an older commit, but
+      # the manifests used to be rendered from the dispatched ref (HEAD)
+      # regardless. That runs the old binary against the new commit's env vars,
+      # probes and resource limits — and a rollback could then fail its own
+      # `rollout status` on a readiness probe the old image never served.
+      # Deploys tag images with the commit SHA, so a SHA-shaped image_tag names
+      # the commit whose manifests belong with it; anything else needs an
+      # explicit manifest_ref.
+      - name: Resolve manifest ref
+        id: manifest_ref
+        env:
+          PINNED_TAG: ${{ inputs.image_tag }}
+          MANIFEST_REF: ${{ inputs.manifest_ref }}
+        run: |
+          set -euo pipefail
+
+          ref=""
+          if [ -n "${PINNED_TAG}" ]; then
+            ref="${MANIFEST_REF}"
+            if [ -z "${ref}" ] && printf '%s' "${PINNED_TAG}" | grep -Eq '^[0-9a-f]{40}$'; then
+              ref="${PINNED_TAG}"
+            fi
+            if [ -z "${ref}" ]; then
+              echo "::warning::image_tag '${PINNED_TAG}' is not a commit SHA and no manifest_ref was given; applying manifests from ${GITHUB_SHA}. That image will run against this ref's env vars, probes and resource limits."
+            fi
+          elif [ -n "${MANIFEST_REF}" ]; then
+            echo "::warning::manifest_ref is only honoured together with image_tag; ignoring it and deploying ${GITHUB_SHA}."
+          fi
+
+          if [ -z "${ref}" ]; then
+            ref="${GITHUB_SHA}"
+          fi
+
+          echo "rendering manifests from ${ref}"
+          echo "ref=${ref}" >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.manifest_ref.outputs.ref }}
+          submodules: true
 
       - name: Setup kustomize
         uses: imranismail/setup-kustomize@v2
@@ -232,13 +343,105 @@ jobs:
           cat "${hostkeys}" >> ~/.ssh/known_hosts
           rm -f "${hostkeys}"
 
-      - name: Deploy over SSH (kubectl apply)
+      - name: Deploy over SSH (kubectl apply + smoke check)
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          CONTAINER_NAME: ${{ inputs.container }}
+          SMOKE_PORT: ${{ inputs.smoke_port }}
+          SMOKE_PATH: ${{ inputs.smoke_path }}
+          SMOKE_BODY: ${{ inputs.smoke_body }}
+          SMOKE_EXPECT: ${{ inputs.smoke_expect }}
         run: |
           set -euo pipefail
+
+          image_ref="${IMAGE_REPO}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+          # Apply, wait and smoke-test share one SSH session so the check runs
+          # against the rollout it just watched. The heredoc is unquoted: ${...}
+          # is expanded here by the runner, \$... stays for the VPS shell.
+          #
+          # The smoke request is issued from inside the new pod (node -e over
+          # loopback) rather than from a throwaway curl pod: the NetworkPolicy
+          # only lets the api reach the engines, every service image already
+          # ships node, and exec leaves nothing behind to clean up.
+          remote="$(cat <<EOF
+          set -euo pipefail
+
+          kubectl apply -f -
+
+          # set -e would abort the script the moment rollout status fails, so
+          # the rollback below would never run — and for a Recreate-strategy
+          # service (trace-service) that leaves no pod serving at all. Capture
+          # the result instead and undo explicitly.
+          rollout_ok=1
+          kubectl -n '${NAMESPACE}' rollout status 'deployment/${DEPLOYMENT_NAME}' --timeout=10m || rollout_ok=0
+
+          if [ "\${rollout_ok}" != 1 ]; then
+            echo "rollout did not become ready; rolling back ${DEPLOYMENT_NAME}" >&2
+            kubectl -n '${NAMESPACE}' rollout undo 'deployment/${DEPLOYMENT_NAME}' || true
+            kubectl -n '${NAMESPACE}' rollout status 'deployment/${DEPLOYMENT_NAME}' --timeout=5m || true
+            echo "NOTE: undo restores the previous pod spec, but every other object in this" >&2
+            echo "manifest slice (ConfigMap, Service, PDB) stays at this commit's version." >&2
+            echo "To restore those too, re-dispatch this workflow with image_tag AND" >&2
+            echo "manifest_ref set to the last known-good commit." >&2
+            exit 1
+          fi
+
+          if [ -n '${SMOKE_PATH}' ]; then
+            # Matching on the image we just deployed picks a pod of the new
+            # ReplicaSet even while an old one is still terminating.
+            pod=''
+            for attempt in 1 2 3 4 5; do
+              pod=\$(kubectl -n '${NAMESPACE}' get pods -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.spec.containers[?(@.name=="${CONTAINER_NAME}")].image}{"|"}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' | grep -F '|${image_ref}|True' | head -n1 | cut -d'|' -f1) || true
+              if [ -n "\${pod}" ]; then break; fi
+              sleep 3
+            done
+
+            smoke_ok=1
+            if [ -z "\${pod}" ]; then
+              echo "smoke: no ready pod running ${image_ref}" >&2
+              smoke_ok=0
+            else
+              echo "smoke: \${pod} ${SMOKE_PATH}"
+              kubectl -n '${NAMESPACE}' exec "\${pod}" -c '${CONTAINER_NAME}' -- node -e '
+                const [port, path, body, expect] = process.argv.slice(1);
+                const init = { signal: AbortSignal.timeout(20000) };
+                if (body) {
+                  init.method = "POST";
+                  init.headers = { "content-type": "application/json" };
+                  init.body = body;
+                }
+                fetch("http://127.0.0.1:" + port + path, init).then(async (res) => {
+                  const text = await res.text();
+                  process.stdout.write(res.status + " " + text.slice(0, 400) + "\n");
+                  if (!res.ok) process.exit(1);
+                  if (expect && !text.includes(expect)) {
+                    process.stdout.write("missing expected substring: " + expect + "\n");
+                    process.exit(1);
+                  }
+                }, (err) => {
+                  process.stdout.write("request failed: " + err + "\n");
+                  process.exit(1);
+                });
+              ' '${SMOKE_PORT}' '${SMOKE_PATH}' '${SMOKE_BODY}' '${SMOKE_EXPECT}' || smoke_ok=0
+            fi
+
+            if [ "\${smoke_ok}" != 1 ]; then
+              # Undo restores the revision that was serving before this apply.
+              echo "smoke check failed; rolling back ${DEPLOYMENT_NAME}" >&2
+              kubectl -n '${NAMESPACE}' rollout undo 'deployment/${DEPLOYMENT_NAME}' || true
+              kubectl -n '${NAMESPACE}' rollout status 'deployment/${DEPLOYMENT_NAME}' --timeout=5m || true
+              echo "NOTE: undo restores the previous pod spec only; the rest of this commit's" >&2
+              echo "manifest slice (ConfigMap, Service, PDB) stays applied. Re-dispatch with" >&2
+              echo "image_tag AND manifest_ref to restore both." >&2
+              exit 1
+            fi
+            echo "smoke check passed for ${DEPLOYMENT_NAME}"
+          fi
+          EOF
+          )"
 
           # ServerAliveInterval keeps the session alive while `rollout status`
           # waits silently (no output for minutes), so the VPS sshd does not drop
@@ -251,5 +454,5 @@ jobs:
             -o ServerAliveCountMax=20 \
             -p "${SSH_PORT}" \
             "${SSH_USER}@${SSH_HOST}" \
-            "kubectl apply -f - && kubectl -n \"${NAMESPACE}\" rollout status \"deployment/${DEPLOYMENT_NAME}\" --timeout=10m" \
+            "${remote}" \
             < "${{ steps.render.outputs.manifest }}"

@@ -8,6 +8,12 @@ on:
       - ".github/workflows/deploy-api.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Roll back: redeploy an image tag that already exists (e.g. an earlier commit SHA) instead of building this ref"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy:
@@ -20,4 +26,7 @@ jobs:
       deployment: api
       container: api
       verify_command: npm run lint && npm test
+      image_tag: ${{ github.event.inputs.image_tag || '' }}
+      # Keeps the default smoke path: /healthz is the gateway's own probe route.
+      smoke_expect: '"ok":true'
     secrets: inherit

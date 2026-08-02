@@ -9,6 +9,12 @@ on:
       - ".github/workflows/deploy-engine-hermes.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Roll back: redeploy an image tag that already exists (e.g. an earlier commit SHA) instead of building this ref"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy:
@@ -22,4 +28,11 @@ jobs:
       image: jslab-engine-hermes
       deployment: engine-hermes
       container: engine-hermes
+      image_tag: ${{ github.event.inputs.image_tag || '' }}
+      # hermes only compiles + disassembles, and the dump format changes with
+      # the binary, so the check asserts the service answered /run within its
+      # timeout and output caps rather than matching disassembly text.
+      smoke_path: /run
+      smoke_body: '{"sourceText":"print(6*7)"}'
+      smoke_expect: '"ok":true'
     secrets: inherit

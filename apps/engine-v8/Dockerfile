@@ -11,7 +11,7 @@ FROM --platform=$TARGETPLATFORM ${V8_BASE_IMAGE} AS v8-binary
 ########################
 # deps
 ########################
-FROM node:20-bookworm-slim AS deps
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 # Shared engine runtime. install-links (apps/engine-v8/.npmrc) copies it into
 # node_modules as a real dir — so the multi-stage runner COPY of node_modules
@@ -66,7 +66,7 @@ RUN npm prune --omit=dev
 ########################
 # runner (production)
 ########################
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 

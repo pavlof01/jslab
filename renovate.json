@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Solo-maintainer setup: one batched run per week, no automerge, majors only on request.",
+    "Only image and action versions are managed here. npm dependencies are deliberately left out: eight lockfiles would drown the dashboard, and their versions are already pinned by lockfiles that CI installs with `npm ci`."
+  ],
+  "extends": ["config:recommended"],
+  "enabledManagers": ["dockerfile", "github-actions", "kubernetes"],
+  "timezone": "Etc/UTC",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "kubernetes": {
+    "description": "The kubernetes manager has no default file patterns; without this it would never look at redis:7-alpine or any other image tag in the manifests.",
+    "managerFilePatterns": ["infra/k8s/**/*.yaml"]
+  },
+  "packageRules": [
+    {
+      "description": "Engine binaries ship under mutable tags (pavlof01/v8-d8:latest, pavlof01/jsc:debug, ...), so the tag alone says nothing about what a build used. Pinning the digest is what makes an engine image reproducible; Renovate then moves the digest deliberately instead of a rebuild silently picking up a new binary.",
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true
+    },
+    {
+      "description": "Routine image moves (including digest refreshes) land as a single PR per week.",
+      "matchManagers": ["dockerfile", "kubernetes"],
+      "matchUpdateTypes": ["pin", "digest", "patch", "minor"],
+      "groupName": "container images"
+    },
+    {
+      "description": "Same for the actions used by the deploy and CI workflows.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["pin", "digest", "patch", "minor"],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Majors (node 22 -> 24, redis 7 -> 8, actions v4 -> v5) change runtime behaviour and are worth a deliberate look, so they wait on the dependency dashboard instead of opening PRs on their own.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "description": "Security fixes are not worth holding for the weekly slot.",
+    "schedule": ["at any time"],
+    "labels": ["dependencies", "security"]
+  }
+}

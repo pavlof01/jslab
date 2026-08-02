@@ -9,6 +9,12 @@ on:
       - ".github/workflows/deploy-trace-service.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Roll back: redeploy an image tag that already exists (e.g. an earlier commit SHA) instead of building this ref"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   deploy:
@@ -20,5 +26,14 @@ jobs:
       image: jslab-trace-service
       deployment: trace-service
       container: trace-service
-      verify_command: npm run typecheck
+      # The suite is committed now, and it is the only gate covering the worker
+      # sandbox's execution budget — the thing standing between a hostile input
+      # and a wedged pod. Typecheck alone would not catch a regression there.
+      verify_command: npm run typecheck && npm test
+      image_tag: ${{ github.event.inputs.image_tag || '' }}
+      # A real trace instead of /healthz: it fails if the engine262 submodule
+      # did not make it into the image, which a health route would not notice.
+      smoke_path: /execute/type-conversion
+      smoke_body: '{"functionName":"ToNumber","input":"42"}'
+      smoke_expect: '"success":true'
     secrets: inherit
