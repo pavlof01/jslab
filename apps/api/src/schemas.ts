@@ -1,51 +1,18 @@
 import { z } from "zod";
+import { flagCatalog, sanitizeFlags, type FlagSpec, type SanitizedFlags } from "./flags.js";
 import type { EngineKind, RunRequest, TraceExecuteInput, TraceExecuteRequest } from "./types.js";
 
-const engineFlags: Record<EngineKind, readonly string[]> = {
-  v8: [
-    "--allow-natives-syntax",
-    "--no-liftoff",
-    "--no-wasm-async-compilation",
-    "--print-all-code",
-    "--print-all-exceptions",
-    "--print-ast",
-    "--print-break-location",
-    "--print-builtin-code",
-    "--print-builtin-size",
-    "--print-bytecode",
-    "--print-code",
-    "--print-code-verbose",
-    "--print-deopt-stress",
-    "--print-flag-values",
-    "--print-maglev-code",
-    "--print-maglev-deopt-verbose",
-    "--print-maglev-graph",
-    "--print-maglev-graphs",
-    "--print-opt-code",
-    "--print-opt-source",
-    "--print-regexp-bytecode",
-    "--print-regexp-code",
-    "--print-regexp-graph",
-    "--print-scopes",
-    "--print-turbolev-frontend",
-    "--print-turbolev-inline-functions",
-    "--print-wasm-code",
-    "--print-wasm-stub-code",
-    "--trace-deopt",
-    "--trace-ic",
-    "--trace-ignition",
-    "--trace-maps",
-    "--trace-maps-details",
-    "--trace-opt",
-    "--trace-opt-verbose",
-  ],
-  hermes: ["-O", "-gc-sanitize-handles", "-strict"],
-  sm: ["--baseline-eager", "--ion-eager"],
-  jsc: ["-d"],
-};
+/** Full catalog entries for an engine, for the /api/flags documentation route. */
+export function flagSpecs(engine: EngineKind): readonly FlagSpec[] {
+  return flagCatalog[engine];
+}
 
+/**
+ * Flag names accepted for an engine. Value-bearing entries are listed by name
+ * only; they are accepted on the wire as `--name=value`.
+ */
 export function allowedFlags(engine: EngineKind): readonly string[] {
-  return engineFlags[engine];
+  return flagCatalog[engine].map((spec) => spec.flag);
 }
 
 export const runRequestSchema: z.ZodType<RunRequest> = z.object({
@@ -111,19 +78,11 @@ export function validationMessage(err: unknown): string {
   return (err instanceof Error && err.message) || "invalid payload";
 }
 
-export function normalizeFlags(engine: EngineKind, flags: string[], maxFlags: number): string[] {
-  const allow = new Set(engineFlags[engine]);
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of flags.slice(0, maxFlags)) {
-    if (typeof raw !== "string") continue;
-    const trimmed = raw.trim();
-    if (!trimmed.startsWith("-")) continue;
-    if (!allow.has(trimmed)) continue;
-    if (seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  out.sort();
-  return out;
+/**
+ * Gateway-side flag filtering. Runs the same sanitizer the engines run, over
+ * the same catalog, so a flag can never be accepted here and dropped there.
+ * Rejected flags come back in `dropped` and are reported to the caller.
+ */
+export function normalizeFlags(engine: EngineKind, flags: string[], maxFlags: number): SanitizedFlags {
+  return sanitizeFlags(engine, flags, { maxFlags });
 }

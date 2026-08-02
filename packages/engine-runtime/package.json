@@ -13,8 +13,9 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "lint": "tsc --noEmit"
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "fastify": "^4.27.2",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.11",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.10"
   }
 }

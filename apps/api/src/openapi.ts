@@ -34,7 +34,12 @@ export const openapiDoc = {
             type: "object",
             additionalProperties: false,
             properties: {
-              flags: { type: "array", items: { type: "string" } },
+              flags: {
+                type: "array",
+                items: { type: "string" },
+                description:
+                  "Per-engine allowlisted flags (see GET /flags). Value-bearing flags are passed as '--flag=value'. Anything rejected is echoed back in meta.droppedFlags."
+              },
               timeoutMs: {
                 type: "integer",
                 minimum: 1,
@@ -88,7 +93,26 @@ TraceExecuteRequest: {
           stdout: { type: "string" },
           stderr: { type: "string" },
           artifacts: { type: "array", items: { $ref: "#/components/schemas/Artifact" } },
-          meta: { type: "object" }
+          meta: {
+            type: "object",
+            additionalProperties: true,
+            properties: {
+              durationMs: { type: "integer" },
+              engine: { type: "string" },
+              cacheHit: { type: "boolean" },
+              droppedFlags: {
+                type: "array",
+                items: { type: "string" },
+                description:
+                  "Requested flags that were rejected by the allowlist and never reached the engine. A flag accepted anywhere in the request is never listed here, so a repeat or a duplicate with a bad value is not reported as a typo."
+              },
+              outputTruncated: {
+                type: "boolean",
+                description: "Output hit the engine's byte cap; stdout and stderr together hold at most outputLimitBytes bytes."
+              },
+              outputLimitBytes: { type: "integer" }
+            }
+          }
         }
       },
       ErrorResponse: {
@@ -98,6 +122,32 @@ TraceExecuteRequest: {
         properties: {
           ok: { type: "boolean", enum: [false] },
           error: { type: "string" }
+        }
+      },
+      FlagCatalogResponse: {
+        type: "object",
+        additionalProperties: true,
+        required: ["ok", "engines"],
+        properties: {
+          ok: { type: "boolean" },
+          engines: {
+            type: "object",
+            additionalProperties: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: true,
+                required: ["flag", "description", "category"],
+                properties: {
+                  flag: { type: "string" },
+                  description: { type: "string" },
+                  category: { type: "string" },
+                  takesValue: { type: "boolean" },
+                  valuePattern: { type: "string" }
+                }
+              }
+            }
+          }
         }
       },
       HealthzResponse: {
@@ -144,6 +194,20 @@ TraceExecuteRequest: {
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/HealthzResponse" } }
             }
+          }
+        }
+      }
+    },
+    "/flags": {
+      get: {
+        summary: "Per-engine flag catalog",
+        description:
+          "The allowlist /run filters against, with a description and category per flag. Value-bearing flags carry takesValue plus the regex their value must match.",
+        security: [],
+        responses: {
+          "200": {
+            description: "flag catalog",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/FlagCatalogResponse" } } }
           }
         }
       }

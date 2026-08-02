@@ -10,6 +10,7 @@ import { openapiDoc } from "./openapi.js";
 import { enforceLimit } from "./rateLimit.js";
 import { extractApiKey, issueApiKey, lookupApiKey } from "./apiKeys.js";
 import {
+  flagSpecs,
   normalizeFlags,
   runRequestSchema,
   traceExecuteRequestSchema,
@@ -55,6 +56,26 @@ app.get("/metrics", async (_req, reply) => {
 
 app.get("/api/openapi.json", async () => openapiDoc);
 
+// The per-engine flag catalog, served from the same data /api/run filters
+// against — so a client (or the playground's flag picker) can never offer a
+// flag the gateway would silently reject. Static: built once at boot.
+const flagsDoc = {
+  ok: true,
+  engines: Object.fromEntries(
+    (["v8", "hermes", "sm", "jsc"] as const).map((engine) => [
+      engine,
+      flagSpecs(engine).map((spec) => ({
+        flag: spec.flag,
+        description: spec.description,
+        category: spec.category,
+        ...(spec.takesValue ? { takesValue: true, valuePattern: spec.valuePattern?.source } : {}),
+      })),
+    ]),
+  ),
+};
+
+app.get("/api/flags", async () => flagsDoc);
+
 app.register(apiReference, {
   routePrefix: "/api/docs",
   configuration: {
@@ -72,8 +93,10 @@ type Budget = {
   id: string;
   generalSuffix: string;
   heavySuffix: string;
+  traceSuffix: string;
   generalLimit: number;
   heavyLimit: number;
+  traceLimit: number;
 };
 
 /**
@@ -89,14 +112,24 @@ async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
       reply.code(401).send({ ok: false, error: "invalid API key" });
       return null;
     }
-    return { id: key, generalSuffix: "key-general", heavySuffix: "key-heavy", generalLimit: record.rpm, heavyLimit: record.rpm };
+    return {
+      id: key,
+      generalSuffix: "key-general",
+      heavySuffix: "key-heavy",
+      traceSuffix: "key-trace",
+      generalLimit: record.rpm,
+      heavyLimit: record.rpm,
+      traceLimit: record.rpm,
+    };
   }
   return {
     id: clientIp(req),
     generalSuffix: "general",
     heavySuffix: "heavy",
+    traceSuffix: "trace",
     generalLimit: config.RATE_LIMIT_PER_MIN,
     heavyLimit: config.RATE_LIMIT_HEAVY_PER_MIN,
+    traceLimit: config.TRACE_RATE_LIMIT_PER_MIN,
   };
 }
 
@@ -109,7 +142,7 @@ function normalizeRequest(body: unknown): NormalizedRunRequest {
     fallback: config.DEFAULT_TIMEOUT_MS,
   });
 
-  const flags = normalizeFlags(parsed.engine, parsed.options?.flags ?? [], config.MAX_FLAGS);
+  const { flags, dropped } = normalizeFlags(parsed.engine, parsed.options?.flags ?? [], config.MAX_FLAGS);
 
   if (parsed.sourceText.length > config.MAX_SOURCE_LENGTH) {
     throw new Error(`sourceText exceeds limit (${config.MAX_SOURCE_LENGTH} chars)`);
@@ -120,7 +153,18 @@ function normalizeRequest(body: unknown): NormalizedRunRequest {
     sourceText: parsed.sourceText,
     flags,
     timeoutMs,
+    droppedFlags: dropped,
   };
+}
+
+/**
+ * Attach the rejected flags to a response body. Done at reply time rather than
+ * inside the run: the cache key ignores dropped flags, so a cached body would
+ * otherwise report the *previous* caller's typos.
+ */
+function withDroppedFlags(body: RunResult["body"], droppedFlags: string[]): RunResult["body"] {
+  if (!droppedFlags.length || !body || !("meta" in body)) return body;
+  return { ...body, meta: { ...(body as ApiResponse).meta, droppedFlags } } as RunResult["body"];
 }
 
 function mapEngineErrorToStatus(enginePayload: any): number {
@@ -301,7 +345,7 @@ app.post("/api/run", async (req, reply) => {
       cached.status === 200 && cached.body && "meta" in cached.body
         ? { ...(cached.body as ApiResponse), meta: { ...(cached.body as ApiResponse).meta, cacheHit: true, durationMs: Date.now() - start } }
         : cached.body;
-    reply.code(cached.status).send(body);
+    reply.code(cached.status).send(withDroppedFlags(body, normalized.droppedFlags));
     return;
   }
   if (!isDev) cacheEvents.inc({ result: "miss" });
@@ -339,7 +383,7 @@ app.post("/api/run", async (req, reply) => {
   runDuration.observe({ engine: normalized.engine, outcome }, (Date.now() - start) / 1000);
 
   if (result.retryAfter) reply.header("retry-after", result.retryAfter);
-  reply.code(result.status).send(result.body);
+  reply.code(result.status).send(withDroppedFlags(result.body, normalized.droppedFlags));
 });
 
 async function proxyToTraceService(
@@ -370,6 +414,26 @@ async function proxyToTraceService(
       return;
     }
 
+    // trace-service signals its own per-pod backpressure with 429 + Retry-After
+    // (same contract as the engine services). Dropping that header left the
+    // client a bare 429 with nothing to back off on, so forward it the way
+    // /api/run does: as the header *and* as meta.retryAfter in the body, which
+    // is where every existing client reads it.
+    const retryAfter = traceRes.headers["retry-after"];
+    if (retryAfter !== undefined) {
+      reply.header("retry-after", String(retryAfter));
+      const seconds = Number(retryAfter);
+      if (tracePayload && typeof tracePayload === "object" && !Array.isArray(tracePayload)) {
+        const meta = (tracePayload as { meta?: Record<string, unknown> }).meta;
+        if (meta?.retryAfter === undefined) {
+          tracePayload = {
+            ...(tracePayload as Record<string, unknown>),
+            meta: { ...(meta ?? {}), retryAfter: Number.isFinite(seconds) ? seconds : String(retryAfter) },
+          };
+        }
+      }
+    }
+
     reply.code(traceRes.statusCode).send(tracePayload);
   } catch (err: any) {
     const classified = classifyUpstreamError("trace-service", err);
@@ -378,10 +442,17 @@ async function proxyToTraceService(
   }
 }
 
-// Trace executions run engine262 over user input, so they are as heavy as an
-// engine run and must be metered. They share the same budget resolution as
-// /api/run (API key or IP) so a client can't dodge the limit by switching
-// endpoints. Returns true if the request was rate-limited or rejected (401).
+// Trace executions run engine262 over user input, so they must be metered.
+// They share the same budget resolution as /api/run (API key or IP) so a client
+// can't dodge the limit by switching endpoints, and they still charge the
+// general bucket — that is the per-caller ceiling on gateway requests of any
+// kind, and traces are real requests.
+//
+// What they no longer share is the *heavy* bucket. Traces don't spawn an engine
+// binary, and stepping through the spec visualizer issues them in bursts, so
+// charging them against the 20/min engine budget made the visualizer 429 the
+// playground and vice versa. They get their own "trace" bucket instead.
+// Returns true if the request was rate-limited or rejected (401).
 async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
   const budget = await resolveBudget(req, reply);
   if (!budget) return true; // invalid API key → 401 already sent
@@ -391,10 +462,10 @@ async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
     reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return true;
   }
-  const heavy = await enforceLimit(redis, budget.id, budget.heavySuffix, budget.heavyLimit, 60, reply, req.log);
-  if (heavy.limited) {
-    rateLimited.inc({ budget: budget.heavySuffix });
-    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
+  const trace = await enforceLimit(redis, budget.id, budget.traceSuffix, budget.traceLimit, 60, reply, req.log);
+  if (trace.limited) {
+    rateLimited.inc({ budget: budget.traceSuffix });
+    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: trace.retryAfter } });
     return true;
   }
   return false;

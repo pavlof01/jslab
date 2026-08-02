@@ -12,5 +12,7 @@
     "rootDir": "src",
     "resolveJsonModule": true
   },
+  // Tests are included so `npm run lint` typechecks them too; the build uses
+  // tsconfig.build.json, which excludes them from the emitted dist/.
   "include": ["src/**/*.ts"]
 }

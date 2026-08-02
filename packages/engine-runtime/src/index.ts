@@ -1,9 +1,13 @@
 import fastify from "fastify";
-import { spawn, type SpawnOptions } from "child_process";
+import { type SpawnOptions } from "child_process";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { z } from "zod";
+import { sanitizeFlags } from "./flags.js";
+import { runCommand } from "./run.js";
+
+export * from "./flags.js";
 
 /**
  * Shared HTTP wrapper for the engine microservices. Every engine service is a
@@ -13,7 +17,9 @@ import { z } from "zod";
  * `{ ok, stdout, stderr, artifacts, meta }` shape.
  *
  * The only per-engine differences are captured in `EngineSpec`: the engine
- * name, its flag allowlist, and how the binary invocation is built.
+ * name and how the binary invocation is built. The flag allowlist is not a
+ * per-engine detail any more — it comes from the shared catalog in `flags.ts`,
+ * which the api gateway mirrors, so the two layers cannot drift.
  */
 
 /** Config fields the shared runtime needs; each engine's config is a superset. */
@@ -37,13 +43,17 @@ export interface Invocation {
   spawnOptions?: Pick<SpawnOptions, "cwd" | "env">;
   /** Optional stdin payload; when set, stdin is piped instead of ignored. */
   input?: string;
+  /**
+   * Extra files written into the temp dir before the binary is spawned, e.g.
+   * a prelude script the engine loads ahead of the snippet. Paths must be
+   * absolute (build them from the `tmpDir` handed to `invoke`).
+   */
+  extraFiles?: ReadonlyArray<{ path: string; contents: string }>;
 }
 
 export interface EngineSpec {
-  /** Short engine key echoed back in `meta.engine` (e.g. "v8", "hermes"). */
+  /** Short engine key echoed back in `meta.engine`; also the flag catalog key. */
   engine: string;
-  /** Flags a client may pass through; everything else is dropped. */
-  allowedFlags: ReadonlySet<string>;
   /** Sort sanitized flags for a stable order. Default true; jsc opts out. */
   sortFlags?: boolean;
   /** mkdtemp prefix, e.g. "engine-v8-". */
@@ -58,14 +68,6 @@ export interface EngineSpec {
   invoke(ctx: { scriptPath: string; tmpDir: string; flags: string[] }): Invocation;
 }
 
-type RunResult = {
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-  timedOut: boolean;
-  outputTruncated: boolean;
-};
-
 const requestSchema = z.object({
   sourceText: z.string().min(1),
   options: z
@@ -75,81 +77,6 @@ const requestSchema = z.object({
     })
     .optional(),
 });
-
-function sanitizeFlags(spec: EngineSpec, flags: string[] = []): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of flags.slice(0, spec.config.MAX_FLAGS)) {
-    if (typeof raw !== "string") continue;
-    const trimmed = raw.trim();
-    if (!trimmed.startsWith("-")) continue;
-    if (!spec.allowedFlags.has(trimmed)) continue;
-    if (seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  if (spec.sortFlags !== false) out.sort();
-  return out;
-}
-
-async function runCommand(
-  cmd: string,
-  args: string[],
-  opts: { timeoutMs: number; maxOutputBytes: number; spawnOptions?: Pick<SpawnOptions, "cwd" | "env">; input?: string },
-): Promise<RunResult> {
-  const stdin = opts.input !== undefined ? "pipe" : "ignore";
-  const child = spawn(cmd, args, { stdio: [stdin, "pipe", "pipe"], ...opts.spawnOptions });
-
-  let stdout = "";
-  let stderr = "";
-  let outputTruncated = false;
-  let timedOut = false;
-
-  const timer = setTimeout(() => {
-    timedOut = true;
-    child.kill("SIGKILL");
-  }, opts.timeoutMs);
-
-  const stopIfNeeded = () => {
-    const bytes = Buffer.byteLength(stdout) + Buffer.byteLength(stderr);
-    if (bytes > opts.maxOutputBytes) {
-      outputTruncated = true;
-      child.kill("SIGKILL");
-    }
-  };
-
-  child.stdout?.on("data", (chunk) => {
-    stdout += chunk.toString();
-    stopIfNeeded();
-  });
-  child.stderr?.on("data", (chunk) => {
-    stderr += chunk.toString();
-    stopIfNeeded();
-  });
-
-  if (opts.input !== undefined && child.stdin) {
-    child.stdin.write(opts.input);
-    child.stdin.end();
-  }
-
-  return await new Promise<RunResult>((resolve) => {
-    // `settled` guards against a close+error double-resolve race.
-    let settled = false;
-    const done = (r: RunResult) => {
-      if (settled) return;
-      settled = true;
-      resolve(r);
-    };
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      done({ stdout, stderr, exitCode: code, timedOut, outputTruncated });
-    });
-    child.on("error", (err) => {
-      clearTimeout(timer);
-      done({ stdout: "", stderr: String(err), exitCode: -1, timedOut, outputTruncated });
-    });
-  });
-}
 
 export function startEngineServer(spec: EngineSpec): void {
   const { config, engine } = spec;
@@ -191,7 +118,10 @@ export function startEngineServer(spec: EngineSpec): void {
     }
 
     const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
-    const flags = sanitizeFlags(spec, parsed.options?.flags || []);
+    const sanitized = sanitizeFlags(engine, parsed.options?.flags || [], {
+      maxFlags: config.MAX_FLAGS,
+      sort: spec.sortFlags,
+    });
 
     if (inFlight >= config.MAX_CONCURRENCY) {
       // 429 (not 503): the api gateway maps engine 5xx to a generic 502, which
@@ -208,7 +138,10 @@ export function startEngineServer(spec: EngineSpec): void {
       const scriptPath = path.join(tmpDir, "snippet.js");
       await fs.writeFile(scriptPath, parsed.sourceText, "utf8");
 
-      const inv = spec.invoke({ scriptPath, tmpDir, flags });
+      const inv = spec.invoke({ scriptPath, tmpDir, flags: sanitized.flags });
+      for (const file of inv.extraFiles ?? []) {
+        await fs.writeFile(file.path, file.contents, "utf8");
+      }
       const result = await runCommand(inv.cmd, inv.args, {
         timeoutMs,
         maxOutputBytes: config.MAX_OUTPUT_BYTES,
@@ -220,17 +153,23 @@ export function startEngineServer(spec: EngineSpec): void {
         reply.code(408).send({ ok: false, error: "execution timed out" });
         return;
       }
-      if (result.outputTruncated) {
-        reply.code(400).send({ ok: false, error: "output exceeded limit" });
-        return;
-      }
-
+      // Overflowing the output budget is not an error: the most instructive V8
+      // flags (--print-all-code, --trace-ic) blow past it on any real snippet,
+      // and discarding everything turned them into a guaranteed 400. Keep what
+      // fits and say so in meta. outputLimitBytes is the true ceiling for the
+      // whole body: runCommand caps stdout + stderr *combined* at this value,
+      // so the gateway can size its cache guard against it.
       reply.send({
         ok: true,
         stdout: result.stdout,
         stderr: result.stderr,
         artifacts: [],
-        meta: { durationMs: Date.now() - start, engine },
+        meta: {
+          durationMs: Date.now() - start,
+          engine,
+          ...(result.outputTruncated ? { outputTruncated: true, outputLimitBytes: config.MAX_OUTPUT_BYTES } : {}),
+          ...(sanitized.dropped.length ? { droppedFlags: sanitized.dropped } : {}),
+        },
       });
     } catch (err: any) {
       reply.code(500).send({ ok: false, error: err?.message || "execution failed" });

@@ -2,40 +2,101 @@ import { describe, expect, it } from "vitest";
 import { normalizeFlags, allowedFlags, runRequestSchema, validationMessage, clampTimeout } from "./schemas.js";
 
 describe("normalizeFlags", () => {
-  it("drops flags not on the per-engine allowlist", () => {
+  it("drops flags not on the per-engine allowlist and reports them", () => {
     const out = normalizeFlags("v8", ["--print-bytecode", "--totally-made-up", "--rm-rf"], 10);
-    expect(out).toEqual(["--print-bytecode"]);
+    expect(out.flags).toEqual(["--print-bytecode"]);
+    expect(out.dropped).toEqual(["--totally-made-up", "--rm-rf"]);
   });
 
-  it("dedupes repeated flags", () => {
+  it("dedupes repeated flags without reporting them as dropped", () => {
+    // meta.droppedFlags is documented as flags that never reached the engine.
+    // A repeat did reach it (the first occurrence was accepted), so listing it
+    // would make a UI flag a working flag as a typo.
     const out = normalizeFlags("v8", ["--trace-opt", "--trace-opt", "--trace-opt"], 10);
-    expect(out).toEqual(["--trace-opt"]);
+    expect(out.flags).toEqual(["--trace-opt"]);
+    expect(out.dropped).toEqual([]);
   });
 
   it("returns a sorted, stable order regardless of input order", () => {
     const a = normalizeFlags("v8", ["--trace-opt", "--print-bytecode"], 10);
     const b = normalizeFlags("v8", ["--print-bytecode", "--trace-opt"], 10);
-    expect(a).toEqual(b);
-    expect(a).toEqual([...a].sort());
+    expect(a.flags).toEqual(b.flags);
+    expect(a.flags).toEqual([...a.flags].sort());
   });
 
   it("caps the number of flags before filtering", () => {
-    // maxFlags applies to the raw slice, so anything past the cap is ignored
+    // maxFlags applies to the raw list, so anything past the cap is dropped
     // even if it is allowlisted.
     const all = allowedFlags("v8").slice(0, 5);
     const out = normalizeFlags("v8", [...all], 2);
-    expect(out.length).toBeLessThanOrEqual(2);
+    expect(out.flags).toEqual([...all.slice(0, 2)].sort());
+    expect(out.dropped).toContain(all[2]);
   });
 
   it("rejects non-string and non-dash-prefixed entries", () => {
+    // Blank/whitespace entries are rejected but not reported: an empty string
+    // in droppedFlags tells the caller nothing they can fix.
     const out = normalizeFlags("v8", ["print-bytecode", "", "   ", "--print-bytecode"], 10);
-    expect(out).toEqual(["--print-bytecode"]);
+    expect(out.flags).toEqual(["--print-bytecode"]);
+    expect(out.dropped).toEqual(["print-bytecode"]);
+  });
+
+  it("does not report a rejected entry whose flag name was accepted elsewhere", () => {
+    // The bad value never reached the engine, but --print-bytecode-filter did,
+    // so naming it as dropped would send the caller hunting a working flag.
+    const out = normalizeFlags("v8", ["--print-bytecode-filter=a b", "--print-bytecode-filter=fib"], 10);
+    expect(out.flags).toEqual(["--print-bytecode-filter=fib"]);
+    expect(out.dropped).toEqual([]);
   });
 
   it("isolates allowlists per engine", () => {
     // A v8 flag must not pass through the hermes allowlist.
-    expect(normalizeFlags("hermes", ["--print-bytecode"], 10)).toEqual([]);
-    expect(normalizeFlags("hermes", ["-O", "-strict"], 10)).toEqual(["-O", "-strict"]);
+    expect(normalizeFlags("hermes", ["--print-bytecode"], 10).flags).toEqual([]);
+    expect(normalizeFlags("hermes", ["-O", "-strict"], 10).flags).toEqual(["-O", "-strict"]);
+  });
+
+  it("bounds the reported drop list so junk input cannot bloat the response", () => {
+    const junk = Array.from({ length: 50 }, (_, i) => `--nope-${i}`);
+    expect(normalizeFlags("v8", junk, 4).dropped).toHaveLength(4);
+  });
+
+  describe("value-bearing flags", () => {
+    it("accepts --flag=value when the value matches the catalog pattern", () => {
+      const out = normalizeFlags("v8", ["--print-bytecode", "--print-bytecode-filter=fib"], 10);
+      expect(out.flags).toEqual(["--print-bytecode", "--print-bytecode-filter=fib"]);
+      expect(out.dropped).toEqual([]);
+    });
+
+    it("accepts a wildcard filter", () => {
+      expect(normalizeFlags("v8", ["--print-bytecode-filter=*fib*"], 10).flags).toEqual([
+        "--print-bytecode-filter=*fib*",
+      ]);
+    });
+
+    it("rejects a value that could smuggle anything past the allowlist", () => {
+      const out = normalizeFlags("v8", ["--print-bytecode-filter=a b", "--print-bytecode-filter=;rm -rf /"], 10);
+      expect(out.flags).toEqual([]);
+      expect(out.dropped).toHaveLength(2);
+    });
+
+    it("rejects a value-bearing flag passed without a value", () => {
+      const out = normalizeFlags("v8", ["--print-bytecode-filter"], 10);
+      expect(out.flags).toEqual([]);
+      expect(out.dropped).toEqual(["--print-bytecode-filter"]);
+    });
+
+    it("rejects a value on a flag that takes none", () => {
+      const out = normalizeFlags("v8", ["--print-bytecode=fib"], 10);
+      expect(out.flags).toEqual([]);
+      expect(out.dropped).toEqual(["--print-bytecode=fib"]);
+    });
+
+    it("dedupes by flag name so a second value cannot override the first", () => {
+      const out = normalizeFlags("v8", ["--print-bytecode-filter=a", "--print-bytecode-filter=b"], 10);
+      expect(out.flags).toEqual(["--print-bytecode-filter=a"]);
+      // The flag itself reached the engine, so it is not reported as dropped.
+      expect(out.dropped).toEqual([]);
+    });
   });
 });
 
