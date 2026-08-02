@@ -84,7 +84,9 @@ export class TraceSandbox {
   constructor(options: TraceSandboxOptions) {
     this.#budgetMs = options.budgetMs;
     this.#maxQueueDepth = options.maxQueueDepth ?? DEFAULT_MAX_QUEUE_DEPTH;
-    this.#workerUrl = options.workerUrl ?? new URL("./worker.ts", import.meta.url);
+    // The .mjs bootstrap, not worker.ts: see worker-bootstrap.mjs for why the
+    // TypeScript body cannot be a worker entry point directly.
+    this.#workerUrl = options.workerUrl ?? new URL("./worker-bootstrap.mjs", import.meta.url);
     this.#maxOldGenerationSizeMb = options.maxOldGenerationSizeMb ?? DEFAULT_MAX_OLD_GENERATION_MB;
   }
 
@@ -161,9 +163,6 @@ export class TraceSandbox {
     if (this.#worker) return this.#worker;
     this.#ready = false;
     const worker = new Worker(this.#workerUrl, {
-      // Worker threads do not inherit the tsx loader from the parent, and this
-      // service runs its TypeScript sources directly (see package.json `start`).
-      execArgv: ["--import", "tsx"],
       resourceLimits: { maxOldGenerationSizeMb: this.#maxOldGenerationSizeMb },
     });
     worker.on("message", (reply: SandboxReply) => this.#onReply(worker, reply));
@@ -197,6 +196,18 @@ export class TraceSandbox {
       clearTimeout(inFlight.timer);
       inFlight.reject(error);
     }
+
+    // A worker that dies before it ever reports ready failed to boot, and
+    // respawning it for the next caller would fail the same way. Nothing has a
+    // deadline armed yet at that point (the budget starts at dispatch), so
+    // queued callers would hang forever instead of hearing about it — fail
+    // them now and let the next request pay for one fresh boot attempt.
+    if (!this.#ready) {
+      const queued = this.#queue;
+      this.#queue = [];
+      for (const pending of queued) pending.reject(error);
+    }
+
     void this.#recycleWorker();
     this.#pump();
   }
