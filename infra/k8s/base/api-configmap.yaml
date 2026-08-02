@@ -14,6 +14,10 @@ data:
   CACHE_TTL_SECONDS: "600"
   RATE_LIMIT_PER_MIN: "60"
   RATE_LIMIT_HEAVY_PER_MIN: "20"
+  # /api/trace/execute gets its own budget: a trace boots engine262 and is far
+  # more expensive per request than a cached /api/run, on a node whose CPU is
+  # shared with another tenant's production.
+  TRACE_RATE_LIMIT_PER_MIN: "30"
   API_KEY_RATE_LIMIT_PER_MIN: "240"
   API_KEY_ISSUE_PER_HOUR: "5"
   MAX_TIMEOUT_MS: "5000"

@@ -83,9 +83,20 @@ spec:
       ports:
         - port: 8080
 ---
-# trace-service is reached by both the API gateway and the frontend
-# (SSR initial data). It runs engine262 over untrusted input, so lock
-# its sources and (via default-deny) its egress.
+# trace-service should be reachable from the API gateway only — that is the
+# one path where trace runs are rate limited and metered. Browser traces now
+# take it (/api/trace/execute is routed to the api service by ingress.yaml).
+#
+# The frontend still needs this hole because two routes it serves have no
+# gateway equivalent: SSR initial data (abstract-functions-visualizer/
+# server-data.ts calls /functions, /spec/:name and /execute/*) and the
+# /api/spec + /api/trace/functions handlers. NetworkPolicy is L3/L4 only, so
+# it cannot allow the catalog paths while denying /execute. Drop the frontend
+# selector here and in frontend-egress once the gateway proxies /functions and
+# /spec/:name too — that is the last unmetered route to trace-service.
+#
+# It runs engine262 over untrusted input, so keep its sources locked and (via
+# default-deny) its egress closed.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -253,6 +264,8 @@ spec:
         - podSelector:
             matchLabels:
               app: api
+        # Only for SSR initial data and the /functions + /spec catalog routes;
+        # see the note on trace-service-ingress above.
         - podSelector:
             matchLabels:
               app: trace-service

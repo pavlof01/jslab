@@ -1,0 +1,175 @@
+# ─────────────────────────────────────────────────────────────
+# Grafana Alloy — scrape + remote_write agent. NOT wired into any
+# kustomization the deploy pipeline applies: it depends on the
+# `alloy-grafana-cloud` Secret, which is provisioned out-of-band, and
+# without it the pod crash-loops on an already-tight node.
+# Enable with `kubectl apply -k infra/k8s/monitoring` (see infra/README.md).
+# ─────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: alloy
+  labels:
+    app: alloy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jslab-alloy
+  labels:
+    app: alloy
+rules:
+  # Node discovery, and kubelet/cAdvisor metrics read through the apiserver
+  # proxy so Alloy never needs egress to the kubelet port on the host.
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/metrics", "nodes/proxy"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jslab-alloy
+  labels:
+    app: alloy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jslab-alloy
+subjects:
+  - kind: ServiceAccount
+    name: alloy
+    namespace: jslab
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alloy
+  labels:
+    app: alloy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alloy
+  template:
+    metadata:
+      labels:
+        app: alloy
+    spec:
+      serviceAccountName: alloy
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 473
+        runAsGroup: 473
+        fsGroup: 473
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.5.1
+          args:
+            - run
+            - /etc/alloy/config.alloy
+            - --storage.path=/tmp/alloy
+            - --server.http.listen-addr=0.0.0.0:12345
+          envFrom:
+            # Provisioned out-of-band; see infra/README.md. Absent Secret =
+            # pod stuck in CreateContainerConfigError, which is why this
+            # manifest is not part of the deploy pipeline.
+            - secretRef:
+                name: alloy-grafana-cloud
+          ports:
+            - containerPort: 12345
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /-/ready
+              port: 12345
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              # The node has ~600m CPU / ~1Gi memory of headroom; a 60s scrape
+              # of three targets must not eat into it.
+              cpu: 20m
+              memory: 96Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 473
+            runAsGroup: 473
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: alloy-config
+        - name: tmp
+          emptyDir: {}
+---
+# The namespace is default-deny, so Alloy needs its own allowlist. DNS is
+# already covered by the namespace-wide allow-dns-egress policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alloy-egress
+  labels:
+    app: alloy
+spec:
+  podSelector:
+    matchLabels:
+      app: alloy
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api
+      ports:
+        - port: 8080
+    # 443 = kube-apiserver (node discovery + kubelet proxy) and the Grafana
+    # Cloud remote_write endpoint; 6443 in case the apiserver is addressed on
+    # the node's own port rather than the in-cluster Service.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 443
+        - port: 6443
+---
+# Additive to api-ingress in base/networkpolicy.yaml: NetworkPolicies selecting
+# the same pod union their rules, so the base policy needs no edit for a
+# component that is off by default.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-ingress-alloy
+  labels:
+    app: alloy
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: alloy
+      ports:
+        - port: 8080

@@ -1,0 +1,23 @@
+[Unit]
+Description=Prune unused container images from k3s containerd
+Documentation=https://github.com/pavlof01/js-engines/blob/main/infra/README.md
+# Ordering only — deliberately NOT Requires=/Wants=k3s.service. Both of those
+# would *start* k3s, and the timer is Persistent=true, so a run missed while an
+# operator had k3s stopped for maintenance would fire at boot/daemon-reload and
+# drag the cluster back up under them. This node also hosts another tenant's
+# production, so resurrecting k3s behind an operator's back is the worst
+# possible failure mode for a cache-cleanup job.
+After=k3s.service
+# Instead, no-op when there is nothing to talk to. A failed condition makes
+# systemd skip the unit and record success, so the timer stays healthy and
+# retries tomorrow rather than logging a failure every day k3s is down.
+ConditionPathExists=/run/k3s/containerd/containerd.sock
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jslab-image-prune.sh
+# Only prune once the image filesystem is genuinely tight; kubelet's own image
+# GC (high 75 / low 65, see infra/node/k3s/config.yaml.d) handles the rest.
+Environment=JSLAB_PRUNE_THRESHOLD_PCT=70
+Nice=10
+IOSchedulingClass=idle

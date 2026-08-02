@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily prune of unused k3s container images
+
+[Timer]
+OnCalendar=*-*-* 04:15:00
+# The node is shared, so jitter the start rather than hammering disk at a fixed
+# minute; Persistent catches up a run missed while the host was down.
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
