@@ -20,11 +20,13 @@ describe("runCommand", () => {
   it("keeps multi-byte characters intact across chunk boundaries", async () => {
     // Decoding each chunk on arrival used to cut UTF-8 sequences in half
     // whenever a 64 KiB pipe chunk landed mid-character.
-    const script = 'process.stdout.write("привет ☃".repeat(20000));';
+    // Deliberately mixed widths: "é" is 2 bytes, "☃" is 3, "𝄞" is 4, so a chunk
+    // boundary can land inside any of them.
+    const script = 'process.stdout.write("héllo ☃ 𝄞".repeat(20000));';
     const result = await run(script, { maxOutputBytes: 8 * 1024 * 1024 });
     expect(result.outputTruncated).toBe(false);
-    expect(result.stdout).not.toContain("�");
-    expect(result.stdout).toBe("привет ☃".repeat(20000));
+    expect(result.stdout).not.toContain("\uFFFD");
+    expect(result.stdout).toBe("héllo ☃ 𝄞".repeat(20000));
   });
 
   it("truncates instead of discarding when the output budget is blown", async () => {
