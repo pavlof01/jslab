@@ -111,10 +111,24 @@ Environment variables (see `src/config.ts`):
 | ------------------ | ------- | --------------------------- |
 | PORT               | 8080    | HTTP server port            |
 | HOST               | 0.0.0.0 | HTTP server binding address |
-| MAX_TIMEOUT_MS     | 5000    | Maximum execution timeout   |
+| MAX_TIMEOUT_MS     | 5000    | Hard execution budget       |
 | DEFAULT_TIMEOUT_MS | 2000    | Default execution timeout   |
 | MAX_SOURCE_LENGTH  | 20000   | Maximum input length        |
 | LOG_LEVEL          | info    | Pino log level              |
+
+## Execution limits
+
+Inputs are arbitrary JavaScript — `{ valueOf: () => { while (true) {} } }` is a valid
+thing to ask ToNumber about — and engine262 evaluates them synchronously. Two limits
+keep one request from taking the pod down:
+
+- **`MAX_SOURCE_LENGTH`** is a `maxLength` on the request schemas, so an oversized
+  payload is rejected during validation and never reaches the engine (`400`).
+- **`MAX_TIMEOUT_MS`** is a hard budget enforced by `src/server/execute/sandbox.ts`.
+  Traces run in a worker thread; a task that outlives the budget has its thread
+  terminated and the request answers `400 { code: "execution_budget_exceeded" }`.
+  One task runs at a time, so a burst of expensive inputs queues and then answers
+  `429 { code: "trace_worker_busy" }` with `Retry-After` rather than piling up.
 
 ## Integration
 

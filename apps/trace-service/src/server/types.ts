@@ -16,4 +16,6 @@ export type ExecuteResponse = {
   /** For BinaryExpression: the operator parsed out of the input ("==", "!==", "<=", etc.). */
   detectedOperator?: string;
   error?: string;
+  /** Machine-readable failure reason, e.g. "execution_budget_exceeded". */
+  code?: string;
 };

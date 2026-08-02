@@ -359,29 +359,3 @@ export function splitBinaryExpression(input: string, operator: string): [string,
   }
   return null;
 }
-
-/**
- * Converts an ECMA262 Value to its string representation.
- * execResult is a Value from the engine (NumberValue, JSStringValue, etc.)
- */
-export function convertResultToString(execResult: Value): string {
-  if (!execResult || typeof execResult !== "object") {
-    return String(execResult);
-  }
-  switch (execResult.type) {
-    case "Number":
-      return String(execResult.value);
-    case "String":
-      return typeof execResult.stringValue === "function" ? execResult.stringValue() : String(execResult.value ?? "");
-    case "Boolean":
-      return execResult === Value.true ? "true" : "false";
-    case "BigInt":
-      return String(execResult.value);
-    case "Null":
-      return "null";
-    case "Undefined":
-      return "undefined";
-    default:
-      return String(execResult);
-  }
-}

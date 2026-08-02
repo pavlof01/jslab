@@ -5,19 +5,48 @@
  *
  * Sub-algorithm invocations are nested inside `kind: "call"` steps via
  * `algoId`, `inputs`, `steps`, `output`, `error` (mirror of the engine262 shape).
+ *
+ * Two entry points, deliberately different:
+ * - `fromEngineValue` for a live engine262 Value (the algorithm's return value) —
+ *   the spec type is read off the Value itself and is always exact.
+ * - `toSerializedValue` for the display strings the trace recorder already
+ *   flattened into steps — recovering a type from those is guesswork, so it must
+ *   never be used where a real Value is in hand.
  */
 import type { TraceNode, TraceStep, TraceStepKind } from "../../trace/index.mts";
 import { ALGO_SPEC_URL } from "../spec-generator.ts";
+
+/**
+ * JSON has no literal for NaN/±Infinity and collapses -0 to 0, so those Numbers
+ * travel as sentinel strings. The frontend renders a Number payload with
+ * `String(value)`, which prints them verbatim.
+ */
+export type NumberPayload = number | "NaN" | "Infinity" | "-Infinity" | "-0";
 
 export type SerializedValue =
   | { type: "Undefined" }
   | { type: "Null"; value: null }
   | { type: "Boolean"; value: boolean }
-  | { type: "Number"; value: number | "NaN" }
+  | { type: "Number"; value: NumberPayload }
   | { type: "String"; value: string }
   | { type: "Symbol"; value: { id: string; description?: string } }
   | { type: "BigInt"; value: string }
   | { type: "Object"; value: { id: string; class: string; preview?: string } };
+
+/**
+ * Structural view of an engine262 `Value`. Declared locally instead of importing
+ * the class union so this module carries no runtime engine262 import and can be
+ * unit-tested without the submodule checked out.
+ */
+export interface EngineValue {
+  readonly type: "Undefined" | "Null" | "Boolean" | "String" | "Symbol" | "Number" | "BigInt" | "Object";
+  /** Primitive payload on every PrimitiveValue except SymbolValue. */
+  readonly value?: unknown;
+  /** SymbolValue only: a JSStringValue or UndefinedValue. */
+  readonly Description?: { readonly value?: unknown };
+  /** ObjectValue only. */
+  readonly internalSlotsList?: readonly string[];
+}
 
 export interface SerializedTraceStep {
   kind: TraceStepKind;
@@ -44,6 +73,91 @@ export interface SerializedTraceNode {
   error?: string;
   steps: SerializedTraceStep[];
   specUrl?: string;
+}
+
+/**
+ * Internal slots that identify a primitive wrapper object (what ToObject builds).
+ * The slot also holds the wrapped Value, which is safe to read for a preview:
+ * unlike Get/toString it cannot re-enter user code.
+ */
+const WRAPPER_SLOTS: ReadonlyArray<readonly [slot: string, className: string]> = [
+  ["NumberData", "Number"],
+  ["StringData", "String"],
+  ["BooleanData", "Boolean"],
+  ["SymbolData", "Symbol"],
+  ["BigIntData", "BigInt"],
+];
+
+function numberPayload(n: number): NumberPayload {
+  if (Number.isNaN(n)) return "NaN";
+  if (n === Infinity) return "Infinity";
+  if (n === -Infinity) return "-Infinity";
+  if (Object.is(n, -0)) return "-0";
+  return n;
+}
+
+function previewOfPrimitive(value: SerializedValue): string | undefined {
+  switch (value.type) {
+    case "String":
+      return JSON.stringify(value.value);
+    case "Number":
+    case "Boolean":
+      return String(value.value);
+    case "BigInt":
+      return `${value.value}n`;
+    case "Symbol":
+      return value.value.description === undefined ? "Symbol()" : `Symbol(${value.value.description})`;
+    default:
+      return undefined;
+  }
+}
+
+function describeObject(value: EngineValue): { id: string; class: string; preview?: string } {
+  const slots = value.internalSlotsList ?? [];
+  for (const [slot, className] of WRAPPER_SLOTS) {
+    if (!slots.includes(slot)) continue;
+    const wrapped = (value as unknown as Record<string, EngineValue | undefined>)[slot];
+    const preview = wrapped ? previewOfPrimitive(fromEngineValue(wrapped)) : undefined;
+    return { id: "obj", class: className, preview };
+  }
+  if (slots.includes("Call")) return { id: "obj", class: "Function" };
+  // A response carries exactly one result Value, so a constant id is enough to
+  // identify it; engine262 objects have no stable identity to expose anyway.
+  return { id: "obj", class: "Object" };
+}
+
+/**
+ * Serializes a live engine262 Value by its spec type.
+ *
+ * This replaces an older Value → display string → re-parse round trip that lost
+ * the type: ToString(true) came back as the Boolean true rather than the String
+ * "true", and ToString(42) as the Number 42 — exactly the confusion this tool
+ * exists to dispel.
+ */
+export function fromEngineValue(value: EngineValue): SerializedValue {
+  switch (value.type) {
+    case "Undefined":
+      return { type: "Undefined" };
+    case "Null":
+      return { type: "Null", value: null };
+    case "Boolean":
+      return { type: "Boolean", value: value.value === true };
+    case "String":
+      return { type: "String", value: typeof value.value === "string" ? value.value : String(value.value ?? "") };
+    case "Number":
+      return { type: "Number", value: numberPayload(Number(value.value)) };
+    case "BigInt":
+      return { type: "BigInt", value: String(value.value) };
+    case "Symbol": {
+      const description = value.Description?.value;
+      return {
+        type: "Symbol",
+        value: { id: "sym", description: typeof description === "string" ? description : undefined },
+      };
+    }
+    case "Object":
+      return { type: "Object", value: describeObject(value) };
+  }
 }
 
 export function toSerializedValue(str: string | undefined): SerializedValue {

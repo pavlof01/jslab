@@ -14,12 +14,11 @@ import type { ExecuteResponse } from "../types.ts";
 import {
   callECMA262Function,
   callECMA262BinaryFunction,
-  convertResultToString,
   parseStringToValue,
   detectOperator,
   getOperatorDispatch,
 } from "./helpers.ts";
-import { serializeNode, toSerializedValue } from "./serialize.ts";
+import { fromEngineValue, serializeNode } from "./serialize.ts";
 
 /**
  * Type-conversion endpoint: unary abstract operations (ToNumber, ToString, ToPrimitive, ...).
@@ -72,7 +71,7 @@ export async function executeUnaryConversion(
 
   const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
   const root = rootNode ? serializeNode(rootNode) : undefined;
-  const result = toSerializedValue(convertResultToString(execResult));
+  const result = fromEngineValue(execResult);
 
   return {
     success: true,
@@ -171,7 +170,7 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
 
   const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
   const root = rootNode ? serializeNode(rootNode) : undefined;
-  const result = toSerializedValue(convertResultToString(execResult));
+  const result = fromEngineValue(execResult);
 
   return {
     success: true,
