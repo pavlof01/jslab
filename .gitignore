@@ -1,0 +1,6 @@
+# Local editor/agent settings. Machine-specific absolute paths live in here,
+# so it must never be shared — least of all from a public repository.
+.claude/
+
+# Test-run output
+coverage/
