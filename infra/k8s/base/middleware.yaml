@@ -1,4 +1,4 @@
-# Security-headers middleware referenced by all ingresses as
+# Security-headers middleware referenced by every ingress except jslab-embed as
 #   traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-security-headers@kubernetescrd
 # (namespace "jslab" + name "jslab-security-headers").
 #
@@ -28,3 +28,44 @@ spec:
     customResponseHeaders:
       Permissions-Policy: "geolocation=(), microphone=(), camera=()"
       X-Permitted-Cross-Domain-Policies: "none"
+---
+# Same headers minus frameDeny, for /embed only (see jslab-embed in
+# ingress.yaml). The "Copy embed code" button in the playground hands out an
+# <iframe src="https://jslab.su/embed/playground?s=...">, which every browser
+# refuses to render while the response carries X-Frame-Options: DENY — and
+# frameDeny above emits exactly that on every route.
+#
+# frameDeny is therefore replaced (not just dropped) by a CSP frame-ancestors
+# directive, the modern equivalent that X-Frame-Options was superseded by.
+# It is deliberately wide open: an embed widget whose whole purpose is to be
+# pasted into arbitrary blog posts cannot enumerate its embedders. That is
+# acceptable *only* for this prefix — /embed/playground is anonymous, carries
+# no session or cookie and exposes no state-changing action beyond the same
+# rate-limited POST /api/run any visitor can already call, so there is nothing
+# for a clickjacker to hijack. Every other route keeps frameDeny.
+#
+# Do not widen this middleware's route scope, and do not add authenticated or
+# destructive UI under /embed without revisiting frame-ancestors first.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jslab-embed-headers
+  namespace: jslab
+spec:
+  headers:
+    contentTypeNosniff: true
+    browserXssFilter: true
+    referrerPolicy: strict-origin-when-cross-origin
+    stsSeconds: 63072000
+    stsIncludeSubdomains: true
+    stsPreload: true
+    forceSTSHeader: true
+    contentSecurityPolicy: "frame-ancestors *"
+    customResponseHeaders:
+      Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+      X-Permitted-Cross-Domain-Policies: "none"
+      # Traefik only sets X-Frame-Options when frameDeny/customFrameOptionsValue
+      # is configured, so it is already absent here. The empty value is a
+      # belt-and-braces strip in case an upstream (Next.js, Cloudflare) starts
+      # emitting one: Traefik deletes a response header set to "".
+      X-Frame-Options: ""

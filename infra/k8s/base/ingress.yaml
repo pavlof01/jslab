@@ -62,6 +62,12 @@ spec:
                   number: 8080
 ---
 # ─── jslab-frontend-api ───────────────────────────────────
+# Only the routes the gateway does not implement stay on the frontend:
+# /api/trace/functions (catalog) and /api/spec (spec HTML). /api/trace/execute
+# deliberately does NOT match here so it falls through to the priority-1000
+# /api rule above and is served by the api gateway, where trace runs are rate
+# limited, budgeted against API keys and counted in /metrics. Adding a broader
+# /api/trace prefix back here would silently un-meter trace traffic again.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -86,7 +92,7 @@ spec:
     - host: jslab.su
       http:
         paths:
-          - path: /api/trace
+          - path: /api/trace/functions
             pathType: Prefix
             backend:
               service:
@@ -103,7 +109,7 @@ spec:
     - host: www.jslab.su
       http:
         paths:
-          - path: /api/trace
+          - path: /api/trace/functions
             pathType: Prefix
             backend:
               service:
@@ -120,7 +126,7 @@ spec:
     - host: jslab.cc
       http:
         paths:
-          - path: /api/trace
+          - path: /api/trace/functions
             pathType: Prefix
             backend:
               service:
@@ -137,7 +143,7 @@ spec:
     - host: www.jslab.cc
       http:
         paths:
-          - path: /api/trace
+          - path: /api/trace/functions
             pathType: Prefix
             backend:
               service:
@@ -145,6 +151,81 @@ spec:
                 port:
                   number: 3000
           - path: /api/spec
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+---
+# ─── jslab-embed ──────────────────────────────────────────
+# Same frontend backend as jslab-frontend below, split out purely to swap the
+# security-headers middleware for jslab-embed-headers: the shared one sets
+# frameDeny, and X-Frame-Options: DENY makes the <iframe> snippet the playground
+# hands out unrenderable in every browser. See middleware.yaml for why dropping
+# frameDeny is acceptable on this prefix and nowhere else.
+#
+# Priority 500 sits between jslab-frontend (10) and jslab-api (1000): high
+# enough that /embed/* wins over the frontend catch-all `/`, low enough to be
+# obviously incapable of shadowing the gateway rules. Traefik picks the
+# highest-priority matching router, and every ingress here sets an explicit
+# priority, so no length-based default is in play. /embed shares no prefix with
+# /api, /api/trace/functions or /api/spec, so no other route changes behaviour.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jslab-embed
+  namespace: jslab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.priority: "500"
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-embed-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - jslab.su
+        - www.jslab.su
+      secretName: jslab-su-origin-tls
+    - hosts:
+        - jslab.cc
+        - www.jslab.cc
+      secretName: jslab-cc-origin-tls
+  rules:
+    - host: jslab.su
+      http:
+        paths:
+          - path: /embed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.su
+      http:
+        paths:
+          - path: /embed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /embed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.cc
+      http:
+        paths:
+          - path: /embed
             pathType: Prefix
             backend:
               service:

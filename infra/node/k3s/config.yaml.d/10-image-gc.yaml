@@ -1,0 +1,18 @@
+# k3s server drop-in: /etc/rancher/k3s/config.yaml.d/10-image-gc.yaml
+#
+# kubelet's defaults only start image GC at 85% imagefs usage and stop at 80%.
+# The node sat at 84% for weeks — below the trigger — so nothing was ever
+# collected. Starting at 75% and draining to 65% leaves a real margin.
+#
+# The `+` suffix appends to any kubelet-arg already set in
+# /etc/rancher/k3s/config.yaml instead of replacing the whole list.
+#
+# Image GC only evicts images no container references. It is not enough on its
+# own here (kubelet logged FreeDiskSpaceFailed "wanted to free ... but freed 0
+# bytes"), so it is paired with the jslab-image-prune.timer unit alongside.
+#
+# Requires `systemctl restart k3s` to take effect. That restarts the k3s
+# server process only; containerd and the running pods stay up.
+kubelet-arg+:
+  - "image-gc-high-threshold=75"
+  - "image-gc-low-threshold=65"

@@ -1,0 +1,102 @@
+// The gateway's own counters: runs_total, run_duration, rate_limited.
+prometheus.scrape "jslab_api" {
+  targets = [{
+    __address__ = "api.jslab.svc.cluster.local:8080",
+    job         = "jslab/api",
+    instance    = "api",
+  }]
+  metrics_path    = "/metrics"
+  scrape_interval = "60s"
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+discovery.kubernetes "nodes" {
+  role = "node"
+}
+
+// Route kubelet scrapes through the apiserver proxy: it needs only the
+// ServiceAccount token and port 443, so the egress allowlist below stays
+// narrow and no kubelet client certificate has to be mounted.
+discovery.relabel "kubelet" {
+  targets = discovery.kubernetes.nodes.targets
+
+  rule {
+    target_label = "__address__"
+    replacement  = "kubernetes.default.svc.cluster.local:443"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_node_name"]
+    regex         = "(.+)"
+    target_label  = "__metrics_path__"
+    replacement   = "/api/v1/nodes/${1}/proxy/metrics"
+  }
+}
+
+discovery.relabel "cadvisor" {
+  targets = discovery.kubernetes.nodes.targets
+
+  rule {
+    target_label = "__address__"
+    replacement  = "kubernetes.default.svc.cluster.local:443"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_node_name"]
+    regex         = "(.+)"
+    target_label  = "__metrics_path__"
+    replacement   = "/api/v1/nodes/${1}/proxy/metrics/cadvisor"
+  }
+}
+
+prometheus.scrape "kubelet" {
+  targets         = discovery.relabel.kubelet.output
+  job_name        = "jslab/kubelet"
+  scheme          = "https"
+  scrape_interval = "60s"
+  bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+  tls_config {
+    ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+  }
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.scrape "cadvisor" {
+  targets         = discovery.relabel.cadvisor.output
+  job_name        = "jslab/cadvisor"
+  scheme          = "https"
+  scrape_interval = "60s"
+  bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+  tls_config {
+    ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+  }
+  forward_to = [prometheus.relabel.cadvisor_keep.receiver]
+}
+
+// cAdvisor emits a per-container series for everything; on a Grafana Cloud
+// free tier that alone blows the active-series budget. Keep only what the
+// alerts need — node disk (id="/") plus basic cpu/memory saturation.
+prometheus.relabel "cadvisor_keep" {
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+  rule {
+    source_labels = ["__name__"]
+    regex = "container_fs_(usage|limit)_bytes|container_memory_working_set_bytes|container_cpu_usage_seconds_total|machine_(cpu_cores|memory_bytes)"
+    action = "keep"
+  }
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_PROM_URL")
+
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_PROM_USER")
+      password = sys.env("GRAFANA_CLOUD_PROM_PASSWORD")
+    }
+  }
+
+  // Small queue: this is one tiny node, and a large in-memory WAL backlog
+  // would compete with the workloads we are trying to watch.
+  wal {
+    truncate_frequency = "30m"
+  }
+}
