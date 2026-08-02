@@ -83,20 +83,20 @@ JS
 
 # =============== Flag matrix ===============
 FLAGS=(
-"allow-natives-syntax|--allow-natives-syntax|natives.js|Разрешает %внутренние функции.|В логе NATIVES_DONE; без флага будет SyntaxError."
-"print-bytecode|--print-bytecode|core.js|Печать байткода Ignition.|Секции 'Bytecode for function ...'."
-"print-code|--print-code|core.js|Печать машинного кода.|Дизассемблер с комментариями."
-"print-opt-code|--print-opt-code|core.js|Оптимизированный код.|TurboFan/Maglev код."
-"print-ast|--print-ast|ast_only.js|AST после парсинга.|Дерево узлов."
-"trace-ast|--trace-ast|ast_only.js|Трассировка AST.|Ход построения AST."
-"trace-ic|--trace-ic|core.js|Inline Caches.|Сообщения о смене IC."
-"trace-opt|--trace-opt|core.js|Оптимизации.|'marking ... for optimization'."
-"trace-opt-verbose|--trace-opt-verbose|core.js|Подробные опт./деопт.|Глубокие причины."
-"trace-deopt|--trace-deopt|core.js|Деоптимизации.|Сообщения 'deoptimizing ...'."
-"print-regexp-bytecode|--print-regexp-bytecode|core.js|Байткод regexp.|Инструкции regexp VM."
-"print-regexp-code|--print-regexp-code|core.js|Машинный код regexp.|Дизассемблер regexp."
-"trace-ignition-codegen|--trace-ignition-codegen|core.js|Генерация байткода.|Линии эмиссии."
-"trace-ignition-dispatches|--trace-ignition-dispatches|core.js|Диспетчер байткода.|Очень шумный лог."
+"allow-natives-syntax|--allow-natives-syntax|natives.js|Enables the %-prefixed native functions.|NATIVES_DONE in the log; without the flag it is a SyntaxError."
+"print-bytecode|--print-bytecode|core.js|Prints Ignition bytecode.|'Bytecode for function ...' sections."
+"print-code|--print-code|core.js|Prints generated machine code.|Disassembly with comments."
+"print-opt-code|--print-opt-code|core.js|Optimized code only.|TurboFan/Maglev output."
+"print-ast|--print-ast|ast_only.js|AST after parsing.|The node tree."
+"trace-ast|--trace-ast|ast_only.js|AST construction trace.|How the AST is built up."
+"trace-ic|--trace-ic|core.js|Inline caches.|Messages about IC state transitions."
+"trace-opt|--trace-opt|core.js|Optimization decisions.|'marking ... for optimization'."
+"trace-opt-verbose|--trace-opt-verbose|core.js|Verbose opt/deopt.|Detailed reasons."
+"trace-deopt|--trace-deopt|core.js|Deoptimizations.|'deoptimizing ...' messages."
+"print-regexp-bytecode|--print-regexp-bytecode|core.js|Regexp bytecode.|Regexp VM instructions."
+"print-regexp-code|--print-regexp-code|core.js|Regexp machine code.|Regexp disassembly."
+"trace-ignition-codegen|--trace-ignition-codegen|core.js|Bytecode generation.|Emission lines."
+"trace-ignition-dispatches|--trace-ignition-dispatches|core.js|Bytecode dispatch counts.|Very noisy log."
 )
 
 should_run() {
