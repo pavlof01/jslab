@@ -17,7 +17,7 @@ Browser → Next.js frontend (port 3000)
           └─ trace-service      (engine262 ECMAScript interpreter)
 ```
 
-Engine services are **stateless HTTP wrappers** — no inter-service communication, no shared state. The API gateway is the sole orchestrator.
+Engine services are **stateless HTTP wrappers** — no inter-service communication, no shared state. The API gateway is the sole orchestrator. The four `engine-*` services share one implementation: `packages/engine-runtime` (`@jslab/engine-runtime`, consumed as a `file:` dependency).
 
 ### Request flow
 
@@ -55,14 +55,14 @@ TypeScript check: `node_modules/.bin/tsc --noEmit -p tsconfig.json` (no `tsc` on
 npm run dev          # tsx watch → localhost:8080
 npm run build        # tsc → dist/
 npm run lint         # tsc --noEmit
+npm run test         # vitest (includes the flag-catalog mirror test)
 ```
 
 ### Trace service (`apps/trace-service/`)
 ```bash
-npm run dev                  # tsx watch → localhost:8085
-npm run test                 # vitest (all)
-npm run test:api             # vitest API integration tests only
-npm run test:type-conversion # vitest type-coercion trace tests
+npm run dev    # tsx watch → localhost:8080 (skaffold port-forwards it to localhost:8085)
+npm run test   # vitest
+npm run lint   # tsc --noEmit
 ```
 
 ### Engine services (`apps/engine-v8/`, `apps/engine-hermes/`, etc.)
@@ -103,19 +103,22 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 ## Engine service pattern
 
-Each engine service (`apps/engine-*/src/server.ts`) follows the same structure:
+Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer()` call into the shared `packages/engine-runtime` package. The service supplies an `EngineSpec` — engine name (also the flag-catalog key), temp-dir prefix, config, and an `invoke()` callback that builds the binary command line — and the runtime handles the rest (`packages/engine-runtime/src/index.ts`):
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
-- `allowedFlags` Set filters client-supplied flags (unsanitized flags are **silently dropped**)
-- `child_process.spawn()` runs the binary with timeout; stdout/stderr capped at ~512 KB
-- Returns `{ ok, stdout, stderr, artifacts: [] }`
+- `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
+- Per-pod concurrency gate returns 429 + `Retry-After` when saturated
+- `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
+- Returns `{ ok, stdout, stderr, artifacts: [], meta }`
 
-To add a flag to V8: update `allowedFlags` in `apps/engine-v8/src/server.ts` **and** `engineFlags.v8` in `apps/api/src/schemas.ts` (both must allow it).
+**Flag catalog**: `flagCatalog` in `packages/engine-runtime/src/flags.ts`, mirrored **byte-for-byte** in `apps/api/src/flags.ts` (the api Docker build context is `apps/api` only, so it cannot import the package). `apps/api/src/flags.test.ts` fails if the two copies differ.
+
+To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-runtime/src/flags.ts`, then copy the file verbatim to `apps/api/src/flags.ts` (`npm run test` in `apps/api` verifies the mirror).
 
 ---
 
 ## API gateway key behaviors
 
-- **Flag allowlist** is enforced in `apps/api/src/schemas.ts` → `normalizeFlags()`. Engine services also enforce their own lists independently.
+- **Flag allowlist**: `normalizeFlags()` in `apps/api/src/schemas.ts` runs the shared `sanitizeFlags()` over the catalog in `apps/api/src/flags.ts`. Engine services run the same sanitizer independently via `@jslab/engine-runtime`.
 - **Cache key**: `engine + sourceText + sorted-flags + ceil(timeoutMs/100)` — timeout is bucketed to reduce misses.
 - **Rate limit**: 60 req/min per IP (Redis counters, `Retry-After` on 429).
 - **Trace endpoint**: `POST /api/trace/execute` → `{ functionName, input, preferredType? }` → proxies to `trace-service`.
@@ -126,7 +129,7 @@ To add a flag to V8: update `allowedFlags` in `apps/engine-v8/src/server.ts` **a
 
 `apps/trace-service/` runs the [engine262](https://github.com/nicolo-ribaudo/engine262) ECMAScript interpreter to produce step-by-step traces of abstract operations (ToNumber, ToPrimitive, etc.).
 
-- Entry: `src/server/server.ts` (Fastify, port 8085)
+- Entry: `src/server/server.ts` (Fastify, port 8080; skaffold port-forwards it to localhost:8085)
 - Trace logic: `src/trace/index.mts`
 - Tests use **vitest** (not Jest)
 

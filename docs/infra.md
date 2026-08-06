@@ -7,11 +7,12 @@ This document is a quick “map” of the infrastructure: what services (contain
 | Component | Dockerfile | Kubernetes resources | Port | Dependencies |
 | --- | --- | --- | --- | --- |
 | `frontend` (Next.js) | `apps/frontend/Dockerfile` | `Deployment/frontend` + `Service/frontend` | `3000` | `api` |
-| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey` |
+| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey`, `trace-service` |
 | `engine-v8` (d8 wrapper) | `apps/engine-v8/Dockerfile` | `Deployment/engine-v8` + `Service/engine-v8` | `8080` | — |
 | `engine-hermes` (Hermes toolchain wrapper) | `apps/engine-hermes/Dockerfile` | `Deployment/engine-hermes` + `Service/engine-hermes` | `8080` | — |
 | `engine-jsc` (JavaScriptCore wrapper) | `apps/engine-jsc/Dockerfile` | `Deployment/engine-jsc` + `Service/engine-jsc` | `8080` | — |
 | `engine-spidermonkey` (SpiderMonkey shell wrapper) | `apps/engine-spidermonkey/Dockerfile` | `Deployment/engine-spidermonkey` + `Service/engine-spidermonkey` | `8080` | — |
+| `trace-service` (engine262 abstract-operations tracer) | `apps/trace-service/Dockerfile` | `Deployment/trace-service` + `Service/trace-service` | `8080` | — |
 | `redis` (cache / rate limit) | (image) `redis:7-alpine` | `Deployment/redis` + `Service/redis` | `6379` | — |
 
 ## 2) Topology (Kubernetes)
@@ -21,7 +22,7 @@ flowchart LR
   user((User))
 
   subgraph ns[Namespace: jslab]
-    traefik[Traefik (Ingress Controller)]
+    traefik["Traefik (Ingress Controller)"]
     ing[Ingress: jslab]
 
     svc_front[Service: frontend:3000]
@@ -42,6 +43,9 @@ flowchart LR
     svc_sm[Service: engine-spidermonkey:8080]
     dep_sm[Deployment: engine-spidermonkey]
 
+    svc_trace[Service: trace-service:8080]
+    dep_trace[Deployment: trace-service]
+
     svc_redis[Service: redis:6379]
     dep_redis[Deployment: redis]
 
@@ -54,6 +58,7 @@ flowchart LR
   dep_api --> svc_hermes --> dep_hermes
   dep_api --> svc_jsc --> dep_jsc
   dep_api --> svc_sm --> dep_sm
+  dep_api --> svc_trace --> dep_trace
   dep_api --> svc_redis --> dep_redis
 
   cm_api -. envFrom .-> dep_api
