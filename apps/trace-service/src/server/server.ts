@@ -112,7 +112,7 @@ const start = async () => {
   try {
     sandbox.warm();
     await app.listen({ port: config.PORT, host: config.HOST });
-    console.log(`trace-service started on ${config.HOST}:${config.PORT}`);
+    app.log.info(`trace-service started on ${config.HOST}:${config.PORT}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
