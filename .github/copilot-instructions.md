@@ -13,7 +13,8 @@ Client → Next.js Frontend → Fastify API Gateway (Redis cache + rate limit)
                     ├─ engine-v8 (d8)
                     ├─ engine-hermes (hermesc)
                     ├─ engine-jsc (jsc)
-                    └─ engine-spidermonkey (js)
+                    ├─ engine-spidermonkey (js)
+                    └─ trace-service (engine262)
 ```
 
 **Key constraint**: Engine services are stateless HTTP wrappers around CLI tools. No direct file system access or inter-service communication exists—only the API gateway orchestrates requests.
@@ -40,7 +41,7 @@ cd apps/engine-v8 && npm run dev    # Engine @ localhost:8080
 
 ### Type Safety & Validation
 
-- All services use **Zod** for schema validation and type inference (e.g., `apps/api/src/schemas.ts`, `apps/engine-v8/src/server.ts`).
+- All services use **Zod** for schema validation and type inference (e.g., `apps/api/src/schemas.ts`, `packages/engine-runtime/src/index.ts`).
 - **TypeScript** with `"type": "module"` and ESM imports throughout.
 - Run `npm run lint` (tsc --noEmit) in each app to check types.
 
@@ -48,7 +49,7 @@ cd apps/engine-v8 && npm run dev    # Engine @ localhost:8080
 
 ### API Request/Response Contract
 
-See [apps/api/src/types.ts](apps/api/src/types.ts):
+See [apps/api/src/types.ts](../apps/api/src/types.ts):
 
 ```typescript
 type RunRequest = {
@@ -70,7 +71,7 @@ type ApiResponse = {
 
 - Frontend → API: POST `/api/run` with `RunRequest`.
 - API → Engine services: POST `/run` (same schema).
-- All engine services must respect `allowedFlags` whitelist (e.g., V8: `--print-bytecode`, `--trace-ignition`; Hermes: `-O`, `-gc-sanitize-handles`). Unsanitized flags are silently dropped.
+- All engine services filter flags against the shared `flagCatalog` (e.g., V8: `--print-bytecode`, `--trace-ignition`; Hermes: `-O`, `-gc-sanitize-handles`). Rejected flags are reported back in `meta.droppedFlags`.
 - `sourceText` is immutable; flags and timeout are normalized server-side.
 - **Cache key** includes engine, sourceText, flags, and a timeout bucket (Math.ceil(timeoutMs/100)) to reduce cache misses on timeout variations.
 
@@ -78,33 +79,31 @@ type ApiResponse = {
 
 ### 1. Engine Service Template
 
-All engines ([engine-v8](apps/engine-v8/src/server.ts), [engine-hermes](apps/engine-hermes/src/server.ts), etc.):
+All engines ([engine-v8](../apps/engine-v8/src/server.ts), [engine-hermes](../apps/engine-hermes/src/server.ts), etc.) are thin wrappers around the shared [packages/engine-runtime](../packages/engine-runtime/src/) package:
 
-- Single POST `/run` endpoint accepting `RunRequest`.
-- **Flag sanitization**: Define `allowedFlags` Set, filter/deduplicate client flags. For V8, flags drive all behavior (e.g. `--print-bytecode` to get bytecode output).
-- **Process spawning**: Use `child_process.spawn()` with `timeout`, capture stdout/stderr, truncate if >512KB.
-- Return `{ ok: boolean; stdout: string; stderr: string; artifacts: [] }`.
+- Each `server.ts` calls `startEngineServer()` with an `EngineSpec`: the engine name (also the flag-catalog key), a temp-dir prefix, its config, and an `invoke()` callback that builds the binary command line. For V8, flags drive all behavior (e.g. `--print-bytecode` to get bytecode output).
+- The shared runtime provides the single POST `/run` endpoint: Zod validation, `sanitizeFlags()` against the `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts), a per-pod concurrency gate (429 when saturated), `child_process.spawn()` with timeout, and a combined stdout+stderr cap (`MAX_OUTPUT_BYTES`, default 2 MB).
+- Return shape: `{ ok, stdout, stderr, artifacts: [], meta }` — rejected flags come back in `meta.droppedFlags`, truncated output is flagged with `meta.outputTruncated`.
 - No external state—each request is independent.
 
-**Example snippet** (V8):
+**Example snippet** (V8, [apps/engine-v8/src/server.ts](../apps/engine-v8/src/server.ts)):
 
 ```typescript
-function sanitizeFlags(flags: string[] = []): string[] {
-  const seen = new Set<string>();
-  for (const raw of flags.slice(0, config.MAX_FLAGS)) {
-    const trimmed = raw.trim();
-    if (!allowedFlags.has(trimmed)) continue;
-    if (seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  return out;
-}
+startEngineServer({
+  engine: "v8",
+  tmpPrefix: "engine-v8-",
+  openapiTitle: "engine-v8",
+  config,
+  invoke: ({ scriptPath, flags }) => ({
+    cmd: config.D8_PATH,
+    args: [`--max-old-space-size=${config.MAX_HEAP_MB}`, ...flags, scriptPath],
+  }),
+});
 ```
 
 ### 2. API Gateway Patterns
 
-See [apps/api/src/server.ts](apps/api/src/server.ts):
+See [apps/api/src/server.ts](../apps/api/src/server.ts):
 
 - **Request validation**: Normalize sourceText length, timeout bounds, flags via schema.
 - **Cache-aside**: Check Redis before proxying to engine; write response if cache miss.
@@ -114,7 +113,7 @@ See [apps/api/src/server.ts](apps/api/src/server.ts):
 
 ### 3. Frontend State Management
 
-See [apps/frontend/src/store/useEngineOutputs.ts](apps/frontend/src/store/useEngineOutputs.ts):
+See [apps/frontend/src/store/useEngineOutputs.ts](../apps/frontend/src/store/useEngineOutputs.ts):
 
 - **Zustand store**: Single source of truth for engine outputs, status, errors.
 - **Shallow selectors**: Use `useShallow()` to avoid unnecessary re-renders.
@@ -144,7 +143,7 @@ export function loadConfig(): ApiConfig {
 
 ## Common Pitfalls & Design Constraints
 
-1. **Flag whitelisting is strict**: Client-supplied flags not in the engine's `allowedFlags` Set are discarded silently. To add a flag, update both the engine service and optionally the frontend UI.
+1. **Flag whitelisting is strict**: Client-supplied flags not in the `flagCatalog` are dropped (and reported in `meta.droppedFlags`). The catalog lives in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts) and is mirrored byte-for-byte in [apps/api/src/flags.ts](../apps/api/src/flags.ts) — [apps/api/src/flags.test.ts](../apps/api/src/flags.test.ts) fails if the copies differ.
 
 2. **Cache key normalization**: Timeouts are bucketed (every 100ms) to avoid cache explosion. If latency within ±100ms matters, reduce bucket size or disable cache for specific tasks.
 
@@ -168,21 +167,22 @@ export function loadConfig(): ApiConfig {
 
 ## Testing & Validation
 
-- Smoke test script: [scripts/smoke-test.sh](scripts/smoke-test.sh) — validates all engines + API health.
-- Kubernetes validation: [scripts/validate-k8s.sh](scripts/validate-k8s.sh) — checks manifests.
-- Frontend: Jest config available ([apps/frontend/src/jest.config.ts](apps/frontend/src/jest.config.ts)).
+- Smoke test script: [scripts/smoke-test.sh](../scripts/smoke-test.sh) — validates all engines + API health.
+- Kubernetes validation: [scripts/validate-k8s.sh](../scripts/validate-k8s.sh) — checks manifests.
+- Frontend: Jest config available ([apps/frontend/src/jest.config.ts](../apps/frontend/src/jest.config.ts)).
 
 ## When Adding a New Feature
 
-1. **New engine?** Create `apps/engine-<name>/`, follow [engine-v8](apps/engine-v8/) template, add to `skaffold.yaml` and `infra/k8s/base/`.
-2. **New API endpoint?** Update [apps/api/src/schemas.ts](apps/api/src/schemas.ts), add route in server.ts, update OpenAPI doc.
-3. **New flag?** Add to engine's `allowedFlags` Set. No frontend changes needed unless user-facing flag selector is desired.
+1. **New engine?** Create `apps/engine-<name>/`, follow [engine-v8](../apps/engine-v8/) template, add to `skaffold.yaml` and `infra/k8s/base/`.
+2. **New API endpoint?** Update [apps/api/src/schemas.ts](../apps/api/src/schemas.ts), add route in server.ts, update OpenAPI doc.
+3. **New flag?** Add a `FlagSpec` to `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts), then copy the file verbatim to [apps/api/src/flags.ts](../apps/api/src/flags.ts). No frontend changes needed unless user-facing flag selector is desired.
 4. **Frontend feature?** Ensure useEngineOutputs store is updated if new state shape is needed; update PlaygroundClient or component tree.
 
 ## Key File References
 
-- **API Gateway**: [apps/api/src/](apps/api/src/) (server, cache, rateLimit, config, schemas, types)
-- **Engine Template**: [apps/engine-v8/src/](apps/engine-v8/src/) (server, config)
-- **Frontend UI**: [apps/frontend/src/app/](apps/frontend/src/app/), [apps/frontend/src/store/](apps/frontend/src/store/)
-- **Kubernetes**: [infra/k8s/base/](infra/k8s/base/) (manifests, NetworkPolicy, kustomization)
-- **Docker**: [apps/\*/Dockerfile](apps/), [engines/dockerfiles/](engines/dockerfiles/)
+- **API Gateway**: [apps/api/src/](../apps/api/src/) (server, cache, rateLimit, config, schemas, types)
+- **Engine Runtime (shared)**: [packages/engine-runtime/src/](../packages/engine-runtime/src/) (server wrapper, flag catalog, process spawning)
+- **Engine Template**: [apps/engine-v8/src/](../apps/engine-v8/src/) (server, config)
+- **Frontend UI**: [apps/frontend/src/app/](../apps/frontend/src/app/), [apps/frontend/src/store/](../apps/frontend/src/store/)
+- **Kubernetes**: [infra/k8s/base/](../infra/k8s/base/) (manifests, NetworkPolicy, kustomization)
+- **Docker**: [apps/\*/Dockerfile](../apps/), [engines/dockerfiles/](../engines/dockerfiles/)
