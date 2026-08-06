@@ -17,12 +17,51 @@ The site lets you:
 
 ### 🔸 Supported Engines
 
-| Engine             | Output Types                    | Notable Flags                                                            |
-| ------------------ | ------------------------------- | ------------------------------------------------------------------------ |
-| **V8**             | AST / Bytecode / TurboFan Graph | `--print-bytecode`, `--trace-opt`, `--allow-natives-syntax`, `--log-all` |
-| **SpiderMonkey**   | Bytecode (`dis()`)              | `--baseline-eager`, `--ion-eager`                                        |
-| **JavaScriptCore** | Bytecode / DFG Graph            | `-d`                                                                     |
-| **Hermes**         | IR / Bytecode                   | `-dump-ir`, `-dump-bytecode`, `-O`                                       |
+| Engine             | Output Types                    | Notable Flags                                                              |
+| ------------------ | ------------------------------- | -------------------------------------------------------------------------- |
+| **V8**             | AST / Bytecode / TurboFan Graph | `--print-bytecode`, `--print-ast`, `--trace-opt`, `--allow-natives-syntax` |
+| **SpiderMonkey**   | Bytecode (`dis()`)              | `--baseline-eager`, `--ion-eager`                                          |
+| **JavaScriptCore** | Bytecode / DFG Graph            | `-d`                                                                       |
+| **Hermes**         | Bytecode                        | `-O`, `-strict`, `-gc-sanitize-handles`                                    |
+
+Flags are validated against a per-engine allowlist — the full catalog lives in
+[`apps/api/src/flags.ts`](apps/api/src/flags.ts) (mirrored in
+`packages/engine-runtime/src/flags.ts`), and anything outside it is rejected.
+Hermes bytecode dumping (`-dump-bytecode`) is applied server-side on every run,
+so you never pass it yourself.
+
+---
+
+## 🐳 Quick Start (Docker Compose)
+
+The fastest way to run the full stack locally — no Kubernetes required.
+
+**Prerequisites**
+
+- [Docker](https://docs.docker.com/get-docker/) with the Compose plugin
+- [Node.js](https://nodejs.org/) 22 (see `.nvmrc`) — only needed for development outside the containers
+
+**Run**
+
+```bash
+# --recurse-submodules is required: trace-service does not build
+# without the engine262 submodule (apps/trace-service/engine262).
+git clone --recurse-submodules https://github.com/pavlof01/jslab.git
+cd jslab
+docker compose up --build
+```
+
+Already cloned without submodules? Fetch them first:
+
+```bash
+git submodule update --init
+```
+
+Once the containers are healthy, open the frontend at <http://localhost:3000>.
+The API gateway listens on <http://localhost:8080>, and every service (`redis`,
+`engine-v8`, `engine-hermes`, `engine-spidermonkey`, `engine-jsc`,
+`trace-service`, `api`, `frontend`) runs in its own container with hot-reload
+enabled.
 
 ---
 
@@ -50,9 +89,13 @@ Goals:
   ├─ engine-spidermonkey  # SpiderMonkey (js shell) wrapper HTTP service
   ├─ trace-service        # ECMAScript abstract operations tracer (engine262-based)
   └─ frontend             # Next.js UI (playground, V8 pipeline, abstract ops visualizer)
-      └─ src/lib/ecma262  # ECMAScript 262 specification implementation (can be extracted as submodule)
+/engines/dockerfiles     # Dockerfiles for the engine base images (d8, hermes, jsc, js shell)
 /infra/k8s               # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
 ```
+
+The spec-level tracing behind `/type-conversion` and `/equality` is powered by a
+fork of [engine262](https://github.com/engine262/engine262) with trace
+instrumentation, vendored as a git submodule at `apps/trace-service/engine262`.
 
 For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/infra.md).
 
@@ -64,7 +107,19 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
 - Engine Hermes: `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
 - Engine JSC: `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
 - Engine SpiderMonkey: `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
+- Trace service: `docker build -t pavlof01/jslab-trace-service apps/trace-service` (requires the engine262 submodule to be initialized)
 - You can swap `pavlof01/v8-d8`/`pavlof01/hermes`/`pavlof01/jsc`/`pavlof01/spidermonkey` with your own base layers that already contain `d8`/`hermes`/`hermesc`/`hbcdump`/`jsc`/`js`.
+
+### Engine base images
+
+The engine binaries themselves are built by the Dockerfiles in
+[`engines/dockerfiles/`](engines/dockerfiles/): `Dockerfile.v8` (`d8`),
+`Dockerfile.hermes` (`hermes`/`hermesc`/`hbcdump`), `Dockerfile.jsc` (`jsc`) and
+`Dockerfile.spidermonkey` (`js` shell). Prebuilt images are published under the
+[`pavlof01/*` Docker Hub namespace](https://hub.docker.com/u/pavlof01)
+(`pavlof01/v8-d8`, `pavlof01/hermes`, `pavlof01/jsc`,
+`pavlof01/spidermonkey`), so you only need these Dockerfiles when rebuilding an
+engine from source.
 
 ### k3s / Traefik deploy
 
@@ -83,6 +138,7 @@ For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/i
    - `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
    - `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
    - `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
+   - `docker build -t pavlof01/jslab-trace-service apps/trace-service`
    - `docker build -t pavlof01/jslab-frontend apps/frontend`
 2. Apply manifests:
    - `kubectl apply -k infra/k8s/base`
@@ -226,49 +282,20 @@ curl -sS https://jslab.su/api/run \
 
 ---
 
-## 📦 Packages
+## 📄 License
 
-### ECMAScript 262 Specification Implementation
+This project is licensed under the [MIT License](LICENSE) — © 2026 Alexey Pavlov.
 
-The `apps/frontend/src/lib/ecma262` directory contains a complete ECMAScript 262 specification implementation that can be published and used as an independent package.
+## 🙏 Acknowledgements
 
-#### Getting Started
+JSLab wraps and builds upon several open-source JavaScript engines and tools,
+each distributed under its own license:
 
-```typescript
-import { ManagedRealm, createTest262Intrinsics } from "@/lib/ecma262";
+- [V8](https://v8.dev/) — BSD-3-Clause
+- [JavaScriptCore](https://developer.apple.com/documentation/javascriptcore) (part of [WebKit](https://webkit.org/)) — LGPL-2.1 and BSD-2-Clause
+- [SpiderMonkey](https://spidermonkey.dev/) — MPL-2.0
+- [Hermes](https://hermesengine.dev/) — MIT
+- [engine262](https://github.com/engine262/engine262) — MIT
 
-// Create and evaluate
-const realm = new ManagedRealm();
-const result = realm.evaluateScript("2 + 2"); // 4
-```
-
-#### Publishing as npm Package
-
-To extract ecma262 as an independent package:
-
-1. **Create a GitHub repository** for ecma262-spec
-2. **Add as git submodule**:
-   ```bash
-   git submodule add https://github.com/YOUR_USERNAME/ecma262-spec.git \
-     apps/frontend/src/lib/ecma262
-   ```
-3. **Publish to npm**:
-   ```bash
-   cd apps/frontend/src/lib/ecma262
-   npm publish --access=public
-   ```
-
-For detailed instructions, see [`apps/frontend/src/lib/ecma262/SETUP.md`](apps/frontend/src/lib/ecma262/SETUP.md).
-
----
-
-## ⚙️ Importing the Roadmap into GitHub Issues
-
-### 1️⃣ Requirements
-
-- [GitHub CLI](https://cli.github.com/) (`gh`)
-- [jq](https://stedolan.github.io/jq/)
-- Authenticated with GitHub:
-  ```bash
-  gh auth login
-  ```
+Trace output from the abstract-operations visualizer reproduces algorithm text
+from the [ECMA-262 specification](https://tc39.es/ecma262/), © Ecma International.
