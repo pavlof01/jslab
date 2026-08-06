@@ -2,6 +2,7 @@
   "name": "@jslab/trace-service",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "imports": {
     "#self": "./src/index.mts"
