@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report security issues privately through GitHub's
-[private vulnerability reporting](https://github.com/pavlof01/js-engines/security/advisories/new)
+[private vulnerability reporting](https://github.com/pavlof01/jslab/security/advisories/new)
 rather than opening a public issue. Expect an acknowledgement within a few days —
 this is a side project maintained by one person, so please be patient with fixes.
 

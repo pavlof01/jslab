@@ -10,7 +10,7 @@ import { tools } from "@/lib/tools";
 const displayFont = "'Plus Jakarta Sans', Inter, var(--font-sans), sans-serif";
 
 const SITE_URL = "https://jslab.su";
-const REPO_URL = "https://github.com/pavlof01/js-engines";
+const REPO_URL = "https://github.com/pavlof01/jslab";
 const PROFILE_URL = "https://github.com/pavlof01";
 const MAILTO_URL = "mailto:pavlof01@gmail.com";
 

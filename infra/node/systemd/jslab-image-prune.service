@@ -1,6 +1,6 @@
 [Unit]
 Description=Prune unused container images from k3s containerd
-Documentation=https://github.com/pavlof01/js-engines/blob/main/infra/README.md
+Documentation=https://github.com/pavlof01/jslab/blob/main/infra/README.md
 # Ordering only — deliberately NOT Requires=/Wants=k3s.service. Both of those
 # would *start* k3s, and the timer is Persistent=true, so a run missed while an
 # operator had k3s stopped for maintenance would fire at boot/daemon-reload and
