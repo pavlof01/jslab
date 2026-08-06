@@ -4,3 +4,17 @@
 
 # Test-run output
 coverage/
+
+# macOS Finder metadata
+.DS_Store
+
+# Installed dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+
+# Environment files — keep secrets local, but track the example template
+.env*
+!.env.example
