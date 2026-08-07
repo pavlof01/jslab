@@ -120,3 +120,13 @@ const start = async () => {
 };
 
 start();
+
+// Without this, a rolling deploy's SIGTERM is ignored: the pod finishes
+// (or drops) whatever it's doing and gets SIGKILLed at the end of the grace
+// period instead of draining. app.close() runs the onClose hook above
+// (sandbox.close()), which lets an in-flight trace finish before the worker
+// thread is torn down. Matches the shutdown handler every other service here
+// already has (see packages/engine-runtime/src/index.ts, apps/api/src/server.ts).
+const shutdown = () => app.close().finally(() => process.exit(0));
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

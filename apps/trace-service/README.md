@@ -111,8 +111,7 @@ Environment variables (see `src/config.ts`):
 | ------------------ | ------- | --------------------------- |
 | PORT               | 8080    | HTTP server port            |
 | HOST               | 0.0.0.0 | HTTP server binding address |
-| MAX_TIMEOUT_MS     | 5000    | Hard execution budget       |
-| DEFAULT_TIMEOUT_MS | 2000    | Default execution timeout   |
+| MAX_TIMEOUT_MS     | 5000    | Hard execution budget (every request uses this — there is no per-request override) |
 | MAX_SOURCE_LENGTH  | 20000   | Maximum input length        |
 | LOG_LEVEL          | info    | Pino log level              |
 
