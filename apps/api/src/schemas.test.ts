@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { normalizeFlags, allowedFlags, runRequestSchema, validationMessage, clampTimeout } from "./schemas.js";
+import {
+  normalizeFlags,
+  allowedFlags,
+  runRequestSchema,
+  traceExecuteRequestSchema,
+  traceExecuteEqualitySchema,
+  validationMessage,
+  clampTimeout,
+} from "./schemas.js";
 
 describe("normalizeFlags", () => {
   it("drops flags not on the per-engine allowlist and reports them", () => {
@@ -112,6 +120,59 @@ describe("runRequestSchema", () => {
 
   it("rejects empty sourceText", () => {
     expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "" })).toThrow();
+  });
+
+  it("accepts a flags array up to the wire cap", () => {
+    const flags = Array.from({ length: 256 }, (_, i) => `-a${i}`);
+    expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "1", options: { flags } })).not.toThrow();
+  });
+
+  it("rejects a flags array past the wire cap regardless of MAX_FLAGS", () => {
+    // This is a network-layer bound independent of the configurable per-engine
+    // MAX_FLAGS the sanitizer applies later — it exists so an oversized array
+    // is rejected before the sanitizer ever walks it.
+    const flags = Array.from({ length: 257 }, (_, i) => `-a${i}`);
+    expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "1", options: { flags } })).toThrow();
+  });
+});
+
+describe("traceExecuteRequestSchema / traceExecuteEqualitySchema", () => {
+  it("accepts an ordinary trace request", () => {
+    expect(() =>
+      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: "42" }),
+    ).not.toThrow();
+  });
+
+  it("rejects an input string over the length cap", () => {
+    expect(() =>
+      traceExecuteRequestSchema.parse({ functionName: "ToString", input: "a".repeat(20_001) }),
+    ).toThrow();
+  });
+
+  it("rejects a huge string nested inside an array or object input", () => {
+    // A flat top-level string cap alone would miss this — the huge payload
+    // just needs to be one element deep instead of the top-level value.
+    expect(() =>
+      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: ["a".repeat(20_001)] }),
+    ).toThrow();
+    expect(() =>
+      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: { x: "a".repeat(20_001) } }),
+    ).toThrow();
+  });
+
+  it("rejects an array with too many elements", () => {
+    expect(() =>
+      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: Array(1001).fill(1) }),
+    ).toThrow();
+  });
+
+  it("rejects an object with too many properties", () => {
+    const input = Object.fromEntries(Array.from({ length: 1001 }, (_, i) => [`k${i}`, i]));
+    expect(() => traceExecuteRequestSchema.parse({ functionName: "ToNumber", input })).toThrow();
+  });
+
+  it("rejects an equality input string over the length cap", () => {
+    expect(() => traceExecuteEqualitySchema.parse({ input: "a".repeat(20_001) })).toThrow();
   });
 });
 

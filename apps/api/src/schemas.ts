@@ -15,30 +15,47 @@ export function allowedFlags(engine: EngineKind): readonly string[] {
   return flagCatalog[engine].map((spec) => spec.flag);
 }
 
+// Network-layer bound on the flags array, independent of the configurable
+// MAX_FLAGS the sanitizer applies. sanitizeFlags() walks (trims, scans for
+// "=") every element before it caps the *response* at maxFlags, so an
+// unbounded array is a per-request allocation/CPU amplifier regardless of how
+// low MAX_FLAGS is set — a 512KB body can carry on the order of 100k tiny
+// flag strings. This is deliberately generous relative to any sane MAX_FLAGS
+// default; it only needs to rule out that amplification, not police the
+// real per-engine cap (the sanitizer still does that).
+const MAX_FLAGS_WIRE = 256;
+
+// MAX_SOURCE_LENGTH-equivalent for /api/run is enforced after parsing (see
+// server.ts), so this only bounds the shape; but the trace endpoints have no
+// equivalent check anywhere, so it has to live in the schema itself.
+const MAX_TRACE_INPUT_STRING_LENGTH = 20_000;
+
 export const runRequestSchema: z.ZodType<RunRequest> = z.object({
   engine: z.enum(["v8", "hermes", "sm", "jsc"]),
   sourceText: z.string().min(1),
   options: z
     .object({
-      flags: z.array(z.string()).optional(),
+      flags: z.array(z.string()).max(MAX_FLAGS_WIRE).optional(),
       timeoutMs: z.number().int().positive().optional(),
     })
     .optional(),
 });
 
-export const normalizedOptionsSchema = z.object({
-  flags: z.array(z.string()),
-  timeoutMs: z.number().int().positive(),
-});
-
-const traceExecuteInputSchema: z.ZodType<TraceExecuteInput> = z.union([
-  z.string(),
-  z.number(),
-  z.boolean(),
-  z.null(),
-  z.array(z.unknown()),
-  z.record(z.unknown()),
-]);
+// Bounded recursively so a deeply/widely nested object or array can't recreate
+// the same "small request, huge working set" problem a flat string length cap
+// would miss — z.lazy ties the recursive branches back to this same schema.
+const traceExecuteInputSchema: z.ZodType<TraceExecuteInput> = z.lazy(() =>
+  z.union([
+    z.string().max(MAX_TRACE_INPUT_STRING_LENGTH),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(traceExecuteInputSchema).max(1000),
+    z.record(traceExecuteInputSchema).refine((obj) => Object.keys(obj).length <= 1000, {
+      message: "too many properties",
+    }),
+  ]),
+);
 
 export const traceExecuteRequestSchema: z.ZodType<TraceExecuteRequest> = z.object({
   functionName: z.string().min(1),
@@ -47,7 +64,7 @@ export const traceExecuteRequestSchema: z.ZodType<TraceExecuteRequest> = z.objec
 });
 
 export const traceExecuteEqualitySchema = z.object({
-  input: z.string().min(1),
+  input: z.string().min(1).max(MAX_TRACE_INPUT_STRING_LENGTH),
 });
 
 /**
