@@ -21,6 +21,10 @@ spec:
         app: engine-spidermonkey
     spec:
       terminationGracePeriodSeconds: 15
+      # No egress allow reaches the cluster API anyway (see the NetworkPolicy);
+      # this engine only compiles/disassembles and never executes user code,
+      # but there's no legitimate use for the token here either.
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -52,9 +56,11 @@ spec:
             requests:
               cpu: 500m
               memory: 1Gi
+              ephemeral-storage: 256Mi
             limits:
               cpu: "2"
               memory: 2Gi
+              ephemeral-storage: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -71,7 +77,8 @@ spec:
               mountPath: /tmp
       volumes:
         - name: tmp
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 512Mi
 ---
 apiVersion: v1
 kind: Service
