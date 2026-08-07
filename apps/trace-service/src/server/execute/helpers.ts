@@ -201,34 +201,6 @@ export const AVAILABLE_FUNCTIONS = [
   "ToIndex",
 ];
 
-// Mapping of function names to their implementations
-export const FUNCTION_MAP: Record<string, any> = {
-  ToNumber,
-  ToString,
-  ToBoolean,
-  ToPrimitive,
-  ToNumeric,
-  ToObject,
-  ToPropertyKey,
-  ToLength,
-  ToIndex,
-  ToInt32,
-  ToUint32,
-  ToInt8,
-  ToUint8,
-  ToUint8Clamp,
-  ToInt16,
-  ToUint16,
-  ToBigInt,
-  ToBigInt64,
-  ToBigUint64,
-  CanonicalNumericIndexString,
-};
-
-export function isFunctionNameValid(name: string): boolean {
-  return AVAILABLE_FUNCTIONS.includes(name);
-}
-
 /**
  * Calls an ECMA262 function by name
  */
@@ -299,63 +271,4 @@ export function callECMA262BinaryFunction(
     case "AbstractRelationalComparison":
       return AbstractRelationalComparison(lhs, rhs, leftFirst);
   }
-}
-
-/**
- * Splits a binary expression like "a OP b" into [left, right] using the operator.
- * Matches the leftmost top-level occurrence of `operator` (ignoring quoted strings).
- */
-export function splitBinaryExpression(input: string, operator: string): [string, string] | null {
-  const len = input.length;
-  let i = 0;
-  let inString: '"' | "'" | "`" | null = null;
-  let depth = 0; // brackets/parens/braces
-  while (i < len) {
-    const ch = input[i];
-    if (inString) {
-      if (ch === "\\") {
-        i += 2;
-        continue;
-      }
-      if (ch === inString) inString = null;
-      i++;
-      continue;
-    }
-    if (ch === '"' || ch === "'" || ch === "`") {
-      inString = ch;
-      i++;
-      continue;
-    }
-    if (ch === "(" || ch === "[" || ch === "{") {
-      depth++;
-      i++;
-      continue;
-    }
-    if (ch === ")" || ch === "]" || ch === "}") {
-      depth--;
-      i++;
-      continue;
-    }
-    if (depth === 0 && input.startsWith(operator, i)) {
-      // Disambiguate longer operators: skip if part of "===", "<<", "<=" etc.
-      if (operator === "==") {
-        // Don't match if next char is "=" (would be "===")
-        if (input[i + 2] === "=") {
-          i += 3;
-          continue;
-        }
-      } else if (operator === "<") {
-        if (input[i + 1] === "<" || input[i + 1] === "=") {
-          i += 2;
-          continue;
-        }
-      }
-      const left = input.slice(0, i).trim();
-      const right = input.slice(i + operator.length).trim();
-      if (left.length === 0 || right.length === 0) return null;
-      return [left, right];
-    }
-    i++;
-  }
-  return null;
 }
