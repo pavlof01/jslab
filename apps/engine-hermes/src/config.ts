@@ -4,14 +4,12 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(8080),
   HOST: z.string().default("0.0.0.0"),
   HERMES_PATH: z.string().default("/usr/bin/hermes"),
-  HERMESC_PATH: z.string().default("/usr/bin/hermesc"),
-  HBCDUMP_PATH: z.string().default("/usr/bin/hbcdump"),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
   DEFAULT_TIMEOUT_MS: z.coerce.number().default(2000),
   MAX_OUTPUT_BYTES: z.coerce.number().default(2 * 1024 * 1024),
   MAX_FLAGS: z.coerce.number().default(10),
   MAX_SOURCE_LENGTH: z.coerce.number().default(20000),
-  // Max concurrent engine processes per pod. Excess /run requests get 503.
+  // Max concurrent engine processes per pod. Excess /run requests get 429 (with Retry-After).
   MAX_CONCURRENCY: z.coerce.number().int().positive().default(4),
   LOG_LEVEL: z.string().default("info")
 });

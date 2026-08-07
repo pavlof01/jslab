@@ -28,4 +28,4 @@ When `-dump-bytecode` is present in flags the service compiles `sourceText` to a
 
 See `apps/engine-hermes/src/config.ts`.
 
-- `HERMES_PATH`, `HERMESC_PATH`, `HBCDUMP_PATH`
+- `HERMES_PATH`
