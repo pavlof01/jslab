@@ -19,6 +19,40 @@ const BYTECODE_FLAG = "-d" as const;
 const CONSOLE_SHIM = `void (globalThis.console ??= { log: print, info: print, warn: print, error: print, debug: print });\n`;
 const CONSOLE_SHIM_FILE = "console-shim.js";
 
+// jsc EXECUTES the snippet (see the comment on `invoke` below), and the jsc
+// shell exposes filesystem primitives as plain globals: readFile/writeFile can
+// read or write anything the container user can reach (including the mounted
+// ServiceAccount token), and load/run/runString load and execute another file
+// by path. None of this is gated behind a flag we could drop from the
+// allowlist, so it has to be neutralized in-realm before the snippet runs.
+// Reassignment (not `delete`) because these are ordinary writable globals in
+// the jsc shell, and overwriting works even if a future build makes them
+// non-configurable; wrapped in try/catch per-name so one already-frozen
+// global can't stop the rest from being locked down.
+const BLOCKED_GLOBALS = [
+  "readFile",
+  "writeFile",
+  "openFile",
+  "load",
+  "run",
+  "runString",
+  "readline",
+  "checkSyntax",
+  "checkModuleSyntax",
+] as const;
+const LOCKDOWN_SHIM = `
+(function () {
+  function deny(name) {
+    return function () { throw new Error("'" + name + "' is disabled in this sandbox"); };
+  }
+  [${BLOCKED_GLOBALS.map((name) => JSON.stringify(name)).join(", ")}].forEach(function (name) {
+    try { globalThis[name] = deny(name); } catch (e) {}
+    try { delete globalThis[name]; } catch (e) {}
+  });
+})();
+`;
+const LOCKDOWN_SHIM_FILE = "lockdown-shim.js";
+
 // JSC parses env vars starting with "JSC_" as VM options (Options.cpp).
 // `JSC_PATH` is meant for this wrapper, not the engine, and causes noisy stderr.
 const scrubbedEnv = { ...process.env };
@@ -36,12 +70,18 @@ startEngineServer({
   // greedy script is bounded only by the concurrency gate + the pod memory limit.
   invoke: ({ scriptPath, tmpDir, flags }) => {
     // jsc runs multiple script files in order, sharing one global object.
+    // Lockdown must load before the console shim and the snippet, so the
+    // snippet never observes the dangerous globals even transiently.
+    const lockdownPath = path.join(tmpDir, LOCKDOWN_SHIM_FILE);
     const shimPath = path.join(tmpDir, CONSOLE_SHIM_FILE);
     return {
       cmd: config.JSCSHELL_PATH,
-      args: [BYTECODE_FLAG, ...flags, shimPath, scriptPath],
+      args: [BYTECODE_FLAG, ...flags, lockdownPath, shimPath, scriptPath],
       spawnOptions: { env: scrubbedEnv },
-      extraFiles: [{ path: shimPath, contents: CONSOLE_SHIM }],
+      extraFiles: [
+        { path: lockdownPath, contents: LOCKDOWN_SHIM },
+        { path: shimPath, contents: CONSOLE_SHIM },
+      ],
     };
   },
 });
