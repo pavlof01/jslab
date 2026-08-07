@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import type { FastifyBaseLogger, FastifyReply } from "fastify";
 import type { Redis } from "ioredis";
 
@@ -7,9 +8,23 @@ export type RateLimitResult = {
   remaining: number;
 };
 
-function windowKey(ip: string, suffix: string, windowSeconds: number): string {
+// Hash rather than embed the raw identity: even with clientIp()'s shape guard
+// upstream, this is the layer that must hold on its own — an unbounded or
+// unvalidated identity turned directly into a Redis key name lets a caller
+// pump arbitrarily many distinct keys into Redis under `allkeys-lru`,
+// evicting unrelated keys (including apikey: records) well before any
+// per-key TTL would expire them. Truncated to 32 hex chars: this only needs
+// to be collision-resistant among concurrent callers, not a general-purpose
+// digest. Exported so any other Redis-key derivation from a caller identity
+// (e.g. apiKeys.ts's per-owner key limit) uses the same hashing, rather than
+// a second raw identity ending up in a Redis key name somewhere else.
+export function hashIdentity(identity: string): string {
+  return crypto.createHash("sha256").update(identity).digest("hex").slice(0, 32);
+}
+
+function windowKey(identity: string, suffix: string, windowSeconds: number): string {
   const window = Math.floor(Date.now() / 1000 / windowSeconds);
-  return `ratelimit:${suffix}:${ip}:${window}`;
+  return `ratelimit:${suffix}:${hashIdentity(identity)}:${window}`;
 }
 
 async function take(redis: Redis, key: string, limit: number, windowSeconds: number): Promise<{ count: number; ttl: number }> {
@@ -21,7 +36,12 @@ async function take(redis: Redis, key: string, limit: number, windowSeconds: num
   if (!results) {
     return { count: limit + 1, ttl: windowSeconds };
   }
-  const count = Number(results[0][1]);
+  // Each entry is [error, reply]; an errored INCR (e.g. WRONGTYPE after a key
+  // collision) must not be read as a numeric result — Number(undefined) is
+  // NaN, and `NaN > limit` is false, which would silently admit the request.
+  const [incrErr, incrValue] = results[0];
+  if (incrErr) throw incrErr;
+  const count = Number(incrValue);
   const ttl = Math.max(Number(results[2][1]), 1);
   return { count, ttl };
 }

@@ -52,8 +52,6 @@ services:
       NODE_ENV: development
       PORT: 8080
       HERMES_PATH: /usr/local/bin/hermes
-      HERMESC_PATH: /usr/local/bin/hermesc
-      HBCDUMP_PATH: /usr/local/bin/hbcdump
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./apps/engine-hermes/src:/app/src
@@ -177,6 +175,12 @@ services:
       TRACE_SERVICE_URL: http://trace-service:8080
       LOG_LEVEL: debug
       CHOKIDAR_USEPOLLING: "true"
+      # No Cloudflare (or any proxy) in front of this compose stack, so there
+      # is no CF-Connecting-IP to trust — fall back to the direct socket
+      # address. TRUST_PROXY_HOPS stays at its default (1); with no
+      # X-Forwarded-For header present locally, Fastify uses the raw peer
+      # address regardless.
+      CLIENT_IP_HEADER: ""
     volumes:
       - ./apps/api/src:/app/src
       - ./apps/api/tsconfig.json:/app/tsconfig.json
