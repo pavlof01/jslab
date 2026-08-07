@@ -97,6 +97,21 @@ describe("runCommand", () => {
     expect(result.stdout).toBe("piped");
   });
 
+  it("does not crash the process when the child exits before reading stdin", async () => {
+    // A child that never touches process.stdin and exits immediately closes
+    // the pipe out from under the write — Node emits an EPIPE 'error' on
+    // child.stdin. Without a listener that's an uncaught exception, which
+    // vitest would surface as an unhandled error failing this test (or, in
+    // production, taking the whole pod down). Large-ish input raises the odds
+    // the write actually races the child's exit instead of completing first.
+    const result = await runCommand(node, ["-e", "process.exit(0);"], {
+      timeoutMs: 5000,
+      maxOutputBytes: 1024,
+      input: "x".repeat(1024 * 1024),
+    });
+    expect(result.exitCode).toBe(0);
+  });
+
   it("reports a missing binary instead of throwing", async () => {
     const result = await runCommand("/nonexistent/engine-binary", [], { timeoutMs: 1000, maxOutputBytes: 1024 });
     expect(result.exitCode).toBe(-1);

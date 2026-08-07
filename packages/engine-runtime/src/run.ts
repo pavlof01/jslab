@@ -83,6 +83,13 @@ export async function runCommand(
   child.stderr?.on("data", collect(stderrChunks));
 
   if (opts.input !== undefined && child.stdin) {
+    // If the child exits before draining stdin, Node emits 'error' (EPIPE) on
+    // the write stream; with no listener that's an uncaught exception, and
+    // this process is a pod running someone else's binary that has every
+    // reason to exit early. The run's outcome is already decided by the
+    // child's own close/error handlers below, so this only needs to stop the
+    // write from crashing the process — not change the result.
+    child.stdin.on("error", () => {});
     child.stdin.write(opts.input);
     child.stdin.end();
   }
