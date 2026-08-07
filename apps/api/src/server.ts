@@ -1,4 +1,4 @@
-import fastify, { type FastifyBaseLogger } from "fastify";
+import fastify, { type FastifyBaseLogger, type FastifyRequest } from "fastify";
 // @ts-ignore
 import apiReference from "@scalar/fastify-api-reference";
 import underPressure from "@fastify/under-pressure";
@@ -7,8 +7,8 @@ import { request } from "undici";
 import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
 import { openapiDoc } from "./openapi.js";
-import { enforceLimit } from "./rateLimit.js";
-import { extractApiKey, issueApiKey, lookupApiKey } from "./apiKeys.js";
+import { enforceLimit, hashIdentity } from "./rateLimit.js";
+import { extractApiKey, issueApiKey, lookupApiKey, revokeApiKey } from "./apiKeys.js";
 import {
   flagSpecs,
   normalizeFlags,
@@ -33,16 +33,26 @@ const app = fastify({
   logger: { level: config.LOG_LEVEL },
   bodyLimit: config.REQUEST_BODY_LIMIT_BYTES,
 
-  // IMPORTANT: enable only if you are actually behind a reverse proxy (Traefik/Nginx).
-  // With trustProxy=true, Fastify derives req.ip from X-Forwarded-For *only* from trusted proxies,
-  // so we don't have to parse XFF manually (and avoid spoofing).
-  trustProxy: true
+  // IMPORTANT: a *number* here means "trust exactly this many hops of
+  // X-Forwarded-For, counted from the proxy end" — not "trust the whole
+  // chain". `true` (the previous setting) trusts every hop, which makes
+  // proxy-addr return the client's own — attacker-controlled — leftmost
+  // entry. Only set this to `true` if you know every hop between the client
+  // and this pod is a proxy you control.
+  trustProxy: config.TRUST_PROXY_HOPS
 });
 
-// Under pressure (it's better to set thresholds explicitly)
+// Under pressure (it's better to set thresholds explicitly).
+// These must sit below the pod's memory *limit* (768Mi in
+// infra/k8s/base/api-deployment.yaml as shipped), not above it: the previous
+// 1GB heap threshold could never trip before the kernel OOM-killed the
+// container first, so the valve never actually shed load — the pod just died
+// instead. maxRssBytes catches non-heap growth (buffers, native allocations)
+// that maxHeapUsedBytes alone misses. Tune both if you change the pod limit.
 app.register(underPressure, {
   maxEventLoopDelay: 1000,
-  maxHeapUsedBytes: 1024 * 1024 * 1024, // 1GB (tune for your VM)
+  maxHeapUsedBytes: 480 * 1024 * 1024,
+  maxRssBytes: 600 * 1024 * 1024,
   message: "under pressure",
   retryAfter: 10,
 });
@@ -83,10 +93,24 @@ app.register(apiReference, {
   }
 });
 
-function clientIp(req: any): string {
-  // With trustProxy=true, Fastify will compute req.ip correctly behind trusted proxies.
-  // Do not parse x-forwarded-for manually to avoid letting clients spoof it.
-  return req.ip;
+// Deliberately permissive-but-bounded: this only needs to reject the "16KB of
+// junk" case (an oversized or shell-shaped string used as a Redis key name or
+// rate-limit identity), not validate real IPs precisely. IPv4, or anything
+// bracket/colon/hex shaped for IPv6 — capped well under any real address.
+const IP_SHAPE = /^[0-9a-fA-F.:]{1,64}$/;
+
+function clientIp(req: FastifyRequest): string {
+  const header = config.CLIENT_IP_HEADER;
+  if (header) {
+    const raw = req.headers[header];
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (value && IP_SHAPE.test(value)) return value;
+  }
+  // Fastify derives req.ip from X-Forwarded-For using exactly
+  // config.TRUST_PROXY_HOPS trusted hops (see the `trustProxy` option above),
+  // so this is only reachable when CLIENT_IP_HEADER is unset/absent — e.g.
+  // local dev, or a deployment not behind Cloudflare.
+  return IP_SHAPE.test(req.ip) ? req.ip : "unknown";
 }
 
 type Budget = {
@@ -109,16 +133,35 @@ async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
   if (key) {
     const record = await lookupApiKey(redis, key, req.log);
     if (!record) {
+      // A format-valid-but-unknown key still costs a Redis lookup, so an
+      // invalid-key flood must be metered like any other request — charge it
+      // against the caller's IP under the ordinary general bucket rather than
+      // letting failed auth bypass rate limiting entirely.
+      const ip = clientIp(req);
+      const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
+      if (general.limited) {
+        rateLimited.inc({ budget: "general" });
+        reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
+        return null;
+      }
       reply.code(401).send({ ok: false, error: "invalid API key" });
       return null;
     }
     return {
+      // The raw key is fine to pass through as an identity: rateLimit.ts
+      // hashes every identity before it becomes a Redis key name (see
+      // hashIdentity), so this never puts the plaintext credential in a key.
       id: key,
       generalSuffix: "key-general",
       heavySuffix: "key-heavy",
       traceSuffix: "key-trace",
       generalLimit: record.rpm,
-      heavyLimit: record.rpm,
+      // Deliberately NOT record.rpm: the heavy bucket gates engine-spawning
+      // requests specifically, and a key raising it to the full general rpm
+      // (12x the anonymous heavy limit) turned key issuance into a process-
+      // spawn amplifier. Keys still get more than anonymous callers, just not
+      // proportional to the unrelated general quota.
+      heavyLimit: Math.min(record.rpm, config.API_KEY_HEAVY_RATE_LIMIT_PER_MIN),
       traceLimit: record.rpm,
     };
   }
@@ -167,18 +210,21 @@ function withDroppedFlags(body: RunResult["body"], droppedFlags: string[]): RunR
   return { ...body, meta: { ...(body as ApiResponse).meta, droppedFlags } } as RunResult["body"];
 }
 
-function mapEngineErrorToStatus(enginePayload: any): number {
-  // Best-effort mapping when EngineResponse schema is not fully known.
-  const msg = String(enginePayload?.error ?? "").toLowerCase();
-
-  if (msg.includes("timeout") || msg.includes("timed out")) return 504;
-  if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("parse")) return 400;
-  if (msg.includes("rate")) return 429;
-
-  // Some engines might include an explicit statusCode.
-  const statusCode = Number(enginePayload?.statusCode);
-  if (Number.isFinite(statusCode) && statusCode >= 400 && statusCode <= 599) return statusCode;
-
+// Called only for a non-ok engine payload whose HTTP status is NOT 429 or
+// >=500 — both are already handled by the caller before this runs (see
+// executeRun). What reaches here is engine-runtime's own deterministic error
+// statuses (packages/engine-runtime/src/index.ts): 400 for a rejected
+// payload, 408 for an engine-reported execution timeout. Map on the engine's
+// actual HTTP status rather than pattern-matching its error *text* — a
+// substring like "rate" also matches "generate"/"accurate", and the engine
+// already tells us the real status; re-deriving it from prose was strictly a
+// downgrade.
+function mapEngineErrorToStatus(engineStatusCode: number): number {
+  if (engineStatusCode === 408) return 504;
+  if (engineStatusCode === 400) return 400;
+  // Anything else here is an engine status this gateway doesn't have a
+  // specific mapping for — treat as a generic bad gateway rather than
+  // guessing.
   return 502;
 }
 
@@ -199,21 +245,36 @@ function classifyUpstreamError(serviceName: string, err: any): { kind: string; m
   if (code === "UND_ERR_BODY_TIMEOUT") {
     return { kind: "body_timeout", message: `${serviceName} body timeout` };
   }
+  if (code === "UPSTREAM_RESPONSE_TOO_LARGE") {
+    return { kind: "response_too_large", message: `${serviceName} response too large` };
+  }
   return { kind: "request_error", message: `${serviceName} request failed` };
 }
 
-async function readResponseText(body: unknown): Promise<string> {
-  if (typeof (body as any)?.text === "function") {
-    return await (body as any).text();
-  }
+// Engines cap their own combined output around ~512KB (see engine-runtime's
+// run.ts), but nothing here enforced that contract — a misbehaving, mis-
+// flagged, or future upstream returning a multi-megabyte body would be
+// buffered whole into this process's heap, once per concurrent request. 4MB
+// is generous headroom over the engines' own cap while still bounding the
+// worst case; if it's ever hit, something upstream is already broken and the
+// caller gets a 502 (via the catch in executeRun/proxyToTraceService) rather
+// than this pod running out of memory.
+const MAX_UPSTREAM_RESPONSE_BYTES = 4 * 1024 * 1024;
 
-  return await new Promise<string>((resolve, reject) => {
-    let data = "";
-    (body as NodeJS.ReadableStream).setEncoding("utf8");
-    (body as NodeJS.ReadableStream).on("data", (chunk) => (data += chunk));
-    (body as NodeJS.ReadableStream).on("end", () => resolve(data));
-    (body as NodeJS.ReadableStream).on("error", reject);
-  });
+async function readResponseText(body: AsyncIterable<Buffer | string>, maxBytes = MAX_UPSTREAM_RESPONSE_BYTES): Promise<string> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of body) {
+    const buf = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk;
+    total += buf.length;
+    if (total > maxBytes) {
+      const err = new Error(`upstream response exceeds ${maxBytes} bytes`) as Error & { code: string };
+      err.code = "UPSTREAM_RESPONSE_TOO_LARGE";
+      throw err;
+    }
+    chunks.push(buf);
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 type RunResult = {
@@ -286,7 +347,7 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
     }
 
     if (!enginePayload.ok) {
-      const status = mapEngineErrorToStatus(enginePayload as any);
+      const status = mapEngineErrorToStatus(engineRes.statusCode);
       // Bad input (400) and engine-reported timeout (504) are deterministic for
       // a given snippet, so cache them briefly to stop re-burning engine slots.
       // Everything else (502/429/…) is transient and stays uncached.
@@ -471,26 +532,68 @@ async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
   return false;
 }
 
+// No @fastify/cors is registered (deliberately — see docker-compose/infra
+// notes), so nothing stops a browser from *sending* a cross-site request to a
+// state-changing endpoint like this one — only from reading the response.
+// CORS "simple requests" (form submissions, `fetch(..., {mode:'no-cors'})`)
+// are restricted to a fixed content-type set that does NOT include
+// `application/json`; requiring it here forces any cross-origin attempt into
+// a CORS preflight, which this API never answers, so the browser blocks it
+// before the request is ever sent. This is the whole mitigation — no token,
+// no session, because there is nothing session-like to protect here.
+function requireJsonContentType(req: any, reply: any): boolean {
+  const contentType = String(req.headers["content-type"] ?? "");
+  if (contentType.split(";")[0].trim().toLowerCase() === "application/json") return true;
+  reply.code(415).send({ ok: false, error: "Content-Type must be application/json" });
+  return false;
+}
+
 // Self-service public-API key issuance. No accounts: anyone can mint a key,
 // but issuance is IP-limited to curb abuse. A key raises the request quota.
 app.post("/api/keys", async (req, reply) => {
+  if (!requireJsonContentType(req, reply)) return;
   const ip = clientIp(req);
   const issue = await enforceLimit(redis, ip, "key-issue", config.API_KEY_ISSUE_PER_HOUR, 3600, reply, req.log);
   if (issue.limited) {
     reply.code(429).send({ ok: false, error: "key issuance limit reached", meta: { retryAfter: issue.retryAfter } });
     return;
   }
-  const key = await issueApiKey(redis, config.API_KEY_RATE_LIMIT_PER_MIN, Date.now(), req.log);
-  if (!key) {
+  const result = await issueApiKey(
+    redis,
+    config.API_KEY_RATE_LIMIT_PER_MIN,
+    Date.now(),
+    config.API_KEY_TTL_SECONDS,
+    hashIdentity(ip),
+    config.API_KEY_MAX_PER_ISSUER,
+    req.log,
+  );
+  if (!result.ok) {
+    if (result.reason === "owner_limit") {
+      reply.code(429).send({ ok: false, error: "too many live keys for this address; revoke one before minting another" });
+      return;
+    }
     reply.code(503).send({ ok: false, error: "could not issue key" });
     return;
   }
   reply.code(201).send({
     ok: true,
-    apiKey: key,
+    apiKey: result.key,
     rateLimitPerMin: config.API_KEY_RATE_LIMIT_PER_MIN,
+    expiresInSeconds: config.API_KEY_TTL_SECONDS,
     usage: "Send the key as an 'x-api-key' header or 'Authorization: Bearer <key>' on /api/run and /api/trace/*.",
   });
+});
+
+// Revocation: presenting the key is the only proof of ownership this
+// accountless system has, same as using it to authenticate anywhere else.
+app.delete("/api/keys", async (req, reply) => {
+  const key = extractApiKey(req.headers ?? {});
+  if (!key) {
+    reply.code(400).send({ ok: false, error: "no API key presented" });
+    return;
+  }
+  const revoked = await revokeApiKey(redis, key, req.log);
+  reply.code(revoked ? 200 : 404).send({ ok: revoked });
 });
 
 app.post("/api/trace/execute/type-conversion", async (req, reply) => {

@@ -68,6 +68,29 @@ catalog paths while denying `/execute`. Once the gateway proxies `/functions`
 and `/spec/:name`, drop the `app: frontend` selector from both
 `trace-service-ingress` and `frontend-egress`.
 
+## Client IP trust (`apps/api`)
+
+The gateway rate-limits and issues API keys per client IP, so getting the
+right IP matters. Two settings in `apps/api/src/config.ts` control this:
+
+- `TRUST_PROXY_HOPS` (default `1`) — passed to Fastify's `trustProxy`. It is a
+  hop *count*, not a "trust everything" switch: with a fixed count, Fastify
+  reads the address that many entries in from the client end of
+  `X-Forwarded-For`, so a client prepending fake entries cannot influence the
+  result as long as exactly that many real proxies sit between the client and
+  this pod. `jslab.su`'s only hop is Traefik, hence `1`.
+- `CLIENT_IP_HEADER` (default `cf-connecting-ip`) — checked *before*
+  `req.ip`. Cloudflare overwrites this header on every request that reaches
+  its edge (unlike `X-Forwarded-For`, which it appends to rather than
+  replaces), so it cannot be forged by the client. This is what actually
+  makes IP-based limiting safe behind Cloudflare, independent of the Traefik
+  hop count above.
+
+If you deploy without Cloudflare (or another edge that overwrites a header
+the same way), set `CLIENT_IP_HEADER=""` and make sure `TRUST_PROXY_HOPS`
+matches your real proxy chain — otherwise `req.ip` (and therefore every rate
+limit and the API-key-issuance cap) is attacker-controlled.
+
 ## Secrets / certs (provisioned out-of-band, not in git)
 
 These exist on the cluster and are **not** committed:
