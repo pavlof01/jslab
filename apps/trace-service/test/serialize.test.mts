@@ -105,3 +105,39 @@ describe("the display-string round trip it replaced", () => {
     expect(fromEngineValue(jsString("null"))).toEqual({ type: "String", value: "null" });
   });
 });
+
+describe("output size bound", () => {
+  // A short expression like "'a'.repeat(50_000_000)" builds a huge string well
+  // inside the worker's time/heap budget; without a cap here that string is
+  // embedded verbatim in the response (and again in every trace step that
+  // references it). This pins that the cap exists and is a huge-input
+  // regression, not that it enforces one particular byte count.
+  it("caps a huge String Value instead of embedding it verbatim", () => {
+    const huge = "a".repeat(1_000_000);
+    const result = fromEngineValue(jsString(huge));
+    expect(result.type).toBe("String");
+    if (result.type !== "String") throw new Error("unreachable");
+    expect(result.value.length).toBeLessThan(huge.length);
+    expect(result.value).toContain("truncated");
+  });
+
+  it("leaves ordinary-length strings untouched", () => {
+    expect(fromEngineValue(jsString("hello"))).toEqual({ type: "String", value: "hello" });
+  });
+
+  it("caps a huge BigInt Value's decimal representation", () => {
+    const huge = 10n ** 100_000n;
+    const result = fromEngineValue(jsBigInt(huge));
+    expect(result.type).toBe("BigInt");
+    if (result.type !== "BigInt") throw new Error("unreachable");
+    expect(result.value.length).toBeLessThan(String(huge).length);
+  });
+
+  it("caps a huge quoted-string display value in the round-trip parser", () => {
+    const huge = `"${"a".repeat(1_000_000)}"`;
+    const result = toSerializedValue(huge);
+    expect(result.type).toBe("String");
+    if (result.type !== "String") throw new Error("unreachable");
+    expect(result.value.length).toBeLessThan(huge.length);
+  });
+});

@@ -88,6 +88,19 @@ const WRAPPER_SLOTS: ReadonlyArray<readonly [slot: string, className: string]> =
   ["BigIntData", "BigInt"],
 ];
 
+// MAX_SOURCE_LENGTH bounds the *input* text, not what evaluating it produces:
+// a short expression like "'a'.repeat(50_000_000)" builds a huge string well
+// inside the worker's time and heap budget, and every String/BigInt payload
+// (and any preview built from one) embeds the value verbatim. Cap here so a
+// cheap request can't turn into a multi-megabyte response — repeated across
+// every step of a trace that references the same value.
+const MAX_STRING_LENGTH = 10_000;
+
+function capString(s: string, max: number = MAX_STRING_LENGTH): string {
+  if (s.length <= max) return s;
+  return `${s.slice(0, max)}… (truncated, ${s.length - max} more chars)`;
+}
+
 function numberPayload(n: number): NumberPayload {
   if (Number.isNaN(n)) return "NaN";
   if (n === Infinity) return "Infinity";
@@ -143,16 +156,16 @@ export function fromEngineValue(value: EngineValue): SerializedValue {
     case "Boolean":
       return { type: "Boolean", value: value.value === true };
     case "String":
-      return { type: "String", value: typeof value.value === "string" ? value.value : String(value.value ?? "") };
+      return { type: "String", value: capString(typeof value.value === "string" ? value.value : String(value.value ?? "")) };
     case "Number":
       return { type: "Number", value: numberPayload(Number(value.value)) };
     case "BigInt":
-      return { type: "BigInt", value: String(value.value) };
+      return { type: "BigInt", value: capString(String(value.value)) };
     case "Symbol": {
       const description = value.Description?.value;
       return {
         type: "Symbol",
-        value: { id: "sym", description: typeof description === "string" ? description : undefined },
+        value: { id: "sym", description: typeof description === "string" ? capString(description) : undefined },
       };
     }
     case "Object":
@@ -175,19 +188,19 @@ export function toSerializedValue(str: string | undefined): SerializedValue {
   if (str === "Undefined") return { type: "Undefined" };
   if (str === "Symbol") return { type: "Symbol", value: { id: "sym" } };
   if (str === "BigInt") return { type: "BigInt", value: "0" };
-  if (/^-?\d+n$/.test(str)) return { type: "BigInt", value: str.slice(0, -1) };
+  if (/^-?\d+n$/.test(str)) return { type: "BigInt", value: capString(str.slice(0, -1)) };
   if ((str.startsWith("{") && str.endsWith("}")) || (str.startsWith("[") && str.endsWith("]"))) {
-    return { type: "Object", value: { id: "display", class: "", preview: str } };
+    return { type: "Object", value: { id: "display", class: "", preview: capString(str) } };
   }
   if (str.startsWith('"') && str.endsWith('"') && str.length >= 2) {
-    return { type: "String", value: str.slice(1, -1) };
+    return { type: "String", value: capString(str.slice(1, -1)) };
   }
   // Numeric literal (e.g. "+0", "-0", "42", "3.14")
   if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(str)) {
     const n = Number(str);
     if (!Number.isNaN(n)) return { type: "Number", value: n };
   }
-  return { type: "String", value: str };
+  return { type: "String", value: capString(str) };
 }
 
 function mapInputs(inputs: readonly string[] | undefined): SerializedValue[] {
