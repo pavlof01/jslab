@@ -120,8 +120,8 @@ To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-ru
 
 - **Flag allowlist**: `normalizeFlags()` in `apps/api/src/schemas.ts` runs the shared `sanitizeFlags()` over the catalog in `apps/api/src/flags.ts`. Engine services run the same sanitizer independently via `@jslab/engine-runtime`.
 - **Cache key**: `engine + sourceText + sorted-flags + ceil(timeoutMs/100)` — timeout is bucketed to reduce misses.
-- **Rate limit**: 60 req/min per IP (Redis counters, `Retry-After` on 429).
-- **Trace endpoint**: `POST /api/trace/execute` → `{ functionName, input, preferredType? }` → proxies to `trace-service`.
+- **Rate limit**: 60 req/min per IP by default, layered per bucket (general/heavy/trace); a self-service API key raises the general and trace quotas, with a lower, separate cap on the heavy (engine-spawning) bucket. Identity is hashed before it becomes a Redis key name; see `rateLimit.ts` and `apiKeys.ts`. Client IP is read from `CF-Connecting-IP` when present (see `infra/README.md`'s "Client IP trust" section), falling back to `req.ip` under a configurable trusted-hop count.
+- **Trace endpoints**: `POST /api/trace/execute/type-conversion` → `{ functionName, input, preferredType? }` and `POST /api/trace/execute/equality` → `{ input }` → proxy to `trace-service`.
 
 ---
 

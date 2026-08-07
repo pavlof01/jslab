@@ -4,7 +4,12 @@ export const openapiDoc = {
     title: "JSLab API",
     version: "1.0.0"
   },
-  servers: [{ url: "/api" }],
+  // Every path below is the FULL route (e.g. "/api/run", but "/healthz" and
+  // "/metrics" with no /api prefix — they're mounted at the app root, not
+  // under the gateway's /api namespace). An empty server URL keeps that
+  // explicit instead of implying a shared /api prefix that /healthz and
+  // /metrics don't actually have.
+  servers: [{ url: "" }],
   security: [{}, { ApiKeyHeader: [] }, { BearerAuth: [] }],
   components: {
     securitySchemes: {
@@ -25,14 +30,17 @@ export const openapiDoc = {
       },
       RunRequest: {
         type: "object",
-        additionalProperties: false,
+        // The real validator (a plain zod z.object, not .strict()) silently
+        // strips unknown fields rather than rejecting the request — false
+        // here would document a 400 that never happens.
+        additionalProperties: true,
         required: ["engine", "sourceText"],
         properties: {
           engine: { type: "string", enum: ["v8", "hermes", "sm", "jsc"] },
           sourceText: { type: "string", minLength: 1 },
           options: {
             type: "object",
-            additionalProperties: false,
+            additionalProperties: true,
             properties: {
               flags: {
                 type: "array",
@@ -52,7 +60,7 @@ export const openapiDoc = {
       },
 TraceExecuteRequest: {
         type: "object",
-        additionalProperties: false,
+        additionalProperties: true, // z.object without .strict() strips, doesn't reject
         required: ["functionName", "input"],
         properties: {
           functionName: { type: "string", minLength: 1 },
@@ -60,18 +68,51 @@ TraceExecuteRequest: {
           preferredType: { type: "string", enum: ["string", "number"] }
         }
       },
-      TraceExecuteResponse: {
+      TraceExecuteEqualityRequest: {
+        type: "object",
+        additionalProperties: true, // z.object without .strict() strips, doesn't reject
+        required: ["input"],
+        properties: {
+          input: {
+            type: "string",
+            minLength: 1,
+            description: "A binary expression, e.g. \"1 == '1'\"."
+          }
+        }
+      },
+      SerializedValue: {
+        description:
+          "A spec-typed value: { type: \"String\"|\"Number\"|\"Boolean\"|\"Null\"|\"Undefined\"|\"BigInt\"|\"Symbol\"|\"Object\", value: ... }. Long String/BigInt values are truncated server-side.",
         type: "object",
         additionalProperties: true,
-        required: ["success"],
+        required: ["type"],
+        properties: {
+          type: { type: "string" }
+        }
+      },
+      TraceExecuteResponse: {
+        type: "object",
+        additionalProperties: false,
+        required: ["success", "functionName"],
         properties: {
           success: { type: "boolean" },
           functionName: { type: "string" },
-          resultValue: { type: "string" },
-          resultType: { type: "string" },
-          trace: { type: "array", items: { type: "object", additionalProperties: true } },
-          stepCount: { type: "integer" },
-          error: { type: "string" }
+          result: { allOf: [{ $ref: "#/components/schemas/SerializedValue" }], description: "Present on success." },
+          root: {
+            type: "object",
+            additionalProperties: true,
+            description: "Root algorithm invocation tree (present on success). Sub-algorithm calls nest inside call-kind steps."
+          },
+          effectiveAlgoId: {
+            type: "string",
+            description: "Equality only: which spec algorithm actually ran (e.g. \"IsLooselyEqual\")."
+          },
+          detectedOperator: {
+            type: "string",
+            description: "Equality only: the operator parsed out of the input (\"==\", \"!==\", \"<=\", ...)."
+          },
+          error: { type: "string" },
+          code: { type: "string", description: "Machine-readable failure reason, e.g. \"execution_budget_exceeded\"." }
         }
       },
       Artifact: {
@@ -162,24 +203,51 @@ TraceExecuteRequest: {
     }
   },
   paths: {
-    "/keys": {
+    "/api/keys": {
       post: {
         summary: "Issue a public API key",
         description:
-          "Self-service key issuance (no account needed). Issuance is IP-rate-limited. A key raises the request quota; send it as an 'x-api-key' header or 'Authorization: Bearer <key>'.",
+          "Self-service key issuance (no account needed). Issuance is IP-rate-limited, and one issuer may hold only a bounded number of live keys at once. A key raises the request quota; send it as an 'x-api-key' header or 'Authorization: Bearer <key>'. Requires 'Content-Type: application/json'. Keys expire; re-issue before they do.",
         security: [],
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
         responses: {
           "201": {
             description: "key issued",
             content: { "application/json": { schema: { $ref: "#/components/schemas/KeyResponse" } } }
           },
+          "415": {
+            description: "missing or wrong Content-Type",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
           "429": {
-            description: "issuance rate limited",
+            description: "issuance rate limited, or too many live keys for this address",
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
           },
           "503": {
             description: "could not issue key",
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      },
+      delete: {
+        summary: "Revoke a public API key",
+        description: "Presenting the key is the only proof of ownership this accountless system has.",
+        security: [{ ApiKeyHeader: [] }, { BearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "revoked",
+            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } }
+          },
+          "400": {
+            description: "no API key presented",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
+          "404": {
+            description: "key not found (already revoked or expired)",
+            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } }
           }
         }
       }
@@ -198,7 +266,20 @@ TraceExecuteRequest: {
         }
       }
     },
-    "/flags": {
+    "/metrics": {
+      get: {
+        summary: "Prometheus metrics",
+        description: "Not exposed publicly by the shipped ingress (see infra/k8s/base/ingress.yaml) — reachable only inside the cluster. Documented here because the route exists on every deployment of this app, including ones that route differently.",
+        security: [],
+        responses: {
+          "200": {
+            description: "ok",
+            content: { "text/plain": { schema: { type: "string" } } }
+          }
+        }
+      }
+    },
+    "/api/flags": {
       get: {
         summary: "Per-engine flag catalog",
         description:
@@ -212,7 +293,7 @@ TraceExecuteRequest: {
         }
       }
     },
-    "/run": {
+    "/api/run": {
       post: {
         summary: "Run code on a JS engine",
         requestBody: {
@@ -245,9 +326,9 @@ TraceExecuteRequest: {
         }
       }
     },
-    "/trace/execute": {
+    "/api/trace/execute/type-conversion": {
       post: {
-        summary: "Execute abstract operation trace",
+        summary: "Trace a type-conversion abstract operation (ToNumber, ToString, ...)",
         requestBody: {
           required: true,
           content: {
@@ -263,11 +344,40 @@ TraceExecuteRequest: {
             description: "invalid request",
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
           },
+          "429": {
+            description: "rate limited",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
           "502": {
             description: "trace service unavailable",
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/trace/execute/equality": {
+      post: {
+        summary: "Trace an equality-operator expression (==, ===, <=, ...)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteEqualityRequest" } }
+          }
+        },
+        responses: {
+          "200": {
+            description: "trace executed",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } } }
           },
-          "503": {
+          "400": {
+            description: "invalid request",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
+          "429": {
+            description: "rate limited",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          },
+          "502": {
             description: "trace service unavailable",
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
           }
