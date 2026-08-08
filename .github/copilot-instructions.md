@@ -143,7 +143,7 @@ export function loadConfig(): ApiConfig {
 
 ## Common Pitfalls & Design Constraints
 
-1. **Flag whitelisting is strict**: Client-supplied flags not in the `flagCatalog` are dropped (and reported in `meta.droppedFlags`). The catalog lives in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts) and is mirrored byte-for-byte in [apps/api/src/flags.ts](../apps/api/src/flags.ts) — [apps/api/src/flags.test.ts](../apps/api/src/flags.test.ts) fails if the copies differ.
+1. **Flag whitelisting is strict**: Client-supplied flags not in the `flagCatalog` are dropped (and reported in `meta.droppedFlags`). The catalog lives in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts) — the single source of truth. The api gateway and every engine service import it as a `file:` dependency (`@jslab/engine-runtime`), so there is nothing to keep in sync.
 
 2. **Cache key normalization**: Timeouts are bucketed (every 100ms) to avoid cache explosion. If latency within ±100ms matters, reduce bucket size or disable cache for specific tasks.
 
@@ -175,7 +175,7 @@ export function loadConfig(): ApiConfig {
 
 1. **New engine?** Create `apps/engine-<name>/`, follow [engine-v8](../apps/engine-v8/) template, add to `skaffold.yaml` and `infra/k8s/base/`.
 2. **New API endpoint?** Update [apps/api/src/schemas.ts](../apps/api/src/schemas.ts), add route in server.ts, update OpenAPI doc.
-3. **New flag?** Add a `FlagSpec` to `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts), then copy the file verbatim to [apps/api/src/flags.ts](../apps/api/src/flags.ts). No frontend changes needed unless user-facing flag selector is desired.
+3. **New flag?** Add a `FlagSpec` to `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts). Both the api and every engine service pick it up automatically. No frontend changes needed unless user-facing flag selector is desired.
 4. **Frontend feature?** Ensure useEngineOutputs store is updated if new state shape is needed; update PlaygroundClient or component tree.
 
 ## Key File References

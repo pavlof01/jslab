@@ -25,8 +25,8 @@ The site lets you:
 | **Hermes**         | Bytecode                        | `-O`, `-strict`, `-gc-sanitize-handles`                                    |
 
 Flags are validated against a per-engine allowlist — the full catalog lives in
-[`apps/api/src/flags.ts`](apps/api/src/flags.ts) (mirrored in
-`packages/engine-runtime/src/flags.ts`), and anything outside it is rejected.
+[`packages/engine-runtime/src/flags.ts`](packages/engine-runtime/src/flags.ts),
+and anything outside it is rejected.
 Hermes bytecode dumping (`-dump-bytecode`) is applied server-side on every run,
 so you never pass it yourself.
 

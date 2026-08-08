@@ -1,20 +1,5 @@
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
 import { flagCatalog, sanitizeFlags, type CatalogEngine } from "./flags.js";
-
-const RUNTIME_COPY = fileURLToPath(new URL("../../../packages/engine-runtime/src/flags.ts", import.meta.url));
-const API_COPY = fileURLToPath(new URL("./flags.ts", import.meta.url));
-
-describe("flag catalog mirror", () => {
-  // The gateway and the engines each ship their own copy of this file (the api
-  // image's build context is apps/api only, so it cannot depend on the runtime
-  // package). This test is what makes "one source of truth" true: edit the
-  // runtime copy, copy it here, or the build fails.
-  it("is byte-identical to packages/engine-runtime/src/flags.ts", () => {
-    expect(readFileSync(API_COPY, "utf8")).toBe(readFileSync(RUNTIME_COPY, "utf8"));
-  });
-});
 
 describe("flag catalog contents", () => {
   const engines: CatalogEngine[] = ["v8", "hermes", "sm", "jsc"];

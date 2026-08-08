@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { flagCatalog, sanitizeFlags, type FlagSpec, type SanitizedFlags } from "./flags.js";
+import { flagCatalog, sanitizeFlags, type FlagSpec, type SanitizedFlags } from "@jslab/engine-runtime";
 import type { EngineKind, RunRequest, TraceExecuteInput, TraceExecuteRequest } from "./types.js";
 
 /** Full catalog entries for an engine, for the /api/flags documentation route. */

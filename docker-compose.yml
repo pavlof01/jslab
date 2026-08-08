@@ -159,8 +159,8 @@ services:
   # API Gateway
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
       target: dev
     ports:
       - "8080:8080"
