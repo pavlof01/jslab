@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "apps/api/**"
+      - "packages/engine-runtime/**"
       - ".github/workflows/deploy-api.yml"
       - ".github/workflows/reusable-deploy-service-vps.yml"
   workflow_dispatch:
@@ -20,8 +21,10 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-service-vps.yml
     with:
       service: api
-      context: apps/api
+      context: .
       dockerfile: apps/api/Dockerfile
+      verify_dir: apps/api
+      needs_engine_runtime: true
       image: jslab-api
       deployment: api
       container: api

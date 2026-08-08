@@ -9,16 +9,16 @@ build:
     useBuildkit: true
   artifacts:
     - image: jslab-api
-      context: apps/api
+      context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: apps/api/Dockerfile
         target: dev
       sync:
         infer:
-          - "src/**/*.ts"
-          - "package.json"
-          - "package-lock.json"
-          - "tsconfig*.json"
+          - "apps/api/src/**/*.ts"
+          - "apps/api/package.json"
+          - "apps/api/package-lock.json"
+          - "apps/api/tsconfig*.json"
 
     - image: jslab-frontend
       context: apps/frontend

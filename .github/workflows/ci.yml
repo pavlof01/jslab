@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - { name: engine-runtime,       dir: packages/engine-runtime,   typecheck: "npm run lint",  test: "npm test" }
-          - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "npm test" }
+          - { name: api,                  dir: apps/api,                  typecheck: "npm run lint",  test: "npm test", runtime: true }
           - { name: engine-v8,            dir: apps/engine-v8,            typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "", runtime: true }

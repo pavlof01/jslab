@@ -110,15 +110,15 @@ Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer
 - `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
 - Returns `{ ok, stdout, stderr, artifacts: [], meta }`
 
-**Flag catalog**: `flagCatalog` in `packages/engine-runtime/src/flags.ts`, mirrored **byte-for-byte** in `apps/api/src/flags.ts` (the api Docker build context is `apps/api` only, so it cannot import the package). `apps/api/src/flags.test.ts` fails if the two copies differ.
+**Flag catalog**: `flagCatalog` in `packages/engine-runtime/src/flags.ts` — the single source of truth. The api gateway builds from the repo root and depends on the package the same way the engine services do (`file:../../packages/engine-runtime`, `install-links=true` in `.npmrc`), so it imports `flagCatalog`/`sanitizeFlags` directly instead of keeping its own copy.
 
-To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-runtime/src/flags.ts`, then copy the file verbatim to `apps/api/src/flags.ts` (`npm run test` in `apps/api` verifies the mirror).
+To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-runtime/src/flags.ts`. Both the api and every engine service pick it up automatically.
 
 ---
 
 ## API gateway key behaviors
 
-- **Flag allowlist**: `normalizeFlags()` in `apps/api/src/schemas.ts` runs the shared `sanitizeFlags()` over the catalog in `apps/api/src/flags.ts`. Engine services run the same sanitizer independently via `@jslab/engine-runtime`.
+- **Flag allowlist**: `normalizeFlags()` in `apps/api/src/schemas.ts` runs `sanitizeFlags()` from `@jslab/engine-runtime` over its `flagCatalog`. Engine services import and run the same functions.
 - **Cache key**: `engine + sourceText + sorted-flags + ceil(timeoutMs/100)` — timeout is bucketed to reduce misses.
 - **Rate limit**: 60 req/min per IP by default, layered per bucket (general/heavy/trace); a self-service API key raises the general and trace quotas, with a lower, separate cap on the heavy (engine-spawning) bucket. Identity is hashed before it becomes a Redis key name; see `rateLimit.ts` and `apiKeys.ts`. Client IP is read from `CF-Connecting-IP` when present (see `infra/README.md`'s "Client IP trust" section), falling back to `req.ip` under a configurable trusted-hop count.
 - **Trace endpoints**: `POST /api/trace/execute/type-conversion` → `{ functionName, input, preferredType? }` and `POST /api/trace/execute/equality` → `{ input }` → proxy to `trace-service`.
