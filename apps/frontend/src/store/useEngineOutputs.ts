@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
-import { ENGINE_KEYS, EngineKey, RunStatus, type EngineResult } from "@/lib/types";
+import { createEngineSelection, ENGINE_KEYS, EngineKey, RunStatus, type EngineResult } from "@/lib/types";
 import { describeRunFailure, runEngine, type RunFailure } from "@/lib/api";
 import { samples } from "@/lib/samples";
 
@@ -21,7 +21,7 @@ function describeRunNotice(truncated: boolean, droppedFlags: string[]): string |
   return parts.length ? parts.join(" ") : undefined;
 }
 
-const DEFAULT_ENGINE_OUT: EngineResult = { exitCode: null, stdout: "", stderr: "" };
+const DEFAULT_ENGINE_OUT: EngineResult = { stdout: "", stderr: "" };
 
 const createEmptyOut = (): Record<EngineKey, EngineResult> =>
   Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...DEFAULT_ENGINE_OUT }])) as Record<
@@ -34,13 +34,6 @@ const cloneOut = (out: Record<EngineKey, EngineResult>): Record<EngineKey, Engin
     EngineKey,
     EngineResult
   >;
-
-const createEngineSelection = (): Record<EngineKey, boolean> => ({
-  [EngineKey.v8]: true,
-  [EngineKey.sm]: false,
-  [EngineKey.hermes]: false,
-  [EngineKey.jsc]: false,
-});
 
 type RunContext = {
   engines: EngineKey[];
@@ -159,7 +152,7 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
       const tasks = engines.map(async (engine) => {
         const options = engine === EngineKey.v8 ? { flags: v8Flags } : {};
         const result = await runEngine(engine, code, options);
-        return [engine, { exitCode: null, ...result }] as const;
+        return [engine, result] as const;
       });
 
       const settled = await Promise.all(tasks);
