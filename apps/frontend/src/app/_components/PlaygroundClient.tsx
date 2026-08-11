@@ -8,7 +8,7 @@ import { EditorPanel } from "@/components/EditorPanel";
 import EngineCheckboxSelector from "@/components/EngineCheckboxSelector";
 import { OutputsPanel, tabs } from "@/components/OutputsPanel";
 import Samples from "@/components/Samples";
-import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
+import { createEngineSelection, ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
 import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import ShareButton from "@/app/_components/ShareButton";
@@ -19,13 +19,6 @@ import { pushHistory } from "@/lib/runHistory";
 
 const DEFAULT_SPLIT = [35, 65];
 const DEFAULT_SPLIT_MOBILE = [20, 80];
-
-const createEngineSelection = (): Record<EngineKey, boolean> => ({
-  [EngineKey.v8]: true,
-  [EngineKey.sm]: false,
-  [EngineKey.hermes]: false,
-  [EngineKey.jsc]: false,
-});
 
 export default function PlaygroundClient() {
   const { status, showDiff, code, engines, selectedV8Flags } = useEngineOutputsState();
