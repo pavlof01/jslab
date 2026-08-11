@@ -1,13 +1,10 @@
 /**
  * Canonical per-engine flag catalog plus the sanitizer both layers run.
  *
- * MIRRORED FILE — `packages/engine-runtime/src/flags.ts` and
- * `apps/api/src/flags.ts` must stay byte-identical. The api gateway cannot take
- * a `file:` dependency on this package: its Dockerfile copies only `apps/api`
- * as the build context, and that Dockerfile plus the deploy workflows would
- * have to change in lockstep. The copy is kept honest by `flags.test.ts` in
- * apps/api, which fails the build the moment the two files differ — so the
- * catalog is still edited in exactly one place, then copied.
+ * Single source of truth: the engine services and the api gateway all depend on
+ * `@jslab/engine-runtime` (`file:../../packages/engine-runtime`, with
+ * `install-links=true` in `.npmrc`) and import this module directly, so a flag
+ * added here is picked up by every layer at once and the two cannot drift.
  */
 
 export type CatalogEngine = "v8" | "hermes" | "sm" | "jsc";

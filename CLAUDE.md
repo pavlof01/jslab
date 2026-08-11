@@ -55,7 +55,7 @@ TypeScript check: `node_modules/.bin/tsc --noEmit -p tsconfig.json` (no `tsc` on
 npm run dev          # tsx watch → localhost:8080
 npm run build        # tsc → dist/
 npm run lint         # tsc --noEmit
-npm run test         # vitest (includes the flag-catalog mirror test)
+npm run test         # vitest
 ```
 
 ### Trace service (`apps/trace-service/`)
