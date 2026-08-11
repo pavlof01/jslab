@@ -207,7 +207,10 @@ function Samples({ currentCode, onSelectSample }: Props) {
       },
       theme: "github-dark",
     });
-  }, [browseOpen]);
+    // Both dialogs render code previews through this adapter, so both must be
+    // in the dependency list: with only `browseOpen` here, opening the V8
+    // dialog first left the adapter null and its cards rendered without code.
+  }, [browseOpen, v8BrowseOpen]);
 
   const openRenameDialog = useCallback((sample: CustomSample) => {
     setRenameTarget(sample);
