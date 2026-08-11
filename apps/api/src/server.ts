@@ -1,5 +1,4 @@
 import fastify, { type FastifyBaseLogger, type FastifyRequest } from "fastify";
-// @ts-ignore
 import apiReference from "@scalar/fastify-api-reference";
 import underPressure from "@fastify/under-pressure";
 import { Redis } from "ioredis";
@@ -293,15 +292,15 @@ type RunResult = {
 const inFlight = new Map<string, Promise<RunResult>>();
 
 const engineBaseByKind = {
-  v8: () => config.ENGINE_V8_URL,
-  hermes: () => config.ENGINE_HERMES_URL,
-  sm: () => config.ENGINE_SM_URL,
-  jsc: () => config.ENGINE_JSC_URL,
+  v8: config.ENGINE_V8_URL,
+  hermes: config.ENGINE_HERMES_URL,
+  sm: config.ENGINE_SM_URL,
+  jsc: config.ENGINE_JSC_URL,
 } as const;
 
 async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogger): Promise<RunResult> {
   const start = Date.now();
-  const engineUrl = `${engineBaseByKind[normalized.engine]().replace(/\/$/, "")}/run`;
+  const engineUrl = `${engineBaseByKind[normalized.engine].replace(/\/$/, "")}/run`;
 
   try {
     const engineBody = { sourceText: normalized.sourceText, options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs } };

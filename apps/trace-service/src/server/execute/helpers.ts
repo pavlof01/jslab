@@ -213,7 +213,7 @@ export function callECMA262Function(functionName: string, inputValue: Value, pre
     case "ToBoolean":
       return ToBoolean(inputValue);
     case "ToPrimitive":
-      return ToPrimitive(inputValue, preferredType as "string" | "number" | undefined);
+      return ToPrimitive(inputValue, preferredType);
     case "ToNumeric":
       return ToNumeric(inputValue);
     case "ToObject":
