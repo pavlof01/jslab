@@ -129,6 +129,7 @@ jobs:
   verify:
     if: ${{ inputs.verify_command != '' && inputs.image_tag == '' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       VERIFY_DIR: ${{ inputs.verify_dir != '' && inputs.verify_dir || inputs.context }}
     steps:
@@ -163,6 +164,8 @@ jobs:
     # verification is skipped (disabled, or a pinned image_tag).
     if: ${{ !cancelled() && (needs.verify.result == 'success' || inputs.verify_command == '' || inputs.image_tag != '') }}
     runs-on: ubuntu-24.04
+    # Generous: an engine image builds a JS engine from source on a cold cache.
+    timeout-minutes: 45
     # Per service, newest wins: a second push for the same service makes the
     # in-flight build's image obsolete before it is pushed, and cancelling is
     # free because nothing has touched the node yet. This is the group that
@@ -211,6 +214,8 @@ jobs:
     needs: build
     # Plain success gating: skipped/failed/cancelled build => no rollout.
     runs-on: ubuntu-24.04
+    # Covers the SSH deploy plus the rollout wait it blocks on.
+    timeout-minutes: 20
     # Per-service, and deliberately NOT a shared group across services. A
     # single shared group would serialise the fan-out this workflow's own path
     # filter creates (touching this file starts all seven services) — but a

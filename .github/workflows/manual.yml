@@ -26,6 +26,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -86,6 +87,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     environment: production
     steps:
       - name: Checkout
