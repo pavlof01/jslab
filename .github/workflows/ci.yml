@@ -16,6 +16,10 @@ jobs:
   apps:
     name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
+    # A healthy matrix leg finishes in well under two minutes; this only has to
+    # stop a wedged install or a test that never returns from billing the whole
+    # six-hour default. One such run burned 68 minutes on 2026-08-06.
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +63,7 @@ jobs:
   manifests:
     name: k8s-manifests
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Setup kustomize
