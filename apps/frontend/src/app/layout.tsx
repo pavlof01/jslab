@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Providers } from "./providers";
 import { ConditionalHeader } from "@/components/ConditionalHeader";
+import { SITE_ORIGIN } from "@/lib/site";
 
 import "./globals.css";
 
@@ -40,9 +41,9 @@ export const metadata: Metadata = {
   authors: { name: "Pavlov Alexey", url: "https://github.com/pavlof01" },
   creator: "Pavlov Alexey",
   publisher: "Pavlov Alexey",
-  metadataBase: new URL("https://jslab.su"),
+  metadataBase: new URL(SITE_ORIGIN),
   alternates: {
-    canonical: "https://jslab.su",
+    canonical: SITE_ORIGIN,
   },
   openGraph: {
     title: "JSLab — Explore JS Engines",

@@ -6,10 +6,11 @@ import { MdMailOutline } from "react-icons/md";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { tools } from "@/lib/tools";
+import { SITE_ORIGIN } from "@/lib/site";
 
 const displayFont = "'Plus Jakarta Sans', Inter, var(--font-sans), sans-serif";
 
-const SITE_URL = "https://jslab.su";
+const SITE_URL = SITE_ORIGIN;
 const REPO_URL = "https://github.com/pavlof01/jslab";
 const PROFILE_URL = "https://github.com/pavlof01";
 const MAILTO_URL = "mailto:pavlof01@gmail.com";
