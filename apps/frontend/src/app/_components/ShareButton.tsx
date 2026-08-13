@@ -4,9 +4,21 @@ import { useCallback, useMemo, useState } from "react";
 import { Button, Menu, Portal } from "@chakra-ui/react";
 import { LuCheck, LuLink } from "react-icons/lu";
 
-import { ENGINE_KEYS } from "@/lib/types";
+import { ENGINE_KEYS, EngineKey } from "@/lib/types";
 import { useEngineOutputsState } from "@/store/useEngineOutputs";
 import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
+import { buildSnapshotUrl } from "@/lib/embedState";
+
+/** What the last successful copy produced; drives the transient button label. */
+type CopyTarget = "link" | "embed" | "article";
+
+const COPIED_LABEL: Record<CopyTarget, string> = {
+  link: "Copied!",
+  embed: "Embed copied!",
+  article: "Article link copied!",
+};
+
+const IDLE_LABEL = "Share";
 
 /**
  * Copies a shareable playground URL (code + engines + v8 flags encoded in the
@@ -14,8 +26,8 @@ import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
  * snippet — the embed page had no entry point in the product before this.
  */
 export default function ShareButton() {
-  const { code, engines, selectedV8Flags } = useEngineOutputsState();
-  const [copied, setCopied] = useState<"link" | "embed" | null>(null);
+  const { code, engines, selectedV8Flags, out, activeTab } = useEngineOutputsState();
+  const [copied, setCopied] = useState<CopyTarget | null>(null);
 
   const state = useMemo(
     () => ({ code, engines: ENGINE_KEYS.filter((k) => engines[k]), v8Flags: selectedV8Flags }),
@@ -49,12 +61,40 @@ export default function ShareButton() {
     }
   }, [state]);
 
+  // The output currently on screen, frozen into a link. Medium and friends take
+  // a bare URL and nothing else — no iframe markup, no <script> — so this is the
+  // only shape that embeds there.
+  const activeOut = out?.[activeTab];
+  const canCopyArticleLink = Boolean(activeOut?.stdout || activeOut?.stderr);
+
+  const copyArticleLink = useCallback(async () => {
+    if (!activeOut) return;
+    const url = await buildSnapshotUrl(window.location.origin, {
+      code,
+      engine: activeTab,
+      // Only V8 takes client-supplied flags; the other engines ignore them.
+      flags: activeTab === EngineKey.v8 ? selectedV8Flags : [],
+      output: activeOut.stdout ?? "",
+      stderr: activeOut.stderr || undefined,
+    });
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied("article");
+      window.setTimeout(() => setCopied(null), 1500);
+    } catch {
+      // Clipboard blocked (insecure context / permissions): leave the label
+      // unchanged rather than claim a copy that did not happen.
+    }
+  }, [activeOut, activeTab, code, selectedV8Flags]);
+
+  const label = copied ? COPIED_LABEL[copied] : IDLE_LABEL;
+
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button size="sm" variant="surface" colorPalette="white" aria-label="Share this snippet">
           {copied ? <LuCheck /> : <LuLink />}
-          {copied === "link" ? "Copied!" : copied === "embed" ? "Embed copied!" : "Share"}
+          {label}
         </Button>
       </Menu.Trigger>
       <Portal>
@@ -65,6 +105,9 @@ export default function ShareButton() {
             </Menu.Item>
             <Menu.Item value="copy-embed" onSelect={copyEmbed}>
               Copy embed code
+            </Menu.Item>
+            <Menu.Item value="copy-article" onSelect={copyArticleLink} disabled={!canCopyArticleLink}>
+              Copy article link (output only)
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>
