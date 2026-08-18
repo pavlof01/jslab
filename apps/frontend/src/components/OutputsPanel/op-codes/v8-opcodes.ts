@@ -1,4 +1,4 @@
-// opcodeInfo.ts
+import { createDescriber, fromTable, type TokenDescriber } from "./resolver";
 
 /** Meta description for register-based opcode families (not used directly as opcodes). */
 export const META_REGISTER_FAMILY = {
@@ -216,13 +216,11 @@ export function resolveRegisterOpcode(opcode: string): string | undefined {
 /*  Address / section / header line helpers                      */
 /* ────────────────────────────────────────────────────────────── */
 
-/** Describe raw V8 addresses like "0x25c3001000a0". */
 function resolveAddressToken(key: string): string | undefined {
   if (!/^0x[0-9a-fA-F]+$/.test(key)) return undefined;
   return "Raw V8 heap or code address. Useful for correlating dumps, but not stable across runs or processes.";
 }
 
-/** Describe dump section headers like "Constant pool (size = 6)". */
 function resolveSectionHeader(line: string): string | undefined {
   let m: RegExpMatchArray | null;
 
@@ -244,7 +242,6 @@ function resolveSectionHeader(line: string): string | undefined {
   return undefined;
 }
 
-/** Describe per-function bytecode header lines. */
 function resolveBytecodeHeader(line: string): string | undefined {
   let m: RegExpMatchArray | null;
 
@@ -300,17 +297,14 @@ function resolveHeapMetaToken(raw: string): string | undefined {
     return `FixedArray on the V8 heap with ${m[1]} slots, used to store internal metadata or constant pool entries.`;
   }
 
-  // Plain FixedArray (no size)
   if (key === "FixedArray") {
     return "Fixed-size array on the V8 heap, used as a generic container for internal metadata.";
   }
 
-  // TrustedFixedArray
   if (key === "TrustedFixedArray") {
     return "Immutable FixedArray used as a trusted constant pool: holds strings, boilerplates, SharedFunctionInfo, and other constants referenced by bytecode.";
   }
 
-  // ClassBoilerplate
   if (key === "ClassBoilerplate") {
     return "Internal template used to allocate and initialize a JavaScript class (constructor, prototype methods, static methods).";
   }
@@ -364,50 +358,14 @@ function resolveHeapMetaToken(raw: string): string | undefined {
 /*  Main helper                                                   */
 /* ────────────────────────────────────────────────────────────── */
 
-/**
- * Main helper: get a human-readable description for a V8 token.
- *
- * Supports:
- *   - plain opcodes (via OPCODE_INFO),
- *   - register families StarN / LdarN and Mov patterns (via resolveRegisterOpcode),
- *   - special register moves ("Mov <closure>, r2"),
- *   - raw addresses (0x...),
- *   - dump section headers ("Constant pool (size = N)", "Handler Table (size = N)", "Source Position Table (size = N)"),
- *   - bytecode headers ("Bytecode length: ...", "Parameter count ...", "Register count ...", "Frame size ..."),
- *   - heap meta tokens (TrustedFixedArray, FixedArray[40], ObjectBoilerplateDescription[4],
- *     SharedFunctionInfo name, ClassBoilerplate, ScopeInfo KIND, String[6]: #name, etc.).
- */
-export function getOpcodeInfo(rawToken: string | null | undefined): string | undefined {
-  if (!rawToken) return undefined;
-
-  const key = rawToken.trim();
-  if (!key) return undefined;
-
-  // 1. Direct opcode lookup
-  const direct = (OPCODE_INFO as Record<string, string>)[key];
-  if (direct) return direct;
-
-  // 2. Register-based opcode families (StarN / LdarN / Mov ...)
-  const registerFamily = resolveRegisterOpcode(key);
-  if (registerFamily) return registerFamily;
-
-  // 3. Raw address tokens (0x...)
-  const addrInfo = resolveAddressToken(key);
-  if (addrInfo) return addrInfo;
-
-  // 4. Section headers (Constant pool / Handler Table / Source Position Table)
-  const sectionInfo = resolveSectionHeader(key);
-  if (sectionInfo) return sectionInfo;
-
-  // 5. Bytecode header lines (Bytecode length / Parameter count / Register count / Frame size)
-  const headerInfo = resolveBytecodeHeader(key);
-  if (headerInfo) return headerInfo;
-
-  // 6. Heap meta tokens (TrustedFixedArray, FixedArray[40], ObjectBoilerplateDescription[4],
-  //    SharedFunctionInfo name, ClassBoilerplate, ScopeInfo, String[...], etc.)
-  const heapMetaInfo = resolveHeapMetaToken(key);
-  if (heapMetaInfo) return heapMetaInfo;
-
-  // 7. Fallback: nothing known about this token
-  return undefined;
-}
+export const describeToken: TokenDescriber = createDescriber({
+  strip: (token) => token,
+  steps: [
+    fromTable(OPCODE_INFO as Record<string, string>),
+    resolveRegisterOpcode,
+    resolveAddressToken,
+    resolveSectionHeader,
+    resolveBytecodeHeader,
+    resolveHeapMetaToken,
+  ],
+});

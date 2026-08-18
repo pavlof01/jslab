@@ -1,79 +1,172 @@
-import { createSystem, defaultConfig, defineSemanticTokens, defineTokens } from "@chakra-ui/react";
-import { buttonRecipe } from "./recipes";
+import {
+  createSystem,
+  defaultConfig,
+  defineConfig,
+  defineKeyframes,
+  defineSemanticTokens,
+  defineTokens,
+} from "@chakra-ui/react";
+
+import { buttonRecipe, chipRecipe, bandRecipe, inputRecipe, linkRecipe, textareaRecipe } from "./recipes";
+import { dialogSlotRecipe, drawerSlotRecipe, menuSlotRecipe, popoverSlotRecipe, selectSlotRecipe, tabsSlotRecipe } from "./slotRecipes";
+import { layerStyles } from "./layerStyles";
+import { textStyles } from "./textStyles";
 
 const tokens = defineTokens({
   colors: {
-    yellow: {
-      300: { value: "#f9e31a" },
-    },
-    brand: {
-      100: { value: "#CDBB16" },
-      200: { value: "#E2CE18" },
-      300: { value: "#F9E31A" },
-      400: { value: "#8E8215" },
-      500: { value: "#595212" },
-      600: { value: "#3E3A11" },
-      700: { value: "#312E10" },
-      800: { value: "#23210F" },
-      900: { value: "#373525" },
-    },
-    background: {
-      100: { value: "#1e1e1e" },
-      200: { value: "#161616" },
-      300: { value: "#0a0a0a" },
-    },
     surface: {
-      100: { value: "rgba(255,255,255,0.03)" },
-      200: { value: "rgba(255,255,255,0.05)" },
+      base: { value: "#0C0D0E" },
+      band: { value: "#0F1113" },
+      overlay: { value: "#101214" },
+      panel: { value: "#121416" },
+      hover: { value: "#17191C" },
+      bandHover: { value: "#15171A" },
+      accentSoft: { value: "#15170F" },
+      accentRow: { value: "#1A1C13" },
     },
-    brandAlpha: {
-      50: { value: "rgba(249,227,26,0.06)" },
-      100: { value: "rgba(249,227,26,0.10)" },
-      200: { value: "rgba(249,227,26,0.20)" },
+
+    rule: {
+      hairline: { value: "#1B1E21" },
+      divider: { value: "#1C1F22" },
+      row: { value: "#1E2124" },
+      list: { value: "#1F2225" },
+      structural: { value: "#24272A" },
+      panel: { value: "#2A2D30" },
+      control: { value: "#33373B" },
+      link: { value: "#3A3E42" },
+      accentDim: { value: "#3B3617" },
+      accent: { value: "#6B6320" },
     },
-    overlay: {
-      100: { value: "rgba(20,20,20,0.90)" },
+
+    ink: {
+      1: { value: "#E8E9E7" },
+      code: { value: "#C9CEC9" },
+      2: { value: "#9BA09D" },
+      3: { value: "#8E938F" },
+      4: { value: "#7E8380" },
+      label: { value: "#6B6F6D" },
+      5: { value: "#5B5F62" },
+      6: { value: "#4F5457" },
+      gutter: { value: "#3E4245" },
     },
-    navSurface: {
-      50: { value: "rgba(35,33,15,0.08)" },
-      100: { value: "rgba(35,33,15,0.82)" },
-      200: { value: "rgba(35,33,15,0.98)" },
+
+    accent: {
+      DEFAULT: { value: "#F9E31A" },
+      ink: { value: "#0C0D0E" },
+      hover: { value: "#FFFFFF" },
+      muted: { value: "#8A7F26" },
     },
-    scrim: {
-      100: { value: "rgba(0,0,0,0.25)" },
-      200: { value: "rgba(0,0,0,0.60)" },
+
+    status: {
+      ok: { value: "#8FBF7F" },
+      error: { value: "#D97B5A" },
+      warn: { value: "#D9C86C" },
+      info: { value: "#7FB3D5" },
+
+      errorSoft: { value: "#17100D" },
+      errorRule: { value: "#3C241A" },
     },
-    divider: {
-      100: { value: "rgba(38,38,38,1)" },
+
+    syn: {
+      plain: { value: "#C9CEC9" },
+      intrinsic: { value: "#F9E31A" },
+      string: { value: "#9FD39A" },
+      keyword: { value: "#7FB3D5" },
+      number: { value: "#D9A66C" },
+      comment: { value: "#61665F" },
     },
-    glow: {
-      blue: { value: "rgba(96,165,250,0.06)" },
-      orange: { value: "rgba(255,159,64,0.05)" },
-      brand: { value: "rgba(249,227,26,0.55)" },
-    },
+  },
+
+  fonts: {
+    mono: { value: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace" },
+    sans: { value: "'Helvetica Neue', Helvetica, 'Segoe UI', Arial, sans-serif" },
+    body: { value: "'Helvetica Neue', Helvetica, 'Segoe UI', Arial, sans-serif" },
+    heading: { value: "'Helvetica Neue', Helvetica, 'Segoe UI', Arial, sans-serif" },
+  },
+
+  durations: {
+    hover: { value: "140ms" },
+    reveal: { value: "240ms" },
+    result: { value: "320ms" },
+  },
+
+  easings: {
+    DEFAULT: { value: "ease" },
+  },
+
+  shadows: {
+    menu: { value: "0 18px 40px rgba(0, 0, 0, 0.55)" },
+  },
+
+  letterSpacings: {
+    control: { value: "0.12em" },
+    label: { value: "0.14em" },
+    labelWide: { value: "0.16em" },
+    display: { value: "-0.04em" },
+    heading: { value: "-0.028em" },
+  },
+
+  opacity: {
+    pending: { value: "0.3" },
+    disabled: { value: "0.42" },
+  },
+
+  spacing: {
+    appX: { value: "clamp(12px, 1.4vw, 18px)" },
+  },
+
+  sizes: {
+    header: { value: "46px" },
+  },
+
+  radii: {
+    none: { value: "0px" },
   },
 });
 
 const semanticTokens = defineSemanticTokens({
   colors: {
     brand: {
-      solid: { value: "{colors.brand.500}" },
-      contrast: { value: "{colors.brand.100}" },
-      fg: { value: "{colors.brand.700}" },
-      muted: { value: "{colors.brand.100}" },
-      subtle: { value: "{colors.brand.200}" },
-      emphasized: { value: "{colors.brand.300}" },
-      focusRing: { value: "{colors.brand.500}" },
+      solid: { value: "{colors.accent}" },
+      contrast: { value: "{colors.accent.ink}" },
+      fg: { value: "{colors.accent}" },
+      muted: { value: "{colors.rule.accentDim}" },
+      subtle: { value: "{colors.surface.accentSoft}" },
+      emphasized: { value: "{colors.accent.hover}" },
+      focusRing: { value: "{colors.accent}" },
     },
   },
 });
 
-export const system = createSystem(defaultConfig, {
+const keyframes = defineKeyframes({
+  reveal: { to: { opacity: 1 } },
+  cursor: { "from, to": { opacity: 1 } },
+});
+
+const config = defineConfig({
   theme: {
+    keyframes,
     tokens,
     semanticTokens,
+    textStyles,
+    layerStyles,
     recipes: {
       button: buttonRecipe,
+      band: bandRecipe,
+      input: inputRecipe,
+      textarea: textareaRecipe,
+      link: linkRecipe,
+      chip: chipRecipe,
+    },
+    slotRecipes: {
+      menu: menuSlotRecipe,
+      select: selectSlotRecipe,
+      dialog: dialogSlotRecipe,
+      drawer: drawerSlotRecipe,
+      popover: popoverSlotRecipe,
+      tabs: tabsSlotRecipe,
     },
   },
 });
+
+export const system = createSystem(defaultConfig, config);

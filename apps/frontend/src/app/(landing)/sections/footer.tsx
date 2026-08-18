@@ -1,196 +1,49 @@
-import type { IconType } from "react-icons";
-import { FaGithub } from "react-icons/fa";
-import { Box, Button, Container, Flex, Grid, GridItem, HStack, IconButton, Text, VStack } from "@chakra-ui/react";
-import { LuGlobe } from "react-icons/lu";
-import { MdMailOutline } from "react-icons/md";
-import Link from "next/link";
-import Logo from "@/components/Logo";
-import { tools } from "@/lib/tools";
-import { SITE_ORIGIN } from "@/lib/site";
-
-const displayFont = "'Plus Jakarta Sans', Inter, var(--font-sans), sans-serif";
-
-const SITE_URL = SITE_ORIGIN;
-const REPO_URL = "https://github.com/pavlof01/jslab";
-const PROFILE_URL = "https://github.com/pavlof01";
-const MAILTO_URL = "mailto:pavlof01@gmail.com";
-
-type FooterLink = { label: string; href: string; external?: boolean };
-
-const platformLinks: FooterLink[] = [
-  ...tools.map((tool) => ({ label: tool.label, href: tool.href })),
-  { label: "Repository", href: REPO_URL, external: true },
-  { label: "Infra Notes", href: `${REPO_URL}/blob/main/docs/infra.md`, external: true },
-];
-
-const communityLinks: FooterLink[] = [
-  { label: "Contributing", href: REPO_URL, external: true },
-  { label: "Issues", href: `${REPO_URL}/issues`, external: true },
-  { label: "Author Profile", href: PROFILE_URL, external: true },
-  { label: "Contact Us", href: MAILTO_URL, external: true },
-];
-
-const socialLinks: Array<{ label: string; href: string; icon: IconType }> = [
-  { label: "Website", href: SITE_URL, icon: LuGlobe },
-  { label: "GitHub", href: PROFILE_URL, icon: FaGithub },
-  { label: "Email", href: MAILTO_URL, icon: MdMailOutline },
-];
-
-type Props = {
-  items: FooterLink[];
-};
-
-// Every entry points at a shipped page, so these are real links. The previous
-// WIP treatment (pointer-events: none) made launched tools unreachable.
-const FooterList: React.FC<Props> = ({ items }) => {
-  return (
-    <VStack align="start" gap={{ base: 3, md: 4 }}>
-      {items.map((item) => (
-        <Button
-          key={item.label}
-          asChild
-          variant="plain"
-          px={0}
-          h="auto"
-          minW="auto"
-          justifyContent="flex-start"
-          color="whiteAlpha.500"
-          fontSize="sm"
-          fontWeight="500"
-          _hover={{ color: "brand.300" }}
-        >
-          {item.external ? (
-            <Link href={item.href} target="_blank" rel="noreferrer">
-              {item.label}
-            </Link>
-          ) : (
-            <Link href={item.href}>{item.label}</Link>
-          )}
-        </Button>
-      ))}
-    </VStack>
-  );
-};
+import Image from "next/image";
+import { Box, Container, Flex, Text } from "@chakra-ui/react";
 
 export const FooterSection: React.FC = () => {
   return (
-    <Box
-      as="footer"
-      bg="brand.800"
-      borderTopWidth="1px"
-      borderColor="rgba(255,255,255,0.05)"
-      px={{ base: 4, sm: 6, md: 20 }}
-      pt={{ base: 12, md: 16 }}
-      pb={{ base: 8, md: 10 }}
-    >
-      <Container maxW="7xl" px={0}>
-        <Grid
-          templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}
-          gap={{ base: 8, md: 12 }}
-          mb={{ base: 10, md: 16 }}
-        >
-          <GridItem colSpan={{ base: 1, md: 2 }}>
-            <Box mb={6}>
-              <Logo />
-            </Box>
-            <Text color="whiteAlpha.500" fontSize="sm" lineHeight="1.8" maxW="sm" mb={8}>
+    <Box layerStyle="section" as="footer">
+      <Container
+        maxW="1280px"
+        px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}
+        pt={{ base: 7, md: "44px" }}
+        pb={{ base: 10, md: "60px" }}
+      >
+        <Flex wrap="wrap" align="flex-end" justify="space-between" gap="24px 40px">
+          <Box maxW="52ch">
+            <Flex align="center" gap={{ base: 3, md: "18px" }}>
+              <Image
+                src="/jslab-mark.png"
+                alt=""
+                width={227}
+                height={256}
+                unoptimized
+                style={{ display: "block", height: "clamp(56px, 6vw, 84px)", width: "auto" }}
+              />
+              <Text
+                fontSize={{ base: "28px", md: "clamp(32px, 4vw, 44px)" }}
+                fontWeight="700"
+                letterSpacing="-0.04em"
+                lineHeight="1"
+              >
+                JSLab
+              </Text>
+            </Flex>
+
+            <Text textStyle="bodySm" mt={{ base: 3, md: "16px" }} color="ink.2">
               An open-source project dedicated to making the ECMAScript standard accessible to every developer.
             </Text>
-            <HStack gap={3} wrap="wrap">
-              {socialLinks.map((item) => (
-                <IconButton
-                  key={item.label}
-                  asChild
-                  aria-label={item.label}
-                  bg="transparent"
-                  borderWidth="1px"
-                  borderColor="rgba(255,255,255,0.08)"
-                  color="whiteAlpha.700"
-                  transition="color 0.2s ease, border-color 0.2s ease"
-                  _hover={{ color: "brand.300", borderColor: "rgba(249,227,26,0.3)" }}
-                >
-                  <Link href={item.href} target="_blank" rel="noreferrer">
-                    <item.icon />
-                  </Link>
-                </IconButton>
-              ))}
-            </HStack>
-          </GridItem>
+          </Box>
 
-          <GridItem>
-            <Text
-              mb={6}
-              color="rgba(249,227,26,0.8)"
-              fontFamily={displayFont}
-              fontSize="sm"
-              fontWeight="800"
-              letterSpacing="0.22em"
-              textTransform="uppercase"
-            >
-              Platform
+          <Flex direction="column" align={{ base: "flex-start", md: "flex-end" }} gap="10px">
+            <a data-jsl="link" href="mailto:pavlof01@gmail.com" style={{ fontFamily: "mono", fontSize: "11.5px" }}>
+              ✉ pavlof01@gmail.com
+            </a>
+            <Text textStyle="codeSm" letterSpacing="0.04em" color="ink.5">
+              © 2026 JSLab Project. Not affiliated with ECMA International.
             </Text>
-            <FooterList items={platformLinks} />
-          </GridItem>
-
-          <GridItem>
-            <Text
-              mb={6}
-              color="rgba(249,227,26,0.8)"
-              fontFamily={displayFont}
-              fontSize="sm"
-              fontWeight="800"
-              letterSpacing="0.22em"
-              textTransform="uppercase"
-            >
-              Community
-            </Text>
-            <FooterList items={communityLinks} />
-          </GridItem>
-        </Grid>
-
-        <Flex
-          borderTopWidth="1px"
-          borderColor="rgba(255,255,255,0.05)"
-          pt={8}
-          direction={{ base: "column", md: "row" }}
-          justify="space-between"
-          align={{ base: "flex-start", md: "center" }}
-          gap={4}
-          color="whiteAlpha.400"
-          fontSize="10px"
-          fontWeight="700"
-          letterSpacing="0.2em"
-          textTransform="uppercase"
-        >
-          <Text maxW={{ base: "full", md: "2xl" }}>
-            © {new Date().getFullYear()} JSLab Project. Not affiliated with ECMA International.
-          </Text>
-          <HStack gap={{ base: 4, md: 8 }} wrap="wrap">
-            <Button
-              asChild
-              variant="plain"
-              px={0}
-              h="auto"
-              minW="auto"
-              color="whiteAlpha.400"
-              _hover={{ color: "white" }}
-            >
-              <Link href={REPO_URL} target="_blank" rel="noreferrer">
-                Repository
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="plain"
-              px={0}
-              h="auto"
-              minW="auto"
-              color="whiteAlpha.400"
-              _hover={{ color: "white" }}
-            >
-              <Link href={MAILTO_URL}>Contact</Link>
-            </Button>
-          </HStack>
+          </Flex>
         </Flex>
       </Container>
     </Box>

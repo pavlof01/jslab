@@ -1,17 +1,22 @@
-:root {
-  --header-h: 72px;
+html {
+  scroll-behavior: smooth;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #23210f;
-    --foreground: #23210f;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 
+::selection {
+  background: var(--chakra-colors-accent);
+  color: var(--chakra-colors-accent-ink);
+}
+
 body {
-  background: var(--background);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--chakra-colors-surface-base);
+  color: var(--chakra-colors-ink-1);
+  font-family: var(--chakra-fonts-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -49,6 +54,26 @@ body {
   color: #fc8181;
 }
 
+@keyframes jsl-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes jsl-blink {
+    from,
+    to {
+      opacity: 1;
+    }
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -60,9 +85,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   @keyframes fade-in {
-    from {
-      opacity: 1;
-    }
+    from,
     to {
       opacity: 1;
     }

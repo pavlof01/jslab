@@ -1,11 +1,9 @@
 "use client";
 
-import { Box, CloseButton, HStack, Table, Text } from "@chakra-ui/react";
+import { Box, Button, DataList, Flex, Text } from "@chakra-ui/react";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
-// A d8 --print-bytecode line packs five unlabelled columns into one row, e.g.
-//   34 S> 0x2a1b00040226 @    0 : 0b 03    Ldar a1
 const COLUMNS: { sample: string; meaning: string }[] = [
   { sample: "34 S>", meaning: "Source byte offset. S> starts a statement, E> an expression." },
   { sample: "0x2a1b…", meaning: "Address of the bytecode array in the heap — differs on every run." },
@@ -14,37 +12,55 @@ const COLUMNS: { sample: string; meaning: string }[] = [
   { sample: "Ldar a1", meaning: "Mnemonic and operands — aN parameters, rN registers, [n] pool slots." },
 ];
 
-/**
- * Explains the V8 bytecode columns once. Dismissal is remembered so returning
- * users are not taught the same table on every visit.
- */
 const BytecodeLegend: React.FC = () => {
   const [dismissed, setDismissed] = useLocalStorage("v8-bytecode-legend-dismissed", false);
 
   if (dismissed) return null;
 
   return (
-    <Box bg="brandAlpha.50" borderRadius="md" px={4} py={3}>
-      <HStack justify="space-between" align="start" mb={2}>
-        <Text fontSize="xs" fontWeight="700" color="brand.300">
-          Reading a V8 bytecode line
+    <Box
+      borderBottomWidth="1px"
+      borderBottomColor="rule.row"
+      borderLeftWidth="2px"
+      borderLeftColor="rule.accentDim"
+      bg="surface.accentSoft"
+      pt="9px"
+      pb="11px"
+      px="clamp(10px, 1vw, 14px)"
+    >
+      <Flex wrap="wrap" align="baseline" justify="space-between" gap="4px 14px" mb="7px">
+        <Text textStyle="label" as="span" color="ink.label">
+          reading a V8 bytecode line
         </Text>
-        <CloseButton size="xs" aria-label="Dismiss bytecode legend" onClick={() => setDismissed(true)} />
-      </HStack>
-      <Table.Root size="sm" variant="outline" bg="transparent">
-        <Table.Body>
-          {COLUMNS.map((column) => (
-            <Table.Row key={column.sample} bg="transparent">
-              <Table.Cell fontFamily="mono" fontSize="xs" color="whiteAlpha.800" whiteSpace="nowrap" py={1}>
-                {column.sample}
-              </Table.Cell>
-              <Table.Cell fontSize="xs" color="whiteAlpha.500" py={1}>
-                {column.meaning}
-              </Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
+        <Button variant="quiet" fontSize="12px" onClick={() => setDismissed(true)} aria-label="Dismiss bytecode legend">
+          ×
+        </Button>
+      </Flex>
+
+      <DataList.Root display="grid" gap="3px" m={0}>
+        {COLUMNS.map((column) => (
+          <DataList.Item
+            key={column.sample}
+            display="grid"
+            gridTemplateColumns="minmax(0, 86px) minmax(0, 1fr)"
+            columnGap="12px"
+            alignItems="baseline"
+          >
+            <DataList.ItemLabel
+              textStyle="codeSm"
+              color="ink.code"
+              whiteSpace="nowrap"
+              overflow="hidden"
+              textOverflow="ellipsis"
+            >
+              {column.sample}
+            </DataList.ItemLabel>
+            <DataList.ItemValue textStyle="codeSm" m={0} lineHeight="1.5" color="ink.label" textWrap="pretty">
+              {column.meaning}
+            </DataList.ItemValue>
+          </DataList.Item>
+        ))}
+      </DataList.Root>
     </Box>
   );
 };

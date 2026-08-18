@@ -1,85 +1,66 @@
-import { BsRocketTakeoff } from "react-icons/bs";
-import { Box, Button, Container, Heading, Text, VStack } from "@chakra-ui/react";
-import Link from "next/link";
+import { Box, Container, Flex, Grid, Text } from "@chakra-ui/react";
 
-const displayFont = "'Plus Jakarta Sans', Inter, var(--font-sans), sans-serif";
-const mutedText = "rgba(255,255,255,0.62)";
+import { BytecodePreview } from "./hero/BytecodePreview";
+import { SpecTracePreview } from "./hero/SpecTracePreview";
 
 export function HeroSection() {
   return (
-    <Box
-      as="section"
-      position="relative"
-      px={{ base: 4, sm: 6, md: 8 }}
-      pt={{ base: 12, sm: 16, md: 24 }}
-      pb={{ base: 16, sm: 20, md: 24 }}
-      textAlign="center"
-    >
-      <Container maxW="full" px={0}>
-        <VStack gap={{ base: 8, md: 10 }}>
-          <Box
-            borderWidth="1px"
-            borderColor="rgba(255,255,255,0.12)"
-            bg="surface.200"
-            borderRadius="full"
-            px={4}
-            py={2}
-            backdropFilter="blur(16px)"
-          >
-            <Text
-              color="whiteAlpha.800"
-              fontSize="xs"
-              fontWeight="700"
-              letterSpacing="0.28em"
-              textTransform="uppercase"
-            >
-              Interactive ECMAScript Explorer
-            </Text>
-          </Box>
-
-          <Heading
+    <Box as="section" id="trace" scrollMarginTop="64px" bg="surface.base">
+      <Container maxW="1280px" px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}>
+        <Flex
+          direction="column"
+          align="center"
+          textAlign="center"
+          pt={{ base: 6, md: "34px" }}
+          pb={{ base: 7, md: "44px" }}
+        >
+          <Text
             as="h1"
-            fontFamily={displayFont}
-            fontSize={{ base: "2.75rem", sm: "3.5rem", md: "clamp(3.5rem, 7.3vw, 12rem)" }}
-            fontWeight="900"
-            letterSpacing="-0.05em"
-            lineHeight={{ base: "0.98", md: "1.02" }}
-            maxW="full"
-            width="full"
+            m={0}
+            display="flex"
+            flexWrap="wrap"
+            alignItems="baseline"
+            justifyContent="center"
+            columnGap="0.4em"
+            rowGap="0.1em"
+            fontSize={{ base: "24px", md: "clamp(26px, 3vw, 42px)" }}
+            lineHeight="1.1"
+            fontWeight="700"
+            letterSpacing="-0.04em"
           >
-            Understand the Engine.
-            <br />
-            <Text as="span" color="brand.300">
-              Explore the Spec.
+            <Text as="span">Read the spec</Text>
+            <Text as="span" aria-hidden="true" color="ink.5" fontSize="0.62em" fontWeight="400">
+              ⟶
             </Text>
-          </Heading>
-
-          <Text color={mutedText} fontSize={{ base: "sm", sm: "md", md: "lg" }} lineHeight="1.8" maxW="2xl">
-            Move from ECMA prose to visual execution traces, inspect abstract operations, and see how runtime behavior
-            unfolds step by step.
+            <Text as="span" textStyle="codeInline" color="ink.code" whiteSpace="nowrap">
+              watch it run
+              <Box
+                as="span"
+                display="inline-block"
+                w="0.42em"
+                h="0.78em"
+                ml="0.18em"
+                verticalAlign="baseline"
+                bg="accent"
+                css={{
+                  animation: "jsl-blink 1.05s steps(1, end) infinite",
+                  "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                }}
+              />
+            </Text>
           </Text>
+        </Flex>
 
-          <Button
-            asChild
-            colorPalette="brand"
-            variant="solid"
-            h="auto"
-            borderRadius="xl"
-            boxShadow="0 10px 40px -10px rgba(249,227,26,0.3)"
-            width={{ base: "full", sm: "auto" }}
-            fontSize={{ base: "md", sm: "lg", md: "xl" }}
-            fontWeight="800"
-            px={{ base: 6, sm: 8, md: 12 }}
-            py={{ base: 4, md: 5 }}
-            transition="transform 0.2s ease, opacity 0.2s ease"
-            _hover={{ opacity: 0.92, transform: "translateY(-2px)" }}
-          >
-            <Link href="/playground" style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem" }}>
-              Get Started Free
-              <BsRocketTakeoff />
-            </Link>
-          </Button>
-        </VStack>
+        <Grid
+          templateColumns="repeat(auto-fit, minmax(min(100%, 420px), 1fr))"
+          alignItems="stretch"
+          gap={{ base: 4, md: "22px" }}
+        >
+          <SpecTracePreview />
+          <BytecodePreview />
+        </Grid>
+
+        <Box pb={{ base: 10, md: "84px" }} />
       </Container>
     </Box>
   );

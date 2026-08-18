@@ -2,12 +2,6 @@ import type { SpecValue, TraceNode } from "./spec-runner";
 
 export type AlgoCategory = "typeConversion" | "equality";
 
-/** Each category has its own route. Single source of truth for nav + tabs. */
-export const CATEGORY_ROUTES: Record<AlgoCategory, string> = {
-  typeConversion: "/type-conversion",
-  equality: "/equality",
-};
-
 export const DEFAULTS_BY_CATEGORY: Record<AlgoCategory, { algo: string; input: string }> = {
   typeConversion: { algo: "ToNumber", input: '{ valueOf: () => "1" }' },
   equality: { algo: "BinaryExpression", input: "[] == !{}" },
@@ -45,4 +39,16 @@ export const EMPTY_FUNCTION_CATALOG: FunctionCatalog = {
 
 export function getDefaultsForCategory(category: AlgoCategory) {
   return DEFAULTS_BY_CATEGORY[category];
+}
+
+export function fallbackInitialData(category: AlgoCategory): VisualizerInitialData {
+  const defaults = DEFAULTS_BY_CATEGORY[category];
+  return {
+    category,
+    selectedAlgo: defaults.algo,
+    input: defaults.input,
+    specHtml: "",
+    trace: { root: null, result: undefined, effectiveAlgoId: null, detectedOperator: null, error: null },
+    functionCatalog: EMPTY_FUNCTION_CATALOG,
+  };
 }

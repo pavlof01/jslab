@@ -8,14 +8,15 @@ const config = [
   },
   ...next,
   {
-    // Legacy hotspots and Next 16's newer React-compiler strictness rules are
-    // kept as warnings so the gate is additive rather than blocking on
-    // pre-existing patterns — tighten to "error" as they get cleaned up.
     rules: {
-      "react/no-array-index-key": "warn",
-      "react-hooks/exhaustive-deps": "warn",
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/refs": "warn",
+      "react/no-array-index-key": "error",
+      "react-hooks/exhaustive-deps": "error",
+      "react-hooks/set-state-in-effect": "error",
+      "react-hooks/refs": "error",
+      "no-unused-disable": "off",
+    },
+    linterOptions: {
+      reportUnusedDisableDirectives: "error",
     },
   },
 ];

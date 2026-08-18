@@ -1,4 +1,5 @@
-/** Plain JSC bytecode opcodes and their descriptions. */
+import { createDescriber, fromLiterals, fromTable, stripEdges, type TokenDescriber } from "./resolver";
+
 export const OPCODE_INFO = {
   // Function prologue / epilogue
   enter: "Establish a new stack frame for the current function.",
@@ -250,9 +251,7 @@ const ECMA_MODE_INFO: Record<string, string> = {
   SloppyMode: "Sloppy mode (non-strict semantics).",
 };
 
-function stripEdgePunctuation(token: string): string {
-  return token.replace(/^[([{]+/, "").replace(/[)\]}.,]+$/, "");
-}
+const strip = (token: string) => stripEdges(token);
 
 function describeRegister(token: string): string | undefined {
   if (token === "this") return "Implicit 'this' value for the current function/frame.";
@@ -302,7 +301,7 @@ function describeKeyValueToken(token: string): string | undefined {
 
   const key = m[1];
   const rawValue = m[2] ?? "";
-  const value = stripEdgePunctuation(rawValue.trim());
+  const value = strip(rawValue.trim());
 
   const keyInfo =
     OPERAND_KEY_INFO[key] ??
@@ -341,66 +340,39 @@ function describeKeyValueToken(token: string): string | undefined {
   return `${keyInfo}\nValue: ${value}`;
 }
 
-export function getTokenInfo(
-  rawToken: string | null | undefined,
-  options: { nextToken?: string | null } = {},
-): string | undefined {
-  if (!rawToken) return undefined;
+const LITERALS: Record<string, string> = {
+  "->": "Resolved jump arrow to the target bytecode offset shown next.",
+  Undefined: "JavaScript 'undefined' value.",
+  Null: "JavaScript 'null' value.",
+  True: "Boolean true.",
+  False: "Boolean false.",
+  Int32: "32-bit integer constant marker in JSC disassembly.",
+  String: "String constant marker in JSC disassembly.",
+  Cell: "JSC internal heap cell (pointer-tagged) marker in disassembly.",
+  Object: "Object constant marker in JSC disassembly.",
+  OperandTypes: "Type feedback tuple used by JSC for optimizing operations.",
+};
 
-  const key = stripEdgePunctuation(rawToken.trim());
-  if (!key) return undefined;
-
-  const opcode = getOpcodeInfo(key);
-  if (opcode) return opcode;
-
-  if (key.endsWith(":") && options.nextToken) {
-    const next = stripEdgePunctuation(options.nextToken.trim());
-    if (next) {
-      const combined = `${key}${next}`;
-      const combinedInfo = describeKeyValueToken(combined);
-      if (combinedInfo) return combinedInfo;
-    }
-  }
-
-  const kv = describeKeyValueToken(key);
-  if (kv) return kv;
-
-  const reg = describeRegister(key);
-  if (reg) return reg;
-
-  const idx = describeIndexRef(key);
-  if (idx) return idx;
-
-  const angle = describeAngleBracket(key);
-  if (angle) return angle;
-
-  const flag = FLAG_INFO[key];
-  if (flag) return flag;
-
-  const resolveType = RESOLVE_TYPE_INFO[key];
-  if (resolveType) return resolveType;
-
-  const errType = ERROR_TYPE_INFO[key];
-  if (errType) return errType;
-
-  const ecmaMode = ECMA_MODE_INFO[key];
-  if (ecmaMode) return ecmaMode;
-
+function describePattern(key: string): string | undefined {
   if (/^#\d+$/.test(key)) return `Basic-block reference ${key}.`;
-  if (key === "->") return "Resolved jump arrow to the target bytecode offset shown next.";
-
-  if (key === "Undefined") return "JavaScript 'undefined' value.";
-  if (key === "Null") return "JavaScript 'null' value.";
-  if (key === "True") return "Boolean true.";
-  if (key === "False") return "Boolean false.";
-
-  if (key === "Int32") return "32-bit integer constant marker in JSC disassembly.";
-  if (key === "String") return "String constant marker in JSC disassembly.";
-  if (key === "Cell") return "JSC internal heap cell (pointer-tagged) marker in disassembly.";
-  if (key === "Object") return "Object constant marker in JSC disassembly.";
-  if (key === "OperandTypes") return "Type feedback tuple used by JSC for optimizing operations.";
-
   if (/^0x[0-9A-Fa-f]+$/.test(key)) return "Hex address/pointer printed by the JSC disassembler.";
-
   return undefined;
 }
+
+export const describeToken: TokenDescriber = createDescriber({
+  strip,
+  steps: [
+    getOpcodeInfo,
+    { joinNext: describeKeyValueToken },
+    describeKeyValueToken,
+    describeRegister,
+    describeIndexRef,
+    describeAngleBracket,
+    fromTable(FLAG_INFO),
+    fromTable(RESOLVE_TYPE_INFO),
+    fromTable(ERROR_TYPE_INFO),
+    fromTable(ECMA_MODE_INFO),
+    fromLiterals(LITERALS),
+    describePattern,
+  ],
+});

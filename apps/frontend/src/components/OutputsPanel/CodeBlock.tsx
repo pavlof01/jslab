@@ -5,49 +5,15 @@ import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
 import { Box, BoxProps, Skeleton, Stack } from "@chakra-ui/react";
 
-import hermesbc from "./tm/hermes-bytecode.tmLanguage.json";
-import jscbc from "./tm/jsc-bytecode.tmLanguage.json";
-import smbc from "./tm/spidermonkey-bytecode.tmLanguage.json";
-import v8bc from "./tm/v8-bytecode.tmLanguage.json";
 import DefaultEmptyCodeBlockState, {
   Props as DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";
-import { EngineKey } from "@/lib/types";
+import { engineLang, type BytecodeLang } from "@/lib/engines";
+import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
+import type { EngineKey } from "@/lib/types";
 import CodeDisplay from "./components/Code";
 import { compareOutputs } from "@/utils/diff-bytecode";
 import CopyButton from "./components/CopyButton";
-
-type CustomLanguages = "v8bc" | "jscbc" | "smbc" | "hermesbc";
-const THEME = "ayu-dark";
-
-const langHighlighterByEngineKey: Record<EngineKey, CustomLanguages> = {
-  [EngineKey.v8]: "v8bc",
-  [EngineKey.jsc]: "jscbc",
-  [EngineKey.sm]: "smbc",
-  [EngineKey.hermes]: "hermesbc",
-};
-
-let highlighterPromise: Promise<Highlighter> | null = null;
-async function getHighlighter() {
-  if (!highlighterPromise) {
-    highlighterPromise = (async () => {
-      const { createHighlighter } = await import("shiki/bundle/web");
-      const highlighter = await createHighlighter({
-        langs: [],
-        themes: [THEME],
-      });
-
-      await Promise.all([
-        highlighter.loadLanguage(v8bc),
-        highlighter.loadLanguage(jscbc),
-        highlighter.loadLanguage(smbc),
-        highlighter.loadLanguage(hermesbc),
-      ]);
-      return highlighter;
-    })();
-  }
-  return highlighterPromise;
-}
 
 const normalizeForDiff = (line: string) =>
   line
@@ -58,8 +24,8 @@ const normalizeForDiff = (line: string) =>
     .replace(/^(\s*)\d+:(?=\s+[A-Za-z_])/, "$1<OFF>:")
     .replace(/\s+/g, " ");
 
-export async function highlight(code: string, lang: BundledLanguage | CustomLanguages, prevCode?: string) {
-  const highlighter = await getHighlighter();
+export async function highlight(code: string, lang: BundledLanguage | BytecodeLang, prevCode?: string) {
+  const highlighter = await getBytecodeHighlighter();
   const shikiLang = lang as BundledLanguage;
 
   const currentRaw = await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME });
@@ -75,7 +41,6 @@ export async function highlight(code: string, lang: BundledLanguage | CustomLang
   return { tokens: diffTokens, highlighter };
 }
 
-// Ragged widths so the placeholder reads as lines of disassembly, not a block.
 const SKELETON_LINE_WIDTHS = ["45%", "72%", "60%", "80%", "38%", "66%"];
 
 interface Props {
@@ -106,7 +71,7 @@ export const HighlightedCode = memo(function HighlightedCode({
       return;
     }
 
-    const lang = langHighlighterByEngineKey[engineKey];
+    const lang = engineLang(engineKey);
     let cancelled = false;
     void highlight(out, lang, showDiff ? prev : "").then((node) => {
       if (!cancelled) {
@@ -120,8 +85,6 @@ export const HighlightedCode = memo(function HighlightedCode({
     };
   }, [engineKey, out, prev, showDiff, isLoading]);
 
-  // While a run is in flight the effect above clears the tokens, so without this
-  // the pane would fall through to the "no output yet" empty state mid-run.
   if (isLoading) {
     return (
       <Stack flex={1} gap={2} p={4} aria-busy="true" aria-label="Running engine">
