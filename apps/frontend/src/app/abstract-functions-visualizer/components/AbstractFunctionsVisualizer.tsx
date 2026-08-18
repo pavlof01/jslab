@@ -1,22 +1,59 @@
 "use client";
 
-import {
-  Box,
-  Grid,
-  IconButton,
-  DrawerRoot,
-  DrawerBackdrop,
-  DrawerPositioner,
-  DrawerContent,
-  DrawerBody,
-  DrawerCloseTrigger,
-} from "@chakra-ui/react";
-import { LuBookOpen, LuX } from "react-icons/lu";
+import { useMemo } from "react";
+import { Box, createListCollection, Portal, Select } from "@chakra-ui/react";
 
-import { ExecutionTreePanel } from "@/app/abstract-functions-visualizer/components/ExecutionTreePanel";
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
+import { SpecTraceScreen, type SpecTracePreset } from "@/app/abstract-functions-visualizer/components/SpecTraceScreen";
 import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
+import { VisualizerStoreProvider } from "@/app/abstract-functions-visualizer/StoreProvider";
+import { fallbackInitialData } from "@/app/abstract-functions-visualizer/model";
+import { HINTS, PRESETS } from "./categoryContent";
 import type { AlgoCategory, VisualizerInitialData } from "@/app/abstract-functions-visualizer/model";
+
+function AlgoPicker({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (next: string) => void;
+}) {
+  const collection = useMemo(() => createListCollection({ items: options }), [options]);
+
+  return (
+    <Select.Root
+      collection={collection}
+      size="sm"
+      width="auto"
+      value={[value]}
+      onValueChange={(event) => onChange(event.value[0])}
+      positioning={{ sameWidth: false }}
+    >
+      <Select.Control>
+        <Select.Trigger aria-label="Abstract operation to trace">
+          <Select.ValueText />
+        </Select.Trigger>
+        <Select.IndicatorGroup>
+          <Select.Indicator />
+        </Select.IndicatorGroup>
+      </Select.Control>
+      <Portal>
+        <Select.Positioner>
+          <Select.Content maxH="min(60dvh, 420px)">
+            {collection.items.map((item) => (
+              <Select.Item item={item} key={item}>
+                <Select.ItemText>{item}</Select.ItemText>
+                <Select.ItemIndicator />
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Positioner>
+      </Portal>
+    </Select.Root>
+  );
+}
 
 export function AbstractFunctionsVisualizer({
   initialCategory = "typeConversion",
@@ -25,89 +62,76 @@ export function AbstractFunctionsVisualizer({
   initialCategory?: AlgoCategory;
   initialData?: VisualizerInitialData;
 }) {
-  const visualizer = useVisualizerRuntime(initialCategory, initialData);
+  const resolved = initialData ?? fallbackInitialData(initialCategory);
 
   return (
-    <>
-      {/* Mobile FAB — rendered outside overflow:hidden container so fixed positioning works correctly */}
-      <Box display={{ base: "flex", lg: "none" }} position="fixed" top={100} right={6} zIndex={40}>
-        <IconButton
-          aria-label="Open ECMA spec"
-          size="sm"
-          variant="outline"
-          bg="overlay.100"
-          backdropFilter="blur(8px)"
-          borderColor="rgba(255,255,255,0.12)"
-          onClick={() => visualizer.setSpecDrawerOpen(true)}
-        >
-          <LuBookOpen />
-        </IconButton>
-      </Box>
+    <VisualizerStoreProvider initialData={resolved}>
+      <VisualizerScreen initialData={resolved} />
+    </VisualizerStoreProvider>
+  );
+}
 
-      <Box bg="background.300" h="calc(100dvh - var(--header-h))" overflow="hidden">
-        {/* Mobile drawer for spec panel */}
-        <Box display={{ base: "flex", lg: "none" }}>
-          <DrawerRoot
-            open={visualizer.specDrawerOpen}
-            onOpenChange={(e) => visualizer.setSpecDrawerOpen(e.open)}
-            placement="start"
-            size="xs"
-          >
-            <DrawerBackdrop />
-            <DrawerPositioner>
-              <DrawerContent>
-                <DrawerBody p={0} display="flex" flexDir="column" h="100%">
-                  <Box display="flex" justifyContent="flex-end" p={2}>
-                    <DrawerCloseTrigger asChild>
-                      <IconButton aria-label="Close spec panel" size="sm" variant="ghost">
-                        <LuX />
-                      </IconButton>
-                    </DrawerCloseTrigger>
-                  </Box>
-                  <Box flex={1} minH={0} overflow="hidden">
-                    <EcmaSpecPanel
-                      flatEntries={visualizer.flatEntries}
-                      selectedIndex={visualizer.selectedIndex}
-                      specHtml={visualizer.specHtml}
-                    />
-                  </Box>
-                </DrawerBody>
-              </DrawerContent>
-            </DrawerPositioner>
-          </DrawerRoot>
-        </Box>
+function VisualizerScreen({ initialData }: { initialData: VisualizerInitialData }) {
+  const {
+    root,
+    error,
+    isTracing,
+    flatEntries,
+    specHtml,
+    effectiveAlgoId,
+    category,
+    selectedAlgo,
+    traceInputRaw,
+    traceInputExpression,
+    functionOptions,
+    selectedIndex,
+    isPlaying,
+    onSelectIndex,
+    togglePlay,
+    pickExpression,
+    setSelectedAlgo,
+    setTraceInputRaw,
+    commitTraceInput,
+  } = useVisualizerRuntime(initialData);
 
-        <Grid templateColumns={{ base: "1fr", lg: "360px 1fr" }} h="full" overflow="hidden">
-          {/* Desktop: spec panel in grid */}
-          <Box minH={0} overflow="hidden" display={{ base: "none", lg: "block" }}>
-            <EcmaSpecPanel
-              flatEntries={visualizer.flatEntries}
-              selectedIndex={visualizer.selectedIndex}
-              specHtml={visualizer.specHtml}
-            />
-          </Box>
+  const presets: SpecTracePreset[] = useMemo(
+    () =>
+      PRESETS[category].map((label) => ({
+        label,
+        active: label === traceInputExpression,
+        onPick: () => pickExpression(label),
+      })),
+    [category, traceInputExpression, pickExpression],
+  );
 
-          <Box position="relative" minH={0} h="100%">
-            <ExecutionTreePanel
-              root={visualizer.root}
-              error={visualizer.error}
-              flatEntries={visualizer.flatEntries}
-              selectedIndex={visualizer.selectedIndex}
-              category={visualizer.category}
-              selectedAlgo={visualizer.selectedAlgo}
-              detectedOperator={visualizer.detectedOperator}
-              effectiveAlgoId={visualizer.effectiveAlgoId}
-              onAlgoChange={visualizer.setSelectedAlgo}
-              userInputRaw={visualizer.traceInputRaw}
-              onSelectIndex={visualizer.onSelectIndex}
-              onInputChange={visualizer.setTraceInputRaw}
-              onInputCommit={visualizer.commitTraceInput}
-              functionOptions={visualizer.functionOptions}
-              functionMeta={visualizer.functionMeta}
-            />
-          </Box>
-        </Grid>
-      </Box>
-    </>
+  const algoPicker = useMemo(
+    () =>
+      category === "typeConversion" ? (
+        <AlgoPicker value={selectedAlgo} options={functionOptions} onChange={setSelectedAlgo} />
+      ) : undefined,
+    [category, functionOptions, selectedAlgo, setSelectedAlgo],
+  );
+
+  return (
+    <Box as="main" bg="surface.base" minH="calc(100dvh - {sizes.header})">
+      <SpecTraceScreen
+        root={root}
+        error={error}
+        tracing={isTracing}
+        selectedIndex={selectedIndex}
+        stepCount={flatEntries.length}
+        isPlaying={isPlaying}
+        onSelectIndex={onSelectIndex}
+        onTogglePlay={togglePlay}
+        specId={effectiveAlgoId ?? selectedAlgo}
+        expression={traceInputRaw}
+        onExpressionChange={setTraceInputRaw}
+        onTrace={commitTraceInput}
+        hint={HINTS[category]}
+        presets={presets}
+        extraControl={algoPicker}
+        specPane={<EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />}
+      />
+    </Box>
   );
 }

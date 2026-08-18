@@ -1,3 +1,5 @@
+import { createDescriber, fromTable, stripEdges, type TokenDescriber } from "./resolver";
+
 /** SpiderMonkey bytecode opcodes and token descriptions (text disassembly). */
 export const OPCODE_INFO = {
   // Environments / scopes
@@ -57,14 +59,9 @@ export const OPCODE_INFO = {
 
 export type SpiderMonkeyOpcode = keyof typeof OPCODE_INFO;
 
-function stripEdgePunctuation(token: string): string {
-  // Keep ":" so tokens like "ic:" can be combined with the next numeric token.
-  return token.replace(/^[([{]+/, "").replace(/[)\]}.,]+$/, "");
-}
+const strip = (token: string) => stripEdges(token);
 
-function describeOpcode(token: string): string | undefined {
-  return (OPCODE_INFO as Record<string, string>)[token];
-}
+const describeOpcode = fromTable(OPCODE_INFO as Record<string, string>);
 
 function describeOffset(token: string): string | undefined {
   // Instruction offsets are printed as 5 digits: 00000, 00344, etc.
@@ -104,46 +101,15 @@ function describeStackCommentTag(token: string): string | undefined {
   return undefined;
 }
 
-export function getTokenInfo(
-  rawToken: string | null | undefined,
-  options: { nextToken?: string | null } = {},
-): string | undefined {
-  if (!rawToken) return undefined;
-
-  const raw = rawToken.trim();
-  if (!raw) return undefined;
-
-  const key = stripEdgePunctuation(raw);
-  if (!key) return undefined;
-
-  const opcode = describeOpcode(key);
-  if (opcode) return opcode;
-
-  // Combine tokens like "ic:" + "7" → "ic:7"
-  if (raw.endsWith(":") && options.nextToken) {
-    const next = stripEdgePunctuation(options.nextToken.trim());
-    if (/^\d+$/.test(next)) {
-      const combined = `${key}${next}`;
-      const kv = describeInlineCacheKeyValue(combined);
-      if (kv) return kv;
-    }
-  }
-
-  const kv = describeInlineCacheKeyValue(key);
-  if (kv) return kv;
-
-  const off = describeOffset(key);
-  if (off) return off;
-
-  const label = describeLabel(key);
-  if (label) return label;
-
-  const qs = describeQuotedString(key);
-  if (qs) return qs;
-
-  const tag = describeStackCommentTag(key);
-  if (tag) return tag;
-
-  return undefined;
-}
-
+export const describeToken: TokenDescriber = createDescriber({
+  strip,
+  steps: [
+    describeOpcode,
+    { joinNext: describeInlineCacheKeyValue, onlyDigits: true },
+    describeInlineCacheKeyValue,
+    describeOffset,
+    describeLabel,
+    describeQuotedString,
+    describeStackCommentTag,
+  ],
+});

@@ -1,9 +1,3 @@
-/**
- * The snapshot codec is what an article URL is made of: if it round-trips
- * wrong, every embed already pasted into a published post breaks. It also has
- * to survive a truncated or hand-edited param without throwing, because that is
- * what a copy-paste through a CMS eventually produces.
- */
 import { describe, expect, it } from "@jest/globals";
 import { EngineKey } from "@/lib/types";
 import {

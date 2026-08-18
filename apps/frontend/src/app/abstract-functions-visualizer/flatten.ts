@@ -1,17 +1,10 @@
 import type { CallStackFrame, TraceNode, TraceStep } from "./spec-runner";
 
-/**
- * Flat enumeration of every step in the trace tree, used for keyboard
- * navigation, the EcmaSpecPanel highlight pass, and breadcrumb/callStack
- * derivation. Each entry carries its position in the tree (`path`) so the
- * recursive renderer can mark active rows by string equality.
- */
 export type FlatEntry = {
   index: number;
   /** Dotted path through the tree (e.g. "0.2.1" = step 1 inside step 0 inside step 2). */
   path: string;
   step: TraceStep;
-  /** Algorithm that owns this step. */
   algoId: string;
   /** Stack of algorithms from root down to (and including) the owning algo. */
   callStack: CallStackFrame[];

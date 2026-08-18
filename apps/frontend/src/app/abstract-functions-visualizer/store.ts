@@ -1,8 +1,8 @@
-import { create } from "zustand";
+import { createStore } from "zustand/vanilla";
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import { flattenTrace, type FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
+import { executeTrace } from "./traceApi";
 import {
-  CATEGORY_ROUTES,
   DEFAULTS_BY_CATEGORY,
   EMPTY_FUNCTION_CATALOG,
   type AlgoCategory,
@@ -11,24 +11,25 @@ import {
   type VisualizerInitialData,
 } from "./model";
 
-export { CATEGORY_ROUTES, DEFAULTS_BY_CATEGORY };
+export { DEFAULTS_BY_CATEGORY };
 export type { AlgoCategory, FunctionCatalog, FunctionMetaShape, VisualizerInitialData };
 
 const DEFAULT_CATEGORY: AlgoCategory = "typeConversion";
 const DEFAULT_ALGO = DEFAULTS_BY_CATEGORY[DEFAULT_CATEGORY].algo;
 const DEFAULT_INPUT = DEFAULTS_BY_CATEGORY[DEFAULT_CATEGORY].input;
 
-interface VisualizerStore {
+export interface VisualizerStore {
   // ── Trace ──────────────────────────────────────────────────────────────────
   root: TraceNode | null;
   flatEntries: FlatEntry[];
   resultValue: SpecValue | undefined;
   error: string | null;
+  /** A trace request is in flight — the screen shows it as such. */
+  isTracing: boolean;
   showSkipped: boolean;
 
   // ── Spec panel ─────────────────────────────────────────────────────────────
   specHtml: string;
-  specDrawerOpen: boolean;
   functionOptions: string[];
   functionMeta: Record<string, FunctionMetaShape>;
 
@@ -41,6 +42,7 @@ interface VisualizerStore {
   detectedOperator: string | null;
   traceInputRaw: string;
   traceInputExpression: string;
+  traceRequestId: number;
 
   // ── Playback ───────────────────────────────────────────────────────────────
   selectedIndex: number;
@@ -58,7 +60,6 @@ interface VisualizerStore {
   setError: (e: string | null) => void;
   setShowSkipped: (v: boolean) => void;
   setSpecHtml: (html: string) => void;
-  setSpecDrawerOpen: (open: boolean) => void;
   setFunctionCatalog: (catalog: FunctionCatalog) => void;
   setCategory: (c: AlgoCategory) => void;
   setSelectedAlgo: (algo: string) => void;
@@ -69,159 +70,153 @@ interface VisualizerStore {
   onSelectIndex: (i: number) => void;
   onSelectPath: (path: string) => void;
   tickPlayback: () => void;
-  runNow: () => void;
+  runNow: () => Promise<void>;
   initializeFromServer: (data: VisualizerInitialData) => void;
 }
 
-export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
-  root: null,
-  flatEntries: [],
-  resultValue: undefined,
-  error: null,
-  showSkipped: true,
-  specHtml: "",
-  specDrawerOpen: false,
-  functionOptions: EMPTY_FUNCTION_CATALOG.available_functions,
-  functionMeta: EMPTY_FUNCTION_CATALOG.function_meta,
-  category: DEFAULT_CATEGORY,
-  selectedAlgo: DEFAULT_ALGO,
-  effectiveAlgoId: null,
-  detectedOperator: null,
-  traceInputRaw: DEFAULT_INPUT,
-  traceInputExpression: DEFAULT_INPUT,
-  selectedIndex: 0,
-  isPlaying: false,
-  collapsedBlocks: {},
+export type VisualizerStoreApi = ReturnType<typeof createVisualizerStore>;
 
-  maxIndex: () => Math.max(0, get().flatEntries.length - 1),
+export function createVisualizerStore(initial?: VisualizerInitialData) {
+  let latestTraceToken = 0;
 
-  setRoot: (root) =>
-    set({
-      root,
-      flatEntries: root ? flattenTrace(root) : [],
-      selectedIndex: 0,
-      collapsedBlocks: {},
-    }),
+  const store = createStore<VisualizerStore>()((set, get) => ({
+    root: null,
+    flatEntries: [],
+    resultValue: undefined,
+    error: null,
+    isTracing: false,
+    showSkipped: true,
+    specHtml: "",
+    functionOptions: EMPTY_FUNCTION_CATALOG.available_functions,
+    functionMeta: EMPTY_FUNCTION_CATALOG.function_meta,
+    category: DEFAULT_CATEGORY,
+    selectedAlgo: DEFAULT_ALGO,
+    effectiveAlgoId: null,
+    detectedOperator: null,
+    traceInputRaw: DEFAULT_INPUT,
+    traceInputExpression: DEFAULT_INPUT,
+    traceRequestId: 0,
+    selectedIndex: 0,
+    isPlaying: false,
+    collapsedBlocks: {},
 
-  setResultValue: (resultValue) => set({ resultValue }),
-  setError: (error) => set({ error }),
-  setShowSkipped: (showSkipped) => set({ showSkipped }),
-  setSpecHtml: (specHtml) => set({ specHtml }),
-  setSpecDrawerOpen: (specDrawerOpen) => set({ specDrawerOpen }),
-  setFunctionCatalog: (catalog) =>
-    set({
-      functionOptions: catalog.available_functions,
-      functionMeta: catalog.function_meta,
-    }),
-  setCategory: (category) => {
-    const def = DEFAULTS_BY_CATEGORY[category];
-    set({
-      category,
-      selectedAlgo: def.algo,
-      effectiveAlgoId: null,
-      detectedOperator: null,
-      traceInputRaw: def.input,
-      traceInputExpression: def.input,
-      root: null,
-      flatEntries: [],
-      selectedIndex: 0,
-      collapsedBlocks: {},
-      error: null,
-    });
-  },
-  setSelectedAlgo: (selectedAlgo) => set({ selectedAlgo }),
-  setTraceInputRaw: (traceInputRaw) => set({ traceInputRaw }),
-  commitTraceInput: (traceInputExpression) => set({ traceInputExpression }),
+    maxIndex: () => Math.max(0, get().flatEntries.length - 1),
 
-  setIsPlaying: (v) =>
-    set((s) => ({ isPlaying: typeof v === "function" ? v(s.isPlaying) : v })),
+    setRoot: (root) =>
+      set({
+        root,
+        flatEntries: root ? flattenTrace(root) : [],
+        selectedIndex: 0,
+        collapsedBlocks: {},
+      }),
 
-  toggleBlock: (path) =>
-    set((s) => ({
-      collapsedBlocks: { ...s.collapsedBlocks, [path]: !s.collapsedBlocks[path] },
-    })),
+    setResultValue: (resultValue) => set({ resultValue }),
+    setError: (error) => set({ error }),
+    setShowSkipped: (showSkipped) => set({ showSkipped }),
+    setSpecHtml: (specHtml) => set({ specHtml }),
+    setFunctionCatalog: (catalog) =>
+      set({
+        functionOptions: catalog.available_functions,
+        functionMeta: catalog.function_meta,
+      }),
+    setCategory: (category) => {
+      const def = DEFAULTS_BY_CATEGORY[category];
+      set({
+        category,
+        selectedAlgo: def.algo,
+        effectiveAlgoId: null,
+        detectedOperator: null,
+        traceInputRaw: def.input,
+        traceInputExpression: def.input,
+        root: null,
+        flatEntries: [],
+        selectedIndex: 0,
+        collapsedBlocks: {},
+        error: null,
+      });
+    },
+    setSelectedAlgo: (selectedAlgo) => set({ selectedAlgo }),
+    setTraceInputRaw: (traceInputRaw) => set({ traceInputRaw }),
+    commitTraceInput: (traceInputExpression) =>
+      set((state) => ({ traceInputExpression, traceRequestId: state.traceRequestId + 1 })),
 
-  onSelectIndex: (i) => {
-    const max = get().maxIndex();
-    set({ isPlaying: false, selectedIndex: Math.max(0, Math.min(max, i)) });
-  },
+    setIsPlaying: (v) => set((s) => ({ isPlaying: typeof v === "function" ? v(s.isPlaying) : v })),
 
-  onSelectPath: (path) => {
-    const { flatEntries } = get();
-    const i = flatEntries.findIndex((e) => e.path === path);
-    if (i >= 0) set({ isPlaying: false, selectedIndex: i });
-  },
+    toggleBlock: (path) =>
+      set((s) => ({
+        collapsedBlocks: { ...s.collapsedBlocks, [path]: !s.collapsedBlocks[path] },
+      })),
 
-  tickPlayback: () => {
-    const { selectedIndex, flatEntries, setIsPlaying } = get();
-    if (selectedIndex >= flatEntries.length - 1) {
+    onSelectIndex: (i) => {
+      const max = get().maxIndex();
+      set({ isPlaying: false, selectedIndex: Math.max(0, Math.min(max, i)) });
+    },
+
+    onSelectPath: (path) => {
+      const { flatEntries } = get();
+      const i = flatEntries.findIndex((e) => e.path === path);
+      if (i >= 0) set({ isPlaying: false, selectedIndex: i });
+    },
+
+    tickPlayback: () => {
+      const { selectedIndex, flatEntries, setIsPlaying } = get();
+      if (selectedIndex >= flatEntries.length - 1) {
+        setIsPlaying(false);
+      } else {
+        set({ selectedIndex: selectedIndex + 1 });
+      }
+    },
+
+    runNow: async () => {
+      const { category, selectedAlgo, traceInputExpression, setIsPlaying, setError, setRoot, setResultValue } = get();
       setIsPlaying(false);
-    } else {
-      set({ selectedIndex: selectedIndex + 1 });
-    }
-  },
+      setError(null);
+      const token = ++latestTraceToken;
+      set({ isTracing: true });
 
-  runNow: () => {
-    const { category, selectedAlgo, traceInputExpression, setIsPlaying, setError, setRoot, setResultValue } = get();
-    setIsPlaying(false);
-    setError(null);
-
-    const url =
-      category === "equality"
-        ? "/api/trace/execute/equality"
-        : "/api/trace/execute/type-conversion";
-    const body =
-      category === "equality"
-        ? { input: traceInputExpression }
-        : { functionName: selectedAlgo, input: traceInputExpression };
-
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-      .then((r) => {
-        if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e?.error ?? `trace-service error ${r.status}`)));
-        return r.json();
-      })
-      .then((data) => {
-        if (!data.success) throw new Error(data.error ?? "trace-service returned failure");
-        setRoot((data.root as TraceNode | undefined) ?? null);
-        setResultValue(data.result as SpecValue | undefined);
+      try {
+        const trace = await executeTrace(category, selectedAlgo, traceInputExpression);
+        if (token !== latestTraceToken) return;
+        setRoot(trace.root);
+        setResultValue(trace.result);
         set({
-          effectiveAlgoId: (data.effectiveAlgoId as string | undefined) ?? null,
-          detectedOperator: (data.detectedOperator as string | undefined) ?? null,
+          effectiveAlgoId: trace.effectiveAlgoId,
+          detectedOperator: trace.detectedOperator,
+          isTracing: false,
         });
-      })
-      .catch((e: unknown) => {
-        const msg = e instanceof Error ? e.message : "Unknown executor error";
-        setError(msg);
+      } catch (error) {
+        if (token !== latestTraceToken) return;
+        setError(error instanceof Error ? error.message : "Unknown executor error");
         setRoot(null);
         setResultValue(undefined);
-        set({ effectiveAlgoId: null, detectedOperator: null });
+        set({ effectiveAlgoId: null, detectedOperator: null, isTracing: false });
+      }
+    },
+
+    initializeFromServer: (data) => {
+      const root = data.trace.root;
+
+      set({
+        category: data.category,
+        selectedAlgo: data.selectedAlgo,
+        traceInputRaw: data.input,
+        traceInputExpression: data.input,
+        root,
+        flatEntries: root ? flattenTrace(root) : [],
+        resultValue: data.trace.result,
+        error: data.trace.error,
+        specHtml: data.specHtml,
+        functionOptions: data.functionCatalog.available_functions,
+        functionMeta: data.functionCatalog.function_meta,
+        effectiveAlgoId: data.trace.effectiveAlgoId,
+        detectedOperator: data.trace.detectedOperator,
+        selectedIndex: 0,
+        isPlaying: false,
+        collapsedBlocks: {},
       });
-  },
+    },
+  }));
 
-  initializeFromServer: (data) => {
-    const root = data.trace.root;
-
-    set({
-      category: data.category,
-      selectedAlgo: data.selectedAlgo,
-      traceInputRaw: data.input,
-      traceInputExpression: data.input,
-      root,
-      flatEntries: root ? flattenTrace(root) : [],
-      resultValue: data.trace.result,
-      error: data.trace.error,
-      specHtml: data.specHtml,
-      functionOptions: data.functionCatalog.available_functions,
-      functionMeta: data.functionCatalog.function_meta,
-      effectiveAlgoId: data.trace.effectiveAlgoId,
-      detectedOperator: data.trace.detectedOperator,
-      selectedIndex: 0,
-      isPlaying: false,
-      collapsedBlocks: {},
-    });
-  },
-}));
+  if (initial) store.getState().initializeFromServer(initial);
+  return store;
+}

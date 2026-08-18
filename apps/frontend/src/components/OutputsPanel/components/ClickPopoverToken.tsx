@@ -24,7 +24,7 @@ const ClickPopoverToken: React.FC<Props> = ({ content, description }) => {
   return (
     <Popover.Root lazyMount unmountOnExit open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
-        <Button as="span" size="2xs" fontSize={14} variant="ghost">
+        <Button variant="rule" typeface="prose" type="button" borderBottomStyle="dashed" borderBottomColor="rule.link">
           {content}
         </Button>
       </Popover.Trigger>

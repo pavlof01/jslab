@@ -16,13 +16,19 @@ const diffKindToClass: Record<DiffKind, string> = {
   [DiffKind.Keep]: "diff-keep",
 };
 
+const diffKindToPrefix: Record<DiffKind, string> = {
+  [DiffKind.Add]: "+",
+  [DiffKind.Del]: "-",
+  [DiffKind.Keep]: " ",
+};
+
 const PlainCodeRow: React.FC<Props> = ({ tokens, lineNumber, engineKey }) => {
   if (!tokens.length) return null;
 
   const tok = tokens[0];
   const diffKind = tokens[0].diffType;
   const diffClass = diffKind ? diffKindToClass[diffKind] : "";
-  const prefix = diffKind === DiffKind.Add ? "+" : diffKind === DiffKind.Del ? "-" : " ";
+  const prefix = diffKind ? diffKindToPrefix[diffKind] : " ";
 
   return (
     <span
@@ -46,7 +52,7 @@ const PlainCodeRow: React.FC<Props> = ({ tokens, lineNumber, engineKey }) => {
       <LineNumber value={tok.prevLine ?? lineNumber} />
       <LineNumber value={tok.nextLine ?? ""} />
       {tokens.map((token, index) => (
-        <TokenSpan key={index} token={token} nextToken={tokens[index + 1]} engineKey={engineKey} />
+        <TokenSpan key={token.offset} token={token} nextToken={tokens[index + 1]} engineKey={engineKey} />
       ))}
     </span>
   );

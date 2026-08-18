@@ -1,3 +1,5 @@
+import { createDescriber, fromLiterals, stripEdges, type TokenDescriber } from "./resolver";
+
 /** Plain Hermes bytecode opcodes and their descriptions (hbcdump disassembly). */
 export const OPCODE_INFO = {
   // Environment / closures
@@ -126,9 +128,7 @@ export const OPCODE_INFO = {
 
 export type HermesOpcode = keyof typeof OPCODE_INFO;
 
-function stripEdgePunctuation(token: string): string {
-  return token.replace(/^[([{]+/, "").replace(/[)\]}.,:]+$/, "");
-}
+const strip = (token: string) => stripEdges(token, { keepColon: false });
 
 function describeRegister(token: string): string | undefined {
   const m = token.match(/^r(\d+)$/);
@@ -199,53 +199,25 @@ export function getOpcodeInfo(rawToken: string | null | undefined): string | und
   return undefined;
 }
 
-export function getTokenInfo(
-  rawToken: string | null | undefined,
-  options: { nextToken?: string | null } = {},
-): string | undefined {
-  if (!rawToken) return undefined;
+const LITERALS: Record<string, string> = {
+  null: "JavaScript null literal.",
+  undefined: "JavaScript undefined literal.",
+  true: "Boolean true literal.",
+  false: "Boolean false literal.",
+  "<global>": "Global scope marker used by hbcdump.",
+};
 
-  const key = stripEdgePunctuation(rawToken.trim());
-  if (!key) return undefined;
-
-  const opcode = getOpcodeInfo(key);
-  if (opcode) return opcode;
-
-  const reg = describeRegister(key);
-  if (reg) return reg;
-
-  const label = describeLabel(key);
-  if (label) return label;
-
-  const fn = describeFunctionRef(key);
-  if (fn) return fn;
-
-  const si = describeStringOrIdentifierIndex(key);
-  if (si) return si;
-
-  const hash = describeHash(key);
-  if (hash) return hash;
-
-  const qs = describeQuotedString(key);
-  if (qs) return qs;
-
-  if (key === "null") return "JavaScript null literal.";
-  if (key === "undefined") return "JavaScript undefined literal.";
-  if (key === "true") return "Boolean true literal.";
-  if (key === "false") return "Boolean false literal.";
-
-  if (key === "<global>") return "Global scope marker used by hbcdump.";
-
-  // If a token ends with ":" and the next token completes it (rare in Hermes), try combining.
-  if (rawToken.trim().endsWith(":") && options.nextToken) {
-    const next = stripEdgePunctuation(options.nextToken.trim());
-    if (next) {
-      const combined = `${key}${next}`;
-      const combinedOpcode = getOpcodeInfo(combined);
-      if (combinedOpcode) return combinedOpcode;
-    }
-  }
-
-  return undefined;
-}
-
+export const describeToken: TokenDescriber = createDescriber({
+  strip,
+  steps: [
+    getOpcodeInfo,
+    describeRegister,
+    describeLabel,
+    describeFunctionRef,
+    describeStringOrIdentifierIndex,
+    describeHash,
+    describeQuotedString,
+    fromLiterals(LITERALS),
+    { joinNext: getOpcodeInfo },
+  ],
+});

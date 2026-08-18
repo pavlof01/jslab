@@ -1,9 +1,4 @@
-/**
- * jsdom omits several platform APIs that the browser has and our code uses.
- * Node has all of them, so fill in only what is actually missing — never
- * overwrite something jsdom does provide, or tests stop exercising the
- * implementation the browser would run.
- */
+import { deserialize, serialize } from "node:v8";
 import { TextDecoder, TextEncoder } from "node:util";
 import { CompressionStream, DecompressionStream, ReadableStream, TransformStream, WritableStream } from "node:stream/web";
 
@@ -17,6 +12,21 @@ function fill(name: string, value: unknown) {
 // Used by the embed snapshot codec and anything doing byte-level work.
 fill("TextEncoder", TextEncoder);
 fill("TextDecoder", TextDecoder);
+fill("structuredClone", <T,>(value: T): T => deserialize(serialize(value)) as T);
+fill(
+  "matchMedia",
+  (query: string): MediaQueryList =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList,
+);
 
 // Streams: jsdom has no CompressionStream at all, which is what the snapshot
 // codec compresses with.
