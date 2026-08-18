@@ -1,3 +1,4 @@
+import { readJson, removeKey, writeJson } from "@/lib/storage";
 import { ENGINE_KEYS, EngineKey, isEngineKey, type EngineFlags } from "@/lib/types";
 
 export interface RunHistoryEntry {
@@ -48,21 +49,16 @@ function readFlags(entry: StoredEntry): EngineFlags {
 }
 
 export function loadHistory(storage: Storage = window.localStorage): RunHistoryEntry[] {
-  try {
-    const raw = storage.getItem(RUN_HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isEntry).map((entry) => ({
-      id: entry.id,
-      ts: entry.ts,
-      code: entry.code,
-      engines: entry.engines.filter(isEngineKey),
-      flags: readFlags(entry),
-    }));
-  } catch {
-    return [];
-  }
+  const parsed = readJson<unknown>(storage, RUN_HISTORY_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed.filter(isEntry).map((entry) => ({
+    id: entry.id,
+    ts: entry.ts,
+    code: entry.code,
+    engines: entry.engines.filter(isEngineKey),
+    flags: readFlags(entry),
+  }));
 }
 
 export function pushHistory(
@@ -83,18 +79,11 @@ export function pushHistory(
   if (isDuplicate) return history;
 
   const next = [{ ...entry, id: makeId(), ts: now }, ...history].slice(0, MAX_HISTORY);
-  try {
-    storage.setItem(RUN_HISTORY_KEY, JSON.stringify(next));
-  } catch {
-    // Quota or disabled storage — history is best-effort.
-  }
+  // Best-effort: a browser that refuses the write still gets the fresh list back.
+  writeJson(storage, RUN_HISTORY_KEY, next);
   return next;
 }
 
 export function clearHistory(storage: Storage = window.localStorage): void {
-  try {
-    storage.removeItem(RUN_HISTORY_KEY);
-  } catch {
-    // ignore
-  }
+  removeKey(storage, RUN_HISTORY_KEY);
 }
