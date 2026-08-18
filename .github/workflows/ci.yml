@@ -30,6 +30,7 @@ jobs:
           - { name: engine-hermes,        dir: apps/engine-hermes,        typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-jsc,           dir: apps/engine-jsc,           typecheck: "npm run lint",  test: "", runtime: true }
           - { name: engine-spidermonkey,  dir: apps/engine-spidermonkey,  typecheck: "npm run lint",  test: "", runtime: true }
+          - { name: cli,                  dir: apps/cli,                  typecheck: "npm run lint",  test: "npm test", runtime: true }
           - { name: trace-service,        dir: apps/trace-service,        typecheck: "npm run typecheck", test: "npm test" }
           - { name: frontend,             dir: apps/frontend/src,         typecheck: "npx --no-install tsc --noEmit -p tsconfig.json && npm run lint", test: "npm test" }
     steps:

@@ -1,0 +1,26 @@
+{
+  "name": "@jslab/cli",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "jslab": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jslab/engine-runtime": "file:../../packages/engine-runtime"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.11",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.10"
+  }
+}

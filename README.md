@@ -65,6 +65,28 @@ enabled.
 
 ---
 
+## ⌨️ Terminal client (`jslab`)
+
+Prefer a terminal to a browser? [`apps/cli`](apps/cli) is a small Node client
+that runs one snippet through all four engines and prints what each of them
+produced:
+
+```bash
+cd apps/cli && npm ci && npm run build && npm link   # `jslab` on PATH
+
+jslab --code "const add = (a, b) => a + b; add(1, 2)" --bytecode
+echo "1 + '1'" | jslab -e v8,jsc
+jslab snippet.js -e v8 -f --print-bytecode -f --trace-opt --api http://localhost:8080
+jslab snippet.js --json > run.json
+jslab flags v8 --category bytecode
+```
+
+It talks to the api gateway over `POST /api/run` (defaulting to `jslab.su`, so
+no engine binaries are needed locally) and validates flags against the same
+shared catalog the server enforces. See [`apps/cli/README.md`](apps/cli/README.md).
+
+---
+
 ## 💡 Project Vision
 
 JSLab aims to be a **compiler explorer** for JavaScript engines —  
@@ -88,7 +110,8 @@ Goals:
   ├─ engine-jsc           # JavaScriptCore (jsc) wrapper HTTP service
   ├─ engine-spidermonkey  # SpiderMonkey (js shell) wrapper HTTP service
   ├─ trace-service        # ECMAScript abstract operations tracer (engine262-based)
-  └─ frontend             # Next.js UI (playground, V8 pipeline, abstract ops visualizer)
+  ├─ frontend             # Next.js UI (playground, V8 pipeline, abstract ops visualizer)
+  └─ cli                  # `jslab` terminal client for POST /api/run
 /engines/dockerfiles     # Dockerfiles for the engine base images (d8, hermes, jsc, js shell)
 /infra/k8s               # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
 ```

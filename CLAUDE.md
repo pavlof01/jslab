@@ -29,6 +29,8 @@ Engine services are **stateless HTTP wrappers** — no inter-service communicati
 
 The `/api/trace/execute` endpoint talks to `trace-service` for ECMAScript abstract-operations tracing.
 
+`apps/cli` (`jslab`) is a terminal client for the same `POST /api/run` contract — it fans one snippet out to the four engines and renders their output. It is a client only: it never spawns an engine binary, and it filters flags with the shared `flagCatalog` before sending them.
+
 ### Key types (`apps/api/src/types.ts`)
 
 ```typescript
@@ -69,6 +71,14 @@ npm run lint   # tsc --noEmit
 ```bash
 npm run dev    # tsx watch → localhost:8080
 npm run lint   # tsc --noEmit
+```
+
+### CLI (`apps/cli/`)
+```bash
+npm run build  # tsc → dist/ (bin: dist/index.js, linked as `jslab`)
+npm run dev -- --code "1 + 1" -e v8   # run from source
+npm run lint   # tsc --noEmit
+npm run test   # vitest
 ```
 
 ### Full stack
