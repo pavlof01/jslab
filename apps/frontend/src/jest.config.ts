@@ -12,7 +12,13 @@ const config: Config = {
   testEnvironment: "jsdom",
   watchman: false,
   modulePathIgnorePatterns: ["<rootDir>/.next/"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/$1",
+    "^shiki$": "<rootDir>/test/shikiStub.ts",
+    "^shiki/bundle/web$": "<rootDir>/test/shikiStub.ts",
+  },
   setupFiles: ["<rootDir>/jest.setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.dom.ts"],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

@@ -1,28 +1,17 @@
 import React from "react";
-import { EmptyState, VStack } from "@chakra-ui/react";
-import { TbCodeDots } from "react-icons/tb";
+import { Box } from "@chakra-ui/react";
 
 export type Props = {
   title?: string;
   description?: string;
 };
 
-const DefaultEmptyCodeBlockState: React.FC<Props> = ({
-  title = "No output yet",
-  description = "Run an engine to generate bytecode or program output",
-}) => {
+const DefaultEmptyCodeBlockState: React.FC<Props> = ({ title = "⌘↵ to run", description }) => {
   return (
-    <EmptyState.Root>
-      <EmptyState.Content>
-        <EmptyState.Indicator>
-          <TbCodeDots />
-        </EmptyState.Indicator>
-        <VStack textAlign="center">
-          <EmptyState.Title>{title}</EmptyState.Title>
-          <EmptyState.Description>{description}</EmptyState.Description>
-        </VStack>
-      </EmptyState.Content>
-    </EmptyState.Root>
+    <Box textStyle="code" px="12px" py="10px" lineHeight="21px" color="ink.5">
+      <Box>{title}</Box>
+      {description ? <Box color="ink.6">{description}</Box> : null}
+    </Box>
   );
 };
 

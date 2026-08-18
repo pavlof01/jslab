@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
 
-import { EngineKey, RunStatus } from "@/lib/types";
+import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
+import { formatRunMeta } from "@/lib/runMessages";
 import { useEngineOutputsStore } from "./useEngineOutputs";
 
 type FakeResponse = { ok: boolean; status: number; body: unknown };
@@ -71,7 +72,9 @@ describe("useEngineOutputsStore.runEngines", () => {
 
     const state = useEngineOutputsStore.getState();
     expect(state.status).toBe(RunStatus.done);
-    expect(state.meta).toBe("Duration: 7 ms · cached");
+    expect(state.durationMs).toBe(7);
+    expect(state.cacheHit).toBe(true);
+    expect(formatRunMeta(state.durationMs, state.cacheHit)).toBe("Duration: 7 ms · cached");
     expect(state.error).toBeUndefined();
   });
 
@@ -90,6 +93,23 @@ describe("useEngineOutputsStore.runEngines", () => {
 
     const state = useEngineOutputsStore.getState();
     expect(state.out[EngineKey.v8].stdout).toBe("fast");
-    expect(state.meta).toBe("Duration: 1 ms");
+    expect(state.durationMs).toBe(1);
+    expect(state.cacheHit).toBe(false);
+  });
+});
+
+describe("useEngineOutputsStore.setEngines", () => {
+  it("keeps activeTab when its engine stays enabled", () => {
+    const { setEngines, setActiveTab } = useEngineOutputsStore.getState();
+    setActiveTab(EngineKey.hermes);
+    setEngines({ ...createEngineSelection(), [EngineKey.v8]: true, [EngineKey.hermes]: true });
+    expect(useEngineOutputsStore.getState().activeTab).toBe(EngineKey.hermes);
+  });
+
+  it("falls back to the first enabled engine when the active tab is disabled", () => {
+    const { setEngines, setActiveTab } = useEngineOutputsStore.getState();
+    setActiveTab(EngineKey.hermes);
+    setEngines({ ...createEngineSelection(), [EngineKey.v8]: true, [EngineKey.jsc]: true });
+    expect(useEngineOutputsStore.getState().activeTab).toBe(EngineKey.v8);
   });
 });

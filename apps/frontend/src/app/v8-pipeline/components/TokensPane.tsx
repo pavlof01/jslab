@@ -3,23 +3,22 @@ import { Flex, Box, Text } from "@chakra-ui/react";
 import { type Token } from "../lib/tokenize";
 
 const TOKEN_COLOR: Record<string, string> = {
-  Keyword: "#f9e31a",
-  Identifier: "rgba(255,255,255,0.92)",
-  NumericLiteral: "#66d9e8",
-  StringLiteral: "#a8e267",
-  TemplateLiteral: "#a8e267",
-  RegExpLiteral: "#ff9f43",
-  Operator: "#ff6b6b",
-  Punctuator: "rgba(255,255,255,0.45)",
-  LineComment: "rgba(255,255,255,0.28)",
-  BlockComment: "rgba(255,255,255,0.28)",
+  Keyword: "syn.keyword",
+  Identifier: "ink.code",
+  NumericLiteral: "syn.number",
+  StringLiteral: "syn.string",
+  TemplateLiteral: "syn.string",
+  RegExpLiteral: "syn.string",
+  Operator: "ink.2",
+  Punctuator: "ink.4",
+  LineComment: "syn.comment",
+  BlockComment: "syn.comment",
 };
-
 const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
   if (tokens.length === 0) {
     return (
       <Flex h="60%" align="center" justify="center">
-        <Text color="whiteAlpha.200" fontSize="sm">
+        <Text color="rule.row" fontSize="sm">
           No tokens found
         </Text>
       </Flex>
@@ -27,7 +26,7 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
   }
   return (
     <Box p={4} overflowX="auto">
-      <Box as="table" w="100%" fontSize="12px" style={{ borderCollapse: "collapse" }}>
+      <Box as="table" w="100%" fontSize="12px" borderCollapse="collapse">
         <Box as="thead">
           <Box as="tr">
             {["#", "Kind", "Value"].map((h) => (
@@ -36,11 +35,9 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
                 as="th"
                 textAlign="left"
                 p="4px 10px"
-                color="whiteAlpha.300"
-                fontSize="10px"
+                textStyle="labelSm"
                 fontWeight="700"
-                letterSpacing="0.12em"
-                textTransform="uppercase"
+                color="ink.6"
                 borderBottom="1px solid rgba(255,255,255,0.06)"
               >
                 {h}
@@ -50,8 +47,8 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
         </Box>
         <Box as="tbody">
           {tokens.map((tok, i) => (
-            <Box key={i} as="tr" _hover={{ bg: "rgba(255,255,255,0.025)" }}>
-              <Box as="td" p="3px 10px" color="whiteAlpha.250" w="48px" flexShrink={0}>
+            <Box key={`${tok.start}-${tok.kind}`} as="tr" _hover={{ bg: "rgba(255,255,255,0.025)" }}>
+              <Box as="td" p="3px 10px" color="ink.6" w="48px" flexShrink={0}>
                 {i + 1}
               </Box>
               <Box as="td" p="3px 10px" w="160px">
@@ -61,8 +58,8 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
                   py="1px"
                   borderRadius="sm"
                   fontSize="11px"
-                  bg="surface.200"
-                  color={TOKEN_COLOR[tok.kind] ?? "whiteAlpha.600"}
+                  bg="surface.band"
+                  color={TOKEN_COLOR[tok.kind] ?? "ink.3"}
                 >
                   {tok.kind}
                 </Box>
@@ -70,10 +67,11 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
               <Box
                 as="td"
                 p="3px 10px"
-                color={TOKEN_COLOR[tok.kind] ?? "whiteAlpha.700"}
+                color={TOKEN_COLOR[tok.kind] ?? "ink.code"}
                 maxW="320px"
                 overflow="hidden"
-                style={{ textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
               >
                 {tok.value.length > 80 ? tok.value.slice(0, 77) + "…" : tok.value}
               </Box>

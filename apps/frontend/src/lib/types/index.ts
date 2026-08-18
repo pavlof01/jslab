@@ -9,22 +9,16 @@ export const ENGINE_KEYS: readonly EngineKey[] = [EngineKey.v8, EngineKey.sm, En
 export const isEngineKey = (value: unknown): value is EngineKey =>
   typeof value === "string" && (ENGINE_KEYS as readonly string[]).includes(value);
 
-/**
- * A fresh engine-selection record with the playground's default: V8 on, the
- * rest off. Lives here rather than in the store so the store and the UI cannot
- * disagree about which engines exist or which one is on by default.
- */
-export const createEngineSelection = (): Record<EngineKey, boolean> => ({
-  [EngineKey.v8]: true,
-  [EngineKey.sm]: false,
-  [EngineKey.hermes]: false,
-  [EngineKey.jsc]: false,
-});
+export const DEFAULT_ENGINES: readonly EngineKey[] = [EngineKey.v8];
 
-/**
- * One engine's output as the playground store holds it. The wire shape lives in
- * `lib/api.ts` (`RunResult`); this is what survives into the UI.
- */
+export const createEngineSelection = (on: readonly EngineKey[] = DEFAULT_ENGINES): Record<EngineKey, boolean> =>
+  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, on.includes(engine)])) as Record<EngineKey, boolean>;
+
+export const selectionFrom = createEngineSelection;
+
+export const enabledEngines = (selection: Record<EngineKey, boolean>): EngineKey[] =>
+  ENGINE_KEYS.filter((engine) => selection[engine]);
+
 export type EngineResult = { stdout: string; stderr: string; ms?: number };
 
 export enum RunStatus {

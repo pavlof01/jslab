@@ -1,4 +1,5 @@
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
+import { traceServiceUrl } from "@/lib/server/traceService";
 import {
   EMPTY_FUNCTION_CATALOG,
   getDefaultsForCategory,
@@ -8,9 +9,6 @@ import {
   type VisualizerInitialData,
 } from "./model";
 
-const TRACE_SERVICE_URL = process.env.TRACE_SERVICE_URL?.replace(/\/$/, "") ?? "http://localhost:8085";
-
-/** In-memory TTL cache: default trace per category is deterministic, no need to hit trace-service every request. */
 const INITIAL_DATA_TTL_MS = 5 * 60 * 1000;
 const initialDataCache = new Map<AlgoCategory, { expires: number; data: VisualizerInitialData }>();
 
@@ -27,7 +25,7 @@ async function readJson<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
 
-  const response = await fetch(`${TRACE_SERVICE_URL}${path}`, {
+  const response = await fetch(`${traceServiceUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers,
@@ -43,7 +41,7 @@ async function readJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function readText(path: string): Promise<string> {
-  const response = await fetch(`${TRACE_SERVICE_URL}${path}`, {
+  const response = await fetch(`${traceServiceUrl()}${path}`, {
     cache: "no-store",
     headers: { Accept: "text/html" },
   });
@@ -76,7 +74,11 @@ async function getSpecHtml(functionName: string): Promise<string> {
   }
 }
 
-async function getInitialTrace(category: AlgoCategory, functionName: string, input: string): Promise<InitialTraceState> {
+async function getInitialTrace(
+  category: AlgoCategory,
+  functionName: string,
+  input: string,
+): Promise<InitialTraceState> {
   const endpoint = category === "equality" ? "/execute/equality" : "/execute/type-conversion";
   const body = category === "equality" ? { input } : { functionName, input };
 
@@ -136,7 +138,6 @@ export async function getVisualizerInitialData(category: AlgoCategory): Promise<
     functionCatalog,
   };
 
-  // Only cache successful traces — don't pin a trace-service outage for the full TTL.
   if (!trace.error) {
     initialDataCache.set(category, { expires: Date.now() + INITIAL_DATA_TTL_MS, data });
   }

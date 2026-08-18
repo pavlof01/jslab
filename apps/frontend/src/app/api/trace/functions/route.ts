@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-const TRACE_SERVICE_URL = process.env.TRACE_SERVICE_URL ?? "http://localhost:8080";
+import { traceServiceEndpoint } from "@/lib/server/traceService";
 
 export async function GET(): Promise<NextResponse> {
   let response: Response;
   try {
-    response = await fetch(`${TRACE_SERVICE_URL}/functions`);
+    response = await fetch(traceServiceEndpoint("/functions", "/api/trace/functions"));
   } catch (err) {
     const message = err instanceof Error ? err.message : "trace-service unavailable";
     return NextResponse.json({ error: `trace-service unavailable: ${message}` }, { status: 503 });

@@ -1,102 +1,23 @@
 "use client";
 
-import { Box, Button, CloseButton, Dialog, HStack, IconButton, Menu, Portal, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Menu, Portal, Text } from "@chakra-ui/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { LuChevronDown, LuMenu } from "react-icons/lu";
-import type { NavSection } from "./nav.types";
+import { navSections, type NavSection } from "./nav.types";
+import { useSectionActive } from "./useSectionActive";
 import { MobileNavSection } from "./MobileNavSection";
 import { NavItemBody } from "./NavItemBody";
 
-const navSections: NavSection[] = [
-  {
-    label: "Engines",
-    items: [
-      {
-        label: "Playground",
-        description: "Run snippets and compare engine output.",
-        href: "/playground",
-      },
-      {
-        label: "V8 Pipeline",
-        description: "Trace JavaScript execution through V8's stages.",
-        href: "/v8-pipeline",
-      },
-      {
-        label: "v8.log Viewer",
-        description: "Upload a --prof log and see the hottest functions.",
-        href: "/v8-log",
-      },
-    ],
-  },
-  {
-    label: "ECMA Spec",
-    items: [
-      {
-        label: "Type Conversion",
-        description: "Trace ECMAScript type-conversion operations step by step.",
-        href: "/type-conversion",
-      },
-      {
-        label: "Equality Operators",
-        description: "Trace abstract & strict equality comparisons step by step.",
-        href: "/equality",
-      },
-      {
-        label: "ECMA-262",
-        description: "Open the official ECMAScript specification.",
-        href: "https://tc39.es/ecma262/",
-        external: true,
-      },
-    ],
-  },
-  {
-    label: "Learn",
-    items: [
-      {
-        label: "Coercion Quiz",
-        description: "Predict what tricky expressions print, then see why.",
-        href: "/quiz",
-      },
-      {
-        label: "Public API",
-        description: "Run engines programmatically — issue a key and read the docs.",
-        href: "/api/docs",
-        external: true,
-      },
-    ],
-  },
-];
-
 const menuContentStyles = {
-  minW: "18rem",
-  borderWidth: "1px",
-  borderColor: "rgba(255,255,255,0.08)",
-  bg: "rgba(35,33,15,0.96)",
-  backdropFilter: "blur(18px)",
-  borderRadius: "2xl",
-  boxShadow: "0 20px 50px -24px rgba(0,0,0,0.65)",
-  p: 2,
-  animationDuration: "0s",
+  minW: "300px",
+  p: "0",
 };
 
 const Nav: React.FC = () => {
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const isActivePath = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-
-  const isSectionActive = (section: NavSection) =>
-    section.items.some((item) => !item.external && isActivePath(item.href));
-
-  const handleMobileNavigate = () => {
-    setMobileOpen(false);
-  };
+  const isSectionActive = useSectionActive();
 
   return (
-    <Box ml={{ base: "auto", md: 0 }}>
-      <HStack as="nav" display={{ base: "none", md: "flex" }} gap={{ base: 6, lg: 8 }}>
+    <Box>
+      <HStack as="nav" display={{ base: "none", md: "flex" }} gap={{ base: 6, lg: 8 }} justify="center">
         {navSections.map((section) => {
           const active = isSectionActive(section);
 
@@ -114,18 +35,22 @@ const Nav: React.FC = () => {
             >
               <Menu.Trigger asChild>
                 <Button
-                  variant="plain"
+                  variant="quiet"
+                  typeface="prose"
                   h="auto"
                   minW="auto"
                   px={0}
-                  fontSize="sm"
-                  fontWeight="700"
-                  color={active ? "brand.300" : "whiteAlpha.700"}
-                  _hover={{ color: "brand.300" }}
+                  fontSize="11.5px"
+                  fontWeight="400"
+                  color={active ? "accent" : "ink.label"}
+                  _hover={{ color: "accent" }}
                 >
-                  <Box display="inline-flex" alignItems="center" gap="0.25rem">
-                    <Text>{section.label}</Text>
-                    <LuChevronDown size={14} />
+                  <Box display="inline-flex" alignItems="baseline" gap="7px">
+                    <Text as="span">{section.label}</Text>
+                    {/* The design marks a dropdown with the glyph, not an icon. */}
+                    <Box as="span" aria-hidden="true" fontSize="8px" color="ink.5">
+                      ▼
+                    </Box>
                   </Box>
                 </Button>
               </Menu.Trigger>
@@ -133,32 +58,27 @@ const Nav: React.FC = () => {
               <Portal>
                 <Menu.Positioner>
                   <Menu.Content {...menuContentStyles}>
-                    <VStack align="stretch" gap={1}>
-                      {section.items.map((item) => (
-                        <Menu.Item
-                          key={`${section.label}-${item.label}`}
-                          asChild
-                          value={`${section.label}-${item.label}`}
-                          borderRadius="xl"
-                          px={3}
-                          py={3}
-                          color="whiteAlpha.900"
-                          cursor="pointer"
-                          transition="background-color 0.2s ease, color 0.2s ease"
-                          _highlighted={{ bg: "rgba(249,227,26,0.1)", color: "white" }}
-                        >
-                          {item.external ? (
-                            <a href={item.href} target="_blank" rel="noreferrer">
-                              <NavItemBody item={item} />
-                            </a>
-                          ) : (
-                            <Link href={item.href}>
-                              <NavItemBody item={item} />
-                            </Link>
-                          )}
-                        </Menu.Item>
-                      ))}
-                    </VStack>
+                    {section.items.map((item, index) => (
+                      <Menu.Item
+                        key={`${section.label}-${item.label}`}
+                        asChild
+                        value={`${section.label}-${item.label}`}
+                        px="14px"
+                        py="10px"
+                        borderTopWidth={index ? "1px" : "0"}
+                        borderTopColor="rule.list"
+                      >
+                        {item.external ? (
+                          <a href={item.href} target="_blank" rel="noreferrer">
+                            <NavItemBody item={item} />
+                          </a>
+                        ) : (
+                          <Link href={item.href}>
+                            <NavItemBody item={item} />
+                          </Link>
+                        )}
+                      </Menu.Item>
+                    ))}
                   </Menu.Content>
                 </Menu.Positioner>
               </Portal>
@@ -166,69 +86,6 @@ const Nav: React.FC = () => {
           );
         })}
       </HStack>
-
-      <Dialog.Root
-        open={mobileOpen}
-        onOpenChange={(details) => setMobileOpen(details.open)}
-        placement="top"
-        lazyMount
-        unmountOnExit
-      >
-        <Dialog.Trigger asChild>
-          <IconButton
-            display={{ base: "inline-flex", md: "none" }}
-            aria-label="Open navigation"
-            size="sm"
-            variant="outline"
-            borderColor="rgba(255,255,255,0.12)"
-            color="white"
-            bg="surface.100"
-            _hover={{ bg: "rgba(255,255,255,0.08)" }}
-          >
-            <LuMenu size={18} />
-          </IconButton>
-        </Dialog.Trigger>
-
-        <Portal>
-          <Dialog.Backdrop bg="scrim.200" />
-          <Dialog.Positioner px={4} py={4}>
-            <Dialog.Content
-              maxW="100%"
-              borderRadius="2xl"
-              borderWidth="1px"
-              borderColor="rgba(255,255,255,0.08)"
-              bg="navSurface.200"
-              color="white"
-              overflow="hidden"
-              animationDuration="0s"
-            >
-              <Dialog.Header px={4} py={4} borderBottomWidth="1px" borderColor="rgba(255,255,255,0.06)">
-                <HStack justify="space-between" width="full">
-                  <Dialog.Title fontSize="sm" fontWeight="800" letterSpacing="0.18em" textTransform="uppercase">
-                    Navigation
-                  </Dialog.Title>
-                  <Dialog.CloseTrigger asChild>
-                    <CloseButton size="sm" />
-                  </Dialog.CloseTrigger>
-                </HStack>
-              </Dialog.Header>
-
-              <Dialog.Body px={4} py={4}>
-                <VStack align="stretch" gap={3}>
-                  {navSections.map((section) => (
-                    <MobileNavSection
-                      key={section.label}
-                      section={section}
-                      isSectionActive={isSectionActive}
-                      onNavigate={handleMobileNavigate}
-                    />
-                  ))}
-                </VStack>
-              </Dialog.Body>
-            </Dialog.Content>
-          </Dialog.Positioner>
-        </Portal>
-      </Dialog.Root>
     </Box>
   );
 };

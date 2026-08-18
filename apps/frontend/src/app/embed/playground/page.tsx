@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+
+import { V8FlagCatalogProvider } from "@/components/V8FlagSelector/context";
+import { fetchV8Flags } from "@/lib/server/v8Flags";
 import EmbedPlaygroundClient from "./EmbedPlaygroundClient";
 
 export const metadata: Metadata = {
@@ -7,6 +10,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function EmbedPlaygroundPage() {
-  return <EmbedPlaygroundClient />;
+export const dynamic = "force-dynamic";
+
+export default async function EmbedPlaygroundPage() {
+  const flags = await fetchV8Flags();
+
+  return (
+    <V8FlagCatalogProvider flags={flags}>
+      <EmbedPlaygroundClient />
+    </V8FlagCatalogProvider>
+  );
 }

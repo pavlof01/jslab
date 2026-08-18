@@ -1,83 +1,61 @@
 import { useMemo } from "react";
-import { Show, Stack, Tabs } from "@chakra-ui/react";
-import { EngineKey, RunStatus } from "../../lib/types";
-import { HighlightedCode } from "./CodeBlock";
-import V8MenuControls from "./v8MenuControls";
-import BytecodeLegend from "./components/BytecodeLegend";
-import EngineHint from "./components/EngineHint";
-import { useEngineOutputsActions, useEngineOutputsState } from "@/store/useEngineOutputs";
+import { Stack, Tabs } from "@chakra-ui/react";
 
-export const tabs: { key: EngineKey; label: string }[] = [
-  { key: EngineKey.v8, label: "V8" },
-  { key: EngineKey.sm, label: "SpiderMonkey" },
-  { key: EngineKey.hermes, label: "Hermes" },
-  { key: EngineKey.jsc, label: "JSC" },
-];
+import { engineLabel } from "@/lib/engines";
+import { ENGINE_KEYS, EngineKey, isEngineKey, RunStatus } from "@/lib/types";
+import { useActiveTab, useOutputPane } from "@/store/engineOutputsSelectors";
+import { HighlightedCode } from "./CodeBlock";
+import { EngineNote } from "@/app/_components/EngineNote";
 
 type OutputsPanelProps = {
-  /** Trims the explanatory chrome for the iframe embed, which is height-boxed. */
   compact?: boolean;
 };
 
 export function OutputsPanel({ compact = false }: OutputsPanelProps = {}) {
-  const { out, previousSnapshot, showDiff, status, engines, activeTab } = useEngineOutputsState();
-  const { setActiveTab } = useEngineOutputsActions();
+  const { out, previousSnapshot, showDiff, status, engines } = useOutputPane();
+  const { activeTab, setActiveTab } = useActiveTab();
 
-  const enabledTabs = useMemo(() => tabs.filter((tab) => engines[tab.key]), [engines]);
-  const activeTabIndex = useMemo(() => {
-    const idx = enabledTabs.findIndex((tab) => tab.key === activeTab);
-    return idx >= 0 ? idx : 0;
-  }, [enabledTabs, activeTab]);
+  const enabledTabs = useMemo(() => ENGINE_KEYS.filter((engine) => engines[engine]), [engines]);
 
-  const handleTabChange = (detail: { value: string | null }) => {
-    const next = (detail.value ?? activeKey) as EngineKey;
-    if (next !== activeTab) {
-      setActiveTab(next);
-    }
-  };
+  const activeKey = enabledTabs.includes(activeTab) ? activeTab : (enabledTabs[0] ?? EngineKey.v8);
 
-  // Guard the empty case: with every engine deselected enabledTabs is [], so
-  // enabledTabs[activeTabIndex] is undefined — index into it directly and .key
-  // throws. Optional chaining makes the EngineKey.v8 fallback actually reachable.
-  const activeKey = enabledTabs[activeTabIndex]?.key || EngineKey.v8;
-  const stdout = out?.[activeKey]?.stdout;
-  const stderr = out?.[activeKey]?.stderr;
-  const stdPrevOut = previousSnapshot?.out?.[activeKey]?.stdout;
-  const stdPrevErr = previousSnapshot?.out?.[activeKey]?.stderr;
-
-  const canRenderV8Controls = activeKey === EngineKey.v8;
+  const result = out?.[activeKey];
+  const previous = previousSnapshot?.out?.[activeKey];
 
   return (
-    <Tabs.Root value={activeKey} onValueChange={handleTabChange} display="flex" size="sm" variant="line" flex="1">
+    <Tabs.Root
+      value={activeKey}
+      onValueChange={({ value }) => {
+        if (isEngineKey(value) && value !== activeTab) setActiveTab(value);
+      }}
+      display="flex"
+      size="sm"
+      variant="line"
+      flex="1"
+    >
       <Stack flex="1" minH="20vh" w="full">
         <Tabs.List w="full" ms="-1" px={4}>
-          {enabledTabs.map((tab) => (
-            <Tabs.Trigger colorPalette="teal" key={tab.key} value={tab.key} textStyle="xs">
-              {tab.label}
+          {enabledTabs.map((engine) => (
+            <Tabs.Trigger key={engine} value={engine} textStyle="xs">
+              {engineLabel(engine)}
             </Tabs.Trigger>
           ))}
         </Tabs.List>
 
         <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
-          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="background.200" p={4} overflow="auto">
-            <Show when={canRenderV8Controls}>
-              <V8MenuControls />
-            </Show>
-            <EngineHint engineKey={activeKey} compact={compact} />
-            <Show when={canRenderV8Controls && !compact}>
-              <BytecodeLegend />
-            </Show>
+          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="surface.base" p={4} overflow="auto">
+            <EngineNote engine={activeKey} detail={compact ? "first-quirk" : "full"} />
             <HighlightedCode
               engineKey={activeKey}
-              out={stdout}
-              prev={stdPrevOut}
+              out={result?.stdout}
+              prev={previous?.stdout}
               showDiff={showDiff}
               isLoading={status === RunStatus.running}
             />
             <HighlightedCode
               engineKey={activeKey}
-              out={stderr}
-              prev={stdPrevErr}
+              out={result?.stderr}
+              prev={previous?.stderr}
               showDiff={showDiff}
               EmptyCodeBlockState={() => <></>}
             />
