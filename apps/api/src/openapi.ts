@@ -1,3 +1,5 @@
+import { ENGINE_KINDS } from "@jslab/engine-runtime";
+
 export const openapiDoc = {
   openapi: "3.0.3",
   info: {
@@ -36,7 +38,7 @@ export const openapiDoc = {
         additionalProperties: true,
         required: ["engine", "sourceText"],
         properties: {
-          engine: { type: "string", enum: ["v8", "hermes", "sm", "jsc"] },
+          engine: { type: "string", enum: [...ENGINE_KINDS] },
           sourceText: { type: "string", minLength: 1 },
           options: {
             type: "object",
