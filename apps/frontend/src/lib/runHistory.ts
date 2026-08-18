@@ -1,6 +1,5 @@
 import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
 
-/** One recorded playground run, enough to restore and re-run it. */
 export interface RunHistoryEntry {
   id: string;
   ts: number;
@@ -40,11 +39,6 @@ export function loadHistory(storage: Storage = window.localStorage): RunHistoryE
   }
 }
 
-/**
- * Prepend an entry, newest-first, capped at MAX_HISTORY. A run identical to the
- * most recent one (same code + engines + flags) is skipped so re-running the
- * same snippet doesn't flood the list. Returns the new list.
- */
 export function pushHistory(
   entry: Omit<RunHistoryEntry, "id" | "ts">,
   makeId: () => string,

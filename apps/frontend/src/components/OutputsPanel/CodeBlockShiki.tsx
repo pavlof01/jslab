@@ -1,6 +1,7 @@
 import { CodeBlock, createShikiAdapter, Flex, Float, IconButton } from "@chakra-ui/react";
 import type { HighlighterGeneric } from "shiki";
 
+import { getSourceHighlighter, MACHINE_CODE_LANG, THEME } from "@/lib/shiki";
 import DefaultEmptyCodeBlockState, {
   Props as DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";
@@ -16,7 +17,7 @@ const CodeBlockShiki: React.FC<Props> = ({ code, EmptyCodeBlockState = DefaultEm
   return (
     <Flex flex={1}>
       <CodeBlock.AdapterProvider value={shikiAdapter}>
-        <CodeBlock.Root code={code} language="actionscript-3">
+        <CodeBlock.Root code={code} language={MACHINE_CODE_LANG}>
           <CodeBlock.Content>
             <Float placement="top-end" offset="5" zIndex="1">
               <CodeBlock.CopyTrigger asChild>
@@ -35,15 +36,9 @@ const CodeBlockShiki: React.FC<Props> = ({ code, EmptyCodeBlockState = DefaultEm
   );
 };
 
-const shikiAdapter = createShikiAdapter<HighlighterGeneric<any, any>>({
-  async load() {
-    const { createHighlighter } = await import("shiki");
-    return createHighlighter({
-      langs: ["actionscript-3"],
-      themes: ["ayu-dark"],
-    });
-  },
-  theme: "ayu-dark",
+const shikiAdapter = createShikiAdapter<HighlighterGeneric<never, never>>({
+  load: getSourceHighlighter,
+  theme: THEME,
 });
 
 export default CodeBlockShiki;

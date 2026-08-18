@@ -32,6 +32,7 @@ const envSchema = z.object({
   // issuer can accumulate.
   API_KEY_TTL_SECONDS: z.coerce.number().default(30 * 24 * 3600),
   API_KEY_MAX_PER_ISSUER: z.coerce.number().default(10),
+  REDIS_COMMAND_TIMEOUT_MS: z.coerce.number().default(300),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
   // Floor for a caller-supplied timeout. Below this even a trivial snippet
   // cannot finish (spawning the engine binary alone costs tens of ms), so the

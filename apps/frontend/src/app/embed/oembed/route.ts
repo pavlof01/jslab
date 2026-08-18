@@ -8,20 +8,9 @@ import {
   decodeSnapshot,
   estimateEmbedHeight,
 } from "@/lib/embedState";
+import { clamp, finiteOr } from "@/lib/numbers";
 import { EMBED_PATH } from "@/lib/shareState";
 
-/**
- * oEmbed provider endpoint (https://oembed.com).
- *
- * This is what makes a bare URL pasted into Medium render as a block instead of
- * a link card: Medium delegates to Embedly, Embedly finds the
- * <link rel="alternate" type="application/json+oembed"> on the embed page and
- * calls this.
- *
- * Note the returned `height` is final. Embedly wraps our iframe in its own, so
- * nothing the frame posts afterwards can resize it — the embed scrolls
- * internally instead.
- */
 
 /** Only our own embed paths may be turned into an iframe. */
 const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH];
@@ -31,19 +20,12 @@ function badRequest(message: string, status = 400) {
 }
 
 function clampDimension(raw: string | null, fallback: number, min: number, max: number): number {
-  // The null check is load-bearing: Number(null) is 0, not NaN, so a missing
-  // maxwidth/maxheight would sail past a Number.isFinite guard and clamp to the
-  // minimum instead of using the default.
   if (raw === null || raw.trim() === "") return fallback;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, Math.floor(n)));
+  return clamp(Math.floor(finiteOr(raw, fallback)), min, max);
 }
 
 export async function GET(req: NextRequest) {
   const format = req.nextUrl.searchParams.get("format");
-  // The spec says a provider that cannot supply the requested format must answer
-  // 501, not silently hand back JSON.
   if (format && format !== "json") {
     return badRequest(`format "${format}" is not supported`, 501);
   }
@@ -58,9 +40,6 @@ export async function GET(req: NextRequest) {
     return badRequest("url is not a valid absolute URL");
   }
 
-  // Same-origin only. Without this the endpoint would happily frame any site on
-  // the internet under our name, and a consumer that trusts our provider domain
-  // would render it.
   const self = req.nextUrl;
   const sameHost = target.host === (req.headers.get("x-forwarded-host") ?? self.host);
   if (!sameHost) return badRequest("url does not belong to this site", 404);

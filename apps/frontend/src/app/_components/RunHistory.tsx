@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react";
 import {
-  Box,
   Button,
   DrawerBackdrop,
   DrawerBody,
@@ -16,24 +15,15 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { LuHistory, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 
-import { ENGINE_KEYS, EngineKey } from "@/lib/types";
-import { useEngineOutputsActions } from "@/store/useEngineOutputs";
+import { selectionFrom } from "@/lib/types";
+import { useStateRestore } from "@/store/engineOutputsSelectors";
 import { clearHistory, loadHistory, type RunHistoryEntry } from "@/lib/runHistory";
-
-function relativeTime(ts: number, now: number): string {
-  const s = Math.max(0, Math.round((now - ts) / 1000));
-  if (s < 60) return `${s}s ago`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.round(h / 24)}d ago`;
-}
+import { RunHistoryRow } from "./RunHistoryRow";
 
 export default function RunHistory() {
-  const { setCode, setEngines, setSelectedV8Flags } = useEngineOutputsActions();
+  const { setCode, setEngines, setSelectedV8Flags } = useStateRestore();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<RunHistoryEntry[]>([]);
   const [now, setNow] = useState(0);
@@ -52,14 +42,10 @@ export default function RunHistory() {
   );
 
   const restore = useCallback(
-    (e: RunHistoryEntry) => {
-      setCode(e.code);
-      const selection = ENGINE_KEYS.reduce(
-        (acc, k) => ({ ...acc, [k]: e.engines.includes(k) }),
-        {} as Record<EngineKey, boolean>,
-      );
-      setEngines(selection);
-      setSelectedV8Flags(e.v8Flags);
+    (entry: RunHistoryEntry) => {
+      setCode(entry.code);
+      setEngines(selectionFrom(entry.engines));
+      setSelectedV8Flags(entry.v8Flags);
       setOpen(false);
     },
     [setCode, setEngines, setSelectedV8Flags],
@@ -71,9 +57,16 @@ export default function RunHistory() {
   }, []);
 
   return (
-    <DrawerRoot open={open} onOpenChange={(e) => onOpenChange(e.open)} placement="end" size="sm">
-      <Button size="sm" variant="surface" colorPalette="white" onClick={() => onOpenChange(true)} aria-label="Run history">
-        <LuHistory /> History
+    <DrawerRoot
+      open={open}
+      onOpenChange={(e) => onOpenChange(e.open)}
+      placement="end"
+      size="sm"
+      lazyMount
+      unmountOnExit
+    >
+      <Button size="sm" onClick={() => onOpenChange(true)} aria-label="Run history">
+        history
       </Button>
       <DrawerBackdrop />
       <DrawerPositioner>
@@ -95,51 +88,13 @@ export default function RunHistory() {
           </DrawerHeader>
           <DrawerBody>
             {entries.length === 0 ? (
-              <Text color="whiteAlpha.500" fontSize="sm">
+              <Text color="ink.label" fontSize="sm">
                 No runs yet. Runs you execute in the playground are saved here.
               </Text>
             ) : (
               <VStack align="stretch" gap={2}>
-                {entries.map((e) => (
-                  <Box
-                    key={e.id}
-                    as="button"
-                    textAlign="left"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => restore(e)}
-                    onKeyDown={(ev) => {
-                      if (ev.key === "Enter" || ev.key === " ") {
-                        ev.preventDefault();
-                        restore(e);
-                      }
-                    }}
-                    p={3}
-                    borderRadius="md"
-                    border="1px solid"
-                    borderColor="whiteAlpha.200"
-                    _hover={{ borderColor: "brand.500", bg: "whiteAlpha.50" }}
-                  >
-                    <Flex justify="space-between" mb={1}>
-                      <Text fontSize="xs" color="brand.300">
-                        {e.engines.join(", ")}
-                        {e.v8Flags.length > 0 ? ` · ${e.v8Flags.length} flag${e.v8Flags.length > 1 ? "s" : ""}` : ""}
-                      </Text>
-                      <Text fontSize="xs" color="whiteAlpha.500">
-                        {relativeTime(e.ts, now)}
-                      </Text>
-                    </Flex>
-                    <Text
-                      fontFamily="mono"
-                      fontSize="xs"
-                      color="whiteAlpha.800"
-                      lineClamp={2}
-                      whiteSpace="pre-wrap"
-                      wordBreak="break-all"
-                    >
-                      {e.code.slice(0, 160) || "(empty)"}
-                    </Text>
-                  </Box>
+                {entries.map((entry) => (
+                  <RunHistoryRow key={entry.id} entry={entry} now={now} onRestore={() => restore(entry)} />
                 ))}
               </VStack>
             )}

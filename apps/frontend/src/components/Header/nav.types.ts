@@ -1,11 +1,13 @@
-export type NavItem = {
-  label: string;
-  description: string;
-  href: string;
-  external?: boolean;
-};
+import { NAV_GROUPS, navEntries, type NavEntry } from "@/lib/tools";
+
+export type NavItem = NavEntry;
 
 export type NavSection = {
   label: string;
   items: NavItem[];
 };
+
+export const navSections: NavSection[] = NAV_GROUPS.map(({ group, label }) => ({
+  label,
+  items: navEntries(group),
+}));

@@ -1,10 +1,3 @@
-/**
- * Parses V8's --trace-opt / --trace-deopt / --trace-ic output into structured
- * events. V8's exact wording drifts between versions, so this is deliberately
- * lenient: it keys off stable substrings ("optimizing", "deoptimizing",
- * "marking ... for optimization", "IC") and never throws — unrecognized lines
- * are ignored rather than failing the whole parse.
- */
 
 export type V8TraceEventKind = "optimize" | "deopt" | "ic";
 
@@ -18,13 +11,11 @@ export interface V8TraceEvent {
   reason?: string;
   /** Source position like "file:3:10" when present. */
   location?: string;
-  /** The original line, for the raw view. */
   raw: string;
 }
 
 const FN_RE = /<JS(?:Function| Function)\s+([^\s(>]+)/;
 const REASON_RE = /reason:\s*([^\]]+?)\s*[\]]?\s*$/;
-// Handles both "at <stdin>:3:10" (bracket before the position) and "at foo.js:3:10".
 const LOCATION_RE = /at\s+<?([\w./-]+)>?:(\d+):(\d+)/;
 const BAILOUT_RE = /(?:DEOPT|deopt|kind:)\s*[-(]?\s*(eager|lazy|soft)/i;
 
@@ -46,11 +37,8 @@ export function parseV8Trace(output: string): V8TraceEvent[] {
     if (!line) continue;
     const lower = line.toLowerCase();
 
-    // --- Deoptimizations (most important) ---
     if (lower.includes("deoptimizing") || lower.includes("bailout") || lower.includes(";;; deoptimize")) {
       const reason = REASON_RE.exec(line)?.[1];
-      // A trailing ";;; deoptimize at <loc>, reason: ..." continuation line
-      // often has no function; attach it to the previous deopt if so.
       const fn = fnOf(line);
       if (!fn && (lower.startsWith(";;;") || lower.includes("deoptimize at")) && events.length) {
         const prev = events[events.length - 1];
@@ -88,7 +76,6 @@ export function parseV8Trace(output: string): V8TraceEvent[] {
     }
 
     // --- Inline caches (--trace-ic) ---
-    // Lines look like: "[LoadIC in ...map... (MONOMORPHIC->POLYMORPHIC) ...]"
     const icMatch = /\b([A-Za-z]*IC)\b/.exec(line);
     if (icMatch && line.startsWith("[")) {
       const transition = /\((\w+->\w+|\w+)\)/.exec(line)?.[1];
@@ -104,7 +91,6 @@ export interface V8TraceSummary {
   optimize: number;
   deopt: number;
   ic: number;
-  /** Function names that were deoptimized at least once. */
   deoptedFns: string[];
 }
 

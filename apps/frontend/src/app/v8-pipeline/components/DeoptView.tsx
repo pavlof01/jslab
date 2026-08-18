@@ -1,14 +1,18 @@
 "use client";
 
+/* eslint-disable react/no-array-index-key -- Trace events are a sequence: two
+   identical deopts of the same function are distinct events, told apart only by
+   position. */
+
 import { useMemo } from "react";
 import { Badge, Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
 
 import { parseV8Trace, summarizeV8Trace, type V8TraceEvent } from "@/lib/parseV8Trace";
 
 const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }> = {
-  optimize: { label: "OPT", color: "green.400" },
-  deopt: { label: "DEOPT", color: "red.400" },
-  ic: { label: "IC", color: "blue.300" },
+  optimize: { label: "OPT", color: "status.ok" },
+  deopt: { label: "DEOPT", color: "status.error" },
+  ic: { label: "IC", color: "status.info" },
 };
 
 export default function DeoptView({ output }: { output: string }) {
@@ -18,7 +22,7 @@ export default function DeoptView({ output }: { output: string }) {
   if (!output.trim()) {
     return (
       <Box p={6}>
-        <Text color="whiteAlpha.500" fontSize="sm">
+        <Text color="ink.label" fontSize="sm">
           Run to trace optimization and deoptimization events. Deopts happen when V8 has to throw away optimized code —
           usually because a value’s type changed from what the optimizer assumed.
         </Text>
@@ -29,7 +33,7 @@ export default function DeoptView({ output }: { output: string }) {
   if (events.length === 0) {
     return (
       <Box p={6}>
-        <Text color="whiteAlpha.600" fontSize="sm">
+        <Text color="ink.2" fontSize="sm">
           No optimization or deoptimization events. Try a hot loop (e.g. call a function a few hundred times) so V8
           tiers it up — then feed it a changing type to force a deopt.
         </Text>
@@ -44,7 +48,7 @@ export default function DeoptView({ output }: { output: string }) {
         <Badge colorPalette="red">{summary.deopt} deoptimized</Badge>
         {summary.ic > 0 && <Badge colorPalette="blue">{summary.ic} IC</Badge>}
         {summary.deoptedFns.length > 0 && (
-          <Text fontSize="xs" color="whiteAlpha.600">
+          <Text fontSize="xs" color="ink.2">
             deopted: {summary.deoptedFns.join(", ")}
           </Text>
         )}
@@ -63,7 +67,7 @@ export default function DeoptView({ output }: { output: string }) {
               borderRadius="md"
               borderLeft="3px solid"
               borderColor={style.color}
-              bg="whiteAlpha.50"
+              bg="surface.hover"
             >
               <Text fontFamily="mono" fontSize="10px" fontWeight="700" color={style.color} minW={12}>
                 {style.label}
@@ -72,18 +76,18 @@ export default function DeoptView({ output }: { output: string }) {
               <Box flex="1" minW={0}>
                 <Flex gap={2} align="baseline" wrap="wrap">
                   {e.fn && (
-                    <Text fontFamily="mono" fontSize="sm" color="whiteAlpha.900">
+                    <Text textStyle="codeXl" color="ink.1">
                       {e.fn}
                     </Text>
                   )}
                   {e.location && (
-                    <Text fontFamily="mono" fontSize="xs" color="whiteAlpha.500">
+                    <Text textStyle="code" color="ink.label">
                       {e.location}
                     </Text>
                   )}
                 </Flex>
                 {e.reason && (
-                  <Text fontSize="xs" color={e.kind === "deopt" ? "red.200" : "whiteAlpha.700"}>
+                  <Text fontSize="xs" color={e.kind === "deopt" ? "status.error" : "ink.2"}>
                     {e.reason}
                   </Text>
                 )}

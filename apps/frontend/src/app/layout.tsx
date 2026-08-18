@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 import { Providers } from "./providers";
 import { ConditionalHeader } from "@/components/ConditionalHeader";
 import { SITE_ORIGIN } from "@/lib/site";
@@ -83,14 +81,31 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="google-site-verification" content="Ef6TZgGnNnoYy5eVp7xsHN73inP9oT5izQak78uVwuQ" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        />
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        {/*
+          THESIS: The page is the tool's own output, set well. Real bytecode and
+          a real spec trace do the arguing; the design's whole job is to make
+          them legible and get out of the way. Refuses the metaphor — no borrowed
+          world — and equally refuses the category's laziest habits: eyebrow
+          pill, centred hero over a stock code block, six identical icon cards.
+          OWN-WORLD: Convention, executed at full craft. Near-black ground,
+          hairline rules, one accent (#F9E31A) spent only on the live result and
+          the primary action. Density is a feature: listings stay monospace,
+          tabular and tight. Character comes from type scale, optical alignment
+          and restraint, never ornament.
+          STORY: A developer chasing "why is [] == ![] true" sees the spec
+          executing, believes the steps are real, and steps into a tool.
+          FIRST VIEWPORT: The expression, its verdict, and the five operations
+          that actually ran — left. The four engines' bytecode for one snippet —
+          right. Both real output, not illustration. Primary action sits under
+          the trace.
+          FORM: Category standard, taken by the user as the standing exit after
+          two direction rounds; craft bar Linear / Vercel / Raycast / Astro /
+          Bun / Deno / Compiler Explorer. Seed key 8354c7e8, not built.
+          FINISH: unreviewed and undocumented is unfinished; this build ends with
+          the finish review, the verdict, and DESIGN.md
+        */}
         <Providers>
           <ConditionalHeader />
           {children}

@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
-import {
-  OEMBED_PATH,
-  SNAPSHOT_PARAM,
-  BYTECODE_EMBED_PATH,
-  decodeSnapshot,
-  type EmbedSnapshot,
-} from "@/lib/embedState";
+import { OEMBED_PATH, SNAPSHOT_PARAM, BYTECODE_EMBED_PATH, decodeSnapshot, type EmbedSnapshot } from "@/lib/embedState";
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
 export const metadata: Metadata = {
   title: "JSLab bytecode",
-  // Per-snippet, transient views; keep them out of the index.
   robots: { index: false, follow: false },
 };
 
-/** Absolute origin of this request, so the discovery href is absolute as oEmbed requires. */
 async function requestOrigin(): Promise<string> {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "jslab.su";
@@ -24,19 +16,6 @@ async function requestOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-/**
- * Embeddable bytecode view.
- *
- * The snapshot is decoded HERE, on the server, not in the client component.
- * Embedly requires provider pages to be crawlable server side, and a crawler
- * runs no effects: decoding in the browser would have served it an empty frame.
- * Node has the same DecompressionStream/atob the browser does, so the same
- * codec runs in both places.
- *
- * The <link rel="alternate"> is what turns a bare URL pasted into Medium into a
- * rendered block: Medium delegates to Embedly, Embedly fetches this page,
- * looks for exactly this tag, and calls the endpoint it points at.
- */
 export default async function EmbedBytecodePage({
   searchParams,
 }: {

@@ -1,26 +1,29 @@
 /* ── Dark theme tokens (from ecmarkup dark palette) ──────────────────────── */
 .panel {
-  --fg:            #fcfcfc;
-  --bg:            #171717;
-  --border:        #2a2a2a;
-  --fg-muted:      #b0b0b0;
-  --fg-dim:        #888;
-  --link:          #439de2;
-  --link-hover:    #80cafb;
-  --var-color:     #4fb6ab;
-  --secnum-color:  #666;
-  --highlight-bg:  rgba(114, 105, 24, 1);
+  --fg: #fcfcfc;
+  --bg: #171717;
+  --border: #2a2a2a;
+  --fg-muted: #b0b0b0;
+  --fg-dim: #888;
+  --link: #439de2;
+  --link-hover: #80cafb;
+  --var-color: #4fb6ab;
+  --secnum-color: #666;
+  --highlight-bg: rgba(114, 105, 24, 1);
   --highlight-dim: rgba(114, 105, 24, 0.4);
   --clause-active: #439de2;
-  --separator:     #252525;
+  --separator: #252525;
 
-  font-family: 'IBM Plex Serif', Palatino, 'Palatino Linotype', Georgia, serif;
+  font-family: "IBM Plex Serif", Palatino, "Palatino Linotype", Georgia, serif;
   font-size: 14px;
   line-height: 1.75;
   color: var(--fg);
   background: var(--bg);
   overflow-y: auto;
-  height: 100%;
+  /* The panel is its own scroller — the step-follow logic drives its
+     scrollTop, so the cap must live here, not on a wrapper. A wrapper that
+     scrolls instead leaves this element un-overflowed and scrollTo() inert. */
+  max-height: min(64vh, 720px);
   padding: 24px 28px 48px;
   border-right: 1px solid var(--border);
 }
@@ -49,7 +52,7 @@
   font-weight: 600;
   color: var(--secnum-color);
   margin-right: 6px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: "IBM Plex Sans", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -95,7 +98,7 @@
   color: var(--fg);
 }
 :global(emu-const) {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: "IBM Plex Sans", sans-serif;
   font-variant: small-caps;
   text-transform: uppercase;
   font-size: 0.88em;
@@ -105,7 +108,7 @@
 :global(emu-xref a) {
   color: var(--link);
   text-decoration: none;
-  font-family: 'IBM Plex Mono', 'Fira Code', monospace;
+  font-family: "IBM Plex Mono", "Fira Code", monospace;
   font-size: 0.9em;
 }
 :global(emu-xref a:hover) {
@@ -120,7 +123,9 @@
   margin-left: 5px;
   color: var(--fg-dim);
   opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
   vertical-align: middle;
   text-decoration: none;
 }
@@ -131,16 +136,4 @@
 }
 :global(.spec-ext-link-icon) {
   display: block;
-}
-
-/* ── Active step highlight ── */
-.stepActive {
-  background-color: var(--highlight-bg) !important;
-  border-radius: 3px;
-  color: #f0e68c;
-}
-
-/* ── Active clause title ── */
-.clauseActive :global(h1) {
-  color: var(--clause-active);
 }
