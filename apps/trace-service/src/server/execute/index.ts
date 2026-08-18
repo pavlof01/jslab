@@ -11,14 +11,41 @@ import {
   type ValueCompletion,
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
-import {
-  callECMA262Function,
-  callECMA262BinaryFunction,
-  parseStringToValue,
-  detectOperator,
-  getOperatorDispatch,
-} from "./helpers.ts";
+import { callBinaryAlgorithm, callUnaryOperation, getOperatorDispatch } from "../operations.ts";
+import { detectOperator, parseStringToValue } from "./parse.ts";
 import { fromEngineValue, serializeNode } from "./serialize.ts";
+
+/**
+ * Both entry points end the same way: unwrap the completion (a throw can
+ * surface either from `evalQ` or from the algorithm itself), pick the trace
+ * root, and serialize. Only the extra fields differ, so the tail lives here
+ * once rather than being copied either side of the two evaluations.
+ */
+function finishTrace(
+  functionName: string,
+  evalResult: unknown,
+  inputTrace: TraceRecord | undefined,
+  extra: Partial<ExecuteResponse> = {},
+): ExecuteResponse {
+  if (evalResult instanceof ThrowCompletion) {
+    return { success: false, functionName, error: `Execution threw: ${evalResult.Value}` };
+  }
+
+  const execResult = (evalResult as NormalCompletion<Value | ThrowCompletion>).Value;
+  if (execResult instanceof ThrowCompletion) {
+    return { success: false, functionName, error: String(execResult.Value) };
+  }
+
+  const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
+
+  return {
+    success: true,
+    functionName,
+    result: fromEngineValue(execResult),
+    root: rootNode ? serializeNode(rootNode) : undefined,
+    ...extra,
+  };
+}
 
 /**
  * Type-conversion endpoint: unary abstract operations (ToNumber, ToString, ToPrimitive, ...).
@@ -45,40 +72,13 @@ export async function executeUnaryConversion(
     inputTrace = inputValue.trace;
 
     const raw = realm.scope<ValueCompletion<Value>>(
-      () => callGenerator(callECMA262Function(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
+      () => callGenerator(callUnaryOperation(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
     );
 
     return raw instanceof NormalCompletion ? raw.Value : raw;
   });
 
-  if (evalResult instanceof ThrowCompletion) {
-    return {
-      success: false,
-      functionName,
-      error: `Execution threw: ${evalResult.Value}`,
-    };
-  }
-
-  const execResult = (evalResult as NormalCompletion<Value | ThrowCompletion>).Value;
-
-  if (execResult instanceof ThrowCompletion) {
-    return {
-      success: false,
-      functionName,
-      error: String(execResult.Value),
-    };
-  }
-
-  const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
-  const root = rootNode ? serializeNode(rootNode) : undefined;
-  const result = fromEngineValue(execResult);
-
-  return {
-    success: true,
-    functionName,
-    result,
-    root,
-  };
+  return finishTrace(functionName, evalResult, inputTrace);
 }
 
 /**
@@ -131,10 +131,7 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
     inputTrace = lhs.trace;
 
     const raw = realm.scope<ValueCompletion<Value>>(
-      () =>
-        callGenerator(
-          callECMA262BinaryFunction(dispatch.algoName, lhs, rhs, dispatch.leftFirst),
-        ) as ValueCompletion<Value>,
+      () => callGenerator(callBinaryAlgorithm(dispatch.algoName, lhs, rhs, dispatch.leftFirst)) as ValueCompletion<Value>,
     );
 
     if (raw instanceof ThrowCompletion) {
@@ -150,34 +147,5 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
     return { success: false, functionName: "BinaryExpression", error: parseError };
   }
 
-  if (evalResult instanceof ThrowCompletion) {
-    return {
-      success: false,
-      functionName: "BinaryExpression",
-      error: `Execution threw: ${evalResult.Value}`,
-    };
-  }
-
-  const execResult = (evalResult as NormalCompletion<Value | ThrowCompletion>).Value;
-
-  if (execResult instanceof ThrowCompletion) {
-    return {
-      success: false,
-      functionName: "BinaryExpression",
-      error: String(execResult.Value),
-    };
-  }
-
-  const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
-  const root = rootNode ? serializeNode(rootNode) : undefined;
-  const result = fromEngineValue(execResult);
-
-  return {
-    success: true,
-    functionName: "BinaryExpression",
-    result,
-    root,
-    effectiveAlgoId,
-    detectedOperator,
-  };
+  return finishTrace("BinaryExpression", evalResult, inputTrace, { effectiveAlgoId, detectedOperator });
 }
