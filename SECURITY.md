@@ -30,10 +30,16 @@ What is in scope:
 ## Design notes for reviewers
 
 - Every engine runs as a non-root user with a read-only root filesystem, no
-  capabilities, and `/tmp` on an `emptyDir`.
+  capabilities, `seccompProfile: RuntimeDefault`, and `/tmp` on an `emptyDir`.
 - Client-supplied engine flags are filtered against a per-engine allowlist in both
   the gateway and the engine service; anything else is dropped and reported back
-  in `meta.droppedFlags`.
+  in `meta.droppedFlags`. Both layers import the same catalog from
+  `packages/engine-runtime`, so they cannot drift apart.
+- The `d8` and `jsc` shells expose filesystem primitives as ordinary globals
+  (`read`/`readbuffer`/`readline` and `readFile`/`writeFile`/`load`/`run`/…),
+  none of them gated behind a droppable flag. Both services load a lockdown shim
+  in-realm before the snippet that replaces those globals with throwing stubs.
+  SpiderMonkey and Hermes only compile and disassemble, so the snippet never runs.
 - Execution is bounded by a wall-clock timeout, an output cap, and a per-pod
   concurrency gate. Spec traces run in a worker thread that is killed outright when
   it exceeds its budget.
