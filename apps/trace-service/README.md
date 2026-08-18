@@ -1,119 +1,107 @@
-# Trace Service README
+# Trace service
 
-The Trace Service is a Node.js HTTP service that executes ECMA262 abstract operations and returns execution traces with step-by-step information.
+A Fastify service that executes ECMAScript abstract operations on a vendored,
+trace-instrumented build of [engine262](https://github.com/pavlof01/engine262)
+and returns the spec steps it walked.
 
-## Overview
+**Purpose**: given `ToNumber("42")` or `{} == ![]`, produce the actual sequence
+of spec steps the algorithm takes — not a description of them. Execution is
+real; there is no mock data.
 
-**Purpose**: Execute ECMA262 type conversion functions (ToNumber, ToString, ToBoolean, etc.) and return detailed trace information showing the internal steps of conversion.
+**Pattern**: same shape as the `engine-*` services (stateless HTTP, called only
+by the api gateway), but it runs engine262 in a worker thread rather than
+spawning a CLI binary, so it does not use `packages/engine-runtime`.
 
-**Pattern**: Follows the JSLab engine service pattern (like engine-v8, engine-hermes, etc.)
+## Getting the source
 
-## Architecture
-
-### Local Development
+The engine262 fork is a git submodule at `apps/trace-service/engine262` and is
+imported directly — nothing here builds or tests without it:
 
 ```bash
-npm run dev  # Runs on localhost:8080
+git submodule update --init --recursive
 ```
 
-### Production
+## Running it
 
 ```bash
-npm run build  # Compile TypeScript
-npm start      # Run compiled server
+npm ci
+npm run dev     # tsx watch src/server/server.ts → 0.0.0.0:8080
+npm start       # same entry point, without the watcher
+npm run typecheck   # tsc --noEmit  (this is what CI runs; `npm run build` is the same check)
+npm test        # vitest
 ```
 
-### Kubernetes
-
-The service is deployed as part of the JSLab cluster:
-
-```bash
-kubectl apply -k infra/k8s/base/  # Production
-skaffold dev                       # Development with live reload
-```
-
-Port forwarding (dev):
+Under Docker Compose and Skaffold the service listens on 8080 in-container and
+is published on **localhost:8085** — the api gateway's `TRACE_SERVICE_URL` and
+the frontend's direct calls both point at it.
 
 ```bash
-skaffold dev --port-forward  # Exposes trace-service on localhost:8085
+docker compose up --build            # from the repo root
+skaffold dev --port-forward -n jslab # exposes trace-service on localhost:8085
+kubectl apply -k infra/k8s/base      # cluster deploy (namespace: jslab)
 ```
 
 ## API
 
-### Health Check
+Clients reach these through the api gateway (`POST /api/trace/execute/*`), which
+is where rate limiting and metrics live. The paths below are the service's own.
+
+### `GET /healthz`
 
 ```bash
-curl http://localhost:8080/healthz
+curl http://localhost:8085/healthz
 # { "ok": true }
 ```
 
-### Get Available Functions
+### `GET /functions`
+
+The catalog the visualizer builds its UI from: `available_functions`
+(`ToNumber`, `ToNumeric`, `ToString`, `ToBoolean`, `ToPrimitive`, `ToObject`,
+`ToPropertyKey`, `ToLength`, `ToIndex`), `function_meta`, `supported_operators`
+(`===`, `!==`, `==`, `!=`, `<=`, `>=`, `<`, `>`) and an `endpoints` hint.
+
+### `POST /execute/type-conversion`
 
 ```bash
-curl http://localhost:8080/functions
-```
-
-Response:
-
-```json
-{
-  "available_functions": ["ToNumber", "ToString", ...],
-  "description": "POST to /execute with { functionName, input, preferredType? }",
-  "note": "Mock data currently. Real ECMA262 execution coming soon."
-}
-```
-
-### Execute Function with Trace
-
-```bash
-curl -X POST http://localhost:8080/execute \
+curl -X POST http://localhost:8085/execute/type-conversion \
   -H "Content-Type: application/json" \
-  -d '{
-    "functionName": "ToNumber",
-    "input": "\"42\"",
-    "preferredType": "number"
-  }'
+  -d '{ "functionName": "ToNumber", "input": "\"42\"", "preferredType": "number" }'
 ```
 
-Response:
+`input` is source text for the value to convert, evaluated inside the sandbox.
+`preferredType` (`"string"` / `"number"`) is optional and only meaningful for
+`ToPrimitive`. The response carries `success`, `functionName`, the result value
+and type, and the trace tree the run produced.
 
-```json
-{
-  "success": true,
-  "functionName": "ToNumber",
-  "resultValue": "42",
-  "resultType": "number",
-  "trace": [
-    {
-      "kind": "operation",
-      "hint": "Input string conversion",
-      "value": "\"42\""
-    },
-    {
-      "kind": "coercion",
-      "hint": "Parse as numeric string",
-      "value": "42"
-    },
-    {
-      "kind": "result",
-      "hint": "Return numeric value",
-      "value": "42"
-    }
-  ]
-}
+### `POST /execute/equality`
+
+```bash
+curl -X POST http://localhost:8085/execute/equality \
+  -H "Content-Type: application/json" \
+  -d '{ "input": "{} == ![]" }'
 ```
+
+`input` is a whole binary expression; the service detects the operator, picks
+the matching spec algorithm (`IsLooselyEqual`, `IsStrictlyEqual`,
+`AbstractRelationalComparison`) and traces it.
+
+### `GET /spec/:functionName`
+
+The ECMA-262 algorithm text for one operation, rendered to HTML by ecmarkup
+from `src/server/ecma-spec.html`. 404 for anything outside the supported set.
+Cached for an hour in production, `no-store` otherwise.
 
 ## Configuration
 
-Environment variables (see `src/config.ts`):
+Environment variables (see `config.ts` in this directory):
 
-| Variable           | Default | Description                 |
-| ------------------ | ------- | --------------------------- |
-| PORT               | 8080    | HTTP server port            |
-| HOST               | 0.0.0.0 | HTTP server binding address |
-| MAX_TIMEOUT_MS     | 5000    | Hard execution budget (every request uses this — there is no per-request override) |
-| MAX_SOURCE_LENGTH  | 20000   | Maximum input length        |
-| LOG_LEVEL          | info    | Pino log level              |
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | 8080 | HTTP server port |
+| `HOST` | 0.0.0.0 | HTTP server binding address |
+| `MAX_TIMEOUT_MS` | 5000 | Hard execution budget (every request uses this — there is no per-request override) |
+| `MAX_SOURCE_LENGTH` | 20000 | Maximum input length |
+| `LOG_LEVEL` | info | Pino log level |
 
 ## Execution limits
 
@@ -131,19 +119,29 @@ keep one request from taking the pod down:
 
 ## Integration
 
-### Frontend Integration
+The visualizer pages (`/type-conversion`, `/equality`) reach `/execute/*`
+**through the api gateway** — the Next.js handler at
+`app/api/trace/execute/[category]/route.ts` proxies to `POST /api/trace/execute/:category`,
+which is the only place trace runs are rate limited, charged to an API-key
+budget and counted in `/metrics`.
 
-The Next.js frontend calls this service via `/api/trace/execute`:
+Two paths still bypass the gateway and call this service directly from the
+frontend's server side, because the gateway has no equivalent route yet:
+`GET /functions` and `GET /spec/:functionName` (plus the SSR fetch in
+`app/abstract-functions-visualizer/server-data.ts`). That is the sole reason the
+NetworkPolicy still allows frontend → trace-service; see the "Network policy
+model" section of [`infra/README.md`](../../infra/README.md).
 
 ```typescript
-// apps/frontend/src/app/api/trace/execute/route.ts
-const response = await fetch("http://trace-service:8080/execute", {
+// apps/frontend/src/app/api/trace/execute/[category]/route.ts
+const response = await fetch(`${TRACE_SERVICE_URL}/execute/type-conversion`, {
   method: "POST",
   body: JSON.stringify({ functionName, input, preferredType }),
 });
 ```
 
-Service URL is configurable via `TRACE_SERVICE_URL` environment variable (defaults to `http://localhost:8080` for local dev).
+Service URL is configurable via `TRACE_SERVICE_URL` (defaults to the skaffold-forwarded
+`http://localhost:8085` in the frontend, and to `http://trace-service:8080` in the api).
 
 ### Network Policy
 
@@ -153,27 +151,6 @@ In Kubernetes, the trace-service is allowed to receive requests from:
 - Next.js frontend API routes
 
 See `infra/k8s/base/networkpolicy.yaml` for details.
-
-## Current Status
-
-⚠️ **Currently using mock data** - Returns hardcoded example traces
-
-### Roadmap to Real Execution
-
-1. **Integrate abstract-ops module**
-   - Load ECMA262 function implementations
-   - Enable real execution tracing
-   - Return actual conversion results
-
-2. **Performance optimizations**
-   - Cache compiled functions
-   - Connection pooling if needed
-   - Request batching support
-
-3. **Enhanced tracing**
-   - Capture variable state at each step
-   - Memory usage tracking
-   - Performance analytics
 
 ## Development Tips
 
@@ -193,7 +170,7 @@ See `infra/k8s/base/networkpolicy.yaml` for details.
 npm run dev
 
 # In another terminal
-curl -X POST http://localhost:8080/execute \
+curl -X POST http://localhost:8080/execute/type-conversion \
   -H "Content-Type: application/json" \
   -d '{"functionName": "ToNumber", "input": "\"42\"", "preferredType": null}'
 ```
@@ -201,36 +178,34 @@ curl -X POST http://localhost:8080/execute \
 ### Debugging
 
 ```bash
-# Set log level
 LOG_LEVEL=debug npm run dev
-
-# Check compiled output
-npm run build
-cat dist/server.js
 ```
 
-## File Structure
+## File structure
 
 ```
 apps/trace-service/
-├── config.ts           # Configuration & env validation
+├── config.ts               # Env validation (zod) — at the package root, not in src/
 ├── src/
+│   ├── index.mts           # Package entry (#self)
+│   ├── engine262.d.ts      # Types for the vendored engine262
 │   ├── server/
-│   │   ├── server.ts        # HTTP server (Fastify)
-│   │   ├── operations.ts    # The traceable abstract operations — one table
-│   │   ├── schema.ts        # Request body schemas
-│   │   ├── spec-generator.ts# ecmarkup → per-function spec HTML
-│   │   ├── ecma-spec.html   # Spec source for the clauses above
-│   │   └── execute/         # Sandbox, tracing, parsing, serialization
-│   └── trace/          # engine262 re-export
-├── Dockerfile          # Multi-stage Docker build
-├── package.json        # Dependencies
-├── tsconfig.json       # TypeScript config
-└── README.md           # This file
+│   │   ├── server.ts       # Fastify app and routes
+│   │   ├── operations.ts   # The traceable abstract operations — one table
+│   │   ├── schema.ts       # Request body schemas
+│   │   ├── types.ts
+│   │   ├── spec-generator.ts + ecma-spec.html   # /spec/:functionName rendering
+│   │   └── execute/        # sandbox (worker thread), worker, helpers, serialization
+│   └── trace/index.mts     # Trace capture on top of engine262
+├── test/                   # Vitest suites
+├── engine262/              # git submodule (fork with trace instrumentation)
+├── Dockerfile              # dev + prod targets; build context is this directory
+└── vitest.config.mts
+```
 ```
 
 ## See Also
 
-- [JSLab Architecture](../../docs/infra.md)
-- [Engine Services](../engine-v8/)
-- [Frontend Integration](../frontend/src/app/api/trace/execute/)
+- [Infra map](../../docs/infra.md)
+- [API gateway](../api/README.md)
+- [Frontend integration](../frontend/src/app/api/trace/)
