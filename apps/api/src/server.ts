@@ -26,28 +26,17 @@ const redis = new Redis(config.REDIS_URL, {
   // Small win: fail faster on network/Redis issues instead of hanging too long.
   maxRetriesPerRequest: 2,
   enableReadyCheck: true,
+  enableOfflineQueue: true,
+  commandTimeout: config.REDIS_COMMAND_TIMEOUT_MS,
 });
 
 const app = fastify({
   logger: { level: config.LOG_LEVEL },
   bodyLimit: config.REQUEST_BODY_LIMIT_BYTES,
 
-  // IMPORTANT: a *number* here means "trust exactly this many hops of
-  // X-Forwarded-For, counted from the proxy end" — not "trust the whole
-  // chain". `true` (the previous setting) trusts every hop, which makes
-  // proxy-addr return the client's own — attacker-controlled — leftmost
-  // entry. Only set this to `true` if you know every hop between the client
-  // and this pod is a proxy you control.
   trustProxy: config.TRUST_PROXY_HOPS
 });
 
-// Under pressure (it's better to set thresholds explicitly).
-// These must sit below the pod's memory *limit* (768Mi in
-// infra/k8s/base/api-deployment.yaml as shipped), not above it: the previous
-// 1GB heap threshold could never trip before the kernel OOM-killed the
-// container first, so the valve never actually shed load — the pod just died
-// instead. maxRssBytes catches non-heap growth (buffers, native allocations)
-// that maxHeapUsedBytes alone misses. Tune both if you change the pod limit.
 app.register(underPressure, {
   maxEventLoopDelay: 1000,
   maxHeapUsedBytes: 480 * 1024 * 1024,
@@ -65,9 +54,6 @@ app.get("/metrics", async (_req, reply) => {
 
 app.get("/api/openapi.json", async () => openapiDoc);
 
-// The per-engine flag catalog, served from the same data /api/run filters
-// against — so a client (or the playground's flag picker) can never offer a
-// flag the gateway would silently reject. Static: built once at boot.
 const flagsDoc = {
   ok: true,
   engines: Object.fromEntries(
@@ -92,10 +78,6 @@ app.register(apiReference, {
   }
 });
 
-// Deliberately permissive-but-bounded: this only needs to reject the "16KB of
-// junk" case (an oversized or shell-shaped string used as a Redis key name or
-// rate-limit identity), not validate real IPs precisely. IPv4, or anything
-// bracket/colon/hex shaped for IPv6 — capped well under any real address.
 const IP_SHAPE = /^[0-9a-fA-F.:]{1,64}$/;
 
 function clientIp(req: FastifyRequest): string {
@@ -105,10 +87,6 @@ function clientIp(req: FastifyRequest): string {
     const value = Array.isArray(raw) ? raw[0] : raw;
     if (value && IP_SHAPE.test(value)) return value;
   }
-  // Fastify derives req.ip from X-Forwarded-For using exactly
-  // config.TRUST_PROXY_HOPS trusted hops (see the `trustProxy` option above),
-  // so this is only reachable when CLIENT_IP_HEADER is unset/absent — e.g.
-  // local dev, or a deployment not behind Cloudflare.
   return IP_SHAPE.test(req.ip) ? req.ip : "unknown";
 }
 
@@ -122,20 +100,11 @@ type Budget = {
   traceLimit: number;
 };
 
-/**
- * Determines which rate-limit budget applies to a request. A valid API key is
- * limited by key at the higher key tier; anonymous requests keep the IP limit.
- * Sends 401 and returns null when a key is present but invalid.
- */
 async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
   const key = extractApiKey(req.headers ?? {});
   if (key) {
     const record = await lookupApiKey(redis, key, req.log);
     if (!record) {
-      // A format-valid-but-unknown key still costs a Redis lookup, so an
-      // invalid-key flood must be metered like any other request — charge it
-      // against the caller's IP under the ordinary general bucket rather than
-      // letting failed auth bypass rate limiting entirely.
       const ip = clientIp(req);
       const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
       if (general.limited) {
@@ -147,19 +116,11 @@ async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
       return null;
     }
     return {
-      // The raw key is fine to pass through as an identity: rateLimit.ts
-      // hashes every identity before it becomes a Redis key name (see
-      // hashIdentity), so this never puts the plaintext credential in a key.
       id: key,
       generalSuffix: "key-general",
       heavySuffix: "key-heavy",
       traceSuffix: "key-trace",
       generalLimit: record.rpm,
-      // Deliberately NOT record.rpm: the heavy bucket gates engine-spawning
-      // requests specifically, and a key raising it to the full general rpm
-      // (12x the anonymous heavy limit) turned key issuance into a process-
-      // spawn amplifier. Keys still get more than anonymous callers, just not
-      // proportional to the unrelated general quota.
       heavyLimit: Math.min(record.rpm, config.API_KEY_HEAVY_RATE_LIMIT_PER_MIN),
       traceLimit: record.rpm,
     };
@@ -199,31 +160,14 @@ function normalizeRequest(body: unknown): NormalizedRunRequest {
   };
 }
 
-/**
- * Attach the rejected flags to a response body. Done at reply time rather than
- * inside the run: the cache key ignores dropped flags, so a cached body would
- * otherwise report the *previous* caller's typos.
- */
 function withDroppedFlags(body: RunResult["body"], droppedFlags: string[]): RunResult["body"] {
   if (!droppedFlags.length || !body || !("meta" in body)) return body;
   return { ...body, meta: { ...(body as ApiResponse).meta, droppedFlags } } as RunResult["body"];
 }
 
-// Called only for a non-ok engine payload whose HTTP status is NOT 429 or
-// >=500 — both are already handled by the caller before this runs (see
-// executeRun). What reaches here is engine-runtime's own deterministic error
-// statuses (packages/engine-runtime/src/index.ts): 400 for a rejected
-// payload, 408 for an engine-reported execution timeout. Map on the engine's
-// actual HTTP status rather than pattern-matching its error *text* — a
-// substring like "rate" also matches "generate"/"accurate", and the engine
-// already tells us the real status; re-deriving it from prose was strictly a
-// downgrade.
 function mapEngineErrorToStatus(engineStatusCode: number): number {
   if (engineStatusCode === 408) return 504;
   if (engineStatusCode === 400) return 400;
-  // Anything else here is an engine status this gateway doesn't have a
-  // specific mapping for — treat as a generic bad gateway rather than
-  // guessing.
   return 502;
 }
 
@@ -250,14 +194,6 @@ function classifyUpstreamError(serviceName: string, err: any): { kind: string; m
   return { kind: "request_error", message: `${serviceName} request failed` };
 }
 
-// Engines cap their own combined output around ~512KB (see engine-runtime's
-// run.ts), but nothing here enforced that contract — a misbehaving, mis-
-// flagged, or future upstream returning a multi-megabyte body would be
-// buffered whole into this process's heap, once per concurrent request. 4MB
-// is generous headroom over the engines' own cap while still bounding the
-// worst case; if it's ever hit, something upstream is already broken and the
-// caller gets a 502 (via the catch in executeRun/proxyToTraceService) rather
-// than this pod running out of memory.
 const MAX_UPSTREAM_RESPONSE_BYTES = 4 * 1024 * 1024;
 
 async function readResponseText(body: AsyncIterable<Buffer | string>, maxBytes = MAX_UPSTREAM_RESPONSE_BYTES): Promise<string> {
@@ -279,16 +215,10 @@ async function readResponseText(body: AsyncIterable<Buffer | string>, maxBytes =
 type RunResult = {
   status: number;
   body: ApiResponse | EngineResponse | { ok: false; error: string };
-  // How to cache this outcome: "positive" = full TTL, "negative" = short TTL
-  // (deterministic failures only), "none" = don't cache (transient/backpressure).
   cache: "positive" | "negative" | "none";
   retryAfter?: string;
 };
 
-// In-process single-flight: concurrent identical requests coalesce onto one
-// engine execution instead of each spawning a process. Without this, a burst
-// on one cold-but-popular snippet fills the engine's concurrency gate and
-// everyone gets 429, when a single run could have served them all.
 const inFlight = new Map<string, Promise<RunResult>>();
 
 const engineBaseByKind = {
@@ -319,8 +249,6 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
       log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, "engine returned non-2xx");
     }
 
-    // Engine signals backpressure (its per-pod concurrency cap) with 429.
-    // Propagate it verbatim with Retry-After; never cache it.
     if (engineRes.statusCode === 429) {
       let body: any;
       try {
@@ -332,7 +260,6 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
       return { status: 429, body, cache: "none", retryAfter: retryAfter ? String(retryAfter) : undefined };
     }
 
-    // 5xx from the engine => transient; treat as Bad Gateway, don't cache.
     if (engineRes.statusCode >= 500) {
       return { status: 502, body: { ok: false, error: `engine unavailable (${engineRes.statusCode})` }, cache: "none" };
     }
@@ -347,9 +274,6 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
 
     if (!enginePayload.ok) {
       const status = mapEngineErrorToStatus(engineRes.statusCode);
-      // Bad input (400) and engine-reported timeout (504) are deterministic for
-      // a given snippet, so cache them briefly to stop re-burning engine slots.
-      // Everything else (502/429/…) is transient and stays uncached.
       const cache = status === 400 || status === 504 ? "negative" : "none";
       return { status, body: enginePayload, cache };
     }
@@ -399,8 +323,6 @@ app.post("/api/run", async (req, reply) => {
   if (cached) {
     cacheEvents.inc({ result: "hit" });
     runsTotal.inc({ engine: normalized.engine, outcome: "cache_hit" });
-    // Replay the cached status. For a 200 ApiResponse, refresh the per-request
-    // meta so cacheHit/durationMs reflect this request, not the cached one.
     const body =
       cached.status === 200 && cached.body && "meta" in cached.body
         ? { ...(cached.body as ApiResponse), meta: { ...(cached.body as ApiResponse).meta, cacheHit: true, durationMs: Date.now() - start } }
@@ -410,8 +332,6 @@ app.post("/api/run", async (req, reply) => {
   }
   if (!isDev) cacheEvents.inc({ result: "miss" });
 
-  // Only cache misses spawn an engine process, so only they consume the
-  // (stricter) heavy budget. Cache hits stay cheap for the client.
   const heavy = await enforceLimit(redis, budget.id, budget.heavySuffix, budget.heavyLimit, 60, reply, req.log);
   if (heavy.limited) {
     rateLimited.inc({ budget: budget.heavySuffix });
@@ -422,7 +342,6 @@ app.post("/api/run", async (req, reply) => {
   let result: RunResult;
   const existing = inFlight.get(key);
   if (existing) {
-    // Coalesce onto the in-flight execution; followers don't re-run or re-cache.
     result = await existing;
   } else {
     const p = executeRun(normalized, req.log);
@@ -474,11 +393,6 @@ async function proxyToTraceService(
       return;
     }
 
-    // trace-service signals its own per-pod backpressure with 429 + Retry-After
-    // (same contract as the engine services). Dropping that header left the
-    // client a bare 429 with nothing to back off on, so forward it the way
-    // /api/run does: as the header *and* as meta.retryAfter in the body, which
-    // is where every existing client reads it.
     const retryAfter = traceRes.headers["retry-after"];
     if (retryAfter !== undefined) {
       reply.header("retry-after", String(retryAfter));
@@ -502,17 +416,6 @@ async function proxyToTraceService(
   }
 }
 
-// Trace executions run engine262 over user input, so they must be metered.
-// They share the same budget resolution as /api/run (API key or IP) so a client
-// can't dodge the limit by switching endpoints, and they still charge the
-// general bucket — that is the per-caller ceiling on gateway requests of any
-// kind, and traces are real requests.
-//
-// What they no longer share is the *heavy* bucket. Traces don't spawn an engine
-// binary, and stepping through the spec visualizer issues them in bursts, so
-// charging them against the 20/min engine budget made the visualizer 429 the
-// playground and vice versa. They get their own "trace" bucket instead.
-// Returns true if the request was rate-limited or rejected (401).
 async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
   const budget = await resolveBudget(req, reply);
   if (!budget) return true; // invalid API key → 401 already sent
@@ -531,15 +434,6 @@ async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
   return false;
 }
 
-// No @fastify/cors is registered (deliberately — see docker-compose/infra
-// notes), so nothing stops a browser from *sending* a cross-site request to a
-// state-changing endpoint like this one — only from reading the response.
-// CORS "simple requests" (form submissions, `fetch(..., {mode:'no-cors'})`)
-// are restricted to a fixed content-type set that does NOT include
-// `application/json`; requiring it here forces any cross-origin attempt into
-// a CORS preflight, which this API never answers, so the browser blocks it
-// before the request is ever sent. This is the whole mitigation — no token,
-// no session, because there is nothing session-like to protect here.
 function requireJsonContentType(req: any, reply: any): boolean {
   const contentType = String(req.headers["content-type"] ?? "");
   if (contentType.split(";")[0].trim().toLowerCase() === "application/json") return true;
@@ -547,8 +441,6 @@ function requireJsonContentType(req: any, reply: any): boolean {
   return false;
 }
 
-// Self-service public-API key issuance. No accounts: anyone can mint a key,
-// but issuance is IP-limited to curb abuse. A key raises the request quota.
 app.post("/api/keys", async (req, reply) => {
   if (!requireJsonContentType(req, reply)) return;
   const ip = clientIp(req);
@@ -583,8 +475,6 @@ app.post("/api/keys", async (req, reply) => {
   });
 });
 
-// Revocation: presenting the key is the only proof of ownership this
-// accountless system has, same as using it to authenticate anywhere else.
 app.delete("/api/keys", async (req, reply) => {
   const key = extractApiKey(req.headers ?? {});
   if (!key) {
@@ -595,25 +485,26 @@ app.delete("/api/keys", async (req, reply) => {
   reply.code(revoked ? 200 : 404).send({ ok: revoked });
 });
 
-app.post("/api/trace/execute/type-conversion", async (req, reply) => {
-  const parsed = traceExecuteRequestSchema.safeParse(req.body);
-  if (!parsed.success) {
-    reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
-    return;
-  }
-  if (await enforceTraceRateLimit(req, reply)) return;
-  await proxyToTraceService(req, reply, "/execute/type-conversion", parsed.data);
-});
+type TraceBodySchema = {
+  safeParse: (
+    body: unknown,
+  ) => { success: true; data: unknown } | { success: false; error: { issues: Array<{ message: string }> } };
+};
 
-app.post("/api/trace/execute/equality", async (req, reply) => {
-  const parsed = traceExecuteEqualitySchema.safeParse(req.body);
-  if (!parsed.success) {
-    reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
-    return;
-  }
-  if (await enforceTraceRateLimit(req, reply)) return;
-  await proxyToTraceService(req, reply, "/execute/equality", parsed.data);
-});
+function registerTraceExecuteRoute(name: "type-conversion" | "equality", schema: TraceBodySchema) {
+  app.post(`/api/trace/execute/${name}`, async (req, reply) => {
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
+      return;
+    }
+    if (await enforceTraceRateLimit(req, reply)) return;
+    await proxyToTraceService(req, reply, `/execute/${name}`, parsed.data);
+  });
+}
+
+registerTraceExecuteRoute("type-conversion", traceExecuteRequestSchema);
+registerTraceExecuteRoute("equality", traceExecuteEqualitySchema);
 
 const listen = async () => {
   try {
