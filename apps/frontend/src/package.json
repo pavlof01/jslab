@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "typegen": "chakra typegen style/theme.ts"
+    "typegen": "chakra typegen style/theme.ts",
+    "postinstall": "test -f style/theme.ts && npm run typegen || true",
+    "prelint": "npm run typegen",
+    "prebuild": "npm run typegen"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.33.0",
