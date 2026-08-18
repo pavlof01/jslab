@@ -33,7 +33,7 @@ export default function EmbedBytecodeClient({ snapshot }: { snapshot: EmbedSnaps
   const openHref = buildShareUrl("", "/playground", {
     code: snapshot.code,
     engines: [snapshot.engine],
-    v8Flags: snapshot.flags,
+    flags: { [snapshot.engine]: snapshot.flags },
   });
 
   return (

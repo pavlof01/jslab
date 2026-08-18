@@ -7,7 +7,7 @@ import { useStateRestore } from "@/store/engineOutputsSelectors";
 import { decodeShareState, SHARE_PARAM } from "@/lib/shareState";
 
 export function useSharedStateRestore(): void {
-  const { setCode, setEngines, setSelectedV8Flags } = useStateRestore();
+  const { setCode, setEngines, setFlags } = useStateRestore();
 
   useEffect(() => {
     const param = new URLSearchParams(window.location.search).get(SHARE_PARAM);
@@ -18,6 +18,6 @@ export function useSharedStateRestore(): void {
 
     setCode(shared.code);
     setEngines(selectionFrom(shared.engines));
-    setSelectedV8Flags(shared.v8Flags);
-  }, [setCode, setEngines, setSelectedV8Flags]);
+    setFlags(shared.flags);
+  }, [setCode, setEngines, setFlags]);
 }

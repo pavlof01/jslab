@@ -1,7 +1,8 @@
 "use client";
 
 import Samples from "@/components/Samples";
-import V8FlagSelector from "@/components/V8FlagSelector";
+import FlagSelector from "@/components/FlagSelector";
+import { useFlaggedEngines } from "@/components/FlagSelector/context";
 import V8Intrinsics from "@/components/V8Intrinsics";
 import { Box, Button } from "@chakra-ui/react";
 import { Chip, ShortcutHint } from "@/components/ui";
@@ -18,8 +19,12 @@ export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
   const { engines, setEngines } = useEngineSelection();
   const { showDiff, toggleDiff } = useDiffToggle();
   const { status } = useRunStatus();
+  const flaggedEngines = useFlaggedEngines();
 
   const running = status === RunStatus.running;
+  // A picker for an engine that is switched off would offer flags nothing will
+  // run, so the toolbar shows one per enabled engine that has flags to give.
+  const flagPickers = flaggedEngines.filter((engine) => engines[engine]);
 
   const toggleEngine = (engine: EngineKey) => {
     if (engine === EngineKey.v8) return;
@@ -41,7 +46,9 @@ export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
             onToggle={() => toggleEngine(engine)}
           />
         ))}
-        <V8FlagSelector />
+        {flagPickers.map((engine) => (
+          <FlagSelector key={engine} engine={engine} />
+        ))}
         <V8Intrinsics />
       </Box>
 

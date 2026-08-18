@@ -14,7 +14,7 @@ import {
   useRunEngines,
   useRunStatus,
   useSetCode,
-  useV8Flags,
+  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
 import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
 import { buildShareUrl } from "@/lib/shareState";
@@ -24,7 +24,7 @@ export default function EmbedPlaygroundClient() {
   const code = useCode();
   const setCode = useSetCode();
   const { engines } = useEngineSelection();
-  const { selectedV8Flags } = useV8Flags();
+  const { flags } = useEngineFlags();
   const runEngines = useRunEngines();
   useSharedStateRestore();
 
@@ -33,9 +33,9 @@ export default function EmbedPlaygroundClient() {
   }, [runEngines]);
 
   const openInJslabHref = useMemo(() => {
-    const state = { code, engines: enabledEngines(engines), v8Flags: selectedV8Flags };
+    const state = { code, engines: enabledEngines(engines), flags };
     return buildShareUrl("", "/playground", state);
-  }, [code, engines, selectedV8Flags]);
+  }, [code, engines, flags]);
 
   return (
     <Flex direction="column" height="100dvh" bg="surface.band">

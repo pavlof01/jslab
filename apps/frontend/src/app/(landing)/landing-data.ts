@@ -202,7 +202,7 @@ export function studyHref(key: V8SampleKey): string {
   return buildShareUrl("", "/playground", {
     code: v8Samples[key],
     engines: [EngineKey.v8],
-    v8Flags: ["--print-bytecode", "--allow-natives-syntax"],
+    flags: { [EngineKey.v8]: ["--print-bytecode", "--allow-natives-syntax"] },
   });
 }
 

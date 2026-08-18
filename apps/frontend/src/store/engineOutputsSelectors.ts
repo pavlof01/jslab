@@ -1,5 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 
+import { flagsFor, type EngineKey } from "@/lib/types";
+
 import { useEngineOutputsStore } from "./useEngineOutputs";
 
 export const useCode = () => useEngineOutputsStore((state) => state.code);
@@ -8,13 +10,12 @@ export const useSetCode = () => useEngineOutputsStore((state) => state.setCode);
 export const useEngineSelection = () =>
   useEngineOutputsStore(useShallow((state) => ({ engines: state.engines, setEngines: state.setEngines })));
 
-export const useV8Flags = () =>
-  useEngineOutputsStore(
-    useShallow((state) => ({
-      selectedV8Flags: state.selectedV8Flags,
-      setSelectedV8Flags: state.setSelectedV8Flags,
-    })),
+export const useEngineFlags = () => {
+  const { flags, setEngineFlags } = useEngineOutputsStore(
+    useShallow((state) => ({ flags: state.flags, setEngineFlags: state.setEngineFlags })),
   );
+  return { flags, setEngineFlags, flagsFor: (engine: EngineKey) => flagsFor(flags, engine) };
+};
 
 export const useActiveTab = () =>
   useEngineOutputsStore(useShallow((state) => ({ activeTab: state.activeTab, setActiveTab: state.setActiveTab })));
@@ -49,7 +50,7 @@ export const useShareableState = () =>
     useShallow((state) => ({
       code: state.code,
       engines: state.engines,
-      selectedV8Flags: state.selectedV8Flags,
+      flags: state.flags,
       out: state.out,
       activeTab: state.activeTab,
     })),
@@ -60,7 +61,7 @@ export const useStateRestore = () =>
     useShallow((state) => ({
       setCode: state.setCode,
       setEngines: state.setEngines,
-      setSelectedV8Flags: state.setSelectedV8Flags,
+      setFlags: state.setFlags,
     })),
   );
 
