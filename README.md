@@ -6,10 +6,13 @@ parse, compile, and optimize your code under the hood.
 
 The site lets you:
 
-- View **AST**, **bytecode**, and **IR** for multiple engines.
-- Compare **optimization pipelines** and **deoptimization traces**.
-- Upload and visualize **engine logs** (like `v8.log`).
-- Share reproducible code snippets for educational or research purposes.
+- View **AST**, **bytecode**, and **IR** for multiple engines side by side.
+- Walk the **V8 compilation pipeline** stage by stage, including **deoptimization traces**.
+- Step through **ECMAScript abstract operations** (type conversion, equality) against the spec text.
+- Share reproducible code snippets — as links or as embeddable widgets — for educational or research purposes.
+
+Uploading and visualizing engine logs (`v8.log`) is on the roadmap, not shipped
+yet; see [Roadmap](#-roadmap-overview).
 
 ---
 
@@ -17,18 +20,22 @@ The site lets you:
 
 ### 🔸 Supported Engines
 
-| Engine             | Output Types                    | Notable Flags                                                              |
-| ------------------ | ------------------------------- | -------------------------------------------------------------------------- |
-| **V8**             | AST / Bytecode / TurboFan Graph | `--print-bytecode`, `--print-ast`, `--trace-opt`, `--allow-natives-syntax` |
-| **SpiderMonkey**   | Bytecode (`dis()`)              | `--baseline-eager`, `--ion-eager`                                          |
-| **JavaScriptCore** | Bytecode / DFG Graph            | `-d`                                                                       |
-| **Hermes**         | Bytecode                        | `-O`, `-strict`, `-gc-sanitize-handles`                                    |
+| Engine             | Binary | Output types                                            | Notable flags                                                              |
+| ------------------ | ------ | ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **V8**             | `d8`   | AST, Ignition bytecode, Maglev/TurboFan code, IC & deopt traces | `--print-bytecode`, `--print-ast`, `--trace-opt`, `--allow-natives-syntax` |
+| **SpiderMonkey**   | `js`   | Bytecode (`dis()`)                                       | `--baseline-eager`, `--ion-eager`                                          |
+| **JavaScriptCore** | `jsc`  | Bytecode (`-d`)                                          | — (`-d` is applied server-side)                                            |
+| **Hermes**         | `hermes` | Bytecode (`-dump-bytecode`)                            | `-O`, `-strict`, `-gc-sanitize-handles`                                    |
 
 Flags are validated against a per-engine allowlist — the full catalog lives in
-[`packages/engine-runtime/src/flags.ts`](packages/engine-runtime/src/flags.ts),
-and anything outside it is rejected.
-Hermes bytecode dumping (`-dump-bytecode`) is applied server-side on every run,
-so you never pass it yourself.
+[`packages/engine-runtime/src/flags.ts`](packages/engine-runtime/src/flags.ts)
+and is served over HTTP at `GET /api/flags`; anything outside it is rejected and
+echoed back in `meta.droppedFlags`.
+
+The bytecode-dumping switches are applied server-side on every run, so you never
+pass them yourself: Hermes always runs with `-dump-bytecode`, JSC always with
+`-d`, and SpiderMonkey always through a `dis()` wrapper. V8 is the exception —
+`d8` prints nothing extra unless you ask, so every V8 view is driven by flags.
 
 ---
 
@@ -54,7 +61,7 @@ docker compose up --build
 Already cloned without submodules? Fetch them first:
 
 ```bash
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 Once the containers are healthy, open the frontend at <http://localhost:3000>.
@@ -84,31 +91,49 @@ Goals:
 /apps
   ├─ api                  # Fastify API gateway (rate limit + cache + engine proxy)
   ├─ engine-v8            # d8 wrapper HTTP service
-  ├─ engine-hermes        # hermesc/hermes wrapper HTTP service
+  ├─ engine-hermes        # hermes -dump-bytecode wrapper HTTP service
   ├─ engine-jsc           # JavaScriptCore (jsc) wrapper HTTP service
   ├─ engine-spidermonkey  # SpiderMonkey (js shell) wrapper HTTP service
   ├─ trace-service        # ECMAScript abstract operations tracer (engine262-based)
   └─ frontend             # Next.js UI (playground, V8 pipeline, abstract ops visualizer)
+/packages/engine-runtime # Shared engine HTTP wrapper + the flag catalog
 /engines/dockerfiles     # Dockerfiles for the engine base images (d8, hermes, jsc, js shell)
-/infra/k8s               # kustomize base for k3s/Traefik + NetworkPolicies/PDBs
+/infra/k8s               # kustomize base/dev/prod for k3s/Traefik + NetworkPolicies/PDBs
+/infra/node              # Host-level k3s config applied over SSH, not by kubectl
+/docs                    # Infra map and point-in-time reviews
+/scripts                 # Smoke test + manifest validation helpers
 ```
 
+The four `engine-*` services are thin wrappers around one implementation,
+[`packages/engine-runtime`](packages/engine-runtime/), consumed as a `file:`
+dependency by both them and the api gateway — which is why the flag catalog
+cannot drift between the two layers.
+
 The spec-level tracing behind `/type-conversion` and `/equality` is powered by a
-fork of [engine262](https://github.com/engine262/engine262) with trace
-instrumentation, vendored as a git submodule at `apps/trace-service/engine262`.
+[fork of engine262](https://github.com/pavlof01/engine262) (branch
+`jslab/trace-instrumentation`) with trace instrumentation, vendored as a git
+submodule at `apps/trace-service/engine262`.
 
 For a one-page infra diagram (Docker + Kubernetes), see [`docs/infra.md`](docs/infra.md).
 
 ### Docker images
 
+The api and the four engine services bake in `packages/engine-runtime`, so they
+build **from the repo root** (`-f <path>/Dockerfile .`). The frontend and the
+trace service are self-contained and build from their own directory. All
+commands below are run from the repo root:
+
 - Frontend: `docker build -t pavlof01/jslab-frontend apps/frontend`
-- API: `docker build -t pavlof01/jslab-api apps/api`
-- Engine V8: `docker build --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 apps/engine-v8`
-- Engine Hermes: `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
-- Engine JSC: `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
-- Engine SpiderMonkey: `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
 - Trace service: `docker build -t pavlof01/jslab-trace-service apps/trace-service` (requires the engine262 submodule to be initialized)
-- You can swap `pavlof01/v8-d8`/`pavlof01/hermes`/`pavlof01/jsc`/`pavlof01/spidermonkey` with your own base layers that already contain `d8`/`hermes`/`hermesc`/`hbcdump`/`jsc`/`js`.
+- API: `docker build -f apps/api/Dockerfile -t pavlof01/jslab-api .`
+- Engine V8: `docker build -f apps/engine-v8/Dockerfile --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 .`
+- Engine Hermes: `docker build -f apps/engine-hermes/Dockerfile --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes .`
+- Engine JSC: `docker build -f apps/engine-jsc/Dockerfile --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc .`
+- Engine SpiderMonkey: `docker build -f apps/engine-spidermonkey/Dockerfile --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey .`
+- You can swap `pavlof01/v8-d8`/`pavlof01/hermes`/`pavlof01/jsc`/`pavlof01/spidermonkey` with your own base layers that already contain `d8`/`hermes`/`jsc`/`js`.
+
+Each Dockerfile has a `dev` and a `prod` target; `docker compose` and Skaffold
+build `--target dev`, CI builds the default (production) target.
 
 ### Engine base images
 
@@ -128,18 +153,15 @@ engine from source.
 - Ingress (Traefik): routes `/api` to the `api` service and `/` to `frontend` (Next.js) with explicit router priorities.
 - NetworkPolicy: only API reachable from Traefik/namespace, engines reachable only from API, Redis reachable only from API.
 - Pods run with `runAsNonRoot`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `seccompProfile: RuntimeDefault`; `/tmp` mounted from `emptyDir`.
-- PodDisruptionBudgets for api/frontend/engines; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
+- PodDisruptionBudgets for api and frontend; `infra/k8s/hpa.todo.yaml` holds a ready-to-enable HPA for the API.
+
+For the ingress routing model, the network-policy model and the client-IP trust
+settings, see [`infra/README.md`](infra/README.md).
 
 ### Quickstart (Kubernetes)
 
-1. Build images (from repo root):
-   - `docker build -t pavlof01/jslab-api apps/api`
-   - `docker build --build-arg V8_BASE_IMAGE=pavlof01/v8-d8:latest -t pavlof01/jslab-engine-v8 apps/engine-v8`
-   - `docker build --build-arg HERMES_BASE_IMAGE=pavlof01/hermes:latest -t pavlof01/jslab-engine-hermes apps/engine-hermes`
-   - `docker build --build-arg JSC_BASE_IMAGE=pavlof01/jsc:debug -t pavlof01/jslab-engine-jsc apps/engine-jsc`
-   - `docker build --build-arg SPIDERMONKEY_BASE_IMAGE=pavlof01/spidermonkey:debug -t pavlof01/jslab-engine-spidermonkey apps/engine-spidermonkey`
-   - `docker build -t pavlof01/jslab-trace-service apps/trace-service`
-   - `docker build -t pavlof01/jslab-frontend apps/frontend`
+1. Build images — see [Docker images](#docker-images) above for the exact
+   commands (note the repo-root build context for the api and the engines).
 2. Apply manifests:
    - `kubectl apply -k infra/k8s/base`
 3. Check readiness:
@@ -207,6 +229,20 @@ kubectl -n jslab exec -it debug-shell -- \
 
 ### API contract
 
+The gateway's own OpenAPI document is served at `GET /api/openapi.json`, with a
+browsable rendering at `/api/docs`.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /api/run` | Run a snippet on one engine (see below) |
+| `GET /api/flags` | The per-engine flag catalog, with descriptions and categories |
+| `POST /api/trace/execute/type-conversion` | `{ functionName, input, preferredType? }` → spec trace |
+| `POST /api/trace/execute/equality` | `{ input }` (a binary expression such as `{} == ![]`) → spec trace |
+| `POST /api/keys` | Mint a self-service API key (raises the general and trace quotas) |
+| `DELETE /api/keys` | Revoke the key presented in `x-api-key` / `Authorization: Bearer` |
+| `GET /api/openapi.json`, `/api/docs` | OpenAPI document and API reference UI |
+| `GET /healthz`, `GET /metrics` | Liveness probe and Prometheus metrics |
+
 - Endpoint: `POST /api/run`
 - Request:
 
@@ -225,13 +261,25 @@ kubectl -n jslab exec -it debug-shell -- \
   "ok": true,
   "stdout": "...",
   "stderr": "...",
-  "artifacts": [{ "kind": "bytecode", "mime": "text/plain", "dataBase64": "..." }],
+  "artifacts": [],
   "meta": { "durationMs": 0, "engine": "v8", "cacheHit": false }
 }
 ```
 
-- Rate limits: 60 req/min per IP stored in Redis (`Retry-After` headers on 429).
-- Cache: Redis hash of engine+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s).
+- `artifacts` is part of the contract but the engine services currently return
+  it empty — every engine's output arrives as text on `stdout`/`stderr`.
+- `meta` also carries `droppedFlags` when the allowlist rejected something, and
+  `outputTruncated` + `outputLimitBytes` when the combined output hit the
+  2 MB (`MAX_OUTPUT_BYTES`) cap.
+- Normalization: `sourceText` is capped at `MAX_SOURCE_LENGTH` (20 000 chars),
+  `timeoutMs` is clamped into `[MIN_TIMEOUT_MS, MAX_TIMEOUT_MS]` = `[250, 5000]`
+  (default 2000), and at most `MAX_FLAGS` (10) flags are considered.
+- Rate limits: Redis counters per client IP, layered per bucket — `general`
+  60/min, `heavy` (engine-spawning) 20/min, `trace` 30/min. A self-service API
+  key raises general and trace to its own quota (240/min), while the heavy
+  bucket stays separately capped (60/min). 429 responses carry `Retry-After`
+  and `meta.retryAfter`.
+- Cache: Redis hash of engine+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s); deterministic failures get the shorter `NEGATIVE_CACHE_TTL_SECONDS` (default 30s).
 
 ### Quick curl example
 
@@ -253,24 +301,26 @@ curl -sS https://jslab.su/api/run \
 
 ## 🗺 Roadmap Overview
 
-### Phase 1 — Core MVP
+### Phase 1 — Core MVP ✅ (shipped)
 
-- Engine selector and preset flags
-- Sandbox API `/api/run`
-- Execution history and “Share session” links
+- Engine selector and preset flags ✅
+- Sandbox API `/api/run` ✅
+- Execution history and “Share session” links ✅
 
 ### Phase 2 — Advanced Analysis ✅ (shipped)
 
 - AST tree visualization (`--print-ast`) ✅
 - Bytecode diff viewer (Myers diff + Shiki) ✅
-- V8 compilation pipeline diagram (Tokens → AST → Ignition → Sparkplug → Maglev → TurboFan) ✅
+- V8 compilation pipeline diagram (Tokens → AST → Ignition → Sparkplug → Maglev → TurboFan → Deopt) ✅
 - ECMAScript abstract operations step-through visualizer ✅
 - Hermes IR viewer ✅
 
 ### Phase 3 — Community & Docs
 
-- Opcode documentation (`/docs/{engine}/{opcode}`)
-- Multi-engine playground
+- Multi-engine playground ✅
+- Embeddable playground / bytecode widgets (`/embed/*`, with oEmbed) ✅
+- Inline opcode descriptions in the output panel ✅
+- Standalone opcode documentation pages (`/docs/{engine}/{opcode}`)
 - Snippet sharing & voting
 
 ### Phase 4 — Research Lab
