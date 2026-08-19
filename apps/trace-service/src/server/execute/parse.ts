@@ -1,4 +1,4 @@
-import type { ManagedRealm } from "../../trace/index.mts";
+import { evalQ, inspect, NormalCompletion, ThrowCompletion, type ManagedRealm, type Value } from "../../trace/index.mts";
 import { SUPPORTED_OPERATORS, type SupportedOperator } from "../operations.ts";
 
 /**
@@ -83,6 +83,28 @@ export function parseStringToValue(input: string, realm: ManagedRealm) {
     const result = realm.evaluateScript(expr);
     return result;
   } catch (error) {
-    throw new Error(`Failed to parse input "${input}": ${error}`);
+    // engine262 throws a ThrowCompletion; the SyntaxError itself is its Value.
+    const thrown = error instanceof ThrowCompletion ? error.Value : (error as Value);
+    throw new Error(`Failed to parse input "${input}": ${describeValue(thrown, realm)}`);
   }
+}
+
+/**
+ * What a thrown value says about itself.
+ *
+ * `String(value)` on an engine262 object gives "[object Object]", which tells a
+ * caller nothing about the TypeError it just triggered. `inspect` renders the
+ * value the way the engine would, but it uses the X() shorthand, which only
+ * exists while an evalQ is on the stack — hence its own evalQ, and the realm
+ * scope for the intrinsics it reads.
+ */
+export function describeValue(value: Value, realm?: ManagedRealm): string {
+  const render = () => evalQ(() => inspect(value));
+  try {
+    const completion = realm ? realm.scope(render) : render();
+    if (completion instanceof NormalCompletion) return String(completion.Value).trim();
+  } catch {
+    // Fall through: a bare type name still beats "[object Object]".
+  }
+  return (value as { type?: string })?.type ? `[${(value as { type?: string }).type}]` : String(value);
 }

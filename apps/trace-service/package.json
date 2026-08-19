@@ -13,7 +13,8 @@
     "start": "tsx src/server/server.ts",
     "lint": "tsc -p tsconfig.json --noEmit --skipLibCheck",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest --config vitest.config.mts"
+    "test": "vitest run --config vitest.config.mts",
+    "test:coverage": "vitest run --config vitest.config.mts --coverage"
   },
   "dependencies": {
     "@unicode/unicode-16.0.0": "^1.6.16",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.15",
+    "@vitest/coverage-v8": "^4.1.11",
     "devtools-protocol": "^0.0.1561482",
     "typescript": "5.8.2",
     "vitest": "^4.0.16"
