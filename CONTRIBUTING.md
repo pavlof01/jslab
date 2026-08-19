@@ -7,7 +7,7 @@ need to get a working dev environment and land a change.
 
 - **Node.js 22** (all Dockerfiles and CI use `node:22`)
 - **Docker** with Compose (recommended path — the engine services need real
-  engine binaries such as `d8`, `hermesc`, `jsc`, and the SpiderMonkey `js`
+  engine binaries such as `d8`, `hermes`, `jsc`, and the SpiderMonkey `js`
   shell, which the Docker images provide)
 - Optional, for full-stack Kubernetes work: a k3s cluster and
   [skaffold](https://skaffold.dev/) — see the README and
@@ -50,13 +50,20 @@ not `apps/frontend/`.
 | Engines | `apps/engine-v8/`, `apps/engine-hermes/`, `apps/engine-jsc/`, `apps/engine-spidermonkey/` | `npm run dev` | 8080 |
 
 The API, trace service, and engines all default to port 8080 — set `PORT` when
-running more than one outside Docker. Two gotchas:
+running more than one outside Docker. Three gotchas:
 
-- **Engine services** consume `@jslab/engine-runtime` as a `file:` dependency,
-  so build it before installing an engine service:
+- **The API gateway and the engine services** consume `@jslab/engine-runtime` as
+  a `file:` dependency, so build it before installing either:
   `cd packages/engine-runtime && npm ci && npm run build`.
 - **Engine services** also expect the engine binary on disk (e.g. `D8_PATH`,
   default `/opt/v8/d8`) — without it, prefer `docker compose up`.
+- **The frontend** generates its Chakra recipe types from `style/theme.ts`.
+  `postinstall`, `prelint` and `prebuild` run `npm run typegen` for you; run it
+  by hand after changing a recipe or a style if your editor disagrees.
+
+Docker images for the API and the engines bake in `packages/engine-runtime`, so
+they build from the repo root (`docker build -f apps/api/Dockerfile -t jslab-api .`);
+the frontend and trace service build from their own directory.
 
 ## Tests and checks
 
@@ -70,6 +77,10 @@ plus kustomize/kubeconform validation of the Kubernetes manifests:
 | `apps/trace-service` | `npm run typecheck` | `npm test` (Vitest — watch mode locally; requires the engine262 submodule) |
 | `apps/engine-*` | `npm run lint` (`tsc --noEmit`) | — |
 | `packages/engine-runtime` | `npm run lint` | `npm test` (Vitest) |
+
+Every leg checks out submodules recursively (trace-service's tests need
+engine262), and the api and engine legs build `packages/engine-runtime` before
+installing.
 
 ## Full stack on Kubernetes
 

@@ -10,10 +10,10 @@ Browser → Next.js frontend (port 3000)
           Fastify API gateway (port 8080)  ←→  Redis (cache + rate limit)
               ↓ POST /run (normalized)
           Engine microservices (each port 8080)
-          ├─ engine-v8          (d8 binary)
-          ├─ engine-hermes      (hermesc + hbcdump)
-          ├─ engine-jsc         (jsc binary)
-          ├─ engine-spidermonkey (js shell)
+          ├─ engine-v8          (d8 binary; flags decide the output)
+          ├─ engine-hermes      (hermes -dump-bytecode)
+          ├─ engine-jsc         (jsc -d)
+          ├─ engine-spidermonkey (js shell, dis() wrapper)
           └─ trace-service      (engine262 ECMAScript interpreter)
 ```
 
@@ -24,10 +24,10 @@ Engine services are **stateless HTTP wrappers** — no inter-service communicati
 1. Frontend calls `POST /api/run` with `{ engine, sourceText, options: { flags?, timeoutMs? } }`
 2. API normalizes: clamps timeout, filters flags against per-engine allowlist, checks Redis cache
 3. Forwards to the engine service as `POST /run` with `{ sourceText, options: { flags, timeoutMs } }`
-4. Engine spawns the CLI binary, captures stdout/stderr, returns `{ ok, stdout, stderr, artifacts }`
+4. Engine spawns the CLI binary, captures stdout/stderr, returns `{ ok, stdout, stderr, artifacts: [] }`
 5. API writes to cache, returns `ApiResponse` (adds `meta.durationMs`, `meta.cacheHit`, `meta.engine`)
 
-The `/api/trace/execute` endpoint talks to `trace-service` for ECMAScript abstract-operations tracing.
+The `/api/trace/execute/{type-conversion,equality}` endpoints talk to `trace-service` for ECMAScript abstract-operations tracing.
 
 ### Key types (`apps/api/src/types.ts`)
 
@@ -37,6 +37,9 @@ type ApiResponse   = { ok: boolean; stdout: string; stderr: string; artifacts: A
 type Artifact      = { kind: "bytecode"; mime: string; dataBase64: string }
 ```
 
+`Artifact` is part of the contract, but every engine currently returns
+`artifacts: []` — all output comes back as text on stdout/stderr.
+
 ---
 
 ## Development commands
@@ -45,8 +48,10 @@ type Artifact      = { kind: "bytecode"; mime: string; dataBase64: string }
 ```bash
 npm run dev          # Next.js dev server with Turbopack → localhost:3000
 npm run build        # Production build
+npm run lint         # ESLint
 npm run test         # Jest (jsdom)
 npm run test:watch   # Jest watch mode
+npm run typegen      # Chakra recipe/style types (prelint + prebuild run it for you)
 ```
 TypeScript check: `node_modules/.bin/tsc --noEmit -p tsconfig.json` (no `tsc` on PATH).
 
@@ -60,19 +65,31 @@ npm run test         # vitest
 
 ### Trace service (`apps/trace-service/`)
 ```bash
-npm run dev    # tsx watch → localhost:8080 (skaffold port-forwards it to localhost:8085)
-npm run test   # vitest
-npm run lint   # tsc --noEmit
+npm run dev        # tsx watch → localhost:8080 (compose/skaffold publish it on localhost:8085)
+npm run test       # vitest
+npm run typecheck  # tsc --noEmit — what CI runs (`npm run build` is the same check, emits nothing)
 ```
+Needs the `engine262` submodule (`git submodule update --init --recursive`).
 
 ### Engine services (`apps/engine-v8/`, `apps/engine-hermes/`, etc.)
 ```bash
 npm run dev    # tsx watch → localhost:8080
 npm run lint   # tsc --noEmit
 ```
+They consume `@jslab/engine-runtime` as a `file:` dependency, so build it first:
+`cd packages/engine-runtime && npm ci && npm run build`. The api gateway needs
+the same.
+
+### Shared engine runtime (`packages/engine-runtime/`)
+```bash
+npm run build  # tsc -p tsconfig.build.json → dist/
+npm run lint   # tsc --noEmit
+npm run test   # vitest
+```
 
 ### Full stack
 ```bash
+docker compose up --build              # all services + redis, hot-reload, no k8s needed
 skaffold dev --port-forward -n jslab   # rebuilds + port-forwards all services
 kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 ```
@@ -90,6 +107,12 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 | `/v8-pipeline` | `v8-pipeline/components/PipelineClient.tsx` | Stage-by-stage V8 visualization |
 | `/type-conversion` | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
 | `/equality` | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer` | Equality-operator spec step-through (`initialCategory="equality"`) |
+| `/embed/playground` | `embed/playground/EmbedPlaygroundClient.tsx` | Embeddable playground widget (`noindex`) |
+| `/embed/bytecode` | `embed/bytecode/EmbedBytecodeClient.tsx` | Embeddable bytecode snapshot widget (`noindex`) |
+
+`app/abstract-functions-visualizer/` is a shared implementation directory, **not** a route — only `/type-conversion` and `/equality` mount it. `app/embed/oembed/route.ts` is the oEmbed provider for the two widgets.
+
+**Server-side route handlers** (`app/api/`): `run/` and `trace/execute/[category]/` proxy to the api gateway; `trace/functions/` and `spec/[functionName]/` still call `trace-service` directly (as does the SSR fetch in `abstract-functions-visualizer/server-data.ts`) — that's why the NetworkPolicy still allows frontend → trace-service.
 
 **State**: Zustand stores in `store/`. `useEngineOutputs.ts` is the main store for Playground — holds code, engine selection, outputs, status, and `flags` (a per-engine map: every engine accepts flags, so the toolbar renders one `FlagSelector` per enabled engine the catalog has entries for). The abstract-functions visualizer has its own store at `app/abstract-functions-visualizer/store.ts`, with its background work in `effects.ts` (spec HTML, debounced tracing, playback, catalog).
 
@@ -132,24 +155,30 @@ To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-ru
 - **Cache key**: `engine + sourceText + sorted-flags + ceil(timeoutMs/100)` — timeout is bucketed to reduce misses.
 - **Rate limit**: 60 req/min per IP by default, layered per bucket (general/heavy/trace); a self-service API key raises the general and trace quotas, with a lower, separate cap on the heavy (engine-spawning) bucket. Identity is hashed before it becomes a Redis key name; see `rateLimit.ts` and `apiKeys.ts`. Client IP is read from `CF-Connecting-IP` when present (see `infra/README.md`'s "Client IP trust" section), falling back to `req.ip` under a configurable trusted-hop count.
 - **Trace endpoints**: `POST /api/trace/execute/type-conversion` → `{ functionName, input, preferredType? }` and `POST /api/trace/execute/equality` → `{ input }` → proxy to `trace-service`.
+- **Other routes**: `GET /healthz`, `GET /metrics` (Prometheus), `GET /api/flags` (the catalog as JSON), `GET /api/openapi.json` + `/api/docs` (Scalar UI), `POST`/`DELETE /api/keys` (self-service API keys).
 
 ---
 
 ## Trace service
 
-`apps/trace-service/` runs the [engine262](https://github.com/nicolo-ribaudo/engine262) ECMAScript interpreter to produce step-by-step traces of abstract operations (ToNumber, ToPrimitive, etc.).
+`apps/trace-service/` runs a trace-instrumented fork of [engine262](https://github.com/pavlof01/engine262) (branch `jslab/trace-instrumentation`, vendored as a git submodule at `apps/trace-service/engine262`) to produce step-by-step traces of abstract operations (ToNumber, ToPrimitive, etc.).
 
-- Entry: `src/server/server.ts` (Fastify, port 8080; skaffold port-forwards it to localhost:8085)
-- Trace logic: `src/trace/index.mts`
+- Entry: `src/server/server.ts` (Fastify, port 8080; compose and skaffold both publish it on localhost:8085)
+- Routes: `GET /healthz`, `GET /functions`, `POST /execute/type-conversion`, `POST /execute/equality`, `GET /spec/:functionName`
+- Trace logic: `src/trace/index.mts`; the execution sandbox (worker thread + budget) is `src/server/execute/`, and `execute/parse.ts` handles expression parsing only
 - **Operations registry**: `src/server/operations.ts` is the single table of traceable abstract operations — each entry carries its category, its engine262 call and the spec clauses its panel shows. `AVAILABLE_FUNCTIONS` (which becomes the request schema's enum), `FUNCTION_META`, `FUNCTION_ALGOS` and `SUPPORTED_SPEC_FUNCTIONS` are all derived from it, so adding an operation is one entry plus its clauses in `ecma-spec.html`.
-- `src/server/execute/parse.ts` handles expression parsing only; `execute/index.ts` runs the trace in the worker sandbox
-- Tests use **vitest** (not Jest)
+- Config lives at the package root (`apps/trace-service/config.ts`), not under `src/`
+- Tests use **vitest** (not Jest); nothing builds or tests without the engine262 submodule
+- Does **not** use `packages/engine-runtime` — it runs engine262 in a worker thread rather than spawning a binary
 
 ---
 
 ## Infrastructure notes
 
 - Namespace: `jslab` (all k8s resources)
-- NetworkPolicy: Traefik → API only; API → engines + Redis only; engines cannot talk to each other
+- NetworkPolicy: default-deny ingress **and** egress for the namespace, with additive allowlists — Traefik → frontend/api; api → engines, trace-service, Redis; frontend → api and (still) trace-service; engines and trace-service get no egress beyond DNS. Engines cannot talk to each other.
 - All pods: `runAsNonRoot`, `readOnlyRootFilesystem`, `/tmp` from `emptyDir`
+- Overlays: `infra/k8s/base` (full stack), `prod` (base + CI-injected image tags, plus per-service slices), `dev` (Skaffold; excludes Traefik CRDs and NetworkPolicies), `monitoring` (Grafana Alloy, off by default)
+- The api and engine images build from the **repo root** (`-f apps/<svc>/Dockerfile .`) because they bake in `packages/engine-runtime`; frontend and trace-service build from their own directory
 - Apple Silicon: if engine binaries are `amd64`, run skaffold with `--check-cluster-node-platforms=false`
+- Deeper detail: [`infra/README.md`](infra/README.md) (ingress priorities, network policy, client-IP trust, node disk management) and [`docs/infra.md`](docs/infra.md) (diagrams)
