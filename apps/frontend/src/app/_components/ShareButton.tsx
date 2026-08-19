@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Button, Menu, Portal } from "@chakra-ui/react";
 
-import { enabledEngines, EngineKey } from "@/lib/types";
+import { enabledEngines, flagsFor } from "@/lib/types";
 import { useShareableState } from "@/store/engineOutputsSelectors";
 import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
 import { buildSnapshotUrl } from "@/lib/embedState";
@@ -19,12 +19,12 @@ const COPIED_LABEL: Record<CopyTarget, string> = {
 const IDLE_LABEL = "share";
 
 export default function ShareButton() {
-  const { code, engines, selectedV8Flags, out, activeTab } = useShareableState();
+  const { code, engines, flags, out, activeTab } = useShareableState();
   const [copied, setCopied] = useState<CopyTarget | null>(null);
 
   const state = useMemo(
-    () => ({ code, engines: enabledEngines(engines), v8Flags: selectedV8Flags }),
-    [code, engines, selectedV8Flags],
+    () => ({ code, engines: enabledEngines(engines), flags }),
+    [code, engines, flags],
   );
 
   const copyLink = useCallback(async () => {
@@ -55,7 +55,7 @@ export default function ShareButton() {
     const url = await buildSnapshotUrl(window.location.origin, {
       code,
       engine: activeTab,
-      flags: activeTab === EngineKey.v8 ? selectedV8Flags : [],
+      flags: flagsFor(flags, activeTab),
       output: activeOut.stdout ?? "",
       stderr: activeOut.stderr || undefined,
     });
@@ -67,7 +67,7 @@ export default function ShareButton() {
       // Clipboard blocked (insecure context / permissions): leave the label
       // unchanged rather than claim a copy that did not happen.
     }
-  }, [activeOut, activeTab, code, selectedV8Flags]);
+  }, [activeOut, activeTab, code, flags]);
 
   const label = copied ? COPIED_LABEL[copied] : IDLE_LABEL;
 

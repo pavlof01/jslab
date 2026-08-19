@@ -1,20 +1,11 @@
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 
 import { traceServiceEndpoint } from "@/lib/server/traceService";
+import { getUpstream, jsonFromUpstream } from "@/lib/server/upstream";
 
 export async function GET(): Promise<NextResponse> {
-  let response: Response;
-  try {
-    response = await fetch(traceServiceEndpoint("/functions", "/api/trace/functions"));
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "trace-service unavailable";
-    return NextResponse.json({ error: `trace-service unavailable: ${message}` }, { status: 503 });
-  }
+  const fetched = await getUpstream(traceServiceEndpoint("/functions", "/api/trace/functions"));
+  if ("error" in fetched) return fetched.error;
 
-  try {
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ error: "Invalid response from trace-service" }, { status: 502 });
-  }
+  return jsonFromUpstream(fetched.response);
 }

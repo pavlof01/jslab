@@ -103,6 +103,14 @@ export const flagCatalog: Record<CatalogEngine, readonly FlagSpec[]> = {
   jsc: [{ flag: "-d", description: "Dump JSC bytecode for the compiled script.", category: "bytecode" }],
 };
 
+/**
+ * Every engine the platform knows about, derived from the catalog rather than
+ * restated. The gateway builds its request enum, its `/api/flags` document and
+ * its OpenAPI schema from this, so adding an engine to `flagCatalog` is the
+ * only edit needed to make it a first-class engine everywhere.
+ */
+export const ENGINE_KINDS = Object.keys(flagCatalog) as [CatalogEngine, ...CatalogEngine[]];
+
 export interface SanitizedFlags {
   /** Flags accepted, deduplicated by name, in the order they will be passed. */
   flags: string[];

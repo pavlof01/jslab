@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { traceServiceEndpoint } from "@/lib/server/traceService";
+import { getUpstream, jsonFromUpstream } from "@/lib/server/upstream";
 
 const OPERATION_NAME = /^[A-Za-z][A-Za-z0-9]*(?:(?:::|\.)[A-Za-z][A-Za-z0-9]*)*$/;
 
@@ -16,20 +17,13 @@ export async function GET(
 
   const name = encodeURIComponent(functionName);
 
-  let response: Response;
-  try {
-    response = await fetch(traceServiceEndpoint(`/spec/${name}`, `/api/spec/${name}`), {
-      headers: { Accept: "text/html" },
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "trace-service unavailable";
-    return NextResponse.json({ error: `trace-service unavailable: ${message}` }, { status: 503 });
-  }
+  const fetched = await getUpstream(traceServiceEndpoint(`/spec/${name}`, `/api/spec/${name}`), {
+    headers: { Accept: "text/html" },
+  });
+  if ("error" in fetched) return fetched.error;
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    return NextResponse.json(body, { status: response.status });
-  }
+  const { response } = fetched;
+  if (!response.ok) return jsonFromUpstream(response);
 
   const html = await response.text();
   return new NextResponse(html, {

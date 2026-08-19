@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { flagCatalog, sanitizeFlags, type FlagSpec, type SanitizedFlags } from "@jslab/engine-runtime";
+import { ENGINE_KINDS, flagCatalog, sanitizeFlags, type FlagSpec, type SanitizedFlags } from "@jslab/engine-runtime";
 import type { EngineKind, RunRequest, TraceExecuteInput, TraceExecuteRequest } from "./types.js";
 
 /** Full catalog entries for an engine, for the /api/flags documentation route. */
@@ -31,7 +31,7 @@ const MAX_FLAGS_WIRE = 256;
 const MAX_TRACE_INPUT_STRING_LENGTH = 20_000;
 
 export const runRequestSchema: z.ZodType<RunRequest> = z.object({
-  engine: z.enum(["v8", "hermes", "sm", "jsc"]),
+  engine: z.enum(ENGINE_KINDS),
   sourceText: z.string().min(1),
   options: z
     .object({

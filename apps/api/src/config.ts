@@ -1,3 +1,4 @@
+import { loadEnv } from "@jslab/engine-runtime";
 import { z } from "zod";
 
 const envSchema = z.object({
@@ -61,9 +62,5 @@ const envSchema = z.object({
 export type ApiConfig = z.infer<typeof envSchema>;
 
 export function loadConfig(): ApiConfig {
-  const parsed = envSchema.safeParse(process.env);
-  if (!parsed.success) {
-    throw new Error(`Invalid environment: ${parsed.error.message}`);
-  }
-  return parsed.data;
+  return loadEnv(envSchema, "api");
 }

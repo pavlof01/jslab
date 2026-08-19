@@ -1,0 +1,29 @@
+"use client";
+
+import { createContext, useContext, useMemo, type ReactNode } from "react";
+
+import { groupFlags, type EngineFlagCatalog, type FlagGroup } from "@/lib/flagCatalog";
+import type { EngineKey } from "@/lib/types";
+
+type GroupedCatalog = Partial<Record<EngineKey, FlagGroup[]>>;
+
+const FlagCatalogContext = createContext<GroupedCatalog>({});
+
+export function FlagCatalogProvider({ catalog, children }: { catalog: EngineFlagCatalog; children: ReactNode }) {
+  const grouped = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(catalog).map(([engine, flags]) => [engine, groupFlags(flags ?? [])]),
+      ) as GroupedCatalog,
+    [catalog],
+  );
+  return <FlagCatalogContext.Provider value={grouped}>{children}</FlagCatalogContext.Provider>;
+}
+
+/** Engines the catalog knows flags for, so the toolbar only renders live selectors. */
+export const useFlaggedEngines = (): EngineKey[] => {
+  const catalog = useContext(FlagCatalogContext);
+  return useMemo(() => (Object.keys(catalog) as EngineKey[]).filter((engine) => catalog[engine]?.length), [catalog]);
+};
+
+export const useFlagGroups = (engine: EngineKey): FlagGroup[] => useContext(FlagCatalogContext)[engine] ?? [];

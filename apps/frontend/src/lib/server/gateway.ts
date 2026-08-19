@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const DEV_FALLBACK = "http://localhost:8080";
+import { trimSlash } from "@/lib/server/upstream";
 
-const trimSlash = (url: string) => url.replace(/\/$/, "");
+const DEV_FALLBACK = "http://localhost:8080";
 
 export function gatewayUrl(kind: "run" | "trace" = "run"): string {
   const configured = kind === "trace" ? process.env.JSLAB_TRACE_BACKEND_URL ?? process.env.JSLAB_BACKEND_URL : process.env.JSLAB_BACKEND_URL;

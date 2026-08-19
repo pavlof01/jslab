@@ -23,7 +23,7 @@ import { clearHistory, loadHistory, type RunHistoryEntry } from "@/lib/runHistor
 import { RunHistoryRow } from "./RunHistoryRow";
 
 export default function RunHistory() {
-  const { setCode, setEngines, setSelectedV8Flags } = useStateRestore();
+  const { setCode, setEngines, setFlags } = useStateRestore();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<RunHistoryEntry[]>([]);
   const [now, setNow] = useState(0);
@@ -45,10 +45,10 @@ export default function RunHistory() {
     (entry: RunHistoryEntry) => {
       setCode(entry.code);
       setEngines(selectionFrom(entry.engines));
-      setSelectedV8Flags(entry.v8Flags);
+      setFlags(entry.flags);
       setOpen(false);
     },
-    [setCode, setEngines, setSelectedV8Flags],
+    [setCode, setEngines, setFlags],
   );
 
   const onClear = useCallback(() => {

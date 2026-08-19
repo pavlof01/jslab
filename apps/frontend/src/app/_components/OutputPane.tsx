@@ -9,7 +9,7 @@ import {
   useDiffToggle,
   useEngineSelection,
   useOutputPane as useOutputPaneState,
-  useV8Flags,
+  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
 import { enabledEngines } from "@/lib/types";
 import { EngineNote } from "./EngineNote";
@@ -21,7 +21,7 @@ export function OutputPane() {
   const { activeTab, setActiveTab } = useActiveTab();
   const { showDiff } = useDiffToggle();
   const { out, previousSnapshot, status } = useOutputPaneState();
-  const { selectedV8Flags } = useV8Flags();
+  const { flagsFor } = useEngineFlags();
 
   const active = enabledEngines(engines);
   const result = out?.[activeTab];
@@ -46,7 +46,7 @@ export function OutputPane() {
         <StderrDump engine={activeTab} stderr={result?.stderr} previousStderr={previous?.stderr} showDiff={showDiff} />
       </Box>
 
-      <PaneFooter durationMs={result?.ms} flagCount={showingV8 ? selectedV8Flags.length : 0} />
+      <PaneFooter durationMs={result?.ms} flagCount={flagsFor(activeTab).length} />
     </>
   );
 }

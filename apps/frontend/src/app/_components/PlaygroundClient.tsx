@@ -14,7 +14,7 @@ import {
   useRunEngines,
   useRunStatus,
   useSetCode,
-  useV8Flags,
+  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
 import { useSharedStateRestore } from "./useSharedStateRestore";
 import { OutputPane } from "./OutputPane";
@@ -27,7 +27,7 @@ export default function PlaygroundClient() {
   const code = useCode();
   const setCode = useSetCode();
   const { engines } = useEngineSelection();
-  const { selectedV8Flags } = useV8Flags();
+  const { flags } = useEngineFlags();
   const { durationMs, cacheHit, error, notice } = useRunStatus();
   const runEngines = useRunEngines();
 
@@ -38,8 +38,8 @@ export default function PlaygroundClient() {
   const run = useCallback(async () => {
     const outcome = await runEngines();
     if (outcome !== "done") return;
-    pushHistory({ code, engines: active, v8Flags: selectedV8Flags }, () => crypto.randomUUID(), Date.now());
-  }, [runEngines, code, active, selectedV8Flags]);
+    pushHistory({ code, engines: active, flags }, () => crypto.randomUUID(), Date.now());
+  }, [runEngines, code, active, flags]);
 
   return (
     <Box css={styles.frame}>

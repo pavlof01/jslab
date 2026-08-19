@@ -1,6 +1,6 @@
 import PlaygroundClient from "@/app/_components/PlaygroundClient";
-import { V8FlagCatalogProvider } from "@/components/V8FlagSelector/context";
-import { fetchV8Flags } from "@/lib/server/v8Flags";
+import { FlagCatalogProvider } from "@/components/FlagSelector/context";
+import { fetchFlagCatalog } from "@/lib/server/flags";
 
 export const metadata = {
   title: "JavaScript Playground",
@@ -14,11 +14,11 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PlaygroundPage() {
-  const flags = await fetchV8Flags();
+  const catalog = await fetchFlagCatalog();
 
   return (
-    <V8FlagCatalogProvider flags={flags}>
+    <FlagCatalogProvider catalog={catalog}>
       <PlaygroundClient />
-    </V8FlagCatalogProvider>
+    </FlagCatalogProvider>
   );
 }

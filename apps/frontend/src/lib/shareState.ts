@@ -1,10 +1,10 @@
 import { decodeText, encodeText } from "@/lib/base64url";
-import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
+import { ENGINE_KEYS, EngineKey, isEngineKey, type EngineFlags } from "@/lib/types";
 
 export interface ShareState {
   code: string;
   engines: EngineKey[];
-  v8Flags: string[];
+  flags: EngineFlags;
 }
 
 export const SHARE_PARAM = "s";
@@ -13,9 +13,28 @@ export function encodeShareState(state: ShareState): string {
   const compact = {
     c: state.code,
     e: state.engines,
-    f: state.v8Flags,
+    f: state.flags,
   };
   return encodeText(JSON.stringify(compact));
+}
+
+/** Keep only string flags, under keys that are engines we still know. */
+function readFlags(raw: unknown): EngineFlags {
+  // Links minted before flags were per-engine carry a bare array, which was
+  // always V8's list. They still have to open.
+  if (Array.isArray(raw)) {
+    const legacy = raw.filter((flag): flag is string => typeof flag === "string");
+    return legacy.length ? { [EngineKey.v8]: legacy } : {};
+  }
+  if (!raw || typeof raw !== "object") return {};
+
+  const flags: EngineFlags = {};
+  for (const [engine, list] of Object.entries(raw as Record<string, unknown>)) {
+    if (!isEngineKey(engine) || !Array.isArray(list)) continue;
+    const clean = list.filter((flag): flag is string => typeof flag === "string");
+    if (clean.length) flags[engine] = clean;
+  }
+  return flags;
 }
 
 export function decodeShareState(param: string): ShareState | null {
@@ -28,12 +47,10 @@ export function decodeShareState(param: string): ShareState | null {
     const engineSet = new Set<EngineKey>(engines);
     engineSet.add(EngineKey.v8);
 
-    const v8Flags = Array.isArray(raw.f) ? raw.f.filter((x): x is string => typeof x === "string") : [];
-
     return {
       code: raw.c,
       engines: ENGINE_KEYS.filter((k) => engineSet.has(k)),
-      v8Flags,
+      flags: readFlags(raw.f),
     };
   } catch {
     return null;

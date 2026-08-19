@@ -1,4 +1,4 @@
-const trimSlash = (url: string) => url.replace(/\/$/, "");
+import { trimSlash } from "@/lib/server/upstream";
 
 const SKAFFOLD_FORWARDED = "http://localhost:8085";
 

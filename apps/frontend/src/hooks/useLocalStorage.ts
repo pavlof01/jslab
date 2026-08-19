@@ -1,5 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 
+import { parseJson, readRaw, removeKey, writeJson } from "@/lib/storage";
+
 type SetValue<T> = (value: T | ((previous: T) => T)) => void;
 
 const listeners = new Set<() => void>();
@@ -24,24 +26,14 @@ function notifyAll() {
 const parsed = new Map<string, { raw: string | null; value: unknown }>();
 
 function readSnapshot<T>(key: string, initialValue: T): T {
-  let raw: string | null;
-  try {
-    raw = window.localStorage.getItem(key);
-  } catch {
-    return initialValue;
-  }
+  const raw = readRaw(window.localStorage, key);
 
+  // useSyncExternalStore compares snapshots by identity, so re-parsing an
+  // unchanged string would hand React a new object every render and loop.
   const cached = parsed.get(key);
   if (cached && cached.raw === raw) return cached.value as T;
 
-  let value = initialValue;
-  if (raw !== null) {
-    try {
-      value = JSON.parse(raw) as T;
-    } catch {
-      value = initialValue;
-    }
-  }
+  const value = parseJson(raw, initialValue);
   parsed.set(key, { raw, value });
   return value;
 }
@@ -56,10 +48,8 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, SetValue<T
     (next) => {
       const current = readSnapshot(key, initialValue);
       const resolved = next instanceof Function ? next(current) : next;
-      try {
-        window.localStorage.setItem(key, JSON.stringify(resolved));
-      } catch (error) {
-        console.warn(`useLocalStorage could not write "${key}":`, error);
+      if (!writeJson(window.localStorage, key, resolved)) {
+        console.warn(`useLocalStorage could not write "${key}"`);
       }
       notifyAll();
     },
@@ -67,11 +57,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, SetValue<T
   );
 
   const removeValue = useCallback(() => {
-    try {
-      window.localStorage.removeItem(key);
-    } catch (error) {
-      console.warn(`useLocalStorage could not remove "${key}":`, error);
-    }
+    removeKey(window.localStorage, key);
     notifyAll();
   }, [key]);
 

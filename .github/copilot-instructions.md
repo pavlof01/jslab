@@ -81,7 +81,8 @@ type ApiResponse = {
 
 All engines ([engine-v8](../apps/engine-v8/src/server.ts), [engine-hermes](../apps/engine-hermes/src/server.ts), etc.) are thin wrappers around the shared [packages/engine-runtime](../packages/engine-runtime/src/) package:
 
-- Each `server.ts` calls `startEngineServer()` with an `EngineSpec`: the engine name (also the flag-catalog key), a temp-dir prefix, its config, and an `invoke()` callback that builds the binary command line. For V8, flags drive all behavior (e.g. `--print-bytecode` to get bytecode output).
+- Each `server.ts` calls `startEngineServer()` with an `EngineSpec`: the engine name (also the flag-catalog key), a temp-dir prefix, its config, the globals to lock down, any prelude scripts, and an `invoke()` callback that builds the binary command line. For V8, flags drive all behavior (e.g. `--print-bytecode` to get bytecode output).
+- Each `config.ts` extends `engineEnvBase` from the shared package with only its own fields (the binary path, v8's heap cap) and loads it with `loadEnv()`.
 - The shared runtime provides the single POST `/run` endpoint: Zod validation, `sanitizeFlags()` against the `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts), a per-pod concurrency gate (429 when saturated), `child_process.spawn()` with timeout, and a combined stdout+stderr cap (`MAX_OUTPUT_BYTES`, default 2 MB).
 - Return shape: `{ ok, stdout, stderr, artifacts: [], meta }` — rejected flags come back in `meta.droppedFlags`, truncated output is flagged with `meta.outputTruncated`.
 - No external state—each request is independent.
@@ -94,16 +95,19 @@ startEngineServer({
   tmpPrefix: "engine-v8-",
   openapiTitle: "engine-v8",
   config,
-  invoke: ({ scriptPath, flags }) => ({
+  // d8 executes the snippet, so its file-reading globals are neutralized
+  // in-realm; the runtime writes the shim and passes back its path.
+  blockedGlobals: ["read", "readbuffer", "readline"],
+  invoke: ({ scriptPath, flags, preludePaths }) => ({
     cmd: config.D8_PATH,
-    args: [`--max-old-space-size=${config.MAX_HEAP_MB}`, ...flags, scriptPath],
+    args: [`--max-old-space-size=${config.MAX_HEAP_MB}`, ...flags, ...preludePaths, scriptPath],
   }),
 });
 ```
 
 ### 2. API Gateway Patterns
 
-See [apps/api/src/server.ts](../apps/api/src/server.ts):
+`server.ts` only reads the environment, opens Redis and listens; `buildApp({ config, redis })` in [apps/api/src/app.ts](../apps/api/src/app.ts) assembles the routes ([routes/](../apps/api/src/routes/)) over `security.ts` and `upstream.ts`. Routes are tested with `app.inject()` and a fake Redis.
 
 - **Request validation**: Normalize sourceText length, timeout bounds, flags via schema.
 - **Cache-aside**: Check Redis before proxying to engine; write response if cache miss.
@@ -174,13 +178,13 @@ export function loadConfig(): ApiConfig {
 ## When Adding a New Feature
 
 1. **New engine?** Create `apps/engine-<name>/`, follow [engine-v8](../apps/engine-v8/) template, add to `skaffold.yaml` and `infra/k8s/base/`.
-2. **New API endpoint?** Update [apps/api/src/schemas.ts](../apps/api/src/schemas.ts), add route in server.ts, update OpenAPI doc.
-3. **New flag?** Add a `FlagSpec` to `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts). Both the api and every engine service pick it up automatically. No frontend changes needed unless user-facing flag selector is desired.
+2. **New API endpoint?** Update [apps/api/src/schemas.ts](../apps/api/src/schemas.ts), add a route module under [apps/api/src/routes/](../apps/api/src/routes/) and register it in `app.ts`, update the OpenAPI doc.
+3. **New flag?** Add a `FlagSpec` to `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts). The api, every engine service and the frontend's per-engine flag selector all pick it up automatically — no frontend changes needed.
 4. **Frontend feature?** Ensure useEngineOutputs store is updated if new state shape is needed; update PlaygroundClient or component tree.
 
 ## Key File References
 
-- **API Gateway**: [apps/api/src/](../apps/api/src/) (server, cache, rateLimit, config, schemas, types)
+- **API Gateway**: [apps/api/src/](../apps/api/src/) (server, app, routes/, security, upstream, cache, rateLimit, config, schemas, types)
 - **Engine Runtime (shared)**: [packages/engine-runtime/src/](../packages/engine-runtime/src/) (server wrapper, flag catalog, process spawning)
 - **Engine Template**: [apps/engine-v8/src/](../apps/engine-v8/src/) (server, config)
 - **Frontend UI**: [apps/frontend/src/app/](../apps/frontend/src/app/), [apps/frontend/src/store/](../apps/frontend/src/store/)

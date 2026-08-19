@@ -179,9 +179,12 @@ See `infra/k8s/base/networkpolicy.yaml` for details.
 
 ### Adding a New ECMA262 Function
 
-1. Add to `AVAILABLE_FUNCTIONS` array in `src/server.ts`
-2. Add mock trace example to `SAMPLE_TRACES` for testing
-3. When real execution is enabled, add function import
+1. Add one entry to `UNARY_OPERATIONS` in `src/server/operations.ts`: its category, its
+   engine262 call, and the spec clauses its panel should show. The advertised
+   function list, the request schema's enum, the metadata map and the spec route
+   are all derived from that table.
+2. Add the clauses themselves to `src/server/ecma-spec.html` (and a spec URL to
+   `ALGO_SPEC_URL` in `src/server/spec-generator.ts`) so the panel has something to render.
 
 ### Testing
 
@@ -210,10 +213,16 @@ cat dist/server.js
 
 ```
 apps/trace-service/
+├── config.ts           # Configuration & env validation
 ├── src/
-│   ├── server.ts       # Main HTTP server
-│   ├── config.ts       # Configuration & env validation
-│   └── types.ts        # (Future) TypeScript interfaces
+│   ├── server/
+│   │   ├── server.ts        # HTTP server (Fastify)
+│   │   ├── operations.ts    # The traceable abstract operations — one table
+│   │   ├── schema.ts        # Request body schemas
+│   │   ├── spec-generator.ts# ecmarkup → per-function spec HTML
+│   │   ├── ecma-spec.html   # Spec source for the clauses above
+│   │   └── execute/         # Sandbox, tracing, parsing, serialization
+│   └── trace/          # engine262 re-export
 ├── Dockerfile          # Multi-stage Docker build
 ├── package.json        # Dependencies
 ├── tsconfig.json       # TypeScript config

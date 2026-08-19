@@ -1,4 +1,5 @@
 import { sampleCatalog } from "@/lib/samples";
+import { parseJson, readRaw, writeJson } from "@/lib/storage";
 
 export interface CustomSample {
   id: string;
@@ -22,29 +23,17 @@ function isCustomSample(value: unknown): value is CustomSample {
 }
 
 export function parseCustomSamples(raw: string | null): CustomSample[] {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isCustomSample).map((entry) => ({ ...entry, createdAt: entry.createdAt ?? 0 }));
-  } catch {
-    return [];
-  }
+  const parsed = parseJson<unknown>(raw, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(isCustomSample).map((entry) => ({ ...entry, createdAt: entry.createdAt ?? 0 }));
 }
 
 export function loadCustomSamples(storage: Storage = window.localStorage): CustomSample[] {
-  try {
-    return parseCustomSamples(storage.getItem(CUSTOM_SAMPLES_STORAGE_KEY));
-  } catch {
-    return [];
-  }
+  return parseCustomSamples(readRaw(storage, CUSTOM_SAMPLES_STORAGE_KEY));
 }
 
 export function saveCustomSamples(samples: CustomSample[], storage: Storage = window.localStorage): void {
-  try {
-    storage.setItem(CUSTOM_SAMPLES_STORAGE_KEY, JSON.stringify(samples));
-  } catch {
-  }
+  writeJson(storage, CUSTOM_SAMPLES_STORAGE_KEY, samples);
 }
 
 export function isNameTaken(name: string, samples: readonly CustomSample[], exceptId?: string): boolean {

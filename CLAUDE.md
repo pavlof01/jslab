@@ -91,7 +91,9 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 | `/type-conversion` | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
 | `/equality` | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer` | Equality-operator spec step-through (`initialCategory="equality"`) |
 
-**State**: Zustand stores in `store/`. `useEngineOutputs.ts` is the main store for Playground — holds code, engine selection, outputs, status. The abstract-functions visualizer has its own store at `app/abstract-functions-visualizer/store.ts`.
+**State**: Zustand stores in `store/`. `useEngineOutputs.ts` is the main store for Playground — holds code, engine selection, outputs, status, and `flags` (a per-engine map: every engine accepts flags, so the toolbar renders one `FlagSelector` per enabled engine the catalog has entries for). The abstract-functions visualizer has its own store at `app/abstract-functions-visualizer/store.ts`, with its background work in `effects.ts` (spec HTML, debounced tracing, playback, catalog).
+
+**Flags**: `lib/server/flags.ts` fetches the whole `/api/flags` catalog server-side; `components/FlagSelector` renders one engine's flags, grouped by category. Share links and run history carry the per-engine map and still decode the older flat V8 list.
 
 **UI**: Chakra UI v3, and the design system *is* the theme (`src/style/`). `theme.ts` holds the tokens and registers everything; `textStyles.ts` names the kinds of text (`label`, `code`, `body`, …), `layerStyles.ts` the kinds of surface (`panel`, `section`, `overlay`), `recipes.ts` the controls (`button` with variant × typeface × size, `band`, `chip`, `link`, `input`) and `slotRecipes.ts` the components that portal (menu, select, dialog, drawer, popover — kept apart because their Ark anatomies cannot enter a server module). Call sites wear it through props: `textStyle`, `layerStyle`, `variant`. There is no second styling layer and no `chakra.*` factory use — portal components stay Chakra, presentational ones are compositions in `src/components/ui/`. Colour comes from one vocabulary (`surface.*`, `rule.*`, `ink.*`, `accent`, `status.*`); the header's height is the `sizes.header` token (`h="header"`, `top="header"`), not a CSS variable. Run `npm run typegen` after changing a recipe or a style so the variant props stay typed.
 
@@ -103,12 +105,17 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 ## Engine service pattern
 
-Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer()` call into the shared `packages/engine-runtime` package. The service supplies an `EngineSpec` — engine name (also the flag-catalog key), temp-dir prefix, config, and an `invoke()` callback that builds the binary command line — and the runtime handles the rest (`packages/engine-runtime/src/index.ts`):
+Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer()` call into the shared `packages/engine-runtime` package. The service supplies an `EngineSpec` — engine name (also the flag-catalog key), temp-dir prefix, config, the globals to lock down, any prelude scripts, and an `invoke()` callback that builds the binary command line — and the runtime handles the rest (`packages/engine-runtime/src/app.ts`, wrapped by `index.ts` for the listening socket):
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
 - `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
 - Per-pod concurrency gate returns 429 + `Retry-After` when saturated
+- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order
 - `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
 - Returns `{ ok, stdout, stderr, artifacts: [], meta }`
+
+**Config**: each service's `config.ts` extends `engineEnvBase` (`packages/engine-runtime/src/config.ts`) with only its own fields — the binary path, v8's `MAX_HEAP_MB` — and calls `loadEnv(schema, "engine-x")`. Shared defaults (timeouts, output caps, concurrency) live in the base schema only.
+
+**Sandboxing**: `blockedGlobals` on the spec makes the runtime generate the in-realm lockdown shim (`lockdown.ts`) and hand its path back first in `preludePaths`. Set it for any shell that executes the snippet (d8, jsc); compile-only shells (hermesc, sm) need no lockdown.
 
 **Flag catalog**: `flagCatalog` in `packages/engine-runtime/src/flags.ts` — the single source of truth. The api gateway builds from the repo root and depends on the package the same way the engine services do (`file:../../packages/engine-runtime`, `install-links=true` in `.npmrc`), so it imports `flagCatalog`/`sanitizeFlags` directly instead of keeping its own copy.
 
@@ -118,6 +125,9 @@ To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-ru
 
 ## API gateway key behaviors
 
+**Layout**: `server.ts` only reads the environment, opens Redis and listens. `buildApp({ config, redis })` in `app.ts` assembles the routes (`routes/run.ts`, `routes/keys.ts`, `routes/trace.ts`) over shared helpers — `security.ts` (client IP, authentication, budgets, the `consume()` rate-limit helper) and `upstream.ts` (`postJson` for both the engines and trace-service). Because nothing is read or dialled at import time, routes are tested through `app.inject()` with a fake Redis (`app.test.ts`).
+
+- **Engine kinds**: `EngineKind` and `ENGINE_KINDS` come from the flag catalog, not a literal list; `engineBaseUrls()` in `engines.ts` returns `Record<EngineKind, string>`, so a new engine is a compile error there until its URL is configured.
 - **Flag allowlist**: `normalizeFlags()` in `apps/api/src/schemas.ts` runs `sanitizeFlags()` from `@jslab/engine-runtime` over its `flagCatalog`. Engine services import and run the same functions.
 - **Cache key**: `engine + sourceText + sorted-flags + ceil(timeoutMs/100)` — timeout is bucketed to reduce misses.
 - **Rate limit**: 60 req/min per IP by default, layered per bucket (general/heavy/trace); a self-service API key raises the general and trace quotas, with a lower, separate cap on the heavy (engine-spawning) bucket. Identity is hashed before it becomes a Redis key name; see `rateLimit.ts` and `apiKeys.ts`. Client IP is read from `CF-Connecting-IP` when present (see `infra/README.md`'s "Client IP trust" section), falling back to `req.ip` under a configurable trusted-hop count.
@@ -131,6 +141,8 @@ To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-ru
 
 - Entry: `src/server/server.ts` (Fastify, port 8080; skaffold port-forwards it to localhost:8085)
 - Trace logic: `src/trace/index.mts`
+- **Operations registry**: `src/server/operations.ts` is the single table of traceable abstract operations — each entry carries its category, its engine262 call and the spec clauses its panel shows. `AVAILABLE_FUNCTIONS` (which becomes the request schema's enum), `FUNCTION_META`, `FUNCTION_ALGOS` and `SUPPORTED_SPEC_FUNCTIONS` are all derived from it, so adding an operation is one entry plus its clauses in `ecma-spec.html`.
+- `src/server/execute/parse.ts` handles expression parsing only; `execute/index.ts` runs the trace in the worker sandbox
 - Tests use **vitest** (not Jest)
 
 ---

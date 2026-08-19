@@ -1,4 +1,11 @@
-export type EngineKind = "v8" | "hermes" | "sm" | "jsc";
+import type { CatalogEngine } from "@jslab/engine-runtime";
+
+/**
+ * The engines this gateway serves. Defined by the shared flag catalog rather
+ * than restated here: a literal copy is one engine away from disagreeing with
+ * the sanitizer about which keys exist.
+ */
+export type EngineKind = CatalogEngine;
 
 export type RunRequest = {
   engine: EngineKind;
