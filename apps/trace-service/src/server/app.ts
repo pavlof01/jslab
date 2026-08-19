@@ -3,6 +3,7 @@ import fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 import type { TraceServiceConfig } from "../../config.ts";
 import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS } from "./operations.ts";
 import { BudgetExceededError, SandboxBusyError, type SandboxTask } from "./execute/sandbox.ts";
+import type { ExecuteResponse } from "./types.ts";
 import { buildEqualityBodySchema, buildTypeConversionBodySchema } from "./schema.ts";
 import { SUPPORTED_SPEC_FUNCTIONS } from "./operations.ts";
 import { buildSpecHtmlForFunction } from "./spec-generator.ts";
@@ -18,8 +19,9 @@ import { buildSpecHtmlForFunction } from "./spec-generator.ts";
  */
 
 /** The part of TraceSandbox the routes use. */
+/** What the app needs of the sandbox — the real one and a test double alike. */
 export interface SandboxLike {
-  run(task: SandboxTask): Promise<unknown>;
+  run(task: SandboxTask): Promise<ExecuteResponse>;
   close(): Promise<void> | void;
 }
 

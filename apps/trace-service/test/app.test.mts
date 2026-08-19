@@ -7,6 +7,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { buildTraceApp, type SandboxLike } from "../src/server/app.ts";
+import type { ExecuteResponse } from "../src/server/types.ts";
 import { BudgetExceededError, SandboxBusyError, type SandboxTask } from "../src/server/execute/sandbox.ts";
 import type { TraceServiceConfig } from "../config.ts";
 
@@ -20,7 +21,9 @@ const config: TraceServiceConfig = {
 
 type StubSandbox = SandboxLike & { tasks: SandboxTask[]; closed: boolean };
 
-function stubSandbox(run: (task: SandboxTask) => unknown = () => ({ success: true })): StubSandbox {
+function stubSandbox(
+  run: (task: SandboxTask) => ExecuteResponse | Promise<ExecuteResponse> = () => ({ success: true }) as ExecuteResponse,
+): StubSandbox {
   const stub: StubSandbox = {
     tasks: [],
     closed: false,
