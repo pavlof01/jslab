@@ -10,6 +10,8 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { build } from "ecmarkup";
 
+import { FUNCTION_ALGOS } from "./operations.ts";
+
 const __dir = dirname(fileURLToPath(import.meta.url));
 const SPEC_FILE = join(__dir, "ecma-spec.html");
 
@@ -69,132 +71,10 @@ const LINK_ICON_SVG =
   `<polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>` +
   `</svg>`;
 
-// ── Static map: which algorithms each top-level function can reach ────────────
-// Ordered for display (spec reading order).
-
-const FUNCTION_ALGOS: Record<string, string[]> = {
-  ToNumber: [
-    "ToNumber",
-    "StringToNumber",
-    "StringNumericValue",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-  ],
-  ToString: ["ToString", "Number::toString", "ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
-  ToBoolean: ["ToBoolean"],
-  ToNumeric: [
-    "ToNumeric",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-    "ToNumber",
-  ],
-  ToPrimitive: ["ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"],
-  ToObject: ["ToObject"],
-  ToPropertyKey: [
-    "ToPropertyKey",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-    "ToString",
-    "Number::toString",
-  ],
-  ToLength: [
-    "ToLength",
-    "ToNumber",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-  ],
-  ToIndex: [
-    "ToIndex",
-    "ToNumber",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-  ],
-  IsLooselyEqual: [
-    "IsLooselyEqual",
-    "IsStrictlyEqual",
-    "SameValueNonNumber",
-    "Number::equal",
-    "ToNumber",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-  ],
-  IsStrictlyEqual: ["IsStrictlyEqual", "SameValueNonNumber", "Number::equal"],
-  AbstractRelationalComparison: [
-    "AbstractRelationalComparison",
-    "Number::lessThan",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-    "ToNumeric",
-    "ToNumber",
-  ],
-  BinaryExpression: [
-    "IsLooselyEqual",
-    "IsStrictlyEqual",
-    "AbstractRelationalComparison",
-    "SameValueNonNumber",
-    "Number::equal",
-    "Number::lessThan",
-    "Number::add",
-    "Number::subtract",
-    "Number::multiply",
-    "Number::divide",
-    "Number::remainder",
-    "Number::exponentiate",
-    "Number::leftShift",
-    "Number::signedRightShift",
-    "Number::unsignedRightShift",
-    "Number::bitwiseAND",
-    "Number::bitwiseXOR",
-    "Number::bitwiseOR",
-    "NumberBitwiseOp",
-    "Number::toString",
-    "ToPrimitive",
-    "OrdinaryToPrimitive",
-    "GetMethod",
-    "GetV",
-    "ToObject",
-    "Get",
-    "Call",
-    "ToNumeric",
-    "ToNumber",
-    "ToString",
-  ],
-};
+// ── Which algorithms each top-level function can reach ───────────────────────
+// FUNCTION_ALGOS lives with the operations themselves (see operations.ts): a
+// clause list is only meaningful next to the call it documents, and keeping the
+// two apart is how eleven operations ended up executable but undocumented.
 
 // ── Clause cache: id → rendered outerHTML ────────────────────────────────────
 
@@ -259,5 +139,3 @@ export async function buildSpecHtmlForFunction(functionName: string): Promise<st
   if (!IS_DEV) _cache.set(functionName, html);
   return html || null;
 }
-
-export const SUPPORTED_SPEC_FUNCTIONS = Object.keys(FUNCTION_ALGOS);

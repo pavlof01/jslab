@@ -5,7 +5,9 @@ import {
   enabledEngines,
   ENGINE_KEYS,
   EngineKey,
+  flagsFor,
   RunStatus,
+  type EngineFlags,
   type EngineResult,
 } from "@/lib/types";
 import { runEngine } from "@/lib/api";
@@ -18,14 +20,14 @@ let latestRunToken = 0;
 type RunContext = {
   engines: EngineKey[];
   code: string;
-  v8Flags: string[];
+  flags: EngineFlags;
   timestamp: number;
 };
 
 export type RunRequest = {
   code?: string;
   engines?: EngineKey[];
-  v8Flags?: string[];
+  flags?: EngineFlags;
 };
 
 export type RunOutcome = "done" | "failed" | "empty" | "superseded";
@@ -46,7 +48,8 @@ interface EngineOutputsState {
   code: string;
   engines: Record<EngineKey, boolean>;
   activeTab: EngineKey;
-  selectedV8Flags: string[];
+  /** Flags picked per engine; the gateway accepts them for all four. */
+  flags: EngineFlags;
 }
 
 interface EngineOutputsActions {
@@ -58,7 +61,8 @@ interface EngineOutputsActions {
   setCode: (code: string) => void;
   setEngines: (engines: Record<EngineKey, boolean>) => void;
   setActiveTab: (activeTab: EngineKey) => void;
-  setSelectedV8Flags: (flags: string[]) => void;
+  setEngineFlags: (engine: EngineKey, flags: string[]) => void;
+  setFlags: (flags: EngineFlags) => void;
 }
 
 const createInitialState = (): EngineOutputsState => ({
@@ -74,7 +78,7 @@ const createInitialState = (): EngineOutputsState => ({
   code: samples.add,
   engines: createEngineSelection(),
   activeTab: EngineKey.v8,
-  selectedV8Flags: ["--print-bytecode", "--allow-natives-syntax"],
+  flags: { [EngineKey.v8]: ["--print-bytecode", "--allow-natives-syntax"] },
 });
 
 type EngineOutputsStore = EngineOutputsState & EngineOutputsActions;
@@ -93,15 +97,16 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
       return { engines, activeTab: ENGINE_KEYS.find((key) => engines[key]) ?? EngineKey.v8 };
     }),
   setActiveTab: (activeTab) => set({ activeTab }),
-  setSelectedV8Flags: (flags) => set({ selectedV8Flags: flags }),
+  setEngineFlags: (engine, engineFlags) => set((state) => ({ flags: { ...state.flags, [engine]: engineFlags } })),
+  setFlags: (flags) => set({ flags }),
 
-  runEngines: async ({ code: codeArg, engines: enginesArg, v8Flags: v8FlagsArg } = {}) => {
+  runEngines: async ({ code: codeArg, engines: enginesArg, flags: flagsArg } = {}) => {
     const runTimestamp = Date.now();
     const runToken = ++latestRunToken;
     const previousState = get();
     const code = codeArg ?? previousState.code;
     const engines = enginesArg ?? enabledEngines(previousState.engines);
-    const v8Flags = v8FlagsArg ?? previousState.selectedV8Flags;
+    const flags = flagsArg ?? previousState.flags;
 
     if (!code.trim()) {
       set({
@@ -126,7 +131,7 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
             out: cloneOut(previousState.out),
             engines: [...previousState.currentRun.engines],
             code: previousState.currentRun.code,
-            v8Flags: [...previousState.currentRun.v8Flags],
+            flags: { ...previousState.currentRun.flags },
             timestamp: previousState.currentRun.timestamp,
           }
         : previousState.previousSnapshot,
@@ -135,7 +140,7 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
     try {
       const settled = await Promise.all(
         engines.map(async (engine) => {
-          const options = engine === EngineKey.v8 ? { flags: v8Flags } : {};
+          const options = { flags: flagsFor(flags, engine) };
           return [engine, await runEngine(engine, code, options)] as const;
         }),
       );
@@ -148,7 +153,7 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
         durationMs: summary.durationMs,
         cacheHit: summary.cacheHit,
         status: summary.allFailed ? RunStatus.error : RunStatus.done,
-        currentRun: { engines: [...engines], code, v8Flags: [...v8Flags], timestamp: runTimestamp },
+        currentRun: { engines: [...engines], code, flags: { ...flags }, timestamp: runTimestamp },
         error: summary.failure ? describeRunFailure(summary.failure) : undefined,
         notice: describeRunNotice(summary.outputTruncated, summary.droppedFlags),
       });

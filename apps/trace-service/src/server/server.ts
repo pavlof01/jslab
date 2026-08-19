@@ -1,10 +1,10 @@
 import fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 
 import { loadConfig } from "../../config.ts";
-import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS } from "./execute/helpers.ts";
+import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS, SUPPORTED_SPEC_FUNCTIONS } from "./operations.ts";
 import { BudgetExceededError, SandboxBusyError, TraceSandbox, type SandboxTask } from "./execute/sandbox.ts";
 import { buildEqualityBodySchema, buildTypeConversionBodySchema } from "./schema.ts";
-import { buildSpecHtmlForFunction, SUPPORTED_SPEC_FUNCTIONS } from "./spec-generator.ts";
+import { buildSpecHtmlForFunction } from "./spec-generator.ts";
 
 const config = loadConfig();
 const app = fastify({ logger: { level: config.LOG_LEVEL } });

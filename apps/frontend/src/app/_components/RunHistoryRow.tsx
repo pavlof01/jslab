@@ -2,6 +2,7 @@
 
 import { Box, Flex, Text } from "@chakra-ui/react";
 
+import { flagCount, type EngineFlags } from "@/lib/types";
 import type { RunHistoryEntry } from "@/lib/runHistory";
 
 export function relativeTime(then: number, now: number): string {
@@ -14,9 +15,10 @@ export function relativeTime(then: number, now: number): string {
   return `${Math.round(hours / 24)}d ago`;
 }
 
-function flagSummary(flags: string[]): string {
-  if (flags.length === 0) return "";
-  return ` · ${flags.length} flag${flags.length === 1 ? "" : "s"}`;
+function flagSummary(flags: EngineFlags): string {
+  const count = flagCount(flags);
+  if (count === 0) return "";
+  return ` · ${count} flag${count === 1 ? "" : "s"}`;
 }
 
 export function RunHistoryRow({
@@ -42,7 +44,7 @@ export function RunHistoryRow({
       <Flex justify="space-between" mb={1}>
         <Text fontSize="xs" color="accent">
           {entry.engines.join(", ")}
-          {flagSummary(entry.v8Flags)}
+          {flagSummary(entry.flags)}
         </Text>
         <Text fontSize="xs" color="ink.5">
           {relativeTime(entry.ts, now)}

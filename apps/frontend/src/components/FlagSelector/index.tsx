@@ -1,16 +1,24 @@
 "use client";
 
 import { useMemo } from "react";
-import { createListCollection, Portal, Select, Span, Stack, Text } from "@chakra-ui/react";
+import { createListCollection, Portal, Select, Span, Stack } from "@chakra-ui/react";
 
-import { useV8Flags } from "@/store/engineOutputsSelectors";
-import { useV8FlagCatalog } from "./context";
+import { engineLabel } from "@/lib/engines";
+import type { EngineKey } from "@/lib/types";
+import { useEngineFlags } from "@/store/engineOutputsSelectors";
+import { useFlagGroups } from "./context";
 
 type FlagItem = { value: string; label: string; description: string; group: string };
 
-const V8FlagSelector = () => {
-  const { selectedV8Flags, setSelectedV8Flags } = useV8Flags();
-  const groups = useV8FlagCatalog();
+/**
+ * Flag picker for one engine. The engine is a prop rather than baked in: the
+ * gateway sanitizes flags per engine from one catalog, so the UI has no reason
+ * to be V8-only either.
+ */
+const FlagSelector = ({ engine }: { engine: EngineKey }) => {
+  const { flagsFor, setEngineFlags } = useEngineFlags();
+  const groups = useFlagGroups(engine);
+  const selected = flagsFor(engine);
 
   const collection = useMemo(
     () =>
@@ -18,7 +26,7 @@ const V8FlagSelector = () => {
         items: groups.flatMap((group) =>
           group.flags.map((flag) => ({
             value: flag.flag,
-            label: flag.flag.replace(/^--/, ""),
+            label: flag.flag.replace(/^-+/, ""),
             description: flag.description,
             group: group.label,
           })),
@@ -28,7 +36,8 @@ const V8FlagSelector = () => {
     [groups],
   );
 
-  const count = selectedV8Flags.length;
+  const name = engineLabel(engine).toLowerCase();
+  const count = selected.length;
 
   return (
     <Select.Root
@@ -36,13 +45,13 @@ const V8FlagSelector = () => {
       collection={collection}
       size="sm"
       width="auto"
-      value={selectedV8Flags}
-      onValueChange={(e) => setSelectedV8Flags(e.value)}
+      value={selected}
+      onValueChange={(e) => setEngineFlags(engine, e.value)}
       disabled={collection.items.length === 0}
     >
       <Select.Control>
         <Select.Trigger>
-          <Span>{count ? `${count} v8 flag${count === 1 ? "" : "s"}` : "v8 flags"}</Span>
+          <Span>{count ? `${count} ${name} flag${count === 1 ? "" : "s"}` : `${name} flags`}</Span>
         </Select.Trigger>
         <Select.IndicatorGroup>
           <Select.Indicator />
@@ -74,4 +83,4 @@ const V8FlagSelector = () => {
   );
 };
 
-export default V8FlagSelector;
+export default FlagSelector;

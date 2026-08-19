@@ -78,6 +78,44 @@ describe("useEngineOutputsStore.runEngines", () => {
     expect(state.error).toBeUndefined();
   });
 
+  it("sends each engine its own flags", async () => {
+    // Flags used to be a single V8 list, and every other engine was handed an
+    // empty options object no matter what the catalog allowed it.
+    const calls: Array<{ engine: string; flags: string[] }> = [];
+    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(async (_url: unknown, init: unknown) => {
+      const body = JSON.parse((init as { body: string }).body);
+      calls.push({ engine: body.engine, flags: body.options?.flags });
+      return toResponse(okResponse({ ok: true, stdout: "", stderr: "", meta: { durationMs: 1 } }));
+    });
+
+    await useEngineOutputsStore.getState().runEngines({
+      code: "1 + 1",
+      engines: [EngineKey.v8, EngineKey.hermes],
+      flags: { [EngineKey.v8]: ["--print-bytecode"], [EngineKey.hermes]: ["-O"] },
+    });
+
+    expect(calls).toEqual([
+      { engine: EngineKey.v8, flags: ["--print-bytecode"] },
+      { engine: EngineKey.hermes, flags: ["-O"] },
+    ]);
+  });
+
+  it("sends an empty flag list for an engine nothing was picked for", async () => {
+    const calls: string[][] = [];
+    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(async (_url: unknown, init: unknown) => {
+      calls.push(JSON.parse((init as { body: string }).body).options?.flags);
+      return toResponse(okResponse({ ok: true, stdout: "", stderr: "", meta: { durationMs: 1 } }));
+    });
+
+    await useEngineOutputsStore.getState().runEngines({
+      code: "1 + 1",
+      engines: [EngineKey.jsc],
+      flags: { [EngineKey.v8]: ["--print-bytecode"] },
+    });
+
+    expect(calls).toEqual([[]]);
+  });
+
   it("does not let a slow earlier run overwrite a newer run's output", async () => {
     let resolveSlow: (value: FakeResponse) => void = () => {};
     const slowResponse = new Promise<FakeResponse>((resolve) => (resolveSlow = resolve));

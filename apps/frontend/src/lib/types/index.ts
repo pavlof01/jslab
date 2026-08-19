@@ -19,6 +19,20 @@ export const selectionFrom = createEngineSelection;
 export const enabledEngines = (selection: Record<EngineKey, boolean>): EngineKey[] =>
   ENGINE_KEYS.filter((engine) => selection[engine]);
 
+/**
+ * Engine flags the user picked, per engine. Every engine accepts flags (the
+ * gateway sanitizes them against the same catalog for all four), so this is a
+ * map rather than the single V8 list the UI used to carry.
+ */
+export type EngineFlags = Partial<Record<EngineKey, string[]>>;
+
+/** Flags for one engine, safe to spread into a run request. */
+export const flagsFor = (flags: EngineFlags, engine: EngineKey): string[] => flags[engine] ?? [];
+
+/** Total number of flags selected across every engine. */
+export const flagCount = (flags: EngineFlags): number =>
+  ENGINE_KEYS.reduce((total, engine) => total + (flags[engine]?.length ?? 0), 0);
+
 export type EngineResult = { stdout: string; stderr: string; ms?: number };
 
 export enum RunStatus {
