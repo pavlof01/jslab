@@ -10,6 +10,10 @@ const app = buildTraceApp({ config, sandbox });
 
 const start = async () => {
   try {
+    // Boots the worker before the first caller arrives: engine262's import costs
+    // over a second, and the sandbox's budget clock starts at enqueue, so a cold
+    // worker spends a caller's whole budget on startup.
+    sandbox.warm();
     await app.listen({ port: config.PORT, host: config.HOST });
     app.log.info(`trace-service listening on ${config.HOST}:${config.PORT}`);
   } catch (err) {
