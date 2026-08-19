@@ -1,8 +1,8 @@
-import { ThemedToken } from "shiki";
-import TokenSpan from "./CodeToken";
-import { DiffKind } from "@/lib/types";
-import LineNumber from "./LineNumber";
+import type { ThemedToken } from "shiki";
 import type { EngineKey } from "@/lib/types";
+import { DiffKind } from "@/lib/types";
+import TokenSpan from "./CodeToken";
+import LineNumber from "./LineNumber";
 
 type Props = {
   tokens: ThemedToken[];
@@ -52,7 +52,12 @@ const PlainCodeRow: React.FC<Props> = ({ tokens, lineNumber, engineKey }) => {
       <LineNumber value={tok.prevLine ?? lineNumber} />
       <LineNumber value={tok.nextLine ?? ""} />
       {tokens.map((token, index) => (
-        <TokenSpan key={token.offset} token={token} nextToken={tokens[index + 1]} engineKey={engineKey} />
+        <TokenSpan
+          key={token.offset}
+          token={token}
+          nextToken={tokens[index + 1]}
+          engineKey={engineKey}
+        />
       ))}
     </span>
   );

@@ -2,7 +2,12 @@ import fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 
 import { loadConfig } from "../../config.ts";
 import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS } from "./execute/helpers.ts";
-import { BudgetExceededError, SandboxBusyError, TraceSandbox, type SandboxTask } from "./execute/sandbox.ts";
+import {
+  BudgetExceededError,
+  SandboxBusyError,
+  type SandboxTask,
+  TraceSandbox,
+} from "./execute/sandbox.ts";
 import { buildEqualityBodySchema, buildTypeConversionBodySchema } from "./schema.ts";
 import { buildSpecHtmlForFunction, SUPPORTED_SPEC_FUNCTIONS } from "./spec-generator.ts";
 
@@ -13,13 +18,21 @@ const app = fastify({ logger: { level: config.LOG_LEVEL } });
 const sandbox = new TraceSandbox({ budgetMs: config.MAX_TIMEOUT_MS });
 app.addHook("onClose", () => sandbox.close());
 
-const typeConversionBodySchema = buildTypeConversionBodySchema(AVAILABLE_FUNCTIONS, config.MAX_SOURCE_LENGTH);
+const typeConversionBodySchema = buildTypeConversionBodySchema(
+  AVAILABLE_FUNCTIONS,
+  config.MAX_SOURCE_LENGTH,
+);
 const equalityBodySchema = buildEqualityBodySchema(config.MAX_SOURCE_LENGTH);
 
 /**
  * Runs a task in the sandbox and turns every failure mode into a JSON error.
  */
-async function runTask(request: FastifyRequest, reply: FastifyReply, functionName: string, task: SandboxTask) {
+async function runTask(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  functionName: string,
+  task: SandboxTask,
+) {
   try {
     const result = await sandbox.run(task);
     return reply.status(result.success ? 200 : 400).send(result);
@@ -62,7 +75,7 @@ app.get("/functions", async () => ({
   supported_operators: SUPPORTED_OPERATORS,
   endpoints: {
     type_conversion: "POST /execute/type-conversion { functionName, input, preferredType? }",
-    equality: "POST /execute/equality { input } — input is a binary expression like \"{} == ![]\"",
+    equality: 'POST /execute/equality { input } — input is a binary expression like "{} == ![]"',
   },
   note: "Real ECMA262 abstract operation execution with full trace capture",
 }));
@@ -75,7 +88,12 @@ app.post<{ Body: UnaryBody }>(
   { schema: { body: typeConversionBodySchema } },
   async (request: FastifyRequest<{ Body: UnaryBody }>, reply: FastifyReply) => {
     const { functionName, input, preferredType } = request.body;
-    return runTask(request, reply, functionName, { kind: "unary", functionName, input, preferredType });
+    return runTask(request, reply, functionName, {
+      kind: "unary",
+      functionName,
+      input,
+      preferredType,
+    });
   },
 );
 

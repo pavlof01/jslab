@@ -13,7 +13,9 @@ function buildApp() {
   const app = fastify();
   app.post(
     "/execute/type-conversion",
-    { schema: { body: buildTypeConversionBodySchema(["ToNumber", "ToString"], MAX_SOURCE_LENGTH) } },
+    {
+      schema: { body: buildTypeConversionBodySchema(["ToNumber", "ToString"], MAX_SOURCE_LENGTH) },
+    },
     async () => ({ executed: true }),
   );
   app.post(
@@ -65,7 +67,11 @@ describe("request body schemas", () => {
 
   it("rejects an empty equality expression", async () => {
     const app = buildApp();
-    const response = await app.inject({ method: "POST", url: "/execute/equality", payload: { input: "" } });
+    const response = await app.inject({
+      method: "POST",
+      url: "/execute/equality",
+      payload: { input: "" },
+    });
     expect(response.statusCode).toBe(400);
     await app.close();
   });

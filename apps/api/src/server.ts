@@ -1,23 +1,23 @@
-import fastify, { type FastifyBaseLogger, type FastifyRequest } from "fastify";
-import apiReference from "@scalar/fastify-api-reference";
 import underPressure from "@fastify/under-pressure";
+import apiReference from "@scalar/fastify-api-reference";
+import fastify, { type FastifyBaseLogger, type FastifyRequest } from "fastify";
 import { Redis } from "ioredis";
 import { request } from "undici";
+import { extractApiKey, issueApiKey, lookupApiKey, revokeApiKey } from "./apiKeys.js";
 import { cacheKey, readCache, writeCache } from "./cache.js";
 import { loadConfig } from "./config.js";
+import { cacheEvents, rateLimited, registry, runDuration, runsTotal } from "./metrics.js";
 import { openapiDoc } from "./openapi.js";
 import { enforceLimit, hashIdentity } from "./rateLimit.js";
-import { extractApiKey, issueApiKey, lookupApiKey, revokeApiKey } from "./apiKeys.js";
 import {
+  clampTimeout,
   flagSpecs,
   normalizeFlags,
   runRequestSchema,
-  traceExecuteRequestSchema,
   traceExecuteEqualitySchema,
+  traceExecuteRequestSchema,
   validationMessage,
-  clampTimeout,
 } from "./schemas.js";
-import { registry, runsTotal, cacheEvents, rateLimited, runDuration } from "./metrics.js";
 import type { ApiResponse, EngineResponse, NormalizedRunRequest } from "./types.js";
 
 const config = loadConfig();
@@ -34,7 +34,7 @@ const app = fastify({
   logger: { level: config.LOG_LEVEL },
   bodyLimit: config.REQUEST_BODY_LIMIT_BYTES,
 
-  trustProxy: config.TRUST_PROXY_HOPS
+  trustProxy: config.TRUST_PROXY_HOPS,
 });
 
 app.register(underPressure, {
@@ -74,8 +74,8 @@ app.get("/api/flags", async () => flagsDoc);
 app.register(apiReference, {
   routePrefix: "/api/docs",
   configuration: {
-    content: openapiDoc
-  }
+    content: openapiDoc,
+  },
 });
 
 const IP_SHAPE = /^[0-9a-fA-F.:]{1,64}$/;
@@ -106,10 +106,22 @@ async function resolveBudget(req: any, reply: any): Promise<Budget | null> {
     const record = await lookupApiKey(redis, key, req.log);
     if (!record) {
       const ip = clientIp(req);
-      const general = await enforceLimit(redis, ip, "general", config.RATE_LIMIT_PER_MIN, 60, reply, req.log);
+      const general = await enforceLimit(
+        redis,
+        ip,
+        "general",
+        config.RATE_LIMIT_PER_MIN,
+        60,
+        reply,
+        req.log,
+      );
       if (general.limited) {
         rateLimited.inc({ budget: "general" });
-        reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
+        reply.code(429).send({
+          ok: false,
+          error: "rate limit exceeded",
+          meta: { retryAfter: general.retryAfter },
+        });
         return null;
       }
       reply.code(401).send({ ok: false, error: "invalid API key" });
@@ -145,7 +157,11 @@ function normalizeRequest(body: unknown): NormalizedRunRequest {
     fallback: config.DEFAULT_TIMEOUT_MS,
   });
 
-  const { flags, dropped } = normalizeFlags(parsed.engine, parsed.options?.flags ?? [], config.MAX_FLAGS);
+  const { flags, dropped } = normalizeFlags(
+    parsed.engine,
+    parsed.options?.flags ?? [],
+    config.MAX_FLAGS,
+  );
 
   if (parsed.sourceText.length > config.MAX_SOURCE_LENGTH) {
     throw new Error(`sourceText exceeds limit (${config.MAX_SOURCE_LENGTH} chars)`);
@@ -196,14 +212,19 @@ function classifyUpstreamError(serviceName: string, err: any): { kind: string; m
 
 const MAX_UPSTREAM_RESPONSE_BYTES = 4 * 1024 * 1024;
 
-async function readResponseText(body: AsyncIterable<Buffer | string>, maxBytes = MAX_UPSTREAM_RESPONSE_BYTES): Promise<string> {
+async function readResponseText(
+  body: AsyncIterable<Buffer | string>,
+  maxBytes = MAX_UPSTREAM_RESPONSE_BYTES,
+): Promise<string> {
   const chunks: Buffer[] = [];
   let total = 0;
   for await (const chunk of body) {
     const buf = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk;
     total += buf.length;
     if (total > maxBytes) {
-      const err = new Error(`upstream response exceeds ${maxBytes} bytes`) as Error & { code: string };
+      const err = new Error(`upstream response exceeds ${maxBytes} bytes`) as Error & {
+        code: string;
+      };
       err.code = "UPSTREAM_RESPONSE_TOO_LARGE";
       throw err;
     }
@@ -228,12 +249,18 @@ const engineBaseByKind = {
   jsc: config.ENGINE_JSC_URL,
 } as const;
 
-async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogger): Promise<RunResult> {
+async function executeRun(
+  normalized: NormalizedRunRequest,
+  log: FastifyBaseLogger,
+): Promise<RunResult> {
   const start = Date.now();
   const engineUrl = `${engineBaseByKind[normalized.engine].replace(/\/$/, "")}/run`;
 
   try {
-    const engineBody = { sourceText: normalized.sourceText, options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs } };
+    const engineBody = {
+      sourceText: normalized.sourceText,
+      options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs },
+    };
 
     const engineRes = await request(engineUrl, {
       method: "POST",
@@ -246,7 +273,10 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
     const engineText = await readResponseText(engineRes.body);
 
     if (engineRes.statusCode < 200 || engineRes.statusCode >= 300) {
-      log.error({ engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) }, "engine returned non-2xx");
+      log.error(
+        { engineUrl, status: engineRes.statusCode, sample: engineText.slice(0, 500) },
+        "engine returned non-2xx",
+      );
     }
 
     if (engineRes.statusCode === 429) {
@@ -257,19 +287,35 @@ async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogg
         body = { ok: false, error: "engine busy" };
       }
       const retryAfter = engineRes.headers["retry-after"];
-      return { status: 429, body, cache: "none", retryAfter: retryAfter ? String(retryAfter) : undefined };
+      return {
+        status: 429,
+        body,
+        cache: "none",
+        retryAfter: retryAfter ? String(retryAfter) : undefined,
+      };
     }
 
     if (engineRes.statusCode >= 500) {
-      return { status: 502, body: { ok: false, error: `engine unavailable (${engineRes.statusCode})` }, cache: "none" };
+      return {
+        status: 502,
+        body: { ok: false, error: `engine unavailable (${engineRes.statusCode})` },
+        cache: "none",
+      };
     }
 
     let enginePayload: EngineResponse;
     try {
       enginePayload = JSON.parse(engineText) as EngineResponse;
     } catch {
-      log.error({ status: engineRes.statusCode, sample: engineText.slice(0, 2000) }, "engine returned non-json");
-      return { status: 502, body: { ok: false, error: "engine returned invalid response" }, cache: "none" };
+      log.error(
+        { status: engineRes.statusCode, sample: engineText.slice(0, 2000) },
+        "engine returned non-json",
+      );
+      return {
+        status: 502,
+        body: { ok: false, error: "engine returned invalid response" },
+        cache: "none",
+      };
     }
 
     if (!enginePayload.ok) {
@@ -309,10 +355,20 @@ app.post("/api/run", async (req, reply) => {
   const budget = await resolveBudget(req, reply);
   if (!budget) return; // invalid API key → 401 already sent
 
-  const general = await enforceLimit(redis, budget.id, budget.generalSuffix, budget.generalLimit, 60, reply, req.log);
+  const general = await enforceLimit(
+    redis,
+    budget.id,
+    budget.generalSuffix,
+    budget.generalLimit,
+    60,
+    reply,
+    req.log,
+  );
   if (general.limited) {
     rateLimited.inc({ budget: budget.generalSuffix });
-    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
+    reply
+      .code(429)
+      .send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return;
   }
 
@@ -325,17 +381,34 @@ app.post("/api/run", async (req, reply) => {
     runsTotal.inc({ engine: normalized.engine, outcome: "cache_hit" });
     const body =
       cached.status === 200 && cached.body && "meta" in cached.body
-        ? { ...(cached.body as ApiResponse), meta: { ...(cached.body as ApiResponse).meta, cacheHit: true, durationMs: Date.now() - start } }
+        ? {
+            ...(cached.body as ApiResponse),
+            meta: {
+              ...(cached.body as ApiResponse).meta,
+              cacheHit: true,
+              durationMs: Date.now() - start,
+            },
+          }
         : cached.body;
     reply.code(cached.status).send(withDroppedFlags(body, normalized.droppedFlags));
     return;
   }
   if (!isDev) cacheEvents.inc({ result: "miss" });
 
-  const heavy = await enforceLimit(redis, budget.id, budget.heavySuffix, budget.heavyLimit, 60, reply, req.log);
+  const heavy = await enforceLimit(
+    redis,
+    budget.id,
+    budget.heavySuffix,
+    budget.heavyLimit,
+    60,
+    reply,
+    req.log,
+  );
   if (heavy.limited) {
     rateLimited.inc({ budget: budget.heavySuffix });
-    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
+    reply
+      .code(429)
+      .send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: heavy.retryAfter } });
     return;
   }
 
@@ -352,7 +425,8 @@ app.post("/api/run", async (req, reply) => {
       inFlight.delete(key);
     }
     if (!isDev && result.cache !== "none") {
-      const ttl = result.cache === "positive" ? config.CACHE_TTL_SECONDS : config.NEGATIVE_CACHE_TTL_SECONDS;
+      const ttl =
+        result.cache === "positive" ? config.CACHE_TTL_SECONDS : config.NEGATIVE_CACHE_TTL_SECONDS;
       await writeCache(redis, key, { status: result.status, body: result.body }, ttl, req.log);
     }
   }
@@ -365,12 +439,7 @@ app.post("/api/run", async (req, reply) => {
   reply.code(result.status).send(withDroppedFlags(result.body, normalized.droppedFlags));
 });
 
-async function proxyToTraceService(
-  req: any,
-  reply: any,
-  upstreamPath: string,
-  body: unknown,
-) {
+async function proxyToTraceService(req: any, reply: any, upstreamPath: string, body: unknown) {
   const traceServiceUrl = `${config.TRACE_SERVICE_URL.replace(/\/$/, "")}${upstreamPath}`;
 
   try {
@@ -388,7 +457,10 @@ async function proxyToTraceService(
     try {
       tracePayload = JSON.parse(traceText);
     } catch {
-      req.log.error({ status: traceRes.statusCode, sample: traceText.slice(0, 2000) }, "trace-service returned non-json");
+      req.log.error(
+        { status: traceRes.statusCode, sample: traceText.slice(0, 2000) },
+        "trace-service returned non-json",
+      );
       reply.code(502).send({ ok: false, error: "trace-service returned invalid response" });
       return;
     }
@@ -402,7 +474,10 @@ async function proxyToTraceService(
         if (meta?.retryAfter === undefined) {
           tracePayload = {
             ...(tracePayload as Record<string, unknown>),
-            meta: { ...(meta ?? {}), retryAfter: Number.isFinite(seconds) ? seconds : String(retryAfter) },
+            meta: {
+              ...(meta ?? {}),
+              retryAfter: Number.isFinite(seconds) ? seconds : String(retryAfter),
+            },
           };
         }
       }
@@ -419,16 +494,36 @@ async function proxyToTraceService(
 async function enforceTraceRateLimit(req: any, reply: any): Promise<boolean> {
   const budget = await resolveBudget(req, reply);
   if (!budget) return true; // invalid API key → 401 already sent
-  const general = await enforceLimit(redis, budget.id, budget.generalSuffix, budget.generalLimit, 60, reply, req.log);
+  const general = await enforceLimit(
+    redis,
+    budget.id,
+    budget.generalSuffix,
+    budget.generalLimit,
+    60,
+    reply,
+    req.log,
+  );
   if (general.limited) {
     rateLimited.inc({ budget: budget.generalSuffix });
-    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
+    reply
+      .code(429)
+      .send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: general.retryAfter } });
     return true;
   }
-  const trace = await enforceLimit(redis, budget.id, budget.traceSuffix, budget.traceLimit, 60, reply, req.log);
+  const trace = await enforceLimit(
+    redis,
+    budget.id,
+    budget.traceSuffix,
+    budget.traceLimit,
+    60,
+    reply,
+    req.log,
+  );
   if (trace.limited) {
     rateLimited.inc({ budget: budget.traceSuffix });
-    reply.code(429).send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: trace.retryAfter } });
+    reply
+      .code(429)
+      .send({ ok: false, error: "rate limit exceeded", meta: { retryAfter: trace.retryAfter } });
     return true;
   }
   return false;
@@ -444,9 +539,21 @@ function requireJsonContentType(req: any, reply: any): boolean {
 app.post("/api/keys", async (req, reply) => {
   if (!requireJsonContentType(req, reply)) return;
   const ip = clientIp(req);
-  const issue = await enforceLimit(redis, ip, "key-issue", config.API_KEY_ISSUE_PER_HOUR, 3600, reply, req.log);
+  const issue = await enforceLimit(
+    redis,
+    ip,
+    "key-issue",
+    config.API_KEY_ISSUE_PER_HOUR,
+    3600,
+    reply,
+    req.log,
+  );
   if (issue.limited) {
-    reply.code(429).send({ ok: false, error: "key issuance limit reached", meta: { retryAfter: issue.retryAfter } });
+    reply.code(429).send({
+      ok: false,
+      error: "key issuance limit reached",
+      meta: { retryAfter: issue.retryAfter },
+    });
     return;
   }
   const result = await issueApiKey(
@@ -460,7 +567,10 @@ app.post("/api/keys", async (req, reply) => {
   );
   if (!result.ok) {
     if (result.reason === "owner_limit") {
-      reply.code(429).send({ ok: false, error: "too many live keys for this address; revoke one before minting another" });
+      reply.code(429).send({
+        ok: false,
+        error: "too many live keys for this address; revoke one before minting another",
+      });
       return;
     }
     reply.code(503).send({ ok: false, error: "could not issue key" });
@@ -471,7 +581,8 @@ app.post("/api/keys", async (req, reply) => {
     apiKey: result.key,
     rateLimitPerMin: config.API_KEY_RATE_LIMIT_PER_MIN,
     expiresInSeconds: config.API_KEY_TTL_SECONDS,
-    usage: "Send the key as an 'x-api-key' header or 'Authorization: Bearer <key>' on /api/run and /api/trace/*.",
+    usage:
+      "Send the key as an 'x-api-key' header or 'Authorization: Bearer <key>' on /api/run and /api/trace/*.",
   });
 });
 
@@ -488,14 +599,18 @@ app.delete("/api/keys", async (req, reply) => {
 type TraceBodySchema = {
   safeParse: (
     body: unknown,
-  ) => { success: true; data: unknown } | { success: false; error: { issues: Array<{ message: string }> } };
+  ) =>
+    | { success: true; data: unknown }
+    | { success: false; error: { issues: Array<{ message: string }> } };
 };
 
 function registerTraceExecuteRoute(name: "type-conversion" | "equality", schema: TraceBodySchema) {
   app.post(`/api/trace/execute/${name}`, async (req, reply) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
+      reply
+        .code(400)
+        .send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
       return;
     }
     if (await enforceTraceRateLimit(req, reply)) return;

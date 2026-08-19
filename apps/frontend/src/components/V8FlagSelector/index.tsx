@@ -1,7 +1,7 @@
 "use client";
 
+import { createListCollection, Portal, Select, Span, Stack } from "@chakra-ui/react";
 import { useMemo } from "react";
-import { createListCollection, Portal, Select, Span, Stack, Text } from "@chakra-ui/react";
 
 import { useV8Flags } from "@/store/engineOutputsSelectors";
 import { useV8FlagCatalog } from "./context";

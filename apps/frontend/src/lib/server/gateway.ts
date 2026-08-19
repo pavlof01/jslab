@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 const DEV_FALLBACK = "http://localhost:8080";
 
 const trimSlash = (url: string) => url.replace(/\/$/, "");
 
 export function gatewayUrl(kind: "run" | "trace" = "run"): string {
-  const configured = kind === "trace" ? process.env.JSLAB_TRACE_BACKEND_URL ?? process.env.JSLAB_BACKEND_URL : process.env.JSLAB_BACKEND_URL;
+  const configured =
+    kind === "trace"
+      ? (process.env.JSLAB_TRACE_BACKEND_URL ?? process.env.JSLAB_BACKEND_URL)
+      : process.env.JSLAB_BACKEND_URL;
   return configured ? trimSlash(configured) : DEV_FALLBACK;
 }
 
@@ -25,7 +28,9 @@ export function forwardedHeaders(req: NextRequest | Request): HeadersInit {
 
 export const PROXY_TIMEOUT_MS = 15_000;
 
-export async function readJsonBody(req: NextRequest | Request): Promise<{ body: unknown } | { error: NextResponse }> {
+export async function readJsonBody(
+  req: NextRequest | Request,
+): Promise<{ body: unknown } | { error: NextResponse }> {
   try {
     return { body: await req.json() };
   } catch {
@@ -48,13 +53,22 @@ export async function proxyToGateway(
       signal: AbortSignal.timeout(init.timeoutMs ?? PROXY_TIMEOUT_MS),
     });
   } catch (error) {
-    console.error(`Gateway request to ${base}${path} failed:`, error instanceof Error ? error.message : error);
-    return NextResponse.json({ error: "The engine service is unavailable. Try again in a moment." }, { status: 503 });
+    console.error(
+      `Gateway request to ${base}${path} failed:`,
+      error instanceof Error ? error.message : error,
+    );
+    return NextResponse.json(
+      { error: "The engine service is unavailable. Try again in a moment." },
+      { status: 503 },
+    );
   }
 
   try {
     return NextResponse.json(await response.json(), { status: response.status });
   } catch {
-    return NextResponse.json({ error: "The engine service returned an unreadable response." }, { status: 502 });
+    return NextResponse.json(
+      { error: "The engine service returned an unreadable response." },
+      { status: 502 },
+    );
   }
 }

@@ -48,7 +48,13 @@ export function RunHistoryRow({
           {relativeTime(entry.ts, now)}
         </Text>
       </Flex>
-      <Text textStyle="code" color="ink.body" lineClamp={2} whiteSpace="pre-wrap" wordBreak="break-all">
+      <Text
+        textStyle="code"
+        color="ink.body"
+        lineClamp={2}
+        whiteSpace="pre-wrap"
+        wordBreak="break-all"
+      >
         {entry.code.slice(0, 160) || "(empty)"}
       </Text>
     </Box>

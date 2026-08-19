@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { Box, Container, Flex, Text } from "@chakra-ui/react";
+import Image from "next/image";
 
 export const FooterSection: React.FC = () => {
   return (
@@ -32,12 +32,17 @@ export const FooterSection: React.FC = () => {
             </Flex>
 
             <Text textStyle="bodySm" mt={{ base: 3, md: "16px" }} color="ink.2">
-              An open-source project dedicated to making the ECMAScript standard accessible to every developer.
+              An open-source project dedicated to making the ECMAScript standard accessible to every
+              developer.
             </Text>
           </Box>
 
           <Flex direction="column" align={{ base: "flex-start", md: "flex-end" }} gap="10px">
-            <a data-jsl="link" href="mailto:pavlof01@gmail.com" style={{ fontFamily: "mono", fontSize: "11.5px" }}>
+            <a
+              data-jsl="link"
+              href="mailto:pavlof01@gmail.com"
+              style={{ fontFamily: "mono", fontSize: "11.5px" }}
+            >
               ✉ pavlof01@gmail.com
             </a>
             <Text textStyle="codeSm" letterSpacing="0.04em" color="ink.5">

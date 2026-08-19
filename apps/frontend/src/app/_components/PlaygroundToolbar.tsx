@@ -1,16 +1,28 @@
 "use client";
 
+import { Box, Button } from "@chakra-ui/react";
 import Samples from "@/components/Samples";
+import { Chip, ShortcutHint } from "@/components/ui";
 import V8FlagSelector from "@/components/V8FlagSelector";
 import V8Intrinsics from "@/components/V8Intrinsics";
-import { Box, Button } from "@chakra-ui/react";
-import { Chip, ShortcutHint } from "@/components/ui";
 import { engineLabel } from "@/lib/engines";
-import { createEngineSelection, enabledEngines, ENGINE_KEYS, EngineKey, RunStatus } from "@/lib/types";
-import { useCode, useDiffToggle, useEngineSelection, useRunStatus, useSetCode } from "@/store/engineOutputsSelectors";
+import {
+  createEngineSelection,
+  ENGINE_KEYS,
+  EngineKey,
+  enabledEngines,
+  RunStatus,
+} from "@/lib/types";
+import {
+  useCode,
+  useDiffToggle,
+  useEngineSelection,
+  useRunStatus,
+  useSetCode,
+} from "@/store/engineOutputsSelectors";
+import * as styles from "./playground.styles";
 import RunHistory from "./RunHistory";
 import ShareButton from "./ShareButton";
-import * as styles from "./playground.styles";
 
 export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
   const code = useCode();

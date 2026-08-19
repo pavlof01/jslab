@@ -15,11 +15,11 @@ const envSchema = z
     MAX_SOURCE_LENGTH: z.coerce.number().default(20000),
     // Max concurrent engine processes per pod. Excess /run requests get 429 (with Retry-After).
     MAX_CONCURRENCY: z.coerce.number().int().positive().default(4),
-    LOG_LEVEL: z.string().default("info")
+    LOG_LEVEL: z.string().default("info"),
   })
   .transform(({ JSCSHELL_PATH, JSC_PATH, ...rest }) => ({
     ...rest,
-    JSCSHELL_PATH: JSCSHELL_PATH ?? JSC_PATH ?? "jsc"
+    JSCSHELL_PATH: JSCSHELL_PATH ?? JSC_PATH ?? "jsc",
   }));
 
 export type EngineConfig = z.infer<typeof envSchema>;

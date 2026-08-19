@@ -168,7 +168,8 @@ export class TraceSandbox {
     worker.on("message", (reply: SandboxReply) => this.#onReply(worker, reply));
     worker.on("error", (error: Error) => this.#onWorkerFailure(worker, error));
     worker.on("exit", (code: number) => {
-      if (code !== 0) this.#onWorkerFailure(worker, new Error(`Trace worker exited with code ${code}`));
+      if (code !== 0)
+        this.#onWorkerFailure(worker, new Error(`Trace worker exited with code ${code}`));
     });
     this.#worker = worker;
     return worker;

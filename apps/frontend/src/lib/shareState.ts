@@ -28,7 +28,9 @@ export function decodeShareState(param: string): ShareState | null {
     const engineSet = new Set<EngineKey>(engines);
     engineSet.add(EngineKey.v8);
 
-    const v8Flags = Array.isArray(raw.f) ? raw.f.filter((x): x is string => typeof x === "string") : [];
+    const v8Flags = Array.isArray(raw.f)
+      ? raw.f.filter((x): x is string => typeof x === "string")
+      : [];
 
     return {
       code: raw.c,

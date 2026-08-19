@@ -1,6 +1,5 @@
 import type { SystemStyleObject } from "@chakra-ui/react";
 
-
 export const frame: SystemStyleObject = {
   height: "calc(100dvh - {sizes.header})",
   display: "flex",
@@ -89,7 +88,11 @@ export const outputPane: SystemStyleObject = {
   bg: "surface.base",
 };
 
-export const outputScroller: SystemStyleObject = { flex: "1 1 auto", minHeight: 0, overflow: "auto" };
+export const outputScroller: SystemStyleObject = {
+  flex: "1 1 auto",
+  minHeight: 0,
+  overflow: "auto",
+};
 
 export const engineNote: SystemStyleObject = {
   flex: "0 0 auto",

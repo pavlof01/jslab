@@ -3,7 +3,7 @@
 import { Box, Button, SimpleGrid, Text } from "@chakra-ui/react";
 
 import type { CustomSample } from "@/lib/customSamples";
-import { samples, sampleCatalog, type SampleKey } from "@/lib/samples";
+import { type SampleKey, sampleCatalog, samples } from "@/lib/samples";
 import { SampleCard } from "./SampleCard";
 
 export function SampleLibrary({
@@ -78,7 +78,10 @@ export const SampleGrid: React.FC<{ children: React.ReactNode }> = ({ children }
   </SimpleGrid>
 );
 
-const CardAction: React.FC<{ onClick: () => void; children: React.ReactNode }> = ({ onClick, children }) => (
+const CardAction: React.FC<{ onClick: () => void; children: React.ReactNode }> = ({
+  onClick,
+  children,
+}) => (
   <Button
     size="xs"
     variant="ghost"
@@ -92,11 +95,7 @@ const CardAction: React.FC<{ onClick: () => void; children: React.ReactNode }> =
 );
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Text
-    textStyle="labelSm"
-    color="ink.label"
-    mb={2}
-  >
+  <Text textStyle="labelSm" color="ink.label" mb={2}>
     {children}
   </Text>
 );

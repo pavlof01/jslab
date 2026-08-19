@@ -1,7 +1,6 @@
 import type { TraceNode, TraceStep } from "./spec-runner";
 import { formatSpecValue } from "./traceModel";
 
-
 export type DecisionTest = {
   taken: boolean;
   clause: string;
@@ -47,8 +46,8 @@ export function buildDecisionTree(root: TraceNode): DecisionNode[] {
       index: headerIndex ?? index,
       depth,
       op: algoId,
-      args: inputs.map((v) => formatSpecValue(v, Infinity)).join(", "),
-      result: output ? formatSpecValue(output, Infinity) : undefined,
+      args: inputs.map((v) => formatSpecValue(v, Number.POSITIVE_INFINITY)).join(", "),
+      result: output ? formatSpecValue(output, Number.POSITIVE_INFINITY) : undefined,
       tests: [],
       action: undefined,
     };
@@ -70,14 +69,24 @@ export function buildDecisionTree(root: TraceNode): DecisionNode[] {
       }
 
       if (step.kind === "return" || step.kind === "throw") {
-        const value = step.value ? formatSpecValue(step.value, Infinity) : undefined;
+        const value = step.value
+          ? formatSpecValue(step.value, Number.POSITIVE_INFINITY)
+          : undefined;
         node.action = value ? `${label(step)} → ${value}` : label(step);
         node.actionIndex = stepIndex;
         return;
       }
 
       if (step.kind === "call" && step.algoId) {
-        walkCall(step.algoId, step.inputs ?? [], step.output, step.steps ?? [], depth + 1, stepPath, stepIndex);
+        walkCall(
+          step.algoId,
+          step.inputs ?? [],
+          step.output,
+          step.steps ?? [],
+          depth + 1,
+          stepPath,
+          stepIndex,
+        );
         return;
       }
 

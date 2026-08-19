@@ -1,32 +1,32 @@
 import {
-  // Type conversion functions
-  ToBoolean,
-  ToNumber,
-  ToString,
-  ToNumeric,
-  ToObject,
-  ToPrimitive,
-  ToPropertyKey,
-  ToLength,
-  ToIndex,
-  ToInt32,
-  ToUint32,
-  ToInt8,
-  ToUint8,
-  ToUint8Clamp,
-  ToInt16,
-  ToUint16,
-  ToBigInt,
-  ToBigInt64,
-  ToBigUint64,
+  AbstractRelationalComparison,
   CanonicalNumericIndexString,
   // Equality / relational
   IsLooselyEqual,
   IsStrictlyEqual,
-  AbstractRelationalComparison,
+  type ManagedRealm,
+  ToBigInt,
+  ToBigInt64,
+  ToBigUint64,
+  // Type conversion functions
+  ToBoolean,
+  ToIndex,
+  ToInt8,
+  ToInt16,
+  ToInt32,
+  ToLength,
+  ToNumber,
+  ToNumeric,
+  ToObject,
+  ToPrimitive,
+  ToPropertyKey,
+  ToString,
+  ToUint8,
+  ToUint8Clamp,
+  ToUint16,
+  ToUint32,
   // Helper functions
   Value,
-  ManagedRealm,
 } from "../../trace/index.mts";
 
 export type FunctionCategory = "typeConversion" | "equality";
@@ -89,24 +89,64 @@ function transformLessOrEqual(raw: Value): Value {
 export function getOperatorDispatch(operator: SupportedOperator): OperatorDispatch {
   switch (operator) {
     case "==":
-      return { algoName: "IsLooselyEqual", swap: false, leftFirst: true, transform: transformIdentity };
+      return {
+        algoName: "IsLooselyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformIdentity,
+      };
     case "===":
-      return { algoName: "IsStrictlyEqual", swap: false, leftFirst: true, transform: transformIdentity };
+      return {
+        algoName: "IsStrictlyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformIdentity,
+      };
     case "!=":
-      return { algoName: "IsLooselyEqual", swap: false, leftFirst: true, transform: transformNegate };
+      return {
+        algoName: "IsLooselyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformNegate,
+      };
     case "!==":
-      return { algoName: "IsStrictlyEqual", swap: false, leftFirst: true, transform: transformNegate };
+      return {
+        algoName: "IsStrictlyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformNegate,
+      };
     case "<":
-      return { algoName: "AbstractRelationalComparison", swap: false, leftFirst: true, transform: transformIdentity };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: false,
+        leftFirst: true,
+        transform: transformIdentity,
+      };
     case ">":
       // a > b ≡ b < a (with LeftFirst=false to preserve evaluation order)
-      return { algoName: "AbstractRelationalComparison", swap: true, leftFirst: false, transform: transformIdentity };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: true,
+        leftFirst: false,
+        transform: transformIdentity,
+      };
     case "<=":
       // a <= b ≡ !(b < a) treating undefined as false
-      return { algoName: "AbstractRelationalComparison", swap: true, leftFirst: false, transform: transformLessOrEqual };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: true,
+        leftFirst: false,
+        transform: transformLessOrEqual,
+      };
     case ">=":
       // a >= b ≡ !(a < b) treating undefined as false
-      return { algoName: "AbstractRelationalComparison", swap: false, leftFirst: true, transform: transformLessOrEqual };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: false,
+        leftFirst: true,
+        transform: transformLessOrEqual,
+      };
   }
 }
 
@@ -114,7 +154,9 @@ export function getOperatorDispatch(operator: SupportedOperator): OperatorDispat
  * Scan `input` (top-level, ignoring strings & balanced brackets) and return the
  * leftmost supported operator. Returns null if none found.
  */
-export function detectOperator(input: string): { operator: SupportedOperator; index: number } | null {
+export function detectOperator(
+  input: string,
+): { operator: SupportedOperator; index: number } | null {
   const len = input.length;
   let i = 0;
   let inString: '"' | "'" | "`" | null = null;
@@ -204,7 +246,11 @@ export const AVAILABLE_FUNCTIONS = [
 /**
  * Calls an ECMA262 function by name
  */
-export function callECMA262Function(functionName: string, inputValue: Value, preferredType?: "string" | "number") {
+export function callECMA262Function(
+  functionName: string,
+  inputValue: Value,
+  preferredType?: "string" | "number",
+) {
   switch (functionName) {
     case "ToNumber":
       return ToNumber(inputValue);

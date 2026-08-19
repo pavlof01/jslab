@@ -1,6 +1,11 @@
 "use client";
 
-import { createRecipeContext, Span, type HTMLChakraProps, type RecipeProps } from "@chakra-ui/react";
+import {
+  createRecipeContext,
+  type HTMLChakraProps,
+  type RecipeProps,
+  Span,
+} from "@chakra-ui/react";
 
 const { withContext } = createRecipeContext({ key: "chip" });
 
@@ -15,7 +20,14 @@ export type ChipProps = {
   onToggle?: () => void;
 } & Omit<ChipRootProps, "type" | "onToggle">;
 
-export function Chip({ label, checked = false, shape = "box", disabled, onToggle, ...rest }: ChipProps) {
+export function Chip({
+  label,
+  checked = false,
+  shape = "box",
+  disabled,
+  onToggle,
+  ...rest
+}: ChipProps) {
   return (
     <ChipRoot
       type="button"

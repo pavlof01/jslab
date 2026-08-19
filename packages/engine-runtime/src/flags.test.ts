@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flagCatalog, sanitizeFlags, type CatalogEngine } from "./flags.js";
+import { type CatalogEngine, flagCatalog, sanitizeFlags } from "./flags.js";
 
 describe("flag catalog contents", () => {
   const engines: CatalogEngine[] = ["v8", "hermes", "sm", "jsc"];
@@ -35,12 +35,18 @@ describe("flag catalog contents", () => {
   });
 
   it("drops everything for an engine that is not in the catalog", () => {
-    expect(sanitizeFlags("quickjs", ["-d"], { maxFlags: 4 })).toEqual({ flags: [], dropped: ["-d"] });
+    expect(sanitizeFlags("quickjs", ["-d"], { maxFlags: 4 })).toEqual({
+      flags: [],
+      dropped: ["-d"],
+    });
   });
 
   it("keeps the caller's order when sorting is disabled", () => {
     // jsc runs with sortFlags: false; the sanitizer must not reorder there.
-    const out = sanitizeFlags("v8", ["--trace-opt", "--print-bytecode"], { maxFlags: 4, sort: false });
+    const out = sanitizeFlags("v8", ["--trace-opt", "--print-bytecode"], {
+      maxFlags: 4,
+      sort: false,
+    });
     expect(out.flags).toEqual(["--trace-opt", "--print-bytecode"]);
   });
 });

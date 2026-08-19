@@ -1,5 +1,5 @@
+import path from "node:path";
 import { startEngineServer } from "@jslab/engine-runtime";
-import path from "path";
 import { loadConfig } from "./config.js";
 
 const config = loadConfig();

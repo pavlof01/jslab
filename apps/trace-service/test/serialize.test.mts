@@ -7,10 +7,10 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  fromEngineValue,
-  toSerializedValue,
   type EngineValue,
+  fromEngineValue,
   type SerializedValue,
+  toSerializedValue,
 } from "../src/server/execute/serialize.ts";
 
 const jsString = (value: string): EngineValue => ({ type: "String", value });
@@ -21,42 +21,68 @@ const jsSymbol = (description?: string): EngineValue => ({
   type: "Symbol",
   Description: description === undefined ? { value: undefined } : { value: description },
 });
-const jsObject = (internalSlotsList: string[] = [], slots: Record<string, EngineValue> = {}): EngineValue =>
-  ({ type: "Object", internalSlotsList, ...slots }) as EngineValue;
+const jsObject = (
+  internalSlotsList: string[] = [],
+  slots: Record<string, EngineValue> = {},
+): EngineValue => ({ type: "Object", internalSlotsList, ...slots }) as EngineValue;
 
-const GOLDEN: ReadonlyArray<[label: string, value: EngineValue, expected: SerializedValue]> = [
-  ["ToString(true) → the String \"true\"", jsString("true"), { type: "String", value: "true" }],
-  ["ToString(42) → the String \"42\"", jsString("42"), { type: "String", value: "42" }],
-  ["ToString(null) → the String \"null\"", jsString("null"), { type: "String", value: "null" }],
-  ["ToString(undefined) → the String \"undefined\"", jsString("undefined"), { type: "String", value: "undefined" }],
-  ["ToString({}) → the String \"[object Object]\"", jsString("[object Object]"), { type: "String", value: "[object Object]" }],
+const GOLDEN: readonly [label: string, value: EngineValue, expected: SerializedValue][] = [
+  ['ToString(true) → the String "true"', jsString("true"), { type: "String", value: "true" }],
+  ['ToString(42) → the String "42"', jsString("42"), { type: "String", value: "42" }],
+  ['ToString(null) → the String "null"', jsString("null"), { type: "String", value: "null" }],
+  [
+    'ToString(undefined) → the String "undefined"',
+    jsString("undefined"),
+    { type: "String", value: "undefined" },
+  ],
+  [
+    'ToString({}) → the String "[object Object]"',
+    jsString("[object Object]"),
+    { type: "String", value: "[object Object]" },
+  ],
   ["the empty String", jsString(""), { type: "String", value: "" }],
-  ["ToNumber(\"42\") → the Number 42", jsNumber(42), { type: "Number", value: 42 }],
-  ["ToNumber(\"\") → the Number +0", jsNumber(0), { type: "Number", value: 0 }],
-  ["ToNumber(\"-0\") → the Number -0", jsNumber(-0), { type: "Number", value: "-0" }],
-  ["ToNumber(\"abc\") → NaN", jsNumber(NaN), { type: "Number", value: "NaN" }],
-  ["ToNumber(\"Infinity\") → +∞", jsNumber(Infinity), { type: "Number", value: "Infinity" }],
-  ["ToNumber(\"-Infinity\") → -∞", jsNumber(-Infinity), { type: "Number", value: "-Infinity" }],
-  ["ToBoolean(\"0\") → the Boolean true", jsBoolean(true), { type: "Boolean", value: true }],
-  ["ToBoolean(\"\") → the Boolean false", jsBoolean(false), { type: "Boolean", value: false }],
-  ["ToBigInt(\"7\") → the BigInt 7", jsBigInt(7n), { type: "BigInt", value: "7" }],
+  ['ToNumber("42") → the Number 42', jsNumber(42), { type: "Number", value: 42 }],
+  ['ToNumber("") → the Number +0', jsNumber(0), { type: "Number", value: 0 }],
+  ['ToNumber("-0") → the Number -0', jsNumber(-0), { type: "Number", value: "-0" }],
+  ['ToNumber("abc") → NaN', jsNumber(Number.NaN), { type: "Number", value: "NaN" }],
+  [
+    'ToNumber("Infinity") → +∞',
+    jsNumber(Number.POSITIVE_INFINITY),
+    { type: "Number", value: "Infinity" },
+  ],
+  [
+    'ToNumber("-Infinity") → -∞',
+    jsNumber(Number.NEGATIVE_INFINITY),
+    { type: "Number", value: "-Infinity" },
+  ],
+  ['ToBoolean("0") → the Boolean true', jsBoolean(true), { type: "Boolean", value: true }],
+  ['ToBoolean("") → the Boolean false', jsBoolean(false), { type: "Boolean", value: false }],
+  ['ToBigInt("7") → the BigInt 7', jsBigInt(7n), { type: "BigInt", value: "7" }],
   ["a negative BigInt", jsBigInt(-7n), { type: "BigInt", value: "-7" }],
   ["undefined", { type: "Undefined", value: undefined }, { type: "Undefined" }],
   ["null", { type: "Null", value: null }, { type: "Null", value: null }],
   [
-    "ToPropertyKey(Symbol(\"tag\")) → a Symbol",
+    'ToPropertyKey(Symbol("tag")) → a Symbol',
     jsSymbol("tag"),
     { type: "Symbol", value: { id: "sym", description: "tag" } },
   ],
-  ["a Symbol without a description", jsSymbol(), { type: "Symbol", value: { id: "sym", description: undefined } }],
-  ["ToObject({}) → an Object", jsObject(), { type: "Object", value: { id: "obj", class: "Object" } }],
+  [
+    "a Symbol without a description",
+    jsSymbol(),
+    { type: "Symbol", value: { id: "sym", description: undefined } },
+  ],
+  [
+    "ToObject({}) → an Object",
+    jsObject(),
+    { type: "Object", value: { id: "obj", class: "Object" } },
+  ],
   [
     "ToObject(42) → a Number wrapper",
     jsObject(["NumberData"], { NumberData: jsNumber(42) }),
     { type: "Object", value: { id: "obj", class: "Number", preview: "42" } },
   ],
   [
-    "ToObject(\"hi\") → a String wrapper",
+    'ToObject("hi") → a String wrapper',
     jsObject(["StringData"], { StringData: jsString("hi") }),
     { type: "Object", value: { id: "obj", class: "String", preview: '"hi"' } },
   ],
@@ -65,7 +91,11 @@ const GOLDEN: ReadonlyArray<[label: string, value: EngineValue, expected: Serial
     jsObject(["BigIntData"], { BigIntData: jsBigInt(7n) }),
     { type: "Object", value: { id: "obj", class: "BigInt", preview: "7n" } },
   ],
-  ["a callable object", jsObject(["Call"]), { type: "Object", value: { id: "obj", class: "Function" } }],
+  [
+    "a callable object",
+    jsObject(["Call"]),
+    { type: "Object", value: { id: "obj", class: "Function" } },
+  ],
 ];
 
 describe("fromEngineValue", () => {
@@ -76,7 +106,12 @@ describe("fromEngineValue", () => {
   }
 
   it("survives the JSON transport the frontend receives", () => {
-    const nonFinite = [jsNumber(NaN), jsNumber(Infinity), jsNumber(-Infinity), jsNumber(-0)];
+    const nonFinite = [
+      jsNumber(Number.NaN),
+      jsNumber(Number.POSITIVE_INFINITY),
+      jsNumber(Number.NEGATIVE_INFINITY),
+      jsNumber(-0),
+    ];
     const rendered = nonFinite.map((value) => JSON.parse(JSON.stringify(fromEngineValue(value))));
     expect(rendered).toEqual([
       { type: "Number", value: "NaN" },

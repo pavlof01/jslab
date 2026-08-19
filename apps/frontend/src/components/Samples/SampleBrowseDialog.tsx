@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
 import { Button, CloseButton, Dialog, Portal, Stack } from "@chakra-ui/react";
+import { type ReactNode, useState } from "react";
 
 export function SampleBrowseDialog({
   triggerLabel,

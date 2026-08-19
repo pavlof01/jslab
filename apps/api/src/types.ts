@@ -9,7 +9,13 @@ export type RunRequest = {
   };
 };
 
-export type TraceExecuteInput = string | number | boolean | null | unknown[] | Record<string, unknown>;
+export type TraceExecuteInput =
+  | string
+  | number
+  | boolean
+  | null
+  | unknown[]
+  | Record<string, unknown>;
 
 export type TraceExecuteRequest = {
   functionName: string;

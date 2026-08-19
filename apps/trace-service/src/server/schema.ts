@@ -11,7 +11,10 @@ export const executeRequestSchema = z.object({
  * Fastify body schemas. `maxLength` on `input` is what enforces MAX_SOURCE_LENGTH:
  * an oversized payload is rejected during validation, before anything reaches engine262.
  */
-export function buildTypeConversionBodySchema(availableFunctions: readonly string[], maxSourceLength: number) {
+export function buildTypeConversionBodySchema(
+  availableFunctions: readonly string[],
+  maxSourceLength: number,
+) {
   return {
     type: "object",
     properties: {

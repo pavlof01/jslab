@@ -1,6 +1,6 @@
 "use client";
 
-import { Splitter, useBreakpointValue, type SplitterRootProps } from "@chakra-ui/react";
+import { Splitter, type SplitterRootProps, useBreakpointValue } from "@chakra-ui/react";
 import { useCallback } from "react";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";

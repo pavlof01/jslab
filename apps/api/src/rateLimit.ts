@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import type { FastifyBaseLogger, FastifyReply } from "fastify";
 import type { Redis } from "ioredis";
 
@@ -27,7 +27,12 @@ function windowKey(identity: string, suffix: string, windowSeconds: number): str
   return `ratelimit:${suffix}:${hashIdentity(identity)}:${window}`;
 }
 
-async function take(redis: Redis, key: string, limit: number, windowSeconds: number): Promise<{ count: number; ttl: number }> {
+async function take(
+  redis: Redis,
+  key: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<{ count: number; ttl: number }> {
   const pipeline = redis.multi();
   pipeline.incr(key);
   pipeline.expire(key, windowSeconds, "NX");
@@ -70,7 +75,12 @@ export async function enforceLimit(
   let count: number;
   let ttl: number;
   try {
-    ({ count, ttl } = await take(redis, windowKey(ip, suffix, windowSeconds), limit, windowSeconds));
+    ({ count, ttl } = await take(
+      redis,
+      windowKey(ip, suffix, windowSeconds),
+      limit,
+      windowSeconds,
+    ));
   } catch (err) {
     log?.error({ err, suffix }, "rate limit check failed; failing open");
     return { limited: false, retryAfter: 0, remaining: 0 };

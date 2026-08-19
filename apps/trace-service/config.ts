@@ -5,7 +5,7 @@ const envSchema = z.object({
   HOST: z.string().default("0.0.0.0"),
   MAX_TIMEOUT_MS: z.coerce.number().default(5000),
   MAX_SOURCE_LENGTH: z.coerce.number().default(20000),
-  LOG_LEVEL: z.string().default("info")
+  LOG_LEVEL: z.string().default("info"),
 });
 
 export type TraceServiceConfig = z.infer<typeof envSchema>;

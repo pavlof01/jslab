@@ -32,7 +32,8 @@ export const tools: Tool[] = [
   {
     href: "/v8-pipeline",
     label: "V8 Pipeline",
-    description: "Watch one function move through tokens, AST, Ignition, Sparkplug, Maglev and TurboFan.",
+    description:
+      "Watch one function move through tokens, AST, Ignition, Sparkplug, Maglev and TurboFan.",
     group: "engines",
     kind: "engines",
     priority: 0.9,
@@ -82,9 +83,16 @@ export type NavEntry = { href: string; label: string; description: string; exter
 
 export function navEntries(group: NavGroup): NavEntry[] {
   return [
-    ...tools.filter((tool) => tool.group === group).map(({ href, label, description }) => ({ href, label, description })),
+    ...tools
+      .filter((tool) => tool.group === group)
+      .map(({ href, label, description }) => ({ href, label, description })),
     ...externalLinks
       .filter((link) => link.group === group)
-      .map(({ href, label, description }) => ({ href, label, description, external: true as const })),
+      .map(({ href, label, description }) => ({
+        href,
+        label,
+        description,
+        external: true as const,
+      })),
   ];
 }

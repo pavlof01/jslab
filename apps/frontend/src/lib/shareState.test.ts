@@ -1,6 +1,12 @@
-import { describe, it, expect } from "@jest/globals";
-import { encodeShareState, decodeShareState, buildShareUrl, buildEmbedSnippet, SHARE_PARAM } from "./shareState";
+import { describe, expect, it } from "@jest/globals";
 import { EngineKey } from "@/lib/types";
+import {
+  buildEmbedSnippet,
+  buildShareUrl,
+  decodeShareState,
+  encodeShareState,
+  SHARE_PARAM,
+} from "./shareState";
 
 const state = {
   code: "const x = 1;\nconsole.log(x)",

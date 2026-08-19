@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { forwardedHeaders, proxyToGateway, readJsonBody } from "@/lib/server/gateway";
 
@@ -35,13 +35,19 @@ const CATEGORIES = {
     }
     return { body: { functionName, input, ...(preferredType ? { preferredType } : {}) } };
   },
-} satisfies Record<string, (fields: Record<string, unknown>) => { body: unknown } | { error: string }>;
+} satisfies Record<
+  string,
+  (fields: Record<string, unknown>) => { body: unknown } | { error: string }
+>;
 
 type Category = keyof typeof CATEGORIES;
 
 const isCategory = (value: string): value is Category => value in CATEGORIES;
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ category: string }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ category: string }> },
+) {
   const { category } = await params;
   if (!isCategory(category)) {
     return NextResponse.json({ error: `Unknown trace category "${category}"` }, { status: 404 });

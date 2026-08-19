@@ -39,7 +39,15 @@ export type SerializedValue =
  * unit-tested without the submodule checked out.
  */
 export interface EngineValue {
-  readonly type: "Undefined" | "Null" | "Boolean" | "String" | "Symbol" | "Number" | "BigInt" | "Object";
+  readonly type:
+    | "Undefined"
+    | "Null"
+    | "Boolean"
+    | "String"
+    | "Symbol"
+    | "Number"
+    | "BigInt"
+    | "Object";
   /** Primitive payload on every PrimitiveValue except SymbolValue. */
   readonly value?: unknown;
   /** SymbolValue only: a JSStringValue or UndefinedValue. */
@@ -103,8 +111,8 @@ function capString(s: string, max: number = MAX_STRING_LENGTH): string {
 
 function numberPayload(n: number): NumberPayload {
   if (Number.isNaN(n)) return "NaN";
-  if (n === Infinity) return "Infinity";
-  if (n === -Infinity) return "-Infinity";
+  if (n === Number.POSITIVE_INFINITY) return "Infinity";
+  if (n === Number.NEGATIVE_INFINITY) return "-Infinity";
   if (Object.is(n, -0)) return "-0";
   return n;
 }
@@ -119,7 +127,9 @@ function previewOfPrimitive(value: SerializedValue): string | undefined {
     case "BigInt":
       return `${value.value}n`;
     case "Symbol":
-      return value.value.description === undefined ? "Symbol()" : `Symbol(${value.value.description})`;
+      return value.value.description === undefined
+        ? "Symbol()"
+        : `Symbol(${value.value.description})`;
     default:
       return undefined;
   }
@@ -156,7 +166,10 @@ export function fromEngineValue(value: EngineValue): SerializedValue {
     case "Boolean":
       return { type: "Boolean", value: value.value === true };
     case "String":
-      return { type: "String", value: capString(typeof value.value === "string" ? value.value : String(value.value ?? "")) };
+      return {
+        type: "String",
+        value: capString(typeof value.value === "string" ? value.value : String(value.value ?? "")),
+      };
     case "Number":
       return { type: "Number", value: numberPayload(Number(value.value)) };
     case "BigInt":
@@ -165,7 +178,10 @@ export function fromEngineValue(value: EngineValue): SerializedValue {
       const description = value.Description?.value;
       return {
         type: "Symbol",
-        value: { id: "sym", description: typeof description === "string" ? capString(description) : undefined },
+        value: {
+          id: "sym",
+          description: typeof description === "string" ? capString(description) : undefined,
+        },
       };
     }
     case "Object":

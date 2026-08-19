@@ -1,6 +1,5 @@
-import type { SpecValue, TraceNode } from "./spec-runner";
 import type { AlgoCategory } from "./model";
-
+import type { SpecValue, TraceNode } from "./spec-runner";
 
 export interface TraceResult {
   root: TraceNode | null;
@@ -25,7 +24,11 @@ function requestFor(category: AlgoCategory, algo: string, input: string) {
   return { path: "/api/trace/execute/type-conversion", body: { functionName: algo, input } };
 }
 
-export async function executeTrace(category: AlgoCategory, algo: string, input: string): Promise<TraceResult> {
+export async function executeTrace(
+  category: AlgoCategory,
+  algo: string,
+  input: string,
+): Promise<TraceResult> {
   const { path, body } = requestFor(category, algo, input);
 
   const response = await fetch(path, {

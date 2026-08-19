@@ -1,9 +1,9 @@
 "use client";
 
-import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import { Box } from "@chakra-ui/react";
+import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import BytecodeLegend from "@/components/OutputsPanel/components/BytecodeLegend";
-import { EngineKey, RunStatus } from "@/lib/types";
+import { EngineKey, enabledEngines, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
   useDiffToggle,
@@ -11,7 +11,6 @@ import {
   useOutputPane as useOutputPaneState,
   useV8Flags,
 } from "@/store/engineOutputsSelectors";
-import { enabledEngines } from "@/lib/types";
 import { EngineNote } from "./EngineNote";
 import { EngineTabs } from "./EngineTabs";
 import * as styles from "./playground.styles";
@@ -30,7 +29,13 @@ export function OutputPane() {
 
   return (
     <>
-      <EngineTabs engines={active} activeTab={activeTab} onSelect={setActiveTab} out={out} status={status} />
+      <EngineTabs
+        engines={active}
+        activeTab={activeTab}
+        onSelect={setActiveTab}
+        out={out}
+        status={status}
+      />
 
       <EngineNote engine={activeTab} />
       {showingV8 ? <BytecodeLegend /> : null}
@@ -43,7 +48,12 @@ export function OutputPane() {
           showDiff={showDiff}
           isLoading={status === RunStatus.running}
         />
-        <StderrDump engine={activeTab} stderr={result?.stderr} previousStderr={previous?.stderr} showDiff={showDiff} />
+        <StderrDump
+          engine={activeTab}
+          stderr={result?.stderr}
+          previousStderr={previous?.stderr}
+          showDiff={showDiff}
+        />
       </Box>
 
       <PaneFooter durationMs={result?.ms} flagCount={showingV8 ? selectedV8Flags.length : 0} />

@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
 import { Button, Menu, Portal } from "@chakra-ui/react";
-
-import { enabledEngines, EngineKey } from "@/lib/types";
-import { useShareableState } from "@/store/engineOutputsSelectors";
-import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
+import { useCallback, useMemo, useState } from "react";
 import { buildSnapshotUrl } from "@/lib/embedState";
+import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
+import { EngineKey, enabledEngines } from "@/lib/types";
+import { useShareableState } from "@/store/engineOutputsSelectors";
 
 type CopyTarget = "link" | "embed" | "article";
 
@@ -87,7 +86,11 @@ export default function ShareButton() {
             <Menu.Item value="copy-embed" onSelect={copyEmbed}>
               Copy embed code
             </Menu.Item>
-            <Menu.Item value="copy-article" onSelect={copyArticleLink} disabled={!canCopyArticleLink}>
+            <Menu.Item
+              value="copy-article"
+              onSelect={copyArticleLink}
+              disabled={!canCopyArticleLink}
+            >
               Copy article link (output only)
             </Menu.Item>
           </Menu.Content>

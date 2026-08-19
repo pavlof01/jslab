@@ -4,8 +4,8 @@
    identical deopts of the same function are distinct events, told apart only by
    position. */
 
-import { useMemo } from "react";
 import { Badge, Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { parseV8Trace, summarizeV8Trace, type V8TraceEvent } from "@/lib/parseV8Trace";
 
@@ -23,8 +23,9 @@ export default function DeoptView({ output }: { output: string }) {
     return (
       <Box p={6}>
         <Text color="ink.label" fontSize="sm">
-          Run to trace optimization and deoptimization events. Deopts happen when V8 has to throw away optimized code —
-          usually because a value’s type changed from what the optimizer assumed.
+          Run to trace optimization and deoptimization events. Deopts happen when V8 has to throw
+          away optimized code — usually because a value’s type changed from what the optimizer
+          assumed.
         </Text>
       </Box>
     );
@@ -34,8 +35,8 @@ export default function DeoptView({ output }: { output: string }) {
     return (
       <Box p={6}>
         <Text color="ink.2" fontSize="sm">
-          No optimization or deoptimization events. Try a hot loop (e.g. call a function a few hundred times) so V8
-          tiers it up — then feed it a changing type to force a deopt.
+          No optimization or deoptimization events. Try a hot loop (e.g. call a function a few
+          hundred times) so V8 tiers it up — then feed it a changing type to force a deopt.
         </Text>
       </Box>
     );
@@ -69,7 +70,13 @@ export default function DeoptView({ output }: { output: string }) {
               borderColor={style.color}
               bg="surface.hover"
             >
-              <Text fontFamily="mono" fontSize="10px" fontWeight="700" color={style.color} minW={12}>
+              <Text
+                fontFamily="mono"
+                fontSize="10px"
+                fontWeight="700"
+                color={style.color}
+                minW={12}
+              >
                 {style.label}
                 {e.bailout ? `·${e.bailout}` : ""}
               </Text>

@@ -1,8 +1,8 @@
+import type { SpawnOptions } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import fastify from "fastify";
-import { type SpawnOptions } from "child_process";
-import fs from "fs/promises";
-import os from "os";
-import path from "path";
 import { z } from "zod";
 import { sanitizeFlags } from "./flags.js";
 import { runCommand } from "./run.js";
@@ -96,7 +96,12 @@ export function startEngineServer(spec: EngineSpec): void {
       paths: {
         "/healthz": { get: { responses: { "200": { description: "ok" } } } },
         "/openapi.json": { get: { responses: { "200": { description: "openapi document" } } } },
-        "/run": { post: { requestBody: { description: "engine run request" }, responses: { "200": { description: "run response" } } } },
+        "/run": {
+          post: {
+            requestBody: { description: "engine run request" },
+            responses: { "200": { description: "run response" } },
+          },
+        },
       },
     };
     app.get("/openapi.json", async () => openapiDoc);
@@ -113,11 +118,16 @@ export function startEngineServer(spec: EngineSpec): void {
     }
 
     if (parsed.sourceText.length > config.MAX_SOURCE_LENGTH) {
-      reply.code(400).send({ ok: false, error: `sourceText exceeds limit (${config.MAX_SOURCE_LENGTH})` });
+      reply
+        .code(400)
+        .send({ ok: false, error: `sourceText exceeds limit (${config.MAX_SOURCE_LENGTH})` });
       return;
     }
 
-    const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
+    const timeoutMs = Math.min(
+      parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS,
+      config.MAX_TIMEOUT_MS,
+    );
     const sanitized = sanitizeFlags(engine, parsed.options?.flags || [], {
       maxFlags: config.MAX_FLAGS,
       sort: spec.sortFlags,
@@ -167,7 +177,9 @@ export function startEngineServer(spec: EngineSpec): void {
         meta: {
           durationMs: Date.now() - start,
           engine,
-          ...(result.outputTruncated ? { outputTruncated: true, outputLimitBytes: config.MAX_OUTPUT_BYTES } : {}),
+          ...(result.outputTruncated
+            ? { outputTruncated: true, outputLimitBytes: config.MAX_OUTPUT_BYTES }
+            : {}),
           ...(sanitized.dropped.length ? { droppedFlags: sanitized.dropped } : {}),
         },
       });

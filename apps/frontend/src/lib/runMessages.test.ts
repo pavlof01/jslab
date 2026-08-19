@@ -1,15 +1,15 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 
 import { describeRunFailure } from "./runMessages";
 
 describe("describeRunFailure", () => {
   it("spells out the wait for a rate limit", () => {
-    expect(describeRunFailure({ status: 429, message: "rate limit exceeded", retryAfterSeconds: 12 })).toContain(
-      "12 seconds",
-    );
-    expect(describeRunFailure({ status: 429, message: "rate limit exceeded", retryAfterSeconds: 1 })).toContain(
-      "1 second.",
-    );
+    expect(
+      describeRunFailure({ status: 429, message: "rate limit exceeded", retryAfterSeconds: 12 }),
+    ).toContain("12 seconds");
+    expect(
+      describeRunFailure({ status: 429, message: "rate limit exceeded", retryAfterSeconds: 1 }),
+    ).toContain("1 second.");
   });
 
   it("stays readable when no retry delay was advertised", () => {
@@ -29,5 +29,4 @@ describe("describeRunFailure", () => {
       "Run failed (HTTP 502): engine unavailable",
     );
   });
-
 });

@@ -1,4 +1,4 @@
-import { ENGINE_KEYS, EngineKey, isEngineKey } from "@/lib/types";
+import { ENGINE_KEYS, type EngineKey, isEngineKey } from "@/lib/types";
 
 export interface RunHistoryEntry {
   id: string;

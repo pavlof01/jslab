@@ -1,19 +1,18 @@
 "use client";
 
+import { Box, type BoxProps, Skeleton, Stack } from "@chakra-ui/react";
 import { memo, useEffect, useState } from "react";
-import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
-import { Box, BoxProps, Skeleton, Stack } from "@chakra-ui/react";
-
-import DefaultEmptyCodeBlockState, {
-  Props as DefaultEmptyCodeBlockStateProps,
-} from "./components/DefaultEmptyCodeBlockState";
-import { engineLang, type BytecodeLang } from "@/lib/engines";
+import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
+import { type BytecodeLang, engineLang } from "@/lib/engines";
 import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
-import CodeDisplay from "./components/Code";
 import { compareOutputs } from "@/utils/diff-bytecode";
+import CodeDisplay from "./components/Code";
 import CopyButton from "./components/CopyButton";
+import DefaultEmptyCodeBlockState, {
+  type Props as DefaultEmptyCodeBlockStateProps,
+} from "./components/DefaultEmptyCodeBlockState";
 
 const normalizeForDiff = (line: string) =>
   line
@@ -24,7 +23,11 @@ const normalizeForDiff = (line: string) =>
     .replace(/^(\s*)\d+:(?=\s+[A-Za-z_])/, "$1<OFF>:")
     .replace(/\s+/g, " ");
 
-export async function highlight(code: string, lang: BundledLanguage | BytecodeLang, prevCode?: string) {
+export async function highlight(
+  code: string,
+  lang: BundledLanguage | BytecodeLang,
+  prevCode?: string,
+) {
   const highlighter = await getBytecodeHighlighter();
   const shikiLang = lang as BundledLanguage;
 

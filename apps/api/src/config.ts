@@ -55,7 +55,7 @@ const envSchema = z.object({
   // every request reaching its edge, so a client cannot forge it (unlike
   // X-Forwarded-For, which Cloudflare appends to rather than replaces). Set
   // to "" if you are not deploying behind Cloudflare.
-  CLIENT_IP_HEADER: z.string().default("cf-connecting-ip")
+  CLIENT_IP_HEADER: z.string().default("cf-connecting-ip"),
 });
 
 export type ApiConfig = z.infer<typeof envSchema>;

@@ -48,7 +48,9 @@ export function useVisualizerRuntime(resolvedInitialData: VisualizerInitialData)
     })),
   );
 
-  const playback = useVisualizerStore(useShallow((s) => ({ selectedIndex: s.selectedIndex, isPlaying: s.isPlaying })));
+  const playback = useVisualizerStore(
+    useShallow((s) => ({ selectedIndex: s.selectedIndex, isPlaying: s.isPlaying })),
+  );
 
   const setSpecHtml = useVisualizerStore((s) => s.setSpecHtml);
   const setIsPlaying = useVisualizerStore((s) => s.setIsPlaying);
@@ -75,7 +77,13 @@ export function useVisualizerRuntime(resolvedInitialData: VisualizerInitialData)
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`spec ${r.status}`))))
       .then(setSpecHtml)
       .catch(() => setSpecHtml(""));
-  }, [initialKey, input.selectedAlgo, resolvedInitialData.selectedAlgo, resolvedInitialData.specHtml, setSpecHtml]);
+  }, [
+    initialKey,
+    input.selectedAlgo,
+    resolvedInitialData.selectedAlgo,
+    resolvedInitialData.specHtml,
+    setSpecHtml,
+  ]);
 
   useEffect(() => {
     if (

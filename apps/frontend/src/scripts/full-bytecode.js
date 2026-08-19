@@ -1,5 +1,3 @@
-"use strict";
-
 /********************************************************************
  *  Maths, equals, logic, bit operations, and type coercion
  ********************************************************************/
@@ -39,10 +37,10 @@ function comparisonOps(a, b) {
 }
 
 function logicalOps(a, b) {
-  let r1 = a && b;
-  let r2 = a || b;
-  let r3 = !a;
-  let r4 = a ?? b;
+  const r1 = a && b;
+  const r2 = a || b;
+  const r3 = !a;
+  const r4 = a ?? b;
   return r1 + r2 + r3 + r4;
 }
 
@@ -189,9 +187,9 @@ function errorFlow(x) {
     return "ok";
   } catch (e) {
     if (e instanceof Error) {
-      return "error:" + e.message;
+      return `error:${e.message}`;
     }
-    return "caught:" + String(e);
+    return `caught:${String(e)}`;
   } finally {
     // Something pointless, just so there is a finally block
     x++;
@@ -215,7 +213,7 @@ async function asyncWithError() {
     }
     return v;
   } catch (e) {
-    return "caught:" + (e && e.message);
+    return `caught:${e && e.message}`;
   }
 }
 
@@ -248,7 +246,7 @@ function iterationStuff(obj) {
   }
 
   for (const k in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
+    if (Object.hasOwn(obj, k)) {
       sum += obj[k];
     }
   }
@@ -309,7 +307,7 @@ class Derived extends Base {
   }
 
   static staticMethod(x) {
-    return super.staticMethod(x) + 1;
+    return Base.staticMethod(x) + 1;
   }
 }
 
@@ -400,27 +398,27 @@ runAll();
 
 export {
   arithmeticOps,
-  comparisonOps,
-  logicalOps,
-  controlFlowIf,
-  controlFlowSwitch,
-  loops,
   arraysAndObjects,
-  withDefaultsAndRest,
   arrowSimple,
   arrowWithBlock,
-  useArguments,
-  makeCounter,
-  errorFlow,
   asyncSimple,
-  asyncWithError,
-  generatorSimple,
   asyncUseGenerator,
-  iterationStuff,
+  asyncWithError,
   Base,
+  comparisonOps,
+  controlFlowIf,
+  controlFlowSwitch,
   Derived,
-  useClasses,
-  optionalAndNullish,
+  errorFlow,
+  generatorSimple,
+  iterationStuff,
+  logicalOps,
+  loops,
+  makeCounter,
   miscStuff,
+  optionalAndNullish,
   runAll,
+  useArguments,
+  useClasses,
+  withDefaultsAndRest,
 };

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { parseV8Trace, summarizeV8Trace } from "./parseV8Trace";
 
 // Representative --trace-opt / --trace-deopt output (wording as V8 emits it).

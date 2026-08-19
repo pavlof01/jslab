@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
 import { Button, Flex, Link, Text } from "@chakra-ui/react";
+import { useCallback, useMemo } from "react";
 import { CiPlay1 } from "react-icons/ci";
 import { LuExternalLink } from "react-icons/lu";
-
+import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
 import { EditorPanel } from "@/components/EditorPanel";
 import { OutputsPanel } from "@/components/OutputsPanel";
+import { buildShareUrl } from "@/lib/shareState";
 import { enabledEngines, RunStatus } from "@/lib/types";
 import {
   useCode,
@@ -16,8 +17,6 @@ import {
   useSetCode,
   useV8Flags,
 } from "@/store/engineOutputsSelectors";
-import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
-import { buildShareUrl } from "@/lib/shareState";
 
 export default function EmbedPlaygroundClient() {
   const { status } = useRunStatus();
@@ -52,7 +51,12 @@ export default function EmbedPlaygroundClient() {
           JSLab
         </Text>
         <Flex gap={2} align="center">
-          <Button size="xs" onClick={run} loading={status === RunStatus.running} loadingText="Running">
+          <Button
+            size="xs"
+            onClick={run}
+            loading={status === RunStatus.running}
+            loadingText="Running"
+          >
             <CiPlay1 /> Run
           </Button>
           <Link

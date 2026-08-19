@@ -4,8 +4,8 @@ import { Box, Button, Collapsible, HStack, Text, VStack } from "@chakra-ui/react
 import Link from "next/link";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import type { NavSection } from "./nav.types";
 import { NavItemBody } from "./NavItemBody";
+import type { NavSection } from "./nav.types";
 
 type Props = {
   section: NavSection;
@@ -41,7 +41,15 @@ export const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, on
         </Collapsible.Trigger>
 
         <Collapsible.Content>
-          <VStack align="stretch" gap={2} px={3} pb={3} pt={1} borderTopWidth="1px" borderColor="rule.list">
+          <VStack
+            align="stretch"
+            gap={2}
+            px={3}
+            pb={3}
+            pt={1}
+            borderTopWidth="1px"
+            borderColor="rule.list"
+          >
             {section.items.map((item) => (
               <Button
                 key={`${section.label}-${item.label}`}

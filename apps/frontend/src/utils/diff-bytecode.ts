@@ -1,5 +1,5 @@
 import { diffArrays } from "diff";
-import type { TokensResult, ThemedToken } from "shiki";
+import type { ThemedToken, TokensResult } from "shiki";
 import { DiffKind } from "@/lib/types";
 
 type DiffTokensResult = Omit<TokensResult, "tokens"> & {
@@ -11,7 +11,7 @@ const lineToString = (tokens: ThemedToken[]): string => tokens.map((t) => t.cont
 export const compareOutputs = (
   prev: TokensResult,
   current: TokensResult,
-  options: { normalizeLine: (line: string) => string }
+  options: { normalizeLine: (line: string) => string },
 ): DiffTokensResult => {
   const prevLines = prev.tokens.map((line) => options.normalizeLine(lineToString(line)));
   const currentLines = current.tokens.map((line) => options.normalizeLine(lineToString(line)));

@@ -14,7 +14,7 @@ const envSchema = z.object({
   // V8 old-space heap cap (MB). Kept under the pod memory limit so a greedy
   // script hits a JS RangeError instead of OOM-killing the whole pod.
   MAX_HEAP_MB: z.coerce.number().int().positive().default(1536),
-  LOG_LEVEL: z.string().default("info")
+  LOG_LEVEL: z.string().default("info"),
 });
 
 export type EngineConfig = z.infer<typeof envSchema>;

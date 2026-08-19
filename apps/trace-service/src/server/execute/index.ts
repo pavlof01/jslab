@@ -1,22 +1,22 @@
 import {
-  Value,
+  Agent,
   callGenerator,
   evalQ,
   ManagedRealm,
   NormalCompletion,
-  ThrowCompletion,
-  Agent,
   setSurroundingAgent,
+  ThrowCompletion,
   type TraceRecord,
+  type Value,
   type ValueCompletion,
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
 import {
-  callECMA262Function,
   callECMA262BinaryFunction,
-  parseStringToValue,
+  callECMA262Function,
   detectOperator,
   getOperatorDispatch,
+  parseStringToValue,
 } from "./helpers.ts";
 import { fromEngineValue, serializeNode } from "./serialize.ts";
 
@@ -45,7 +45,10 @@ export async function executeUnaryConversion(
     inputTrace = inputValue.trace;
 
     const raw = realm.scope<ValueCompletion<Value>>(
-      () => callGenerator(callECMA262Function(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
+      () =>
+        callGenerator(
+          callECMA262Function(functionName, inputValue, preferredType),
+        ) as ValueCompletion<Value>,
     );
 
     return raw instanceof NormalCompletion ? raw.Value : raw;

@@ -1,7 +1,7 @@
-import { describe, it, expect } from "@jest/globals";
-import { compareOutputs } from "./diff-bytecode";
+import { describe, expect, it } from "@jest/globals";
+import type { ThemedToken, TokensResult } from "shiki";
 import { DiffKind } from "@/lib/types";
-import type { TokensResult, ThemedToken } from "shiki";
+import { compareOutputs } from "./diff-bytecode";
 
 // Build a TokensResult where each source line becomes a single token whose
 // content is that line — enough to exercise compareOutputs' line diffing.

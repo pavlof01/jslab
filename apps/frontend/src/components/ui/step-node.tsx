@@ -1,4 +1,4 @@
-import { Box, Flex, Grid, Span, type BoxProps } from "@chakra-ui/react";
+import { Box, type BoxProps, Flex, Grid, Span } from "@chakra-ui/react";
 
 export type StepRowState = "pending" | "current" | "done";
 
@@ -102,7 +102,17 @@ export function StepNode({
 }
 
 function ParentElbow() {
-  return <Box aria-hidden="true" position="absolute" left={0} top="23px" w="19px" h="1px" bg="rule.panel" />;
+  return (
+    <Box
+      aria-hidden="true"
+      position="absolute"
+      left={0}
+      top="23px"
+      w="19px"
+      h="1px"
+      bg="rule.panel"
+    />
+  );
 }
 
 function FrameHeader({
@@ -179,7 +189,12 @@ function TestRow({ test, onSelect }: { test: StepTest; onSelect?: () => void }) 
           {test.clause}
         </Span>
       ) : null}
-      <Span textStyle="code" lineHeight="1.5" color={test.taken ? "ink.code" : "ink.label"} textWrap="pretty">
+      <Span
+        textStyle="code"
+        lineHeight="1.5"
+        color={test.taken ? "ink.code" : "ink.label"}
+        textWrap="pretty"
+      >
         {test.label}
       </Span>
     </Grid>

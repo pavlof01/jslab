@@ -63,7 +63,9 @@
       ]
     },
     "section-head": {
-      "patterns": [{ "name": "markup.heading.section.smbc", "match": "^[A-Za-z][A-Za-z0-9 ]+:\\s*$" }]
+      "patterns": [
+        { "name": "markup.heading.section.smbc", "match": "^[A-Za-z][A-Za-z0-9 ]+:\\s*$" }
+      ]
     },
     "instruction-line": {
       "name": "meta.instruction.line.smbc",
@@ -73,7 +75,11 @@
         "2": { "name": "constant.numeric.line-number.smbc" }
       },
       "end": "$",
-      "patterns": [{ "include": "#opcode" }, { "include": "#operands" }, { "include": "#inline-comment" }]
+      "patterns": [
+        { "include": "#opcode" },
+        { "include": "#operands" },
+        { "include": "#inline-comment" }
+      ]
     },
     "opcode": {
       "patterns": [

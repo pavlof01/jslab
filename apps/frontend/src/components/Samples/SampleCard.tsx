@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Box, Card, CodeBlock, createShikiAdapter, HStack, Stack } from "@chakra-ui/react";
+import type { ReactNode } from "react";
 import type { HighlighterGeneric } from "shiki";
 
 import { getSourceHighlighter, SOURCE_LANG, THEME } from "@/lib/shiki";
@@ -52,7 +52,13 @@ export function SampleCard({ id, title, description, snippet, active, onSelect, 
           </HStack>
 
           <CodeBlock.AdapterProvider value={CODE_ADAPTER}>
-            <CodeBlock.Root code={snippet} language={SOURCE_LANG} size="sm" maxH="140px" overflow="auto">
+            <CodeBlock.Root
+              code={snippet}
+              language={SOURCE_LANG}
+              size="sm"
+              maxH="140px"
+              overflow="auto"
+            >
               <CodeBlock.Content>
                 <CodeBlock.Code>
                   <CodeBlock.CodeText />

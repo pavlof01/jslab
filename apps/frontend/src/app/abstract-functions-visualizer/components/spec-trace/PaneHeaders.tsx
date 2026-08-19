@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 
 function specHref(specId?: string): string {
   const linkable = specId && specId !== "BinaryExpression";
-  return linkable ? `https://tc39.es/ecma262/#sec-${specId.toLowerCase()}` : "https://tc39.es/ecma262/";
+  return linkable
+    ? `https://tc39.es/ecma262/#sec-${specId.toLowerCase()}`
+    : "https://tc39.es/ecma262/";
 }
 
 export function SpecPaneHeader({ specId }: { specId?: string }) {

@@ -43,7 +43,9 @@ export function formatSpecValue(value: SpecValue, maxLen = 42): string {
       }
       case "Object":
         if (value.value.preview) {
-          return value.value.class ? `${value.value.class}(${value.value.preview})` : value.value.preview;
+          return value.value.class
+            ? `${value.value.class}(${value.value.preview})`
+            : value.value.preview;
         }
         return `${value.value.class}#${value.value.id}`;
       case "Array":

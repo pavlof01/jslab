@@ -3,7 +3,13 @@ import { ENGINES } from "@/lib/engines";
 import type { EngineKey } from "@/lib/types";
 import { engineNote } from "./playground.styles";
 
-export function EngineNote({ engine, detail = "first-quirk" }: { engine: EngineKey; detail?: "first-quirk" | "full" }) {
+export function EngineNote({
+  engine,
+  detail = "first-quirk",
+}: {
+  engine: EngineKey;
+  detail?: "first-quirk" | "full";
+}) {
   const { executes, summary, quirks } = ENGINES[engine];
   const lead = executes ? "executes · " : "compile-only · ";
 

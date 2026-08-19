@@ -1,9 +1,9 @@
 "use client";
 
 import { ChakraProvider } from "@chakra-ui/react";
+import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 import { system } from "@/style/theme";
-import { ThemeProvider } from "next-themes";
 
 type Props = {
   children: ReactNode;

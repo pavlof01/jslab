@@ -7,7 +7,11 @@ export const DEFAULTS_BY_CATEGORY: Record<AlgoCategory, { algo: string; input: s
   equality: { algo: "BinaryExpression", input: "[] == !{}" },
 };
 
-export type FunctionMetaShape = { category: AlgoCategory; arity: "unary" | "binary"; operator?: string };
+export type FunctionMetaShape = {
+  category: AlgoCategory;
+  arity: "unary" | "binary";
+  operator?: string;
+};
 
 export type FunctionCatalog = {
   available_functions: string[];
@@ -48,7 +52,13 @@ export function fallbackInitialData(category: AlgoCategory): VisualizerInitialDa
     selectedAlgo: defaults.algo,
     input: defaults.input,
     specHtml: "",
-    trace: { root: null, result: undefined, effectiveAlgoId: null, detectedOperator: null, error: null },
+    trace: {
+      root: null,
+      result: undefined,
+      effectiveAlgoId: null,
+      detectedOperator: null,
+      error: null,
+    },
     functionCatalog: EMPTY_FUNCTION_CATALOG,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { RunStatus } from "@/lib/types";
 import { formatRunMeta } from "@/lib/runMessages";
+import { RunStatus } from "@/lib/types";
 import { useRunStatus } from "@/store/engineOutputsSelectors";
 
 const srOnly: React.CSSProperties = {
@@ -24,7 +24,9 @@ export default function RunAnnouncer() {
     if (status === RunStatus.error && error) return error;
     if (status === RunStatus.done) {
       const meta = formatRunMeta(durationMs, cacheHit);
-      return [`Run finished. ${meta || "No output timing available."}`, notice].filter(Boolean).join(" ");
+      return [`Run finished. ${meta || "No output timing available."}`, notice]
+        .filter(Boolean)
+        .join(" ");
     }
     return "";
   })();

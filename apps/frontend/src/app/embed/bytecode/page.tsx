@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
-import { OEMBED_PATH, SNAPSHOT_PARAM, BYTECODE_EMBED_PATH, decodeSnapshot, type EmbedSnapshot } from "@/lib/embedState";
+import {
+  BYTECODE_EMBED_PATH,
+  decodeSnapshot,
+  type EmbedSnapshot,
+  OEMBED_PATH,
+  SNAPSHOT_PARAM,
+} from "@/lib/embedState";
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
 export const metadata: Metadata = {
@@ -34,7 +40,12 @@ export default async function EmbedBytecodePage({
 
   return (
     <>
-      <link rel="alternate" type="application/json+oembed" href={discoveryHref} title="JSLab bytecode" />
+      <link
+        rel="alternate"
+        type="application/json+oembed"
+        href={discoveryHref}
+        title="JSLab bytecode"
+      />
       <EmbedBytecodeClient snapshot={snapshot} />
     </>
   );
