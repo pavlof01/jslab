@@ -56,6 +56,10 @@ export async function executeUnaryConversion(
   preferredType?: "string" | "number",
 ): Promise<ExecuteResponse> {
   let inputTrace: TraceRecord | undefined;
+  // A snippet that does not parse is the caller's mistake, so it leaves here the
+  // way the binary path already reports one — as a failed trace the route turns
+  // into a 400, rather than an exception the route can only call a 500.
+  let parseError: string | undefined;
 
   const evalResult = evalQ((_, __) => {
     const agent = new Agent();
@@ -65,7 +69,8 @@ export async function executeUnaryConversion(
     const inputResult = parseStringToValue(input, realm);
 
     if (inputResult instanceof ThrowCompletion) {
-      throw new Error(`Failed to parse input: ${inputResult.Value}`);
+      parseError = `Failed to parse input: ${inputResult.Value}`;
+      return null as unknown as Value;
     }
 
     const inputValue = (inputResult as NormalCompletion<Value>).Value;
@@ -77,6 +82,8 @@ export async function executeUnaryConversion(
 
     return raw instanceof NormalCompletion ? raw.Value : raw;
   });
+
+  if (parseError) return { success: false, functionName, error: parseError };
 
   return finishTrace(functionName, evalResult, inputTrace);
 }
