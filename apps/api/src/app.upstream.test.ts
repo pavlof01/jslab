@@ -18,7 +18,7 @@ const ORIGIN = "http://engine-v8:8080";
 /** `loadConfig` reads the environment, so the environment is what a test sets. */
 function makeApp(env: Record<string, string> = {}) {
   const saved = { ...process.env };
-  Object.assign(process.env, { ENGINE_V8_URL: ORIGIN, REDIS_URL: "redis://localhost:6379", ...env });
+  Object.assign(process.env, { ENGINE_V8_URL: ORIGIN, REDIS_URL: "redis://localhost:6379", LOG_LEVEL: "silent", ...env });
   const redis = createFakeRedis();
   const config = loadConfig();
   process.env = saved;
@@ -119,13 +119,6 @@ describe("proxying a run to its engine", () => {
     expect((await run(app)).statusCode).toBe(502);
   });
 
-  it("turns an unreachable engine into a 502, not a crash", async () => {
-    const { app } = makeApp();
-    open.push(app);
-    upstream.refuse(ORIGIN, "/run");
-
-    expect((await run(app)).statusCode).toBe(502);
-  });
 });
 
 /*

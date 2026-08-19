@@ -7,18 +7,38 @@ import { loadConfig } from "./config.js";
  * or silently-coerced value is a production behaviour change with no diff.
  */
 
+// Every name the schema knows: a test for defaults has to start from an
+// environment that has none of them, and a deploy shell (or a sourced
+// configmap) has most.
 const KEYS = [
   "PORT",
   "HOST",
   "REDIS_URL",
   "ENGINE_V8_URL",
+  "ENGINE_HERMES_URL",
+  "ENGINE_SM_URL",
+  "ENGINE_JSC_URL",
+  "TRACE_SERVICE_URL",
+  "CACHE_TTL_SECONDS",
+  "NEGATIVE_CACHE_TTL_SECONDS",
   "RATE_LIMIT_PER_MIN",
+  "RATE_LIMIT_HEAVY_PER_MIN",
+  "TRACE_RATE_LIMIT_PER_MIN",
+  "API_KEY_RATE_LIMIT_PER_MIN",
+  "API_KEY_ISSUE_PER_HOUR",
+  "API_KEY_HEAVY_RATE_LIMIT_PER_MIN",
+  "API_KEY_TTL_SECONDS",
+  "API_KEY_MAX_PER_ISSUER",
+  "REDIS_COMMAND_TIMEOUT_MS",
   "MAX_TIMEOUT_MS",
   "MIN_TIMEOUT_MS",
+  "DEFAULT_TIMEOUT_MS",
+  "MAX_FLAGS",
+  "MAX_SOURCE_LENGTH",
+  "REQUEST_BODY_LIMIT_BYTES",
+  "LOG_LEVEL",
   "TRUST_PROXY_HOPS",
   "CLIENT_IP_HEADER",
-  "API_KEY_TTL_SECONDS",
-  "LOG_LEVEL",
 ];
 
 let saved: Record<string, string | undefined>;

@@ -119,9 +119,13 @@ describe("enforceLimit", () => {
       },
     } as unknown as Redis;
 
-    const { reply } = fakeReply();
+    const { reply, headers } = fakeReply();
     const result = await enforceLimit(broken, "ip", "general", 1, 60, reply, silentLog);
-    expect(result.limited).toBe(false);
+    // Every field, not just `limited`: an errored INCR read as a number gives
+    // NaN, and `NaN > limit` is false — so `limited: false` alone is true on
+    // both the guarded path and the bug it guards against.
+    expect(result).toEqual({ limited: false, retryAfter: 0, remaining: 0 });
+    expect(headers).toEqual({});
     expect(silentLog.error).toHaveBeenCalled();
   });
 
