@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# Format and lint what is about to be committed, nothing else — a whole-tree run
+# on every commit would be slower and would touch files the author did not.
+#
+# Skip with `git commit --no-verify`; CI runs `biome ci` over everything anyway,
+# so a skipped hook costs a red build, not a bad merge.
+
+if [ ! -x "node_modules/.bin/biome" ]; then
+  echo "pre-commit: Biome is not installed — run 'npm install' at the repo root." >&2
+  echo "pre-commit: skipping (CI still enforces this)." >&2
+  exit 0
+fi
+
+node_modules/.bin/biome check --write --staged --no-errors-on-unmatched --files-ignore-unknown=true || exit 1
+
+# Re-stage the files Biome just rewrote. Only paths already in the index are
+# touched, so an intentionally unstaged hunk stays unstaged.
+git update-index --again

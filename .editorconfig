@@ -1,0 +1,23 @@
+# Editor defaults for people whose editor has no Biome extension installed.
+# Biome reads this file (formatter.useEditorconfig), so the two cannot drift:
+# change indentation or line width here and `biome format` follows.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[*.{yml,yaml}]
+indent_size = 2
