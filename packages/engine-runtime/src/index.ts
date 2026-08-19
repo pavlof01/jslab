@@ -1,3 +1,5 @@
+import type { FastifyInstance } from "fastify";
+
 import { buildEngineApp, type EngineSpec } from "./app.js";
 
 export * from "./flags.js";
@@ -12,7 +14,7 @@ export type { EngineSpec, Invocation, InvocationContext, PreludeScript } from ".
  * Everything a test cares about lives in `buildEngineApp`, which needs no
  * socket and no environment.
  */
-export function startEngineServer(spec: EngineSpec): void {
+export function startEngineServer(spec: EngineSpec): FastifyInstance {
   const { config, engine } = spec;
   const app = buildEngineApp(spec);
 
@@ -30,4 +32,6 @@ export function startEngineServer(spec: EngineSpec): void {
   process.on("SIGINT", () => app.close().finally(() => process.exit(0)));
 
   listen();
+
+  return app;
 }

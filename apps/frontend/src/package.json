@@ -13,7 +13,8 @@
     "typegen": "chakra typegen style/theme.ts",
     "postinstall": "test -f style/theme.ts && npm run typegen || true",
     "prelint": "npm run typegen",
-    "prebuild": "npm run typegen"
+    "prebuild": "npm run typegen",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.33.0",

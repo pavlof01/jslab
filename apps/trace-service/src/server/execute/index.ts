@@ -12,7 +12,7 @@ import {
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
 import { callBinaryAlgorithm, callUnaryOperation, getOperatorDispatch } from "../operations.ts";
-import { detectOperator, parseStringToValue } from "./parse.ts";
+import { describeValue, detectOperator, parseStringToValue } from "./parse.ts";
 import { fromEngineValue, serializeNode } from "./serialize.ts";
 
 /**
@@ -21,19 +21,30 @@ import { fromEngineValue, serializeNode } from "./serialize.ts";
  * root, and serialize. Only the extra fields differ, so the tail lives here
  * once rather than being copied either side of the two evaluations.
  */
+/**
+ * What a caught failure says about itself. engine262 throws completions, not
+ * Errors, and `String(completion)` is "[object Object]" — the value inside is
+ * the one that can describe itself.
+ */
+function explain(error: unknown, realm?: ManagedRealm): string {
+  if (error instanceof ThrowCompletion) return describeValue(error.Value, realm);
+  return error instanceof Error ? error.message : String(error);
+}
+
 function finishTrace(
   functionName: string,
   evalResult: unknown,
   inputTrace: TraceRecord | undefined,
   extra: Partial<ExecuteResponse> = {},
+  realm?: ManagedRealm,
 ): ExecuteResponse {
   if (evalResult instanceof ThrowCompletion) {
-    return { success: false, functionName, error: `Execution threw: ${evalResult.Value}` };
+    return { success: false, functionName, error: `Execution threw: ${describeValue(evalResult.Value, realm)}` };
   }
 
   const execResult = (evalResult as NormalCompletion<Value | ThrowCompletion>).Value;
   if (execResult instanceof ThrowCompletion) {
-    return { success: false, functionName, error: String(execResult.Value) };
+    return { success: false, functionName, error: describeValue(execResult.Value, realm) };
   }
 
   const rootNode = inputTrace?.getRoot() ?? execResult.trace.getRoot();
@@ -56,29 +67,63 @@ export async function executeUnaryConversion(
   preferredType?: "string" | "number",
 ): Promise<ExecuteResponse> {
   let inputTrace: TraceRecord | undefined;
+  // A snippet that does not parse is the caller's mistake, so it leaves here the
+  // way the binary path already reports one — as a failed trace the route turns
+  // into a 400, rather than an exception the route can only call a 500.
+  let parseError: string | undefined;
+  // Kept outside the evaluation so a thrown value can still be rendered against
+  // the realm it came from.
+  let realm: ManagedRealm | undefined;
+  // Rendered while the evaluation is still on the stack: `inspect` needs the
+  // agent and the realm that produced the value, and both are gone by the time
+  // the completion reaches `finishTrace`.
+  let thrownText: string | undefined;
 
   const evalResult = evalQ((_, __) => {
     const agent = new Agent();
     setSurroundingAgent(agent);
-    const realm = new ManagedRealm();
+    realm = new ManagedRealm();
 
-    const inputResult = parseStringToValue(input, realm);
+    let inputResult;
+    try {
+      inputResult = parseStringToValue(input, realm);
+    } catch (error) {
+      // A syntax error arrives as a thrown Error, not a completion.
+      parseError = error instanceof Error ? error.message : String(error);
+      return null as unknown as Value;
+    }
 
     if (inputResult instanceof ThrowCompletion) {
-      throw new Error(`Failed to parse input: ${inputResult.Value}`);
+      parseError = `Failed to parse input: ${describeValue(inputResult.Value, realm)}`;
+      return null as unknown as Value;
     }
 
     const inputValue = (inputResult as NormalCompletion<Value>).Value;
     inputTrace = inputValue.trace;
 
-    const raw = realm.scope<ValueCompletion<Value>>(
-      () => callGenerator(callUnaryOperation(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
-    );
+    let raw: ValueCompletion<Value>;
+    try {
+      raw = realm.scope<ValueCompletion<Value>>(
+        () => callGenerator(callUnaryOperation(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
+      );
+    } catch (error) {
+      // An operation this service does not implement, or a conversion that
+      // threw, is the caller's business — not a service failure.
+      parseError = explain(error, realm);
+      return null as unknown as Value;
+    }
 
-    return raw instanceof NormalCompletion ? raw.Value : raw;
+    const returned = raw instanceof NormalCompletion ? raw.Value : raw;
+    // A throw arrives either as the completion itself or wrapped in a normal one.
+    if (returned instanceof ThrowCompletion) thrownText = describeValue(returned.Value, realm);
+
+    return returned;
   });
 
-  return finishTrace(functionName, evalResult, inputTrace);
+  if (parseError) return { success: false, functionName, error: parseError };
+  if (thrownText) return { success: false, functionName, error: thrownText };
+
+  return finishTrace(functionName, evalResult, inputTrace, {}, realm);
 }
 
 /**
@@ -114,12 +159,26 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
       return null as unknown as Value;
     }
 
-    const leftResult = parseStringToValue(leftSrc, realm);
+    let leftResult;
+    try {
+      leftResult = parseStringToValue(leftSrc, realm);
+    } catch (error) {
+      // Name the side, the way the completion branch below already does.
+      parseError = `Failed to parse left operand "${leftSrc}": ${explain(error, realm)}`;
+      return null as unknown as Value;
+    }
     if (leftResult instanceof ThrowCompletion) {
       parseError = `Failed to parse left operand: ${leftResult.Value}`;
       return null as unknown as Value;
     }
-    const rightResult = parseStringToValue(rightSrc, realm);
+    let rightResult;
+    try {
+      rightResult = parseStringToValue(rightSrc, realm);
+    } catch (error) {
+      // Name the side, the way the completion branch below already does.
+      parseError = `Failed to parse right operand "${rightSrc}": ${explain(error, realm)}`;
+      return null as unknown as Value;
+    }
     if (rightResult instanceof ThrowCompletion) {
       parseError = `Failed to parse right operand: ${rightResult.Value}`;
       return null as unknown as Value;

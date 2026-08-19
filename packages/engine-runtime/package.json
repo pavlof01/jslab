@@ -12,11 +12,14 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "fastify": "^4.27.2",
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.11",
+    "@vitest/coverage-v8": "^4.1.11",
     "typescript": "^5.4.5",
     "vitest": "^4.1.10"
   }

@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "lint": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@fastify/under-pressure": "^8.2.0",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.11",
+    "@vitest/coverage-v8": "^4.1.10",
     "tsx": "^4.7.0",
     "typescript": "^5.4.5",
     "vitest": "^4.1.10"
