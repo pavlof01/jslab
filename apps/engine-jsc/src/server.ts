@@ -56,6 +56,9 @@ const LOCKDOWN_SHIM_FILE = "lockdown-shim.js";
 // JSC parses env vars starting with "JSC_" as VM options (Options.cpp).
 // `JSC_PATH` is meant for this wrapper, not the engine, and causes noisy stderr.
 const scrubbedEnv = { ...process.env };
+// The rule's suggested rewrite (assigning undefined) would keep JSC_PATH as an
+// own key of the object handed to spawn(); it has to be gone, not blank.
+// biome-ignore lint/performance/noDelete: the key must be absent from the child env.
 delete (scrubbedEnv as Record<string, string | undefined>).JSC_PATH;
 
 startEngineServer({

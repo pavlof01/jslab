@@ -15,6 +15,9 @@ const stylesheet = cycleStylesheet(TRACES);
 export function SpecTracePreview() {
   return (
     <Flex layerStyle="panel" direction="column" minW={0}>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the stylesheet is
+          generated at module scope by cycleStylesheet() from TRACES, a constant in
+          this repo. No user input reaches it, and <style> takes no children. */}
       <style dangerouslySetInnerHTML={{ __html: stylesheet }} />
 
       <Band edge="top">

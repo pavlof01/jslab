@@ -311,6 +311,9 @@ export function callECMA262BinaryFunction(
     case "IsLooselyEqual":
       return IsLooselyEqual(lhs, rhs);
     case "IsStrictlyEqual":
+      // IsStrictlyEqual is synchronous; wrapping it in a generator that never
+      // yields is what lets callGenerator drive all three branches identically.
+      // biome-ignore lint/correctness/useYield: degenerate generator, see above.
       return (function* () {
         return IsStrictlyEqual(lhs, rhs);
       })();

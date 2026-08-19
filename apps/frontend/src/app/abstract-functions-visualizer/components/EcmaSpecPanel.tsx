@@ -72,6 +72,10 @@ export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, spe
   return (
     <div ref={panelRef} className={s.panel}>
       {highlightCss ? <style>{highlightCss}</style> : null}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: specHtml is spec
+          markup rendered by our own trace-service (ecmarkup over the ECMAScript
+          spec) and fetched server-side in server-data.ts. Rendering it as markup
+          is the point of this panel; nothing user-supplied is interpolated. */}
       <div dangerouslySetInnerHTML={{ __html: specHtml }} />
     </div>
   );

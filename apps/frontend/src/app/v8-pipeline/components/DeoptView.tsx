@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noArrayIndexKey: position is the only thing telling two identical trace events apart.
 "use client";
 
 /* eslint-disable react/no-array-index-key -- Trace events are a sequence: two

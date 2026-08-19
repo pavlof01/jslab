@@ -30,7 +30,7 @@ const EPSILON = 0.001;
 
 type Stop = [percent: number, declarations: string];
 
-function keyframes(name: string, totalMs: number, stops: Stop[]): string {
+function keyframes(name: string, stops: Stop[]): string {
   const seen = new Map<string, string>();
   for (const [percent, declarations] of stops) {
     const key = Math.min(100, Math.max(0, percent)).toFixed(4);
@@ -77,7 +77,7 @@ export function cycleStylesheet(traces: Trace[]): string {
     const verdictAt = start + trace.steps.length * STEP_MS;
 
     rules.push(
-      keyframes(blockName(index), totalMs, [
+      keyframes(blockName(index), [
         [0, "opacity:0;visibility:hidden"],
         [at(start) - EPSILON, "opacity:0;visibility:hidden"],
         [at(start), "opacity:1;visibility:visible"],
@@ -92,12 +92,11 @@ export function cycleStylesheet(traces: Trace[]): string {
       rules.push(
         keyframes(
           stepName(index, step),
-          totalMs,
           litForTurn(start, stepAt, end, totalMs, "opacity:0.14", "opacity:1", FADE_MS),
         ),
       );
       rules.push(
-        keyframes(cursorName(index, step), totalMs, [
+        keyframes(cursorName(index, step), [
           [0, "opacity:0"],
           [at(stepAt) - EPSILON, "opacity:0"],
           [at(stepAt), "opacity:1"],
@@ -111,7 +110,6 @@ export function cycleStylesheet(traces: Trace[]): string {
     rules.push(
       keyframes(
         verdictName(index),
-        totalMs,
         litForTurn(start, verdictAt, end, totalMs, "opacity:0", "opacity:1", VERDICT_MS),
       ),
     );
@@ -120,7 +118,7 @@ export function cycleStylesheet(traces: Trace[]): string {
     const loud =
       "color:var(--chakra-colors-accent);border-bottom-color:var(--chakra-colors-accent)";
     rules.push(
-      keyframes(tabName(index), totalMs, [
+      keyframes(tabName(index), [
         [0, quiet],
         [at(start) - EPSILON, quiet],
         [at(start), loud],
