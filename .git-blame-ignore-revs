@@ -1,0 +1,11 @@
+# Commits that only moved whitespace and import lines around. Listing them here
+# keeps `git blame` pointing at whoever wrote a line, not at whoever reformatted it.
+#
+# GitHub applies this file automatically. For local git:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Add a commit here only if it changed no behaviour at all.
+
+# style(repo): apply Biome formatting and import order across the tree
+2148cb709b8d4d3d01f83ff2c44db1247877e9b3
