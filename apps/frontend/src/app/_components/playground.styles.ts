@@ -69,6 +69,10 @@ export const footerLine: SystemStyleObject = {
 export const splitRow: SystemStyleObject = { flex: "1 1 0", minHeight: 0 };
 
 export const editorPane: SystemStyleObject = {
+  // The pane fills its splitter panel: the panel is sized by flex-grow, so a
+  // child asking for `height: 100%` — and Monaco does, all the way down — has
+  // nothing to resolve against unless this says so.
+  height: "100%",
   bg: "surface.band",
   display: "flex",
   flexDirection: "column",
@@ -84,6 +88,7 @@ export const editorHost: SystemStyleObject = {
 };
 
 export const outputPane: SystemStyleObject = {
+  height: "100%",
   display: "flex",
   flexDirection: "column",
   bg: "surface.base",
