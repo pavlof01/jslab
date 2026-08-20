@@ -75,7 +75,7 @@ export default function EmbedPlaygroundClient() {
           <EditorPanel code={code} onCodeChange={(v) => setCode(v ?? "")} onRun={run} />
         </Flex>
         <Flex flex="1" minH={0} overflow="auto">
-          <OutputsPanel compact />
+          <OutputsPanel />
         </Flex>
       </Flex>
     </Flex>

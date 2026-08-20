@@ -5,13 +5,8 @@ import { engineLabel } from "@/lib/engines";
 import { ENGINE_KEYS, EngineKey, isEngineKey, RunStatus } from "@/lib/types";
 import { useActiveTab, useOutputPane } from "@/store/engineOutputsSelectors";
 import { HighlightedCode } from "./CodeBlock";
-import { EngineNote } from "@/app/_components/EngineNote";
 
-type OutputsPanelProps = {
-  compact?: boolean;
-};
-
-export function OutputsPanel({ compact = false }: OutputsPanelProps = {}) {
+export function OutputsPanel() {
   const { out, previousSnapshot, showDiff, status, engines } = useOutputPane();
   const { activeTab, setActiveTab } = useActiveTab();
 
@@ -44,7 +39,6 @@ export function OutputsPanel({ compact = false }: OutputsPanelProps = {}) {
 
         <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
           <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="surface.base" p={4} overflow="auto">
-            <EngineNote engine={activeKey} detail={compact ? "first-quirk" : "full"} />
             <HighlightedCode
               engineKey={activeKey}
               out={result?.stdout}
