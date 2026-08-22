@@ -1,5 +1,17 @@
 import { ENGINE_KINDS } from "@jslab/engine-runtime";
 
+/**
+ * Every route that spends from a rate-limit budget (see rateLimit.ts) sets
+ * these on its reply whether or not the request was limited, so they belong
+ * on every 2xx/429/5xx response a budget check precedes — not just 429.
+ */
+const RATE_LIMIT_RESPONSE_HEADERS = {
+  "X-RateLimit-Limit": { $ref: "#/components/headers/RateLimitLimit" },
+  "X-RateLimit-Remaining": { $ref: "#/components/headers/RateLimitRemaining" },
+  "X-RateLimit-Reset": { $ref: "#/components/headers/RateLimitReset" },
+  "X-RateLimit-Bucket": { $ref: "#/components/headers/RateLimitBucket" },
+} as const;
+
 export const openapiDoc = {
   openapi: "3.0.3",
   info: {
@@ -17,6 +29,29 @@ export const openapiDoc = {
     securitySchemes: {
       ApiKeyHeader: { type: "apiKey", in: "header", name: "x-api-key" },
       BearerAuth: { type: "http", scheme: "bearer" },
+    },
+    headers: {
+      // A request can spend from more than one budget (e.g. general then
+      // heavy); these four describe whichever one was checked last, which is
+      // the tightest bound on the caller's *next* request — not necessarily
+      // the first bucket the route touches.
+      RateLimitLimit: {
+        description: "Ceiling for the budget named in X-RateLimit-Bucket.",
+        schema: { type: "integer" },
+      },
+      RateLimitRemaining: {
+        description: "Requests left in that budget's current window.",
+        schema: { type: "integer" },
+      },
+      RateLimitReset: {
+        description: "Unix timestamp (seconds) when that budget's window resets.",
+        schema: { type: "integer" },
+      },
+      RateLimitBucket: {
+        description:
+          "Which budget the other three X-RateLimit-* headers describe, e.g. general, heavy, trace, key-general, key-heavy, key-trace, or key-issue.",
+        schema: { type: "string" },
+      },
     },
     schemas: {
       KeyResponse: {
@@ -255,6 +290,7 @@ export const openapiDoc = {
         responses: {
           "201": {
             description: "key issued",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/KeyResponse" } },
             },
@@ -267,12 +303,14 @@ export const openapiDoc = {
           },
           "429": {
             description: "issuance rate limited, or too many live keys for this address",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
           },
           "503": {
             description: "could not issue key",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
@@ -382,6 +420,7 @@ export const openapiDoc = {
         responses: {
           "200": {
             description: "ok",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ApiResponse" } },
             },
@@ -394,18 +433,21 @@ export const openapiDoc = {
           },
           "429": {
             description: "rate limited",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
           },
           "502": {
             description: "engine error",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
           },
           "504": {
             description: "engine timeout",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
@@ -425,6 +467,7 @@ export const openapiDoc = {
         responses: {
           "200": {
             description: "trace executed",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } },
             },
@@ -437,12 +480,14 @@ export const openapiDoc = {
           },
           "429": {
             description: "rate limited",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
           },
           "502": {
             description: "trace service unavailable",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
@@ -464,6 +509,7 @@ export const openapiDoc = {
         responses: {
           "200": {
             description: "trace executed",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } },
             },
@@ -476,12 +522,14 @@ export const openapiDoc = {
           },
           "429": {
             description: "rate limited",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
           },
           "502": {
             description: "trace service unavailable",
+            headers: RATE_LIMIT_RESPONSE_HEADERS,
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
             },
