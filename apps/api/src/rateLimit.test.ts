@@ -46,6 +46,7 @@ describe("enforceLimit", () => {
     expect(headers["X-RateLimit-Limit"]).toBe("3");
     expect(headers["X-RateLimit-Remaining"]).toBe("2");
     expect(Number(headers["X-RateLimit-Reset"])).toBeGreaterThan(Date.now() / 1000);
+    expect(headers["X-RateLimit-Bucket"]).toBe("general");
     expect(headers["Retry-After"]).toBeUndefined();
 
     await enforceLimit(redis.client, "ip", "general", 3, 60, reply);
@@ -74,6 +75,19 @@ describe("enforceLimit", () => {
     expect((await enforceLimit(redis.client, "ip-a", "heavy", 1, 60, reply)).limited).toBe(false);
     expect((await enforceLimit(redis.client, "ip-b", "general", 1, 60, reply)).limited).toBe(false);
     expect((await enforceLimit(redis.client, "ip-a", "general", 1, 60, reply)).limited).toBe(true);
+  });
+
+  it("names the bucket its headers describe, so a later check's headers don't get mistaken for an earlier one's", async () => {
+    const redis = createFakeRedis();
+    const { reply, headers } = fakeReply();
+
+    await enforceLimit(redis.client, "ip", "general", 60, 60, reply);
+    expect(headers["X-RateLimit-Bucket"]).toBe("general");
+    expect(headers["X-RateLimit-Limit"]).toBe("60");
+
+    await enforceLimit(redis.client, "ip", "heavy", 20, 60, reply);
+    expect(headers["X-RateLimit-Bucket"]).toBe("heavy");
+    expect(headers["X-RateLimit-Limit"]).toBe("20");
   });
 
   it("rejects everything when the limit is zero", async () => {

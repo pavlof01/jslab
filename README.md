@@ -279,6 +279,13 @@ browsable rendering at `/api/docs`.
   key raises general and trace to its own quota (240/min), while the heavy
   bucket stays separately capped (60/min). 429 responses carry `Retry-After`
   and `meta.retryAfter`.
+- Every response — success included, not just 429 — carries `X-RateLimit-Limit`,
+  `X-RateLimit-Remaining`, and `X-RateLimit-Reset` for whichever budget was
+  checked, plus `X-RateLimit-Bucket` naming it (`general`, `heavy`, `trace`,
+  or their `key-*` counterparts for an API key). A request can spend from more
+  than one budget (e.g. general then heavy on a cache miss); the headers
+  describe the last one checked, which is the tightest bound on the caller's
+  next request.
 - Cache: Redis hash of engine+source+normalized flags+timeout bucket, TTL `CACHE_TTL_SECONDS` (default 600s); deterministic failures get the shorter `NEGATIVE_CACHE_TTL_SECONDS` (default 30s).
 
 ### Quick curl example

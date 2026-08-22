@@ -76,6 +76,38 @@ describe("proxying a run to its engine", () => {
     expect(typeof body.meta.durationMs).toBe("number");
   });
 
+  it("carries the heavy budget's X-RateLimit-* headers on a run that actually spawns an engine", async () => {
+    const { app, config } = makeApp();
+    open.push(app);
+    upstream.reply(ORIGIN, "/run", 200, { ok: true, stdout: "2", stderr: "", artifacts: [] });
+
+    const res = await run(app);
+
+    expect(res.statusCode).toBe(200);
+    // Spawning an engine spends the heavy budget after the general one, so
+    // its headers are the ones left on the reply — not the general bucket's.
+    expect(res.headers["x-ratelimit-bucket"]).toBe("heavy");
+    expect(res.headers["x-ratelimit-limit"]).toBe(String(config.RATE_LIMIT_HEAVY_PER_MIN));
+    expect(res.headers["x-ratelimit-remaining"]).toBe(String(config.RATE_LIMIT_HEAVY_PER_MIN - 1));
+  });
+
+  it("reports the same heavy-budget numbers on a successful run and the 429 that follows once it is exhausted", async () => {
+    const { app } = makeApp({ RATE_LIMIT_HEAVY_PER_MIN: "1" });
+    open.push(app);
+    upstream.reply(ORIGIN, "/run", 200, { ok: true, stdout: "2", stderr: "", artifacts: [] });
+
+    const ok = await run(app);
+    expect(ok.statusCode).toBe(200);
+    expect(ok.headers["x-ratelimit-bucket"]).toBe("heavy");
+    expect(ok.headers["x-ratelimit-remaining"]).toBe("0");
+
+    const limited = await run(app, { sourceText: "2+2" }); // different source: cache miss again, spends heavy again
+    expect(limited.statusCode).toBe(429);
+    expect(limited.headers["x-ratelimit-bucket"]).toBe("heavy");
+    expect(limited.headers["x-ratelimit-limit"]).toBe("1");
+    expect(limited.headers["x-ratelimit-remaining"]).toBe("0");
+  });
+
   it("passes an engine 429 through with its Retry-After", async () => {
     const { app } = makeApp();
     open.push(app);

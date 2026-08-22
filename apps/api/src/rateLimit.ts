@@ -52,7 +52,11 @@ async function take(redis: Redis, key: string, limit: number, windowSeconds: num
  * Sets X-RateLimit-* headers for THIS limit, so the advertised limit always
  * matches the check that actually applied. Callers layer limits explicitly:
  * check "general" for every request, and additionally "heavy" only for
- * requests that spawn an engine (cache misses, trace executions).
+ * requests that spawn an engine (cache misses, trace executions). Headers are
+ * set whether or not the request is limited, so a successful response is just
+ * as informative as a 429 — X-RateLimit-Bucket names which of the (possibly
+ * several) budgets checked for this request the three numbers describe, since
+ * a later check in the same request overwrites the earlier one's headers.
  *
  * Fails open: a Redis error logs and admits the request — the engines have
  * their own per-pod concurrency gates, and turning a Redis blip into a 500
@@ -82,6 +86,7 @@ export async function enforceLimit(
   reply.header("X-RateLimit-Limit", String(limit));
   reply.header("X-RateLimit-Remaining", String(remaining));
   reply.header("X-RateLimit-Reset", String(Math.floor(Date.now() / 1000) + ttl));
+  reply.header("X-RateLimit-Bucket", suffix);
   if (limited) {
     reply.header("Retry-After", String(ttl));
   }
