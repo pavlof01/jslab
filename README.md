@@ -236,6 +236,7 @@ browsable rendering at `/api/docs`.
 | --- | --- |
 | `POST /api/run` | Run a snippet on one engine (see below) |
 | `GET /api/flags` | The per-engine flag catalog, with descriptions and categories |
+| `GET /api/engines` | Each engine key with the version string its binary reports (`null` when the shell cannot say) |
 | `POST /api/trace/execute/type-conversion` | `{ functionName, input, preferredType? }` → spec trace |
 | `POST /api/trace/execute/equality` | `{ input }` (a binary expression such as `{} == ![]`) → spec trace |
 | `POST /api/keys` | Mint a self-service API key (raises the general and trace quotas) |

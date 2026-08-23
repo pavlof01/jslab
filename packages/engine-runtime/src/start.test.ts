@@ -79,7 +79,7 @@ describe("startEngineServer", () => {
 
     const health = await waitForHealth(port);
     expect(health.status).toBe(200);
-    expect(await health.json()).toEqual({ ok: true });
+    expect(await health.json()).toEqual({ ok: true, engine: "v8", version: null });
 
     const res = await fetch(`http://127.0.0.1:${port}/run`, {
       method: "POST",

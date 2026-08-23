@@ -38,11 +38,11 @@ export function cacheKey(payload: NormalizedRunRequest): string {
   return `api-cache:${hash}`;
 }
 
-export async function readCache(redis: RedisClient, key: string, log?: FastifyBaseLogger): Promise<CachedResult | null> {
+export async function readJsonCache<T>(redis: RedisClient, key: string, log?: FastifyBaseLogger): Promise<T | null> {
   try {
     const raw = await redis.get(key);
     if (!raw) return null;
-    return JSON.parse(raw) as CachedResult;
+    return JSON.parse(raw) as T;
   } catch (err) {
     // Fail open (treat as a miss), but surface it: a broken Redis must be
     // distinguishable from a genuine 100%-miss workload.
@@ -51,7 +51,10 @@ export async function readCache(redis: RedisClient, key: string, log?: FastifyBa
   }
 }
 
-export async function writeCache(redis: RedisClient, key: string, value: CachedResult, ttlSeconds: number, log?: FastifyBaseLogger): Promise<void> {
+export const readCache = (redis: RedisClient, key: string, log?: FastifyBaseLogger): Promise<CachedResult | null> =>
+  readJsonCache<CachedResult>(redis, key, log);
+
+export async function writeJsonCache(redis: RedisClient, key: string, value: unknown, ttlSeconds: number, log?: FastifyBaseLogger): Promise<void> {
   // The guard lives here, not at the call site: every cache write goes through
   // this function, so there is no path that can skip it.
   const payload = JSON.stringify(value);
@@ -68,3 +71,11 @@ export async function writeCache(redis: RedisClient, key: string, value: CachedR
     log?.warn({ err }, "cache write failed");
   }
 }
+
+export const writeCache = (
+  redis: RedisClient,
+  key: string,
+  value: CachedResult,
+  ttlSeconds: number,
+  log?: FastifyBaseLogger,
+): Promise<void> => writeJsonCache(redis, key, value, ttlSeconds, log);

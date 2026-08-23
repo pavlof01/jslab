@@ -1,7 +1,8 @@
-import { startEngineServer } from "@jslab/engine-runtime";
+import { matchVersion, startEngineServer } from "@jslab/engine-runtime";
 import { loadConfig } from "./config.js";
 
 const config = loadConfig();
+const binary = config.SM_PATH;
 
 const BYTECODE_WRAPPER = String.raw`(() => {
   const readFile = typeof read === "function" ? read : null;
@@ -41,8 +42,13 @@ startEngineServer({
   tmpPrefix: "engine-sm-",
   config,
   // The wrapper reads "snippet.js" relative to cwd, so run from the temp dir.
+  version: {
+    cmd: binary,
+    candidates: [["--version"]],
+    parse: (raw) => matchVersion(raw, /JavaScript-C\s*([^\n]+)/),
+  },
   invoke: ({ tmpDir, flags }) => ({
-    cmd: config.SM_PATH,
+    cmd: binary,
     args: [...flags, "-e", BYTECODE_WRAPPER],
     spawnOptions: { cwd: tmpDir },
   }),

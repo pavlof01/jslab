@@ -96,7 +96,24 @@ describe("GET /healthz", () => {
   it("answers before any run has happened", async () => {
     const res = await makeApp().inject({ method: "GET", url: "/healthz" });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true });
+    expect(res.json()).toEqual({ ok: true, engine: "v8", version: null });
+  });
+
+  it("reports the binary's version once the startup probe answers", async () => {
+    const app = makeApp({
+      version: {
+        cmd: node,
+        candidates: [["-e", "console.log('V8 version 14.9.0 (candidate)')"]],
+        parse: (raw: string) => raw.match(/V8 version ([^\n]+)/)?.[1]?.trim() ?? null,
+      },
+    });
+    let version: string | null = null;
+    for (let attempt = 0; attempt < 50 && version === null; attempt++) {
+      const res = await app.inject({ method: "GET", url: "/healthz" });
+      version = res.json().version;
+      if (version === null) await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(version).toBe("14.9.0 (candidate)");
   });
 });
 

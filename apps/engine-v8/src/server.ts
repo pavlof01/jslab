@@ -1,7 +1,8 @@
-import { startEngineServer } from "@jslab/engine-runtime";
+import { matchVersion, startEngineServer } from "@jslab/engine-runtime";
 import { loadConfig } from "./config.js";
 
 const config = loadConfig();
+const binary = config.D8_PATH;
 
 startEngineServer({
   // Flags come from the shared catalog in @jslab/engine-runtime, keyed by this
@@ -17,8 +18,13 @@ startEngineServer({
   // shared runtime generates the in-realm lockdown (see lockdown.ts) and hands
   // back its path below.
   blockedGlobals: ["read", "readbuffer", "readline"],
+  version: {
+    cmd: binary,
+    candidates: [["-e", "print(version())"]],
+    parse: (raw) => matchVersion(raw, /^\s*(\d+\.\d+[^\n]*)$/m),
+  },
   invoke: ({ scriptPath, flags, preludePaths }) => ({
-    cmd: config.D8_PATH,
+    cmd: binary,
     // d8 runs multiple script file arguments in order, sharing one global
     // object, so the prelude just needs to precede the snippet.
     // Heap cap is engine-controlled (not client-supplied): a script that

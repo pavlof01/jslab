@@ -13,6 +13,7 @@ export type RunResult = {
   exitCode: number | null;
   timedOut: boolean;
   outputTruncated: boolean;
+  spawnError?: boolean;
 };
 
 /**
@@ -113,7 +114,7 @@ export async function runCommand(
     });
     child.on("error", (err) => {
       clearTimeout(timer);
-      done({ stdout: "", stderr: String(err), exitCode: -1, timedOut, outputTruncated });
+      done({ stdout: "", stderr: String(err), exitCode: -1, timedOut, outputTruncated, spawnError: true });
     });
   });
 }

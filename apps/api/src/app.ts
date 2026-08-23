@@ -5,6 +5,7 @@ import type { AppContext } from "./context.js";
 import { ENGINE_KINDS } from "./engines.js";
 import { registry } from "./metrics.js";
 import { openapiDoc } from "./openapi.js";
+import { registerEngineRoutes } from "./routes/engines.js";
 import { registerKeyRoutes } from "./routes/keys.js";
 import { registerRunRoute } from "./routes/run.js";
 import { registerTraceRoutes } from "./routes/trace.js";
@@ -70,6 +71,7 @@ export function buildApp(ctx: AppContext): FastifyInstance {
     configuration: { content: openapiDoc },
   });
 
+  registerEngineRoutes(app, ctx);
   registerRunRoute(app, ctx);
   registerKeyRoutes(app, ctx);
   registerTraceRoutes(app, ctx);

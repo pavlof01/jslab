@@ -1,6 +1,8 @@
 "use client";
 
+import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
+import { engineLabel } from "@/lib/engines";
 import { Box } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "@/lib/types";
 import {
@@ -41,7 +43,7 @@ export function OutputPane() {
         <StderrDump engine={activeTab} stderr={result?.stderr} previousStderr={previous?.stderr} showDiff={showDiff} />
       </Box>
 
-      <PaneFooter durationMs={result?.ms} flagCount={flagsFor(activeTab).length} />
+      <PaneFooter engine={activeTab} durationMs={result?.ms} flagCount={flagsFor(activeTab).length} />
     </>
   );
 }
@@ -70,9 +72,24 @@ function StderrDump({
   );
 }
 
-function PaneFooter({ durationMs, flagCount }: { durationMs?: number; flagCount: number }) {
+function PaneFooter({
+  engine,
+  durationMs,
+  flagCount,
+}: {
+  engine: EngineKey;
+  durationMs?: number;
+  flagCount: number;
+}) {
+  const version = useEngineVersion(engine);
+
   return (
     <Box css={styles.outputFooter}>
+      {version ? (
+        <span>
+          {engineLabel(engine)} {version}
+        </span>
+      ) : null}
       <span>{durationMs ? `${durationMs} ms` : "—"}</span>
       {flagCount > 0 ? (
         <span>

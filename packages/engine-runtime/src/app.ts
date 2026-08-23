@@ -8,6 +8,7 @@ import type { EngineRuntimeConfig } from "./config.js";
 import { sanitizeFlags } from "./flags.js";
 import { buildLockdownShim, LOCKDOWN_SHIM_FILE } from "./lockdown.js";
 import { runCommand } from "./run.js";
+import { detectVersion, type VersionProbe } from "./version.js";
 
 /**
  * Shared HTTP wrapper for the engine microservices. Every engine service is a
@@ -73,6 +74,7 @@ export interface EngineSpec {
   blockedGlobals?: readonly string[];
   /** Further scripts to load before the snippet, in order (e.g. jsc's console shim). */
   prelude?: readonly PreludeScript[];
+  version?: VersionProbe;
   /** Build the binary invocation for a snippet already written to `scriptPath`. */
   invoke(ctx: InvocationContext): Invocation;
 }
@@ -169,7 +171,16 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
   const app = fastify({ logger: { level: config.LOG_LEVEL }, bodyLimit: 512 * 1024 });
   const gate = new ConcurrencyGate(config.MAX_CONCURRENCY);
 
-  app.get("/healthz", async () => ({ ok: true }));
+  let engineVersion: string | null = null;
+  if (spec.version) {
+    void detectVersion(spec.version)
+      .then((detected) => {
+        engineVersion = detected;
+      })
+      .catch((err) => app.log.warn({ err }, "version probe failed"));
+  }
+
+  app.get("/healthz", async () => ({ ok: true, engine: spec.engine, version: engineVersion }));
 
   if (spec.openapiTitle) {
     const doc = openapiDocFor(spec.openapiTitle);

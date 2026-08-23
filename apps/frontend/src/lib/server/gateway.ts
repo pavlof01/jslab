@@ -25,6 +25,25 @@ export function forwardedHeaders(req: NextRequest | Request): HeadersInit {
 
 export const PROXY_TIMEOUT_MS = 15_000;
 
+export const SERVER_READ_TIMEOUT_MS = 2_000;
+
+export async function fetchGatewayJson<T>(
+  path: string,
+  opts: { revalidateSeconds: number; timeoutMs?: number },
+): Promise<T | null> {
+  try {
+    const response = await fetch(`${gatewayUrl()}${path}`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: opts.revalidateSeconds },
+      signal: AbortSignal.timeout(opts.timeoutMs ?? SERVER_READ_TIMEOUT_MS),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export async function readJsonBody(req: NextRequest | Request): Promise<{ body: unknown } | { error: NextResponse }> {
   try {
     return { body: await req.json() };

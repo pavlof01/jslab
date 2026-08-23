@@ -167,6 +167,29 @@ TraceExecuteRequest: {
           error: { type: "string" }
         }
       },
+      EnginesResponse: {
+        type: "object",
+        additionalProperties: true,
+        required: ["engines"],
+        properties: {
+          engines: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["engine", "ok", "version"],
+              properties: {
+                engine: { type: "string", example: "v8" },
+                ok: { type: "boolean" },
+                version: { type: "string", nullable: true, example: "14.9.0 (candidate)" }
+              }
+            }
+          },
+          meta: {
+            type: "object",
+            properties: { cacheHit: { type: "boolean" } }
+          }
+        }
+      },
       FlagCatalogResponse: {
         type: "object",
         additionalProperties: true,
@@ -291,6 +314,20 @@ TraceExecuteRequest: {
           "200": {
             description: "flag catalog",
             content: { "application/json": { schema: { $ref: "#/components/schemas/FlagCatalogResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/engines": {
+      get: {
+        summary: "Engines and the version of each binary behind them",
+        description:
+          "One entry per engine key. `version` is what the engine's own shell reports and is null when the binary offers no way to say so (jsc) or the service is unreachable, which `ok` distinguishes.",
+        security: [],
+        responses: {
+          "200": {
+            description: "engine versions",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/EnginesResponse" } } }
           }
         }
       }

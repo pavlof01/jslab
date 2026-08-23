@@ -13,6 +13,7 @@ services never talk to each other or to Redis.
 | `GET /metrics` | Prometheus metrics (`prom-client` registry) |
 | `POST /api/run` | Run a snippet on one engine — see the repo root `README.md` for the full contract |
 | `GET /api/flags` | The per-engine flag catalog with descriptions and categories |
+| `GET /api/engines` | One entry per engine key with the version its binary reports; cached in Redis for 60s |
 | `POST /api/trace/execute/type-conversion` | `{ functionName, input, preferredType? }` → proxied to `trace-service` |
 | `POST /api/trace/execute/equality` | `{ input }` (a binary expression such as `{} == ![]`) → proxied to `trace-service` |
 | `POST /api/keys` | Mint a self-service API key (201 with the key in plaintext, once) |

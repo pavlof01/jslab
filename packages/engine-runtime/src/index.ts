@@ -5,6 +5,7 @@ import { buildEngineApp, type EngineSpec } from "./app.js";
 export * from "./flags.js";
 export * from "./config.js";
 export * from "./lockdown.js";
+export * from "./version.js";
 export { buildEngineApp } from "./app.js";
 export type { EngineSpec, Invocation, InvocationContext, PreludeScript } from "./app.js";
 

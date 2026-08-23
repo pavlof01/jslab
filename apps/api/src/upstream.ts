@@ -39,6 +39,11 @@ export function classifyUpstreamError(serviceName: string, err: unknown): { kind
     case "UND_ERR_CONNECT_TIMEOUT":
     case "ETIMEDOUT":
       return { kind: "connect_timeout", message: `${serviceName} connect timeout` };
+    case undefined:
+      if ((err as { name?: string } | null)?.name === "TimeoutError") {
+        return { kind: "timeout", message: `${serviceName} timed out` };
+      }
+      return { kind: "request_error", message: `${serviceName} request failed` };
     case "UND_ERR_HEADERS_TIMEOUT":
       return { kind: "headers_timeout", message: `${serviceName} headers timeout` };
     case "UND_ERR_BODY_TIMEOUT":
@@ -69,29 +74,47 @@ async function readResponseText(
   return Buffer.concat(chunks).toString("utf8");
 }
 
-/**
- * POST a JSON body and read the response as text. Never throws: a transport
- * failure comes back as `{ ok: false }` with the classified reason, because
- * every caller has to answer the client either way.
- */
-export async function postJson(
+async function requestUpstream(
+  serviceName: string,
+  url: string,
+  timeoutMs: number,
+  init: { method: "GET" | "POST"; body?: string; headers?: Record<string, string> },
+): Promise<UpstreamResult> {
+  try {
+    const res = await request(url, {
+      method: init.method,
+      body: init.body,
+      headers: init.headers,
+      bodyTimeout: timeoutMs,
+      headersTimeout: timeoutMs,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    return {
+      ok: true,
+      status: res.statusCode,
+      headers: res.headers as UpstreamHeaders,
+      text: await readResponseText(res.body),
+    };
+  } catch (error) {
+    return { ok: false, ...classifyUpstreamError(serviceName, error), error };
+  }
+}
+
+export function postJson(
   serviceName: string,
   url: string,
   body: unknown,
   timeoutMs: number,
 ): Promise<UpstreamResult> {
-  try {
-    const res = await request(url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: { "content-type": "application/json" },
-      bodyTimeout: timeoutMs,
-      headersTimeout: timeoutMs,
-    });
-    return { ok: true, status: res.statusCode, headers: res.headers as UpstreamHeaders, text: await readResponseText(res.body) };
-  } catch (error) {
-    return { ok: false, ...classifyUpstreamError(serviceName, error), error };
-  }
+  return requestUpstream(serviceName, url, timeoutMs, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: { "content-type": "application/json" },
+  });
+}
+
+export function getJson(serviceName: string, url: string, timeoutMs: number): Promise<UpstreamResult> {
+  return requestUpstream(serviceName, url, timeoutMs, { method: "GET" });
 }
 
 /** Parse an upstream body, or `undefined` when it is not JSON at all. */

@@ -128,13 +128,14 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 ## Engine service pattern
 
-Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer()` call into the shared `packages/engine-runtime` package. The service supplies an `EngineSpec` — engine name (also the flag-catalog key), temp-dir prefix, config, the globals to lock down, any prelude scripts, and an `invoke()` callback that builds the binary command line — and the runtime handles the rest (`packages/engine-runtime/src/app.ts`, wrapped by `index.ts` for the listening socket):
+Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer()` call into the shared `packages/engine-runtime` package. The service supplies an `EngineSpec` — engine name (also the flag-catalog key), temp-dir prefix, config, the globals to lock down, any prelude scripts, an optional `version` probe (the flags to ask the binary for its version, and the parser for what that binary prints), and an `invoke()` callback that builds the binary command line — and the runtime handles the rest (`packages/engine-runtime/src/app.ts`, wrapped by `index.ts` for the listening socket):
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
 - `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
 - Per-pod concurrency gate returns 429 + `Retry-After` when saturated
 - A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order
 - `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
 - Returns `{ ok, stdout, stderr, artifacts: [], meta }`
+- `GET /healthz` reports `{ ok, engine, version }`; the version probe runs once at startup (never per request) and stays `null` for a binary with no way to say, such as jsc
 
 **Config**: each service's `config.ts` extends `engineEnvBase` (`packages/engine-runtime/src/config.ts`) with only its own fields — the binary path, v8's `MAX_HEAP_MB` — and calls `loadEnv(schema, "engine-x")`. Shared defaults (timeouts, output caps, concurrency) live in the base schema only.
 
@@ -155,7 +156,7 @@ To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-ru
 - **Cache key**: `engine + sourceText + sorted-flags + ceil(timeoutMs/100)` — timeout is bucketed to reduce misses.
 - **Rate limit**: 60 req/min per IP by default, layered per bucket (general/heavy/trace); a self-service API key raises the general and trace quotas, with a lower, separate cap on the heavy (engine-spawning) bucket. Identity is hashed before it becomes a Redis key name; see `rateLimit.ts` and `apiKeys.ts`. Client IP is read from `CF-Connecting-IP` when present (see `infra/README.md`'s "Client IP trust" section), falling back to `req.ip` under a configurable trusted-hop count.
 - **Trace endpoints**: `POST /api/trace/execute/type-conversion` → `{ functionName, input, preferredType? }` and `POST /api/trace/execute/equality` → `{ input }` → proxy to `trace-service`.
-- **Other routes**: `GET /healthz`, `GET /metrics` (Prometheus), `GET /api/flags` (the catalog as JSON), `GET /api/openapi.json` + `/api/docs` (Scalar UI), `POST`/`DELETE /api/keys` (self-service API keys).
+- **Other routes**: `GET /healthz`, `GET /metrics` (Prometheus), `GET /api/flags` (the catalog as JSON), `GET /api/engines` (per-engine binary versions, fanned out to each engine's `/healthz`, rate-limited on the general bucket and cached in Redis for 60s — an all-failed fan-out is not cached), `GET /api/openapi.json` + `/api/docs` (Scalar UI), `POST`/`DELETE /api/keys` (self-service API keys).
 
 ---
 

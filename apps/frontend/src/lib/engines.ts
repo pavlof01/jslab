@@ -34,3 +34,5 @@ export const ENGINES: Record<EngineKey, EngineDescriptor> = {
 export const engineLabel = (engine: EngineKey): string => ENGINES[engine].short;
 
 export const engineLang = (engine: EngineKey): BytecodeLang => ENGINES[engine].lang;
+
+export type EngineVersions = Partial<Record<EngineKey, string>>;
