@@ -11,7 +11,12 @@ import {
   type ValueCompletion,
 } from "../../trace/index.mts";
 import type { ExecuteResponse } from "../types.ts";
-import { callBinaryAlgorithm, callUnaryOperation, getOperatorDispatch } from "../operations.ts";
+import {
+  callBinaryAlgorithm,
+  callUnaryOperation,
+  getOperatorDispatch,
+  SUPPORTED_OPERATORS,
+} from "../operations.ts";
 import { describeValue, detectOperator, parseStringToValue } from "./parse.ts";
 import { fromEngineValue, serializeNode } from "./serialize.ts";
 
@@ -136,6 +141,7 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
   let parseError: string | undefined;
   let effectiveAlgoId: string | undefined;
   let detectedOperator: string | undefined;
+  let thrownText: string | undefined;
 
   const evalResult = evalQ((_, __) => {
     const agent = new Agent();
@@ -144,8 +150,9 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
 
     const detected = detectOperator(input);
     if (!detected) {
-      parseError =
-        'Expected a binary expression with one of: ==, ===, !=, !==, <, >, <=, >= (e.g. "{} == ![]").';
+      parseError = `Expected a binary expression with one of: ${SUPPORTED_OPERATORS.join(
+        ", ",
+      )} (e.g. "{} == ![]").`;
       return null as unknown as Value;
     }
     const dispatch = getOperatorDispatch(detected.operator);
@@ -194,6 +201,7 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
     );
 
     if (raw instanceof ThrowCompletion) {
+      thrownText = describeValue(raw.Value, realm);
       return raw;
     }
     const rawValue = raw instanceof NormalCompletion ? raw.Value : (raw as Value);
@@ -204,6 +212,9 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
 
   if (parseError) {
     return { success: false, functionName: "BinaryExpression", error: parseError };
+  }
+  if (thrownText) {
+    return { success: false, functionName: "BinaryExpression", error: thrownText, effectiveAlgoId, detectedOperator };
   }
 
   return finishTrace("BinaryExpression", evalResult, inputTrace, { effectiveAlgoId, detectedOperator });

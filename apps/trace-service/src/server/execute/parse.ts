@@ -1,5 +1,10 @@
 import { evalQ, inspect, NormalCompletion, ThrowCompletion, type ManagedRealm, type Value } from "../../trace/index.mts";
-import { SUPPORTED_OPERATORS, type SupportedOperator } from "../operations.ts";
+import {
+  ADDITIVE_OPERATORS,
+  EQUALITY_OPERATORS,
+  RELATIONAL_OPERATORS,
+  type SupportedOperator,
+} from "../operations.ts";
 
 /**
  * Turning request text into something executable: finding the operator in a
@@ -8,15 +13,75 @@ import { SUPPORTED_OPERATORS, type SupportedOperator } from "../operations.ts";
  * module's.
  */
 
-/**
- * Scan `input` (top-level, ignoring strings & balanced brackets) and return the
- * leftmost supported operator. Returns null if none found.
- */
+const OPERAND_EXPECTED = /[+\-*/%<>=!&|^~([{,:?;]/;
+
+const WORD_UNARY = new Set(["typeof", "void", "delete", "new", "in", "instanceof", "await", "yield"]);
+
+const IDENT_CHAR = /[A-Za-z0-9_$]/;
+
+function isUnaryPosition(input: string, index: number): boolean {
+  let i = index - 1;
+  while (i >= 0 && /\s/.test(input[i])) i--;
+  if (i < 0) return true;
+
+  const prev = input[i];
+  if (OPERAND_EXPECTED.test(prev)) return true;
+
+  if (prev === "e" || prev === "E") {
+    let j = i - 1;
+    const digitsStart = j;
+    while (j >= 0 && /[\d_]/.test(input[j])) j--;
+    if (j >= 0 && input[j] === ".") {
+      j--;
+      while (j >= 0 && /[\d_]/.test(input[j])) j--;
+    }
+    const sawDigits = j < digitsStart;
+    const tokenStartsHere = j < 0 || !IDENT_CHAR.test(input[j]);
+    if (sawDigits && tokenStartsHere) return true;
+  }
+
+  if (!/[A-Za-z_$]/.test(prev)) return false;
+
+  let start = i;
+  while (start >= 0 && IDENT_CHAR.test(input[start])) start--;
+  return WORD_UNARY.has(input.slice(start + 1, i + 1));
+}
+
+const firstChars = (operators: readonly string[]) => new Set(operators.map((op) => op[0]));
+const EQUALITY_FIRST = firstChars(EQUALITY_OPERATORS);
+const RELATIONAL_FIRST = firstChars(RELATIONAL_OPERATORS);
+const ADDITIVE_FIRST = firstChars(ADDITIVE_OPERATORS);
+
+function skipRegexLiteral(input: string, index: number): number {
+  let i = index + 1;
+  let inClass = false;
+  while (i < input.length) {
+    const ch = input[i];
+    if (ch === "\\") {
+      i += 2;
+      continue;
+    }
+    if (ch === "[") inClass = true;
+    else if (ch === "]") inClass = false;
+    else if (ch === "/" && !inClass) {
+      i++;
+      break;
+    }
+    i++;
+  }
+  while (i < input.length && /[a-z]/i.test(input[i])) i++;
+  return i;
+}
+
 export function detectOperator(input: string): { operator: SupportedOperator; index: number } | null {
   const len = input.length;
   let i = 0;
   let inString: '"' | "'" | "`" | null = null;
   let depth = 0;
+  let equality: { operator: SupportedOperator; index: number } | null = null;
+  let relational: { operator: SupportedOperator; index: number } | null = null;
+  let additive: { operator: SupportedOperator; index: number } | null = null;
+
   while (i < len) {
     const ch = input[i];
     if (inString) {
@@ -31,6 +96,10 @@ export function detectOperator(input: string): { operator: SupportedOperator; in
     if (ch === '"' || ch === "'" || ch === "`") {
       inString = ch;
       i++;
+      continue;
+    }
+    if (ch === "/" && isUnaryPosition(input, i)) {
+      i = skipRegexLiteral(input, i);
       continue;
     }
     if (ch === "(" || ch === "[" || ch === "{") {
@@ -49,18 +118,35 @@ export function detectOperator(input: string): { operator: SupportedOperator; in
         i += 2;
         continue;
       }
-      for (const op of SUPPORTED_OPERATORS) {
-        if (input.startsWith(op, i)) {
-          // Avoid matching "<" inside "<<" / "<=" already-handled prefix cases:
-          // Operators in SUPPORTED_OPERATORS are sorted longest-first, so "==" only
-          // matches when not followed by "=".
-          return { operator: op, index: i };
+      if (EQUALITY_FIRST.has(ch)) {
+        const op = EQUALITY_OPERATORS.find((candidate) => input.startsWith(candidate, i));
+        if (op) {
+          equality = { operator: op, index: i };
+          i += op.length;
+          continue;
+        }
+      }
+      if (RELATIONAL_FIRST.has(ch)) {
+        const op = RELATIONAL_OPERATORS.find((candidate) => input.startsWith(candidate, i));
+        if (op) {
+          relational = { operator: op, index: i };
+          i += op.length;
+          continue;
+        }
+      }
+      if (ADDITIVE_FIRST.has(ch) && input[i + 1] !== ch && !isUnaryPosition(input, i)) {
+        const op = ADDITIVE_OPERATORS.find((candidate) => input.startsWith(candidate, i));
+        if (op) {
+          additive = { operator: op, index: i };
+          i += op.length;
+          continue;
         }
       }
     }
     i++;
   }
-  return null;
+
+  return equality ?? relational ?? additive;
 }
 
 /**

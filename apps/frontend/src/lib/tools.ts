@@ -48,7 +48,7 @@ export const tools: Tool[] = [
   {
     href: "/equality",
     label: "Equality Operators",
-    description: "Trace == and === through the abstract comparison algorithms, step by step.",
+    description: "Trace ==, ===, relational comparison and + through the spec algorithms, step by step.",
     group: "spec",
     kind: "spec",
     priority: 0.8,

@@ -418,6 +418,50 @@
   </emu-alg>
 </emu-clause>
 
+<emu-clause id="ApplyStringOrNumericBinaryOperator" aoid="ApplyStringOrNumericBinaryOperator" type="abstract operation">
+  <h1>
+    ApplyStringOrNumericBinaryOperator (
+      _lval_: an ECMAScript language value,
+      _opText_: a sequence of Unicode code points,
+      _rval_: an ECMAScript language value,
+    )
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Applies a binary operator to two operands, choosing between string concatenation and numeric arithmetic for `+`.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="ApplyStringOrNumericBinaryOperator-step-1"] If _opText_ is *+*, then
+      1. [id="ApplyStringOrNumericBinaryOperator-step-1a"] Let _lprim_ be ? ToPrimitive(_lval_).
+      1. [id="ApplyStringOrNumericBinaryOperator-step-1b"] Let _rprim_ be ? ToPrimitive(_rval_).
+      1. [id="ApplyStringOrNumericBinaryOperator-step-1c"] If _lprim_ is a String or _rprim_ is a String, then
+        1. [id="ApplyStringOrNumericBinaryOperator-step-1c-i"] Let _lstr_ be ? ToString(_lprim_).
+        1. [id="ApplyStringOrNumericBinaryOperator-step-1c-ii"] Let _rstr_ be ? ToString(_rprim_).
+        1. [id="ApplyStringOrNumericBinaryOperator-step-1c-iii"] Return the string-concatenation of _lstr_ and _rstr_.
+      1. [id="ApplyStringOrNumericBinaryOperator-step-1d"] Set _lval_ to _lprim_.
+      1. [id="ApplyStringOrNumericBinaryOperator-step-1e"] Set _rval_ to _rprim_.
+    1. [id="ApplyStringOrNumericBinaryOperator-step-2"] NOTE: At this point, it must be a numeric operation.
+    1. [id="ApplyStringOrNumericBinaryOperator-step-3"] Let _lnum_ be ? ToNumeric(_lval_).
+    1. [id="ApplyStringOrNumericBinaryOperator-step-4"] Let _rnum_ be ? ToNumeric(_rval_).
+    1. [id="ApplyStringOrNumericBinaryOperator-step-5"] If Type(_lnum_) is not Type(_rnum_), throw a *TypeError* exception.
+    1. [id="ApplyStringOrNumericBinaryOperator-step-6"] Return the result of applying the operation named by _opText_ to _lnum_ and _rnum_.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="BigInt::add" type="abstract operation">
+  <h1>
+    BigInt::add (
+      _x_: a BigInt,
+      _y_: a BigInt,
+    ): a BigInt
+  </h1>
+  <dl class="header">
+    <dt>description</dt><dd>Returns the BigInt value that represents the sum of _x_ and _y_. BigInt arithmetic is exact, so there is no rounding step and no NaN.</dd>
+  </dl>
+  <emu-alg>
+    1. [id="BigInt::add-step-1"] Return the BigInt value that represents the sum of _x_ and _y_.
+  </emu-alg>
+</emu-clause>
+
 <emu-clause id="Number::equal" type="abstract operation">
   <h1>
     Number::equal (

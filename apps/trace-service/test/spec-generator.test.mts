@@ -4,7 +4,9 @@
  * function the service can trace also has spec HTML to show beside the trace,
  * and that a clause carries the id and outbound link the UI depends on.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { executeBinaryExpression } from "../src/server/execute/index.ts";
 import { ALGO_SPEC_URL, buildSpecHtmlForFunction } from "../src/server/spec-generator.ts";
 import { AVAILABLE_FUNCTIONS, SUPPORTED_SPEC_FUNCTIONS } from "../src/server/operations.ts";
 
@@ -76,5 +78,39 @@ describe("buildSpecHtmlForFunction", () => {
 
   it("returns null for a function it has no algorithm list for", async () => {
     expect(await buildSpecHtmlForFunction("NotAnOperation")).toBeNull();
+  });
+});
+
+describe("step anchors", () => {
+  const extractStepId = (hint: string | undefined): string | null => {
+    const m = hint?.match(/^Step (\d+(?:[a-z](?:-[a-zA-Z0-9]+)?)?)/i);
+    return m ? m[1] : null;
+  };
+
+  const specHtml = readFileSync(new URL("../src/server/ecma-spec.html", import.meta.url), "utf8");
+
+  type Node = { algoId?: string; steps?: Array<{ hint?: string; algoId?: string; steps?: unknown }> };
+
+  const collect = (node: Node | undefined, into: Array<[string, string]>): void => {
+    const algoId = node?.algoId;
+    for (const step of node?.steps ?? []) {
+      const stepId = extractStepId(step.hint);
+      if (algoId && stepId) into.push([algoId, stepId]);
+      collect(step as Node, into);
+    }
+  };
+
+  it.each([["[] + {}"], ["1n + 2n"], ["[] == ![]"]])("resolves every step hint of %s to a clause id", async (expression) => {
+    const result = await executeBinaryExpression(expression);
+    expect(result.success).toBe(true);
+
+    const pairs: Array<[string, string]> = [];
+    collect(result.root as Node, pairs);
+    expect(pairs.length).toBeGreaterThan(0);
+
+    for (const [algoId, stepId] of pairs) {
+      if (!specHtml.includes(`"${algoId}-step-`)) continue;
+      expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(`"${algoId}-step-${stepId}"`);
+    }
   });
 });

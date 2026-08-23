@@ -1,5 +1,6 @@
 import {
   AbstractRelationalComparison,
+  ApplyStringOrNumericBinaryOperator,
   IsLooselyEqual,
   IsStrictlyEqual,
   ToBoolean,
@@ -150,6 +151,19 @@ export const BINARY_ALGORITHMS = {
       })(),
     algos: ["IsStrictlyEqual", "SameValueNonNumber", "Number::equal"],
   },
+  ApplyStringOrNumericBinaryOperator: {
+    call: (lhs, rhs) => ApplyStringOrNumericBinaryOperator(lhs, "+", rhs),
+    algos: [
+      "ApplyStringOrNumericBinaryOperator",
+      ...TO_PRIMITIVE_CHAIN,
+      "ToString",
+      "Number::toString",
+      "ToNumeric",
+      "ToNumber",
+      "Number::add",
+      "BigInt::add",
+    ],
+  },
   AbstractRelationalComparison: {
     call: (lhs, rhs, leftFirst) => AbstractRelationalComparison(lhs, rhs, leftFirst),
     algos: [
@@ -178,7 +192,13 @@ export function callBinaryAlgorithm(
  * Operators the BinaryExpression entry point accepts.
  * Order matters: longer operators MUST come first so "===" is matched before "==".
  */
-export const SUPPORTED_OPERATORS = ["===", "!==", "==", "!=", "<=", ">=", "<", ">"] as const;
+export const EQUALITY_OPERATORS = ["===", "!==", "==", "!="] as const;
+export const RELATIONAL_OPERATORS = ["<=", ">=", "<", ">"] as const;
+export const ADDITIVE_OPERATORS = ["+"] as const;
+
+export const COMPARISON_OPERATORS = [...EQUALITY_OPERATORS, ...RELATIONAL_OPERATORS] as const;
+
+export const SUPPORTED_OPERATORS = [...COMPARISON_OPERATORS, ...ADDITIVE_OPERATORS] as const;
 export type SupportedOperator = (typeof SUPPORTED_OPERATORS)[number];
 
 export interface OperatorDispatch {
@@ -200,6 +220,9 @@ function transformIdentity(raw: Value): Value {
 function transformNegate(raw: Value): Value {
   // For !=, !==: raw is Boolean.
   return raw === Value.true ? Value.false : Value.true;
+}
+function transformRaw(raw: Value): Value {
+  return raw;
 }
 function transformLessOrEqual(raw: Value): Value {
   // For <=, >=: raw is BooleanValue | UndefinedValue. undefined OR true → false; else true.
@@ -228,6 +251,8 @@ export function getOperatorDispatch(operator: SupportedOperator): OperatorDispat
     case ">=":
       // a >= b ≡ !(a < b) treating undefined as false
       return { algoName: "AbstractRelationalComparison", swap: false, leftFirst: true, transform: transformLessOrEqual };
+    case "+":
+      return { algoName: "ApplyStringOrNumericBinaryOperator", swap: false, leftFirst: true, transform: transformRaw };
   }
 }
 
@@ -259,8 +284,10 @@ const BINARY_EXPRESSION_ALGOS = [
   "IsLooselyEqual",
   "IsStrictlyEqual",
   "AbstractRelationalComparison",
+  "ApplyStringOrNumericBinaryOperator",
   "SameValueNonNumber",
   "Number::equal",
+  "BigInt::add",
   "Number::lessThan",
   ...NUMERIC_OPERATIONS,
   ...TO_PRIMITIVE_CHAIN,

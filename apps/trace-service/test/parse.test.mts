@@ -30,8 +30,51 @@ describe("detectOperator", () => {
     expect(detectOperator("1 >= 2")?.operator).toBe(">=");
   });
 
-  it("returns the leftmost operator when there are several", () => {
-    expect(detectOperator("1 < 2 == true")?.operator).toBe("<");
+  it("splits on the loosest-binding tier, not on the leftmost operator", () => {
+    const input = "1 < 2 == true";
+    const found = detectOperator(input)!;
+    expect(found.operator).toBe("==");
+    expect(input.slice(0, found.index).trim()).toBe("1 < 2");
+  });
+
+  it("splits a chain on its last operator, because these are left-associative", () => {
+    const chain = '"a" + 1 + 2';
+    const additive = detectOperator(chain)!;
+    expect(additive.operator).toBe("+");
+    expect(chain.slice(0, additive.index).trim()).toBe('"a" + 1');
+    expect(chain.slice(additive.index + 1).trim()).toBe("2");
+
+    const equalities = "1 == 1 == true";
+    const found = detectOperator(equalities)!;
+    expect(equalities.slice(0, found.index).trim()).toBe("1 == 1");
+  });
+
+  it("keeps the + of an exponent out of the split", () => {
+    expect(detectOperator("1e+5")).toBeNull();
+    const input = "1e+5 + 1";
+    const found = detectOperator(input)!;
+    expect(input.slice(0, found.index).trim()).toBe("1e+5");
+    expect(detectOperator("x1e + 5")?.index).toBe(4);
+  });
+
+  it("treats a + after a word-shaped unary operator as unary", () => {
+    expect(detectOperator("typeof +1")).toBeNull();
+    expect(detectOperator("void +1")).toBeNull();
+    const input = "typeof {} + \"!\"";
+    expect(input.slice(0, detectOperator(input)!.index).trim()).toBe("typeof {}");
+  });
+
+  it("ignores an operator inside a regex literal", () => {
+    expect(detectOperator("/a+b/")).toBeNull();
+    const input = "/a+b/.source + \"!\"";
+    expect(input.slice(0, detectOperator(input)!.index).trim()).toBe("/a+b/.source");
+  });
+
+  it("scans a long expression without a top-level operator in linear time", () => {
+    const long = "f(" + "a + ".repeat(5_000) + "b)";
+    const started = performance.now();
+    expect(detectOperator(long)).toBeNull();
+    expect(performance.now() - started).toBeLessThan(50);
   });
 
   it("reports an index the caller can split the operands on", () => {

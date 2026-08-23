@@ -22,6 +22,19 @@ import {
 } from "../src/server/operations.ts";
 import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
 
+
+function findStep(
+  node: { steps?: Array<{ algoId?: string; specUrl?: string }> } | undefined,
+  predicate: (step: { algoId?: string; specUrl?: string }) => boolean,
+): { algoId?: string; specUrl?: string } | undefined {
+  for (const step of node?.steps ?? []) {
+    if (predicate(step)) return step;
+    const nested = findStep(step as { steps?: Array<{ algoId?: string; specUrl?: string }> }, predicate);
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
 describe("operations registry", () => {
   it("advertises exactly the operations it can dispatch", () => {
     expect(AVAILABLE_FUNCTIONS).toEqual(Object.keys(UNARY_OPERATIONS));
@@ -73,8 +86,71 @@ describe("execute", () => {
   });
 
   it("explains an expression with no operator instead of throwing", async () => {
-    const result = await executeBinaryExpression("1 + 1");
+    const result = await executeBinaryExpression("42");
     expect(result.success).toBe(false);
     expect(result.error).toContain("Expected a binary expression");
+    for (const operator of SUPPORTED_OPERATORS) expect(result.error).toContain(operator);
+  });
+
+  it("traces the concatenation branch of +", async () => {
+    const result = await executeBinaryExpression("[] + {}");
+    expect(result.success).toBe(true);
+    expect(result.detectedOperator).toBe("+");
+    expect(result.effectiveAlgoId).toBe("ApplyStringOrNumericBinaryOperator");
+    expect(result.result).toMatchObject({ type: "String", value: "[object Object]" });
+    expect(JSON.stringify(result.root)).toContain("ApplyStringOrNumericBinaryOperator");
+  });
+
+  it("adds when neither side becomes a String", async () => {
+    const result = await executeBinaryExpression("1 + true");
+    expect(result.success).toBe(true);
+    expect(result.result).toMatchObject({ type: "Number", value: 2 });
+  });
+
+  it("traces a chain the way JavaScript associates it", async () => {
+    const result = await executeBinaryExpression('"a" + 1 + 2');
+    expect(result.success).toBe(true);
+    expect(result.result).toMatchObject({ type: "String", value: "a12" });
+
+    const numericFirst = await executeBinaryExpression('1 + 2 + "3"');
+    expect(numericFirst.result).toMatchObject({ type: "String", value: "33" });
+  });
+
+  it("gives the BigInt branch a frame of its own", async () => {
+    const result = await executeBinaryExpression("1n + 2n");
+    expect(result.success).toBe(true);
+    expect(result.result).toMatchObject({ type: "BigInt", value: "3" });
+    const bigIntStep = findStep(result.root, (step) => step.algoId === "BigInt::add");
+    expect(bigIntStep, "no BigInt::add frame in the trace").toBeDefined();
+    expect(bigIntStep?.specUrl).toBeDefined();
+  });
+
+  it("refuses to mix BigInt and Number, at the step that says so", async () => {
+    const result = await executeBinaryExpression("1n + 1");
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("BigInt");
+  });
+
+  it("does not leak one expression's trace into the next through a shared literal", async () => {
+    const failed = await executeBinaryExpression("true + Symbol()");
+    expect(failed.success).toBe(false);
+
+    const next = await executeBinaryExpression("true == 1");
+    expect(next.success).toBe(true);
+    expect(next.root?.algoId).toBe("IsLooselyEqual");
+    expect(JSON.stringify(next.root)).not.toContain("ApplyStringOrNumericBinaryOperator");
+  });
+
+  it("splits on the comparison, not on the + that binds tighter", async () => {
+    const result = await executeBinaryExpression("1 + 2 == 3");
+    expect(result.success).toBe(true);
+    expect(result.detectedOperator).toBe("==");
+    expect(result.result).toMatchObject({ type: "Boolean", value: true });
+  });
+
+  it("does not split on a unary +", async () => {
+    const result = await executeBinaryExpression("+1 == 1");
+    expect(result.success).toBe(true);
+    expect(result.detectedOperator).toBe("==");
   });
 });

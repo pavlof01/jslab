@@ -6,7 +6,7 @@ import { getVisualizerInitialData } from "@/app/abstract-functions-visualizer/se
 export const metadata: Metadata = {
   title: "Equality Operators Visualizer",
   description:
-    "Step through ECMAScript abstract (==) and strict (===) equality comparisons one spec step at a time.",
+    "Step through ECMAScript abstract (==) and strict (===) equality, relational comparison, and the + operator one spec step at a time.",
   alternates: {
     canonical: "/equality",
   },

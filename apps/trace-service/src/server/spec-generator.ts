@@ -37,8 +37,11 @@ export const ALGO_SPEC_URL: Record<string, string> = {
   IsLooselyEqual: "https://262.ecma-international.org/#sec-islooselyequal",
   IsStrictlyEqual: "https://262.ecma-international.org/#sec-isstrictlyequal",
   AbstractRelationalComparison: "https://262.ecma-international.org/#sec-abstract-relational-comparison",
+  ApplyStringOrNumericBinaryOperator:
+    "https://262.ecma-international.org/#sec-applystringornumericbinaryoperator",
   SameType: "https://262.ecma-international.org/#sec-sametype",
   SameValueNonNumber: "https://262.ecma-international.org/#sec-samevaluenonnumber",
+  "BigInt::add": "https://262.ecma-international.org/#sec-numeric-types-bigint-add",
   "Number::equal": "https://262.ecma-international.org/#sec-numeric-types-number-equal",
   "Number::lessThan": "https://262.ecma-international.org/#sec-numeric-types-number-lessThan",
   "Number::sameValue": "https://262.ecma-international.org/#sec-numeric-types-number-sameValue",
