@@ -1,14 +1,18 @@
 # 🧩 JSLab — JavaScript Engine Bytecode Explorer
 
-**JSLab.su** is an experimental platform for visualizing and comparing  
+**JSLab.su** is an experimental platform for visualizing  
 how different JavaScript engines (V8, SpiderMonkey, JavaScriptCore, Hermes)  
 parse, compile, and optimize your code under the hood.
 
 The site lets you:
 
-- View **AST**, **bytecode**, and **IR** for multiple engines side by side.
+- Run one snippet on V8, SpiderMonkey, JavaScriptCore and Hermes, and read each
+  engine's **bytecode** in its own tab; **AST** and **IR** are V8 flags.
+- Diff a run against the **previous run of the same engine** — the outputs of two
+  different engines are never diffed against each other.
 - Walk the **V8 compilation pipeline** stage by stage, including **deoptimization traces**.
-- Step through **ECMAScript abstract operations** (type conversion, equality) against the spec text.
+- Step through **ECMAScript abstract operations** (type conversion, equality, and
+  the `+` operator) against the spec text.
 - Share reproducible code snippets — as links or as embeddable widgets — for educational or research purposes.
 
 Uploading and visualizing engine logs (`v8.log`) is on the roadmap, not shipped
@@ -80,7 +84,7 @@ a place to experiment, learn, and visualize the internals of modern JIT compiler
 Goals:
 
 1. Provide a visual way to understand how JavaScript is executed.
-2. Compare bytecode and optimization stages across engines.
+2. Show the bytecode each engine emits, and V8's optimization stages.
 3. Serve as an educational and research platform for JS internals.
 
 ---

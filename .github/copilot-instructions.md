@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**JSLab** is a multi-service platform for visualizing and comparing JavaScript engine internals (V8, SpiderMonkey, JavaScriptCore, Hermes). The architecture follows a microservices pattern with isolated engine services, a Fastify API gateway, and a Next.js frontend UI.
+**JSLab** is a multi-service platform for visualizing JavaScript engine internals (V8, SpiderMonkey, JavaScriptCore, Hermes). The architecture follows a microservices pattern with isolated engine services, a Fastify API gateway, and a Next.js frontend UI.
 
 ### Service Architecture
 
@@ -132,7 +132,7 @@ See [apps/frontend/src/store/useEngineOutputs.ts](../apps/frontend/src/store/use
 - **Shallow selectors**: Use `useShallow()` to avoid unnecessary re-renders.
 - **Engine selection**: User can toggle which engines to run in parallel.
 - **Concurrent requests**: All selected engines run simultaneously after user submits code.
-- **Playground component**: User can edit code, select flags (V8 only), compare outputs side-by-side.
+- **Playground component**: User can edit code, select flags per engine, and read each engine's output in its own tab.
 
 ### 4. Configuration Management
 

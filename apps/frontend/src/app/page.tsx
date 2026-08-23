@@ -4,7 +4,7 @@ import LandingPage from "./(landing)/page";
 export const metadata: Metadata = {
   title: "Interactive ECMAScript Explorer",
   description:
-    "Understand JavaScript engine behavior and explore the ECMAScript specification with interactive traces, abstract operation visualizers, and engine comparisons.",
+    "Understand JavaScript engine behavior and explore the ECMAScript specification with interactive traces, abstract operation visualizers, and per-engine bytecode.",
   keywords: [
     "ECMAScript explorer",
     "JavaScript engine internals",
