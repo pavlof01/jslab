@@ -3,7 +3,9 @@
 import { memo, useEffect, useState } from "react";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
-import { Box, BoxProps, Skeleton, Stack } from "@chakra-ui/react";
+import { Box, BoxProps, Stack } from "@chakra-ui/react";
+
+import { LogoLoader } from "@/components/ui";
 
 import DefaultEmptyCodeBlockState, {
   Props as DefaultEmptyCodeBlockStateProps,
@@ -40,8 +42,6 @@ export async function highlight(code: string, lang: BundledLanguage | BytecodeLa
 
   return { tokens: diffTokens, highlighter };
 }
-
-const SKELETON_LINE_WIDTHS = ["45%", "72%", "60%", "80%", "38%", "66%"];
 
 interface Props {
   engineKey: EngineKey;
@@ -87,10 +87,8 @@ export const HighlightedCode = memo(function HighlightedCode({
 
   if (isLoading) {
     return (
-      <Stack flex={1} gap={2} p={4} aria-busy="true" aria-label="Running engine">
-        {SKELETON_LINE_WIDTHS.map((width) => (
-          <Skeleton key={width} height="12px" width={width} />
-        ))}
+      <Stack flex={1} align="center" justify="center" p={6} aria-busy="true" aria-label="Running engine">
+        <LogoLoader size={64} />
       </Stack>
     );
   }

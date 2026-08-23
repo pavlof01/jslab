@@ -7,6 +7,7 @@ import { LuExternalLink } from "react-icons/lu";
 
 import { EditorPanel } from "@/components/EditorPanel";
 import { OutputsPanel } from "@/components/OutputsPanel";
+import { LogoLoader } from "@/components/ui";
 import { enabledEngines, RunStatus } from "@/lib/types";
 import {
   useCode,
@@ -52,7 +53,13 @@ export default function EmbedPlaygroundClient() {
           JSLab
         </Text>
         <Flex gap={2} align="center">
-          <Button size="xs" onClick={run} loading={status === RunStatus.running} loadingText="Running">
+          <Button
+            size="xs"
+            onClick={run}
+            loading={status === RunStatus.running}
+            loadingText="Running"
+            spinner={<LogoLoader size={12} />}
+          >
             <CiPlay1 /> Run
           </Button>
           <Link

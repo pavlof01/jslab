@@ -14,10 +14,10 @@ export const FooterSection: React.FC = () => {
           <Box maxW="52ch">
             <Flex align="center" gap={{ base: 3, md: "18px" }}>
               <Image
-                src="/jslab-mark.png"
+                src="/jslab-logo.svg"
                 alt=""
-                width={227}
-                height={256}
+                width={99}
+                height={100}
                 unoptimized
                 style={{ display: "block", height: "clamp(56px, 6vw, 84px)", width: "auto" }}
               />

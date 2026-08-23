@@ -7,16 +7,16 @@ export const Logo = () => {
     <Link href="/">
       <Box cursor="pointer" _hover={{ opacity: 0.9 }}>
         {/*
-          The file is 963×1085, not square. Declaring 40×40 squashed it, and
-          Chakra's preflight (`img { height: auto }`) overrode the height while
-          the width stood — which is what Next was warning about. Declare the
-          real ratio and pin the height the bar actually gives it.
+          Animated SVG mark (SMIL) — it animates inside a plain <img>, and
+          `unoptimized` keeps the Next image optimizer from touching the SVG.
+          The mark is 1000×1010; pin the height the bar gives it.
         */}
         <Image
-          src="/jslab-logo-transparent.png"
+          src="/jslab-logo.svg"
           alt="JSLab"
-          width={36}
-          height={40}
+          width={99}
+          height={100}
+          unoptimized
           style={{ width: "auto", height: 32 }}
           priority
         />

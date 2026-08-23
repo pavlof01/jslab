@@ -5,6 +5,7 @@ import { Box, Button, Flex, Splitter, Tabs, Text, useBreakpointValue } from "@ch
 import { CiPlay1 } from "react-icons/ci";
 
 import { EditorPanel } from "@/components/EditorPanel";
+import { LogoLoader } from "@/components/ui";
 import { STAGES, type ApiStageId, type StageId } from "../lib/stages";
 import { usePipelineRun } from "../lib/usePipelineRun";
 import { StageContent } from "./StageContent";
@@ -50,7 +51,15 @@ export default function PipelineClient() {
         <Text fontSize="sm" fontWeight="700" color="ink.label" letterSpacing="0.04em">
           V8 Compilation Pipeline
         </Text>
-        <Button size="sm" w={28} onClick={analyze} loading={running} loadingText="Running" disabled={running}>
+        <Button
+          size="sm"
+          w={28}
+          onClick={analyze}
+          loading={running}
+          loadingText="Running"
+          disabled={running}
+          spinner={<LogoLoader size={14} />}
+        >
           <CiPlay1 /> Run
         </Button>
       </Flex>

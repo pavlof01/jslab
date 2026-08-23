@@ -1,8 +1,10 @@
 "use client";
 
 import { Fragment } from "react";
-import { Box, Flex, Spinner, Status, Tabs, Text, VStack } from "@chakra-ui/react";
+import { Box, Flex, Status, Tabs, Text, VStack } from "@chakra-ui/react";
 import { FaLongArrowAltRight } from "react-icons/fa";
+
+import { LogoLoader } from "@/components/ui";
 
 import { STAGES } from "../lib/stages";
 import type { StageStatus } from "../lib/usePipelineRun";
@@ -43,7 +45,7 @@ function StageIndicator({ status }: { status: StageStatus }) {
 
   return (
     <Status.Root>
-      {status === "loading" ? <Spinner size="xs" color="accent" /> : null}
+      {status === "loading" ? <LogoLoader size={14} /> : null}
       {color ? <Status.Indicator bg={color} /> : null}
     </Status.Root>
   );
