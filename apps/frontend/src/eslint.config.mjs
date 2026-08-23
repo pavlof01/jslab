@@ -4,7 +4,7 @@ const config = [
   {
     // scripts/ holds standalone Node build/dump scripts, not the Next app —
     // their `useX` helpers trip the React hooks rules. .next is generated.
-    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "scripts/**"],
+    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "scripts/**", "coverage/**"],
   },
   ...next,
   {
