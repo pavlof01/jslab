@@ -1,0 +1,34 @@
+name: codeql
+
+# Static analysis for a public repo that executes untrusted user JavaScript:
+# free on public repos, and the security tab is where its findings land.
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "0 5 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # The vendored spec fork is upstream's code, not ours to triage.
+          config: |
+            paths-ignore:
+              - apps/trace-service/engine262
+      - uses: github/codeql-action/analyze@v3
