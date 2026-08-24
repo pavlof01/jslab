@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PlaygroundPage } from "../helpers/playground";
+import { PlaygroundPage, runMessage } from "../helpers/playground";
 
 test.describe("playground: flags", () => {
   test("shows a picker for V8 and reports how many flags are selected", async ({ page }) => {
@@ -43,6 +43,6 @@ test.describe("playground: flags", () => {
     await pg.setCode("1 + 1");
     await pg.run();
 
-    await expect(page.getByText(/ignored by this engine: --totally-made-up/)).toBeVisible();
+    await expect(runMessage(page, /ignored by this engine: --totally-made-up/)).toBeVisible();
   });
 });

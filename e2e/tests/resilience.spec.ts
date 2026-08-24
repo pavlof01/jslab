@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PlaygroundPage } from "../helpers/playground";
+import { PlaygroundPage, runMessage } from "../helpers/playground";
 
 test.describe("failure handling", () => {
   test("shows a readable wait instead of engine output when rate limited", async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe("failure handling", () => {
     await pg.setCode("1 + 1");
     await pg.runButton.click();
 
-    await expect(page.getByText("Too many runs — the rate limit kicked in. Try again in 7 seconds.")).toBeVisible();
+    await expect(runMessage(page, "Too many runs — the rate limit kicked in. Try again in 7 seconds.")).toBeVisible();
   });
 
   test("explains an unreachable gateway", async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe("failure handling", () => {
     await pg.setCode("1 + 1");
     await pg.runButton.click();
 
-    await expect(page.getByText(/Could not reach the engine service/)).toBeVisible();
+    await expect(runMessage(page, /Could not reach the engine service/)).toBeVisible();
   });
 
   test("explains a gateway that answers with something unreadable", async ({ page }) => {
@@ -37,7 +37,7 @@ test.describe("failure handling", () => {
     await pg.setCode("1 + 1");
     await pg.runButton.click();
 
-    await expect(page.getByText(/Run failed \(HTTP 200\)/)).toBeVisible();
+    await expect(runMessage(page, /Run failed \(HTTP 200\)/)).toBeVisible();
   });
 
   test("warns when the engine truncated its own output", async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe("failure handling", () => {
     await pg.setCode("1 + 1");
     await pg.runButton.click();
 
-    await expect(page.getByText("Output hit the size cap and is truncated.")).toBeVisible();
+    await expect(runMessage(page, "Output hit the size cap and is truncated.")).toBeVisible();
   });
 
   test("still renders the visualizer when its trace service is down", async ({ page }) => {

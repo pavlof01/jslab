@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PlaygroundPage, V8_BYTECODE } from "../helpers/playground";
+import { PlaygroundPage, runMessage, V8_BYTECODE } from "../helpers/playground";
 
 test.describe("playground: run history", () => {
   test("starts empty and explains itself", async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe("playground: run history", () => {
     const pg = await PlaygroundPage.open(page);
     await pg.setCode("   ");
     await pg.runButton.click();
-    await expect(page.getByText("Nothing to run — the editor is empty.")).toBeVisible();
+    await expect(runMessage(page, "Nothing to run — the editor is empty.")).toBeVisible();
 
     await pg.historyButton.click();
     await expect(page.getByText(/no runs yet/i)).toBeVisible();

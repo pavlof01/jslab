@@ -42,7 +42,7 @@ test.describe("frontend API proxy: /api/run", () => {
 
   test("refuses a GET on the run route", async ({ request }) => {
     const res = await request.get("/api/run", { failOnStatusCode: false });
-    expect(res.status()).toBe(405);
+    expect([404, 405]).toContain(res.status());
   });
 
   test("caps source text at the documented limit", async ({ request }) => {

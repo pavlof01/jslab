@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { shareUrl } from "./share";
 
 export class PlaygroundPage {
   constructor(readonly page: Page) {}
@@ -7,6 +8,14 @@ export class PlaygroundPage {
     const pg = new PlaygroundPage(page);
     await page.goto("/playground");
     await pg.editorReady();
+    return pg;
+  }
+
+  static async openWith(page: Page, code: string, engines: string[] = ["v8"]): Promise<PlaygroundPage> {
+    const pg = new PlaygroundPage(page);
+    await page.goto(shareUrl(code, engines, { v8: ["--print-bytecode", "--allow-natives-syntax"] }));
+    await pg.editorReady();
+    if (code.trim()) await expect(pg.editor).toContainText(code.trim().slice(0, 24), { timeout: 20_000 });
     return pg;
   }
 
@@ -20,10 +29,12 @@ export class PlaygroundPage {
   }
 
   async setCode(code: string): Promise<void> {
-    await this.editor.click();
+    const lines = this.page.locator(".monaco-editor .view-lines").first();
+    await expect(lines).toBeVisible({ timeout: 20_000 });
+    await lines.click();
     await this.page.keyboard.press("ControlOrMeta+A");
-    await this.page.keyboard.press("Delete");
     await this.page.keyboard.type(code);
+    await expect(this.editor).toContainText(code.trim().slice(0, 24), { timeout: 15_000 });
   }
 
   async codeText(): Promise<string> {
@@ -40,8 +51,20 @@ export class PlaygroundPage {
   }
 
   async runWithKeyboard(): Promise<void> {
-    await this.editor.click();
-    await this.page.keyboard.press("ControlOrMeta+Enter");
+    await this.page.locator(".monaco-editor .view-lines").first().click();
+    await this.page.locator(".monaco-editor textarea").first().focus();
+
+    await expect
+      .poll(
+        async () => {
+          await this.page.keyboard.press("ControlOrMeta+Enter");
+          await this.page.waitForTimeout(1200);
+          return (await this.announcer.innerText()).trim().length > 0;
+        },
+        { timeout: 20_000, intervals: [400, 900, 1400] },
+      )
+      .toBe(true);
+
     await this.waitForRunToSettle();
   }
 
@@ -109,5 +132,7 @@ export class PlaygroundPage {
     return this.page.locator('[role="status"][aria-live="polite"]');
   }
 }
+
+export const runMessage = (page: Page, text: string | RegExp): Locator => page.getByText(text).last();
 
 export const V8_BYTECODE = /Ldar|Star|Return|Add|LdaSmi|CallUndefinedReceiver/;
