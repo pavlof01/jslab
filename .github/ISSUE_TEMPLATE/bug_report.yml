@@ -1,0 +1,31 @@
+name: Bug report
+description: Something on jslab.su or in the codebase does not behave as documented
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+      placeholder: Ran `[] + {}` on /equality and the trace showed …
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: URL on jslab.su, or the service/package for a code issue.
+      placeholder: https://jslab.su/playground
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest snippet or request that shows the problem.
+      render: text
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Browser + OS for site issues; node --version for local ones.
