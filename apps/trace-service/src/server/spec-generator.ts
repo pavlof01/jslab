@@ -142,7 +142,8 @@ export async function buildSpecHtmlForFunction(functionName: string): Promise<st
   const algoIds = FUNCTION_ALGOS[functionName];
   if (!algoIds) return null;
 
-  if (!IS_DEV && _cache.has(functionName)) return _cache.get(functionName)!;
+  const cached = IS_DEV ? undefined : _cache.get(functionName);
+  if (cached !== undefined) return cached;
 
   const clauses = await getClauseById();
   const html = algoIds

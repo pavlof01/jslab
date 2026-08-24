@@ -22,9 +22,13 @@ const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey }) => {
   const style: CSSProperties = {
     color: token.color ?? "inherit",
     whiteSpace: "pre",
-    ...FONT_STYLES.reduce(
-      (acc, [bit, css]) => (token.fontStyle && token.fontStyle & bit ? { ...acc, ...css } : acc),
+    // Merged, not accumulated: a reduce that spreads its accumulator builds a
+    // fresh object per bit.
+    ...Object.assign(
       {} as CSSProperties,
+      ...FONT_STYLES.filter(([bit]) => token.fontStyle && token.fontStyle & bit).map(
+        ([, css]) => css,
+      ),
     ),
   };
 
