@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Refuse to push a superproject commit whose submodule gitlink does not exist on
+# the submodule's own remote. Without this the push succeeds and every workflow
+# then dies in actions/checkout with "upload-pack: not our ref <sha>".
+set -euo pipefail
+
+fail=0
+
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+
+  while read -r mode _type sha path; do
+    [ "$mode" = "160000" ] || continue
+
+    url="$(git config -f .gitmodules --get "submodule.${path}.url" || true)"
+    if [ -z "$url" ]; then
+      echo "pre-push: no .gitmodules entry for ${path}; cannot verify its gitlink." >&2
+      fail=1
+      continue
+    fi
+
+    if ! git -C "$path" cat-file -e "${sha}^{commit}" 2>/dev/null; then
+      echo "pre-push: ${path} gitlink ${sha} is not even in the local submodule." >&2
+      fail=1
+      continue
+    fi
+
+    if git ls-remote --exit-code "$url" 2>/dev/null | awk '{print $1}' | grep -qx "$sha"; then
+      continue
+    fi
+
+    branch="$(git -C "$path" for-each-ref --format='%(refname:short)' --points-at "$sha" refs/heads 2>/dev/null | head -1)"
+    echo "" >&2
+    echo "pre-push: BLOCKED — submodule '${path}' is not pushed." >&2
+    echo "  gitlink : ${sha}" >&2
+    echo "  remote  : ${url}" >&2
+    echo "" >&2
+    echo "  Push the submodule first:" >&2
+    echo "    git -C ${path} push origin ${branch:-<its-branch>}" >&2
+    echo "" >&2
+    echo "  Or let git do it for you from now on:" >&2
+    echo "    git config push.recurseSubmodules on-demand" >&2
+    echo "" >&2
+    fail=1
+  done < <(git ls-tree -r "$local_sha")
+done
+
+exit "$fail"

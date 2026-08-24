@@ -25,6 +25,24 @@ git clone --recurse-submodules https://github.com/pavlof01/jslab.git
 
 Already cloned without it? Run `git submodule update --init --recursive`.
 
+### If you change the submodule
+
+A commit here can point at an engine262 commit that only exists on your machine.
+Pushing that lands a gitlink nobody else can fetch, and every workflow then dies
+in `actions/checkout` with `upload-pack: not our ref <sha>`. Run this once per
+clone so git pushes the submodule for you:
+
+```bash
+git config push.recurseSubmodules on-demand
+git config core.hooksPath .githooks
+```
+
+The first line makes `git push` push `apps/trace-service/engine262` first. The
+second installs `.githooks/pre-push`, which blocks the push outright if a gitlink
+is missing from the submodule's remote and prints the command to fix it. CI
+checks the same thing in the `submodule-gitlinks` job, so a slip is one clear
+red check rather than eight cryptic ones.
+
 ## Quick start
 
 ```bash

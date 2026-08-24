@@ -60,6 +60,33 @@ jobs:
         # CI=true (set by GitHub) makes vitest/jest run once instead of watching.
         run: ${{ matrix.test }}
 
+  submodules:
+    name: submodule-gitlinks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      # submodules: false on purpose — a gitlink that is not on its remote makes
+      # a recursive checkout die with "upload-pack: not our ref", which is the
+      # error this job exists to translate into something actionable.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Every submodule gitlink must exist on its own remote
+        run: |
+          set -euo pipefail
+          status=0
+          while read -r mode _type sha path; do
+            [ "$mode" = "160000" ] || continue
+            url="$(git config -f .gitmodules --get "submodule.${path}.url")"
+            if git ls-remote "$url" | awk '{print $1}' | grep -qx "$sha"; then
+              echo "ok: $path -> $sha"
+            else
+              echo "::error file=.gitmodules::Submodule '$path' points at $sha, which is not on $url. Push that submodule's branch, then push this repo again (git config push.recurseSubmodules on-demand does it automatically)."
+              status=1
+            fi
+          done < <(git ls-tree -r HEAD)
+          exit $status
+
   api-redis:
     name: api-redis
     runs-on: ubuntu-24.04
