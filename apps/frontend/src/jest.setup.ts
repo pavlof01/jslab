@@ -35,3 +35,12 @@ fill("WritableStream", WritableStream);
 fill("TransformStream", TransformStream);
 fill("CompressionStream", CompressionStream);
 fill("DecompressionStream", DecompressionStream);
+
+fill(
+  "ResizeObserver",
+  class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+);
