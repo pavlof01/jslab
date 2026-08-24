@@ -1,0 +1,79 @@
+name: e2e
+
+# Browser end-to-end tests against the full docker compose stack. Not on every
+# PR: it builds every engine image and boots the whole system, which is minutes,
+# not seconds. Runs on demand and nightly, and can be pointed at a deployed site.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Test a deployed site instead of a fresh compose stack (skips the build)"
+        required: false
+        default: ""
+        type: string
+  schedule:
+    - cron: "30 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bring up the stack
+        if: ${{ github.event.inputs.base_url == '' }}
+        run: |
+          docker compose up --build -d
+          # Wait for the gateway and the frontend to answer before testing.
+          for url in http://localhost:8080/healthz http://localhost:3000/; do
+            for i in $(seq 1 60); do
+              if curl -fsS "$url" >/dev/null 2>&1; then echo "up: $url"; break; fi
+              if [ "$i" = "60" ]; then echo "timed out: $url" >&2; docker compose logs >&2; exit 1; fi
+              sleep 5
+            done
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # Catches a spec that stopped compiling before spending minutes booting a
+      # browser against a stack that is already up.
+      - name: Typecheck the suite
+        working-directory: e2e
+        run: npm run typecheck
+
+      - name: Run e2e
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:3000' }}
+        run: npm test
+
+      - name: Stack logs on failure
+        if: ${{ failure() && github.event.inputs.base_url == '' }}
+        run: docker compose logs --no-color | tail -300
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
