@@ -15,10 +15,13 @@
     "lint": "biome lint",
     "lint:fix": "biome lint --write",
     "ci": "biome ci --reporter=github",
-    "prepare": "husky"
+    "prepare": "husky",
+    "commitlint": "commitlint"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.9",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2"
   }
 }

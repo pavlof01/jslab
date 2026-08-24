@@ -1,0 +1,52 @@
+// Derived from the repo's own history (git log --format=%s -200), not defaults:
+// types observed in use, subjects up to 94 chars, scopes named after services.
+export default {
+  extends: ["@commitlint/config-conventional"],
+  rules: {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "chore",
+        "docs",
+        "ci",
+        "test",
+        "refactor",
+        "perf",
+        "style",
+        "infra",
+        "revert",
+      ],
+    ],
+    "header-max-length": [2, "always", 100],
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "api",
+        "ci",
+        "deps",
+        "e2e",
+        "engine-hermes",
+        "engine-jsc",
+        "engine-runtime",
+        "engine-spidermonkey",
+        "engine-v8",
+        "engines",
+        "frontend",
+        "infra",
+        "jslab",
+        "landing",
+        "main",
+        "repo",
+        "trace",
+        "trace-service",
+        "v8-pipeline",
+      ],
+    ],
+    "body-max-line-length": [0],
+    "subject-case": [0],
+  },
+};

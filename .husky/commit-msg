@@ -1,0 +1,9 @@
+# Validates the commit subject against commitlint.config.mjs. Same guard-and-skip
+# shape as pre-commit: a missing install degrades to CI enforcement, not a block.
+if [ ! -x "node_modules/.bin/commitlint" ]; then
+  echo "commit-msg: commitlint is not installed — run 'npm install' at the repo root." >&2
+  echo "commit-msg: skipping (CI still enforces this)." >&2
+  exit 0
+fi
+
+node_modules/.bin/commitlint --edit "$1"
