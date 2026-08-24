@@ -42,7 +42,7 @@ export default function PlaygroundClient() {
   }, [runEngines, code, active, flags]);
 
   return (
-    <Box css={styles.frame}>
+    <Box as="main" css={styles.frame}>
       <RunAnnouncer />
       <PlaygroundToolbar onRun={run} />
       <RunMessage error={error} notice={notice} />

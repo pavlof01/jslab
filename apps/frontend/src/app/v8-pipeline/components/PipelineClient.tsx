@@ -37,7 +37,7 @@ export default function PipelineClient() {
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
 
   return (
-    <Flex direction="column" height="calc(100dvh - {sizes.header})">
+    <Flex as="main" direction="column" height="calc(100dvh - {sizes.header})">
       <Flex
         h={14}
         bg="surface.band"
