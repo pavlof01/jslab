@@ -27,8 +27,8 @@ const CATEGORIES = {
     if (!functionName || typeof functionName !== "string") {
       return { error: "functionName is required and must be a string" };
     }
-    if (input === undefined) {
-      return { error: "input is required" };
+    if (typeof input !== "string") {
+      return { error: "input must be a string of source text (e.g. \"0\" or \"{ valueOf: () => 1 }\")" };
     }
     if (preferredType !== undefined && preferredType !== "string" && preferredType !== "number") {
       return { error: "preferredType must be 'string' or 'number'" };

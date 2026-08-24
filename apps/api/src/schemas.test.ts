@@ -149,26 +149,19 @@ describe("traceExecuteRequestSchema / traceExecuteEqualitySchema", () => {
     ).toThrow();
   });
 
-  it("rejects a huge string nested inside an array or object input", () => {
-    // A flat top-level string cap alone would miss this — the huge payload
-    // just needs to be one element deep instead of the top-level value.
-    expect(() =>
-      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: ["a".repeat(20_001)] }),
-    ).toThrow();
-    expect(() =>
-      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: { x: "a".repeat(20_001) } }),
-    ).toThrow();
+  it("rejects every non-string input the way trace-service will", () => {
+    for (const input of [0, 1, true, false, null, [], ["1"], { x: 1 }]) {
+      expect(() =>
+        traceExecuteRequestSchema.parse({ functionName: "ToNumber", input }),
+        `input ${JSON.stringify(input)} must be rejected`,
+      ).toThrow();
+    }
   });
 
-  it("rejects an array with too many elements", () => {
-    expect(() =>
-      traceExecuteRequestSchema.parse({ functionName: "ToNumber", input: Array(1001).fill(1) }),
-    ).toThrow();
-  });
-
-  it("rejects an object with too many properties", () => {
-    const input = Object.fromEntries(Array.from({ length: 1001 }, (_, i) => [`k${i}`, i]));
-    expect(() => traceExecuteRequestSchema.parse({ functionName: "ToNumber", input })).toThrow();
+  it("accepts source text that spells a non-string value", () => {
+    for (const input of ["0", "true", "null", "[1, 2]", "{ valueOf: () => 1 }"]) {
+      expect(() => traceExecuteRequestSchema.parse({ functionName: "ToNumber", input })).not.toThrow();
+    }
   });
 
   it("rejects an equality input string over the length cap", () => {

@@ -94,15 +94,16 @@ describe("body validation", () => {
     expect(await res.json()).toEqual({ error: "functionName is required and must be a string" });
   });
 
-  it("requires type-conversion to carry an input", async () => {
-    const res = await POST(post({ functionName: "ToNumber" }), params("type-conversion"));
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "input is required" });
+  it("requires type-conversion input to be a string of source text", async () => {
+    for (const input of [undefined, null, 0, false, [], {}]) {
+      const res = await POST(post({ functionName: "ToNumber", input }), params("type-conversion"));
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toContain("source text");
+    }
   });
 
-  it("accepts a falsy-but-present input, which is a legitimate trace subject", async () => {
-    // ToNumber(null) and ToNumber(0) are exactly the cases a learner types in.
-    for (const input of [null, 0, false, ""]) {
+  it("accepts source text that spells a falsy value, which is a legitimate trace subject", async () => {
+    for (const input of ["null", "0", "false", ""]) {
       const res = await POST(post({ functionName: "ToNumber", input }), params("type-conversion"));
       expect(res.status).toBe(200);
     }

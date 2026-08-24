@@ -66,7 +66,10 @@ TraceExecuteRequest: {
         required: ["functionName", "input"],
         properties: {
           functionName: { type: "string", minLength: 1 },
-          input: {},
+          input: {
+            type: "string",
+            description: "JavaScript source text for the value to trace, e.g. \"0\" or \"{ valueOf: () => 1 }\"."
+          },
           preferredType: { type: "string", enum: ["string", "number"] }
         }
       },

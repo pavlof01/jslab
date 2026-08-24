@@ -41,21 +41,9 @@ export const runRequestSchema: z.ZodType<RunRequest> = z.object({
     .optional(),
 });
 
-// Bounded recursively so a deeply/widely nested object or array can't recreate
-// the same "small request, huge working set" problem a flat string length cap
-// would miss — z.lazy ties the recursive branches back to this same schema.
-const traceExecuteInputSchema: z.ZodType<TraceExecuteInput> = z.lazy(() =>
-  z.union([
-    z.string().max(MAX_TRACE_INPUT_STRING_LENGTH),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(traceExecuteInputSchema).max(1000),
-    z.record(traceExecuteInputSchema).refine((obj) => Object.keys(obj).length <= 1000, {
-      message: "too many properties",
-    }),
-  ]),
-);
+const traceExecuteInputSchema: z.ZodType<TraceExecuteInput> = z
+  .string()
+  .max(MAX_TRACE_INPUT_STRING_LENGTH);
 
 export const traceExecuteRequestSchema: z.ZodType<TraceExecuteRequest> = z.object({
   functionName: z.string().min(1),
