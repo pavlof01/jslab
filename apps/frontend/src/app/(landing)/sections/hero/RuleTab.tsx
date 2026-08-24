@@ -1,6 +1,14 @@
 import { Button } from "@chakra-ui/react";
 
-export function RuleTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+export function RuleTab({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <Button
       variant="rule"

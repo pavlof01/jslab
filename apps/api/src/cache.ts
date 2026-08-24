@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import type { FastifyBaseLogger } from "fastify";
 import type { Redis as RedisClient } from "ioredis";
 import { cacheEvents } from "./metrics.js";
@@ -31,14 +31,18 @@ export function cacheKey(payload: NormalizedRunRequest): string {
     engine: payload.engine,
     sourceText: payload.sourceText,
     flags: payload.flags,
-    timeoutBucket: Math.ceil(payload.timeoutMs / 100)
+    timeoutBucket: Math.ceil(payload.timeoutMs / 100),
   };
   const raw = JSON.stringify(normalized);
   const hash = crypto.createHash("sha256").update(raw).digest("hex");
   return `api-cache:${hash}`;
 }
 
-export async function readJsonCache<T>(redis: RedisClient, key: string, log?: FastifyBaseLogger): Promise<T | null> {
+export async function readJsonCache<T>(
+  redis: RedisClient,
+  key: string,
+  log?: FastifyBaseLogger,
+): Promise<T | null> {
   try {
     const raw = await redis.get(key);
     if (!raw) return null;
@@ -51,10 +55,19 @@ export async function readJsonCache<T>(redis: RedisClient, key: string, log?: Fa
   }
 }
 
-export const readCache = (redis: RedisClient, key: string, log?: FastifyBaseLogger): Promise<CachedResult | null> =>
-  readJsonCache<CachedResult>(redis, key, log);
+export const readCache = (
+  redis: RedisClient,
+  key: string,
+  log?: FastifyBaseLogger,
+): Promise<CachedResult | null> => readJsonCache<CachedResult>(redis, key, log);
 
-export async function writeJsonCache(redis: RedisClient, key: string, value: unknown, ttlSeconds: number, log?: FastifyBaseLogger): Promise<void> {
+export async function writeJsonCache(
+  redis: RedisClient,
+  key: string,
+  value: unknown,
+  ttlSeconds: number,
+  log?: FastifyBaseLogger,
+): Promise<void> {
   // The guard lives here, not at the call site: every cache write goes through
   // this function, so there is no path that can skip it.
   const payload = JSON.stringify(value);

@@ -5,8 +5,8 @@ import { Band } from "@/components/ui/band";
 import { Label } from "@/components/ui/label";
 
 import { TRACES } from "../../landing-data";
+import { looping, TraceSteps } from "./TraceSteps";
 import { TraceTab } from "./TraceTab";
-import { TraceSteps, looping } from "./TraceSteps";
 import { blockName, cycleStylesheet, planCycle, verdictName } from "./traceCycle";
 
 const cycle = planCycle(TRACES);
@@ -51,7 +51,13 @@ export function SpecTracePreview() {
               <Text as="span" color="ink.6">
                 {" ⟶ "}
               </Text>
-              <Text data-reveal="" as="span" color="accent" opacity={0} {...looping(verdictName(index), cycle.totalMs)}>
+              <Text
+                data-reveal=""
+                as="span"
+                color="accent"
+                opacity={0}
+                {...looping(verdictName(index), cycle.totalMs)}
+              >
                 {trace.result}
               </Text>
             </Text>

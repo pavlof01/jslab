@@ -35,7 +35,8 @@ export function usePlaybackKeys({
   }, [selectedIndex, onSelectIndex, onTogglePlay]);
 }
 
-const INTERACTIVE = "input, textarea, select, button, a[href], [role=\"separator\"], [contenteditable=\"true\"]";
+const INTERACTIVE =
+  'input, textarea, select, button, a[href], [role="separator"], [contenteditable="true"]';
 
 function isInteractive(target: HTMLElement): boolean {
   return Boolean(target.closest(INTERACTIVE));

@@ -21,7 +21,9 @@ test.describe("playground: engine selection", () => {
     await expect(pg.engineTab("Hermes")).toHaveCount(0);
   });
 
-  test("runs the same snippet on every engine and each tab has its own output", async ({ page }) => {
+  test("runs the same snippet on every engine and each tab has its own output", async ({
+    page,
+  }) => {
     const pg = await PlaygroundPage.open(page);
     for (const engine of ["Hermes", "JSC", "SpiderMonkey"]) await pg.toggleEngine(engine);
 

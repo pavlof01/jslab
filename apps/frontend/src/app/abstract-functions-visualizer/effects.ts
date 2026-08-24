@@ -34,14 +34,20 @@ function useSeedGuard(initialKey: string) {
 }
 
 /** Keep the spec panel in step with the selected algorithm. */
-export function useSpecHtml(initialKey: string, selectedAlgo: string, initial: VisualizerInitialData): void {
+export function useSpecHtml(
+  initialKey: string,
+  selectedAlgo: string,
+  initial: VisualizerInitialData,
+): void {
   const setSpecHtml = useVisualizerStore((s) => s.setSpecHtml);
   const consumeSeed = useSeedGuard(initialKey);
 
   useEffect(() => {
     if (consumeSeed(Boolean(initial.specHtml) && selectedAlgo === initial.selectedAlgo)) return;
 
-    void getText(`/api/spec/${encodeURIComponent(selectedAlgo)}`).then((html) => setSpecHtml(html ?? ""));
+    void getText(`/api/spec/${encodeURIComponent(selectedAlgo)}`).then((html) =>
+      setSpecHtml(html ?? ""),
+    );
     // consumeSeed is stable for the life of the hook; re-running on it would
     // defeat the guard it implements.
     // eslint-disable-next-line react-hooks/exhaustive-deps

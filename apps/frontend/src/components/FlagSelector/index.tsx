@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { createListCollection, Portal, Select, Span, Stack } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { engineLabel } from "@/lib/engines";
 import type { EngineKey } from "@/lib/types";

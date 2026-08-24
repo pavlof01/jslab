@@ -25,18 +25,27 @@ function isCustomSample(value: unknown): value is CustomSample {
 export function parseCustomSamples(raw: string | null): CustomSample[] {
   const parsed = parseJson<unknown>(raw, []);
   if (!Array.isArray(parsed)) return [];
-  return parsed.filter(isCustomSample).map((entry) => ({ ...entry, createdAt: entry.createdAt ?? 0 }));
+  return parsed
+    .filter(isCustomSample)
+    .map((entry) => ({ ...entry, createdAt: entry.createdAt ?? 0 }));
 }
 
 export function loadCustomSamples(storage: Storage = window.localStorage): CustomSample[] {
   return parseCustomSamples(readRaw(storage, CUSTOM_SAMPLES_STORAGE_KEY));
 }
 
-export function saveCustomSamples(samples: CustomSample[], storage: Storage = window.localStorage): void {
+export function saveCustomSamples(
+  samples: CustomSample[],
+  storage: Storage = window.localStorage,
+): void {
   writeJson(storage, CUSTOM_SAMPLES_STORAGE_KEY, samples);
 }
 
-export function isNameTaken(name: string, samples: readonly CustomSample[], exceptId?: string): boolean {
+export function isNameTaken(
+  name: string,
+  samples: readonly CustomSample[],
+  exceptId?: string,
+): boolean {
   const normalized = name.trim().toLowerCase();
   return (
     samples.some((sample) => sample.id !== exceptId && sample.name.toLowerCase() === normalized) ||

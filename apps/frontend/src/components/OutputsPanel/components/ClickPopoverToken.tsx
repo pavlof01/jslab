@@ -1,6 +1,6 @@
 import { Button, Popover, Portal, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Props = {
   content: ReactNode;
@@ -24,7 +24,13 @@ const ClickPopoverToken: React.FC<Props> = ({ content, description }) => {
   return (
     <Popover.Root lazyMount unmountOnExit open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
-        <Button variant="rule" typeface="prose" type="button" borderBottomStyle="dashed" borderBottomColor="rule.link">
+        <Button
+          variant="rule"
+          typeface="prose"
+          type="button"
+          borderBottomStyle="dashed"
+          borderBottomColor="rule.link"
+        >
           {content}
         </Button>
       </Popover.Trigger>

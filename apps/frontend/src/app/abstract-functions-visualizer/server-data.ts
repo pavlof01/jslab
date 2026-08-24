@@ -1,10 +1,10 @@
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import { traceServiceUrl } from "@/lib/server/traceService";
 import {
-  EMPTY_FUNCTION_CATALOG,
-  getDefaultsForCategory,
   type AlgoCategory,
+  EMPTY_FUNCTION_CATALOG,
   type FunctionCatalog,
+  getDefaultsForCategory,
   type InitialTraceState,
   type VisualizerInitialData,
 } from "./model";
@@ -33,7 +33,10 @@ async function readJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = data && typeof data === "object" && "error" in data ? String(data.error) : response.statusText;
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String(data.error)
+        : response.statusText;
     throw new Error(message);
   }
 
@@ -116,7 +119,9 @@ async function getInitialTrace(
   }
 }
 
-export async function getVisualizerInitialData(category: AlgoCategory): Promise<VisualizerInitialData> {
+export async function getVisualizerInitialData(
+  category: AlgoCategory,
+): Promise<VisualizerInitialData> {
   const cached = initialDataCache.get(category);
   if (cached && cached.expires > Date.now()) {
     return cached.data;

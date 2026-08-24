@@ -1,13 +1,13 @@
-import { describe, expect, it } from "vitest";
 import type { Redis } from "ioredis";
+import { describe, expect, it } from "vitest";
 import {
   extractApiKey,
   generateApiKey,
-  isValidKeyFormat,
   issueApiKey,
+  isValidKeyFormat,
+  KEY_PREFIX,
   lookupApiKey,
   revokeApiKey,
-  KEY_PREFIX,
 } from "./apiKeys.js";
 
 /**
@@ -53,8 +53,8 @@ function fakeRedis() {
     zremrangebyscore(key: string, min: string | number, max: string | number): number {
       const set = zsets.get(key);
       if (!set) return 0;
-      const lo = min === "-inf" ? -Infinity : Number(min);
-      const hi = max === "+inf" ? Infinity : Number(max);
+      const lo = min === "-inf" ? Number.NEGATIVE_INFINITY : Number(min);
+      const hi = max === "+inf" ? Number.POSITIVE_INFINITY : Number(max);
       let removed = 0;
       for (const [member, score] of set) {
         if (score >= lo && score <= hi) {
@@ -91,7 +91,7 @@ describe("isValidKeyFormat", () => {
     expect(isValidKeyFormat(`${KEY_PREFIX}${"a".repeat(32)}`)).toBe(true);
   });
   it("rejects wrong prefix, length, or charset", () => {
-    expect(isValidKeyFormat("nope_" + "a".repeat(32))).toBe(false);
+    expect(isValidKeyFormat(`nope_${"a".repeat(32)}`)).toBe(false);
     expect(isValidKeyFormat(`${KEY_PREFIX}${"a".repeat(31)}`)).toBe(false);
     expect(isValidKeyFormat(`${KEY_PREFIX}${"Z".repeat(32)}`)).toBe(false);
     expect(isValidKeyFormat("")).toBe(false);

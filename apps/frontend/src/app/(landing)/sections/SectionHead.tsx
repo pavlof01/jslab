@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Box, Flex, Text } from "@chakra-ui/react";
+import Link from "next/link";
 
 export function SectionHead({
   number,

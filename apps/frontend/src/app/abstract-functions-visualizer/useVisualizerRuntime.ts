@@ -49,7 +49,9 @@ export function useVisualizerRuntime(resolvedInitialData: VisualizerInitialData)
     })),
   );
 
-  const playback = useVisualizerStore(useShallow((s) => ({ selectedIndex: s.selectedIndex, isPlaying: s.isPlaying })));
+  const playback = useVisualizerStore(
+    useShallow((s) => ({ selectedIndex: s.selectedIndex, isPlaying: s.isPlaying })),
+  );
 
   const setIsPlaying = useVisualizerStore((s) => s.setIsPlaying);
   const setSelectedAlgo = useVisualizerStore((s) => s.setSelectedAlgo);

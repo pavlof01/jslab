@@ -1,10 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
 
 import {
+  type CustomSample,
   isNameTaken,
   parseCustomSamples,
   validateName,
-  type CustomSample,
 } from "@/lib/customSamples";
 import { sampleCatalog } from "@/lib/samples";
 
@@ -40,7 +40,9 @@ describe("parseCustomSamples", () => {
   });
 
   it("accepts an optional description and rejects a non-string one", () => {
-    expect(parseCustomSamples(JSON.stringify([sample({ description: "why" })]))[0].description).toBe("why");
+    expect(
+      parseCustomSamples(JSON.stringify([sample({ description: "why" })]))[0].description,
+    ).toBe("why");
     expect(parseCustomSamples(JSON.stringify([{ ...sample(), description: 7 }]))).toEqual([]);
   });
 });

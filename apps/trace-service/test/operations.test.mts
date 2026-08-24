@@ -9,19 +9,18 @@
  * drifting again.
  */
 import { describe, expect, it } from "vitest";
+import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
 import {
   AVAILABLE_FUNCTIONS,
   BINARY_ALGORITHMS,
+  callUnaryOperation,
   FUNCTION_ALGOS,
   FUNCTION_META,
+  getOperatorDispatch,
   SUPPORTED_OPERATORS,
   SUPPORTED_SPEC_FUNCTIONS,
   UNARY_OPERATIONS,
-  callUnaryOperation,
-  getOperatorDispatch,
 } from "../src/server/operations.ts";
-import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
-
 
 function findStep(
   node: { steps?: Array<{ algoId?: string; specUrl?: string }> } | undefined,
@@ -29,7 +28,10 @@ function findStep(
 ): { algoId?: string; specUrl?: string } | undefined {
   for (const step of node?.steps ?? []) {
     if (predicate(step)) return step;
-    const nested = findStep(step as { steps?: Array<{ algoId?: string; specUrl?: string }> }, predicate);
+    const nested = findStep(
+      step as { steps?: Array<{ algoId?: string; specUrl?: string }> },
+      predicate,
+    );
     if (nested) return nested;
   }
   return undefined;

@@ -1,6 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
 
-import { flagsFor, type EngineKey } from "@/lib/types";
+import { type EngineKey, flagsFor } from "@/lib/types";
 
 import { useEngineOutputsStore } from "./useEngineOutputs";
 
@@ -8,7 +8,9 @@ export const useCode = () => useEngineOutputsStore((state) => state.code);
 export const useSetCode = () => useEngineOutputsStore((state) => state.setCode);
 
 export const useEngineSelection = () =>
-  useEngineOutputsStore(useShallow((state) => ({ engines: state.engines, setEngines: state.setEngines })));
+  useEngineOutputsStore(
+    useShallow((state) => ({ engines: state.engines, setEngines: state.setEngines })),
+  );
 
 export const useEngineFlags = () => {
   const { flags, setEngineFlags } = useEngineOutputsStore(
@@ -18,7 +20,9 @@ export const useEngineFlags = () => {
 };
 
 export const useActiveTab = () =>
-  useEngineOutputsStore(useShallow((state) => ({ activeTab: state.activeTab, setActiveTab: state.setActiveTab })));
+  useEngineOutputsStore(
+    useShallow((state) => ({ activeTab: state.activeTab, setActiveTab: state.setActiveTab })),
+  );
 
 export const useRunStatus = () =>
   useEngineOutputsStore(
@@ -43,7 +47,9 @@ export const useOutputPane = () =>
   );
 
 export const useDiffToggle = () =>
-  useEngineOutputsStore(useShallow((state) => ({ showDiff: state.showDiff, toggleDiff: state.toggleDiff })));
+  useEngineOutputsStore(
+    useShallow((state) => ({ showDiff: state.showDiff, toggleDiff: state.toggleDiff })),
+  );
 
 export const useShareableState = () =>
   useEngineOutputsStore(

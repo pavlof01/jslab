@@ -12,7 +12,7 @@ type Props = {
   engineKey: EngineKey;
 };
 
-const FONT_STYLES: Array<[bit: number, style: CSSProperties]> = [
+const FONT_STYLES: [bit: number, style: CSSProperties][] = [
   [1, { fontStyle: "italic" }],
   [2, { fontWeight: "bold" }],
   [4, { textDecoration: "underline" }],

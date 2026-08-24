@@ -3,7 +3,13 @@
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { forwardedHeaders, gatewayUrl, proxyToGateway, readJsonBody, PROXY_TIMEOUT_MS } from "./gateway";
+import {
+  forwardedHeaders,
+  gatewayUrl,
+  PROXY_TIMEOUT_MS,
+  proxyToGateway,
+  readJsonBody,
+} from "./gateway";
 
 /**
  * The Next server helpers every /api route is built from. Tests run in the
@@ -15,7 +21,10 @@ const originalFetch = global.fetch;
 const savedEnv = { ...process.env };
 
 function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
 }
 
 beforeEach(() => {
@@ -56,13 +65,20 @@ describe("gatewayUrl", () => {
 
 describe("forwardedHeaders", () => {
   it("always asks the gateway for JSON", () => {
-    const headers = forwardedHeaders(new Request("http://localhost/api/run")) as Record<string, string>;
+    const headers = forwardedHeaders(new Request("http://localhost/api/run")) as Record<
+      string,
+      string
+    >;
     expect(headers["content-type"]).toBe("application/json");
   });
 
   it("passes the caller's identity through so the gateway can rate-limit them", () => {
     const req = new Request("http://localhost/api/run", {
-      headers: { "x-forwarded-for": "1.1.1.1", "cf-connecting-ip": "2.2.2.2", "x-api-key": "jslab_abc" },
+      headers: {
+        "x-forwarded-for": "1.1.1.1",
+        "cf-connecting-ip": "2.2.2.2",
+        "x-api-key": "jslab_abc",
+      },
     });
     expect(forwardedHeaders(req)).toEqual({
       "content-type": "application/json",
@@ -87,7 +103,10 @@ describe("forwardedHeaders", () => {
 
 describe("readJsonBody", () => {
   it("parses a JSON body", async () => {
-    const req = new Request("http://localhost/api/run", { method: "POST", body: JSON.stringify({ a: 1 }) });
+    const req = new Request("http://localhost/api/run", {
+      method: "POST",
+      body: JSON.stringify({ a: 1 }),
+    });
     expect(await readJsonBody(req)).toEqual({ body: { a: 1 } });
   });
 
@@ -102,7 +121,9 @@ describe("readJsonBody", () => {
 
 describe("proxyToGateway", () => {
   it("forwards the request and relays the gateway's status and body", async () => {
-    const fetchMock = jest.fn(async (_url: string, _init?: RequestInit) => jsonResponse(200, { ok: true, stdout: "42" }));
+    const fetchMock = jest.fn(async (_url: string, _init?: RequestInit) =>
+      jsonResponse(200, { ok: true, stdout: "42" }),
+    );
     global.fetch = fetchMock as unknown as typeof fetch;
 
     const res = await proxyToGateway("/api/run", {
@@ -121,7 +142,9 @@ describe("proxyToGateway", () => {
   });
 
   it("relays an error status from the gateway untouched", async () => {
-    global.fetch = jest.fn(async () => jsonResponse(429, { error: "rate limit exceeded" })) as unknown as typeof fetch;
+    global.fetch = jest.fn(async () =>
+      jsonResponse(429, { error: "rate limit exceeded" }),
+    ) as unknown as typeof fetch;
     const res = await proxyToGateway("/api/run", { headers: {}, body: "{}" });
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: "rate limit exceeded" });
@@ -143,14 +166,20 @@ describe("proxyToGateway", () => {
 
     const res = await proxyToGateway("/api/run", { headers: {}, body: "{}" });
     expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ error: "The engine service is unavailable. Try again in a moment." });
+    expect(await res.json()).toEqual({
+      error: "The engine service is unavailable. Try again in a moment.",
+    });
   });
 
   it("reports an unreadable gateway response as a 502", async () => {
-    global.fetch = jest.fn(async () => new Response("<html>502</html>", { status: 200 })) as unknown as typeof fetch;
+    global.fetch = jest.fn(
+      async () => new Response("<html>502</html>", { status: 200 }),
+    ) as unknown as typeof fetch;
     const res = await proxyToGateway("/api/run", { headers: {}, body: "{}" });
     expect(res.status).toBe(502);
-    expect(await res.json()).toEqual({ error: "The engine service returned an unreadable response." });
+    expect(await res.json()).toEqual({
+      error: "The engine service returned an unreadable response.",
+    });
   });
 
   it("bounds the wait on a hung gateway", async () => {

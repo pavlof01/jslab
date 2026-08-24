@@ -6,10 +6,23 @@ import {
   defineSemanticTokens,
   defineTokens,
 } from "@chakra-ui/react";
-
-import { buttonRecipe, chipRecipe, bandRecipe, inputRecipe, linkRecipe, textareaRecipe } from "./recipes";
-import { dialogSlotRecipe, drawerSlotRecipe, menuSlotRecipe, popoverSlotRecipe, selectSlotRecipe, tabsSlotRecipe } from "./slotRecipes";
 import { layerStyles } from "./layerStyles";
+import {
+  bandRecipe,
+  buttonRecipe,
+  chipRecipe,
+  inputRecipe,
+  linkRecipe,
+  textareaRecipe,
+} from "./recipes";
+import {
+  dialogSlotRecipe,
+  drawerSlotRecipe,
+  menuSlotRecipe,
+  popoverSlotRecipe,
+  selectSlotRecipe,
+  tabsSlotRecipe,
+} from "./slotRecipes";
 import { textStyles } from "./textStyles";
 
 const tokens = defineTokens({

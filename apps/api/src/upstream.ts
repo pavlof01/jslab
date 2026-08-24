@@ -28,7 +28,10 @@ export function joinUrl(base: string, path: string): string {
   return `${base.replace(/\/$/, "")}${path}`;
 }
 
-export function classifyUpstreamError(serviceName: string, err: unknown): { kind: string; message: string } {
+export function classifyUpstreamError(
+  serviceName: string,
+  err: unknown,
+): { kind: string; message: string } {
   const code = (err as { code?: string } | null)?.code;
   switch (code) {
     case "ENOTFOUND":
@@ -65,7 +68,9 @@ async function readResponseText(
     const buf = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk;
     total += buf.length;
     if (total > maxBytes) {
-      const err = new Error(`upstream response exceeds ${maxBytes} bytes`) as Error & { code: string };
+      const err = new Error(`upstream response exceeds ${maxBytes} bytes`) as Error & {
+        code: string;
+      };
       err.code = "UPSTREAM_RESPONSE_TOO_LARGE";
       throw err;
     }
@@ -113,7 +118,11 @@ export function postJson(
   });
 }
 
-export function getJson(serviceName: string, url: string, timeoutMs: number): Promise<UpstreamResult> {
+export function getJson(
+  serviceName: string,
+  url: string,
+  timeoutMs: number,
+): Promise<UpstreamResult> {
   return requestUpstream(serviceName, url, timeoutMs, { method: "GET" });
 }
 

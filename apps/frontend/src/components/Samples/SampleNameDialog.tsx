@@ -1,9 +1,19 @@
 "use client";
 
+import {
+  Button,
+  CloseButton,
+  Dialog,
+  HStack,
+  Input,
+  Portal,
+  Stack,
+  Text,
+  Textarea,
+} from "@chakra-ui/react";
 import { useState } from "react";
-import { Button, CloseButton, Dialog, HStack, Input, Portal, Stack, Text, Textarea } from "@chakra-ui/react";
 
-import { NAME_ERROR_TEXT, validateName, type CustomSample } from "@/lib/customSamples";
+import { type CustomSample, NAME_ERROR_TEXT, validateName } from "@/lib/customSamples";
 
 type Props = {
   open: boolean;
@@ -45,7 +55,13 @@ function NameForm({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={(e) => onOpenChange(e.open)} placement="center" lazyMount unmountOnExit>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(e) => onOpenChange(e.open)}
+      placement="center"
+      lazyMount
+      unmountOnExit
+    >
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>

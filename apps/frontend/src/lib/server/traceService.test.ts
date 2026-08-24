@@ -39,19 +39,25 @@ describe("remoteSiteUrl", () => {
 
 describe("traceServiceEndpoint", () => {
   it("hits the service's own path when there is no remote site", () => {
-    expect(traceServiceEndpoint("/functions", "/api/trace/functions")).toBe("http://localhost:8085/functions");
+    expect(traceServiceEndpoint("/functions", "/api/trace/functions")).toBe(
+      "http://localhost:8085/functions",
+    );
   });
 
   it("hits the remote site's public path when one is configured", () => {
     // A locally-run frontend can borrow production's trace service, but only
     // through its public API — the service itself is not internet-reachable.
     process.env.JSLAB_REMOTE_SITE = "https://jslab.su";
-    expect(traceServiceEndpoint("/functions", "/api/trace/functions")).toBe("https://jslab.su/api/trace/functions");
+    expect(traceServiceEndpoint("/functions", "/api/trace/functions")).toBe(
+      "https://jslab.su/api/trace/functions",
+    );
   });
 
   it("prefers the remote site even when a service URL is also set", () => {
     process.env.TRACE_SERVICE_URL = "http://trace-service:8080";
     process.env.JSLAB_REMOTE_SITE = "https://jslab.su";
-    expect(traceServiceEndpoint("/spec/ToNumber", "/api/spec/ToNumber")).toBe("https://jslab.su/api/spec/ToNumber");
+    expect(traceServiceEndpoint("/spec/ToNumber", "/api/spec/ToNumber")).toBe(
+      "https://jslab.su/api/spec/ToNumber",
+    );
   });
 });

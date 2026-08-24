@@ -6,9 +6,13 @@
  * Value fidelity itself is covered by serialize.test.mts.
  */
 import { describe, expect, it } from "vitest";
-import type { TraceNode, TraceStep } from "../src/trace/index.mts";
-import { serializeNode, serializeStep, toSerializedValue } from "../src/server/execute/serialize.ts";
+import {
+  serializeNode,
+  serializeStep,
+  toSerializedValue,
+} from "../src/server/execute/serialize.ts";
 import { ALGO_SPEC_URL } from "../src/server/spec-generator.ts";
+import type { TraceNode, TraceStep } from "../src/trace/index.mts";
 
 /** The recorder hands steps over as display strings; build them the same way. */
 const step = (over: Partial<TraceStep>): TraceStep => ({ kind: "operation", ...over }) as TraceStep;
@@ -34,7 +38,10 @@ describe("toSerializedValue", () => {
 
   it("recognises a bare type name as that type's placeholder", () => {
     // The recorder writes type tags for values it never materialised.
-    expect(toSerializedValue("Object")).toEqual({ type: "Object", value: { id: "obj", class: "Object" } });
+    expect(toSerializedValue("Object")).toEqual({
+      type: "Object",
+      value: { id: "obj", class: "Object" },
+    });
     expect(toSerializedValue("String")).toEqual({ type: "String", value: "" });
     expect(toSerializedValue("Symbol")).toEqual({ type: "Symbol", value: { id: "sym" } });
     expect(toSerializedValue("BigInt")).toEqual({ type: "BigInt", value: "0" });
@@ -45,17 +52,25 @@ describe("toSerializedValue", () => {
       type: "Object",
       value: { id: "display", class: "", preview: "{ a: 1 }" },
     });
-    expect(toSerializedValue("[1, 2]")).toMatchObject({ type: "Object", value: { preview: "[1, 2]" } });
+    expect(toSerializedValue("[1, 2]")).toMatchObject({
+      type: "Object",
+      value: { preview: "[1, 2]" },
+    });
   });
 
   it("falls back to a String for anything it cannot classify", () => {
-    expect(toSerializedValue("some free text")).toEqual({ type: "String", value: "some free text" });
+    expect(toSerializedValue("some free text")).toEqual({
+      type: "String",
+      value: "some free text",
+    });
   });
 });
 
 describe("serializeStep", () => {
   it("keeps the branch decision on an if step", () => {
-    expect(serializeStep(step({ kind: "if", description: "If Type(x) is Object", taken: true }))).toEqual({
+    expect(
+      serializeStep(step({ kind: "if", description: "If Type(x) is Object", taken: true })),
+    ).toEqual({
       kind: "if",
       hint: undefined,
       description: "If Type(x) is Object",
@@ -77,7 +92,9 @@ describe("serializeStep", () => {
   });
 
   it("omits `result` for an operation that produced nothing", () => {
-    expect(serializeStep(step({ kind: "operation", description: "Assert: x is a Number" }))).not.toHaveProperty("result");
+    expect(
+      serializeStep(step({ kind: "operation", description: "Assert: x is a Number" })),
+    ).not.toHaveProperty("result");
   });
 
   it("carries a call step's algorithm, inputs, output and spec link", () => {
@@ -98,7 +115,9 @@ describe("serializeStep", () => {
   });
 
   it("carries a call step's error instead of an output", () => {
-    const serialized = serializeStep(step({ kind: "call", algoId: "ToNumber", error: "TypeError" }));
+    const serialized = serializeStep(
+      step({ kind: "call", algoId: "ToNumber", error: "TypeError" }),
+    );
     expect(serialized.error).toBe("TypeError");
     expect(serialized).not.toHaveProperty("output");
   });
@@ -108,12 +127,21 @@ describe("serializeStep", () => {
       step({
         kind: "call",
         algoId: "ToPrimitive",
-        steps: [step({ kind: "call", algoId: "OrdinaryToPrimitive", steps: [step({ kind: "return", output: "1" })] })],
+        steps: [
+          step({
+            kind: "call",
+            algoId: "OrdinaryToPrimitive",
+            steps: [step({ kind: "return", output: "1" })],
+          }),
+        ],
       }),
     );
 
     expect(serialized.steps?.[0].algoId).toBe("OrdinaryToPrimitive");
-    expect(serialized.steps?.[0].steps?.[0]).toMatchObject({ kind: "return", value: { type: "Number", value: 1 } });
+    expect(serialized.steps?.[0].steps?.[0]).toMatchObject({
+      kind: "return",
+      value: { type: "Number", value: 1 },
+    });
   });
 
   it("drops a call step with no algorithm, which has nothing to link to", () => {
@@ -123,7 +151,9 @@ describe("serializeStep", () => {
   });
 
   it("leaves an unknown algorithm without a spec link rather than inventing one", () => {
-    expect(serializeStep(step({ kind: "call", algoId: "MadeUpOperation" })).specUrl).toBeUndefined();
+    expect(
+      serializeStep(step({ kind: "call", algoId: "MadeUpOperation" })).specUrl,
+    ).toBeUndefined();
   });
 });
 
@@ -147,7 +177,9 @@ describe("serializeNode", () => {
   });
 
   it("carries the node's error", () => {
-    expect(serializeNode(node({ error: "TypeError: Cannot convert" })).error).toBe("TypeError: Cannot convert");
+    expect(serializeNode(node({ error: "TypeError: Cannot convert" })).error).toBe(
+      "TypeError: Cannot convert",
+    );
   });
 
   it("serializes every step in order", () => {

@@ -10,8 +10,7 @@ export async function runViaProxy(
   let json: Record<string, unknown> = {};
   try {
     json = (await res.json()) as Record<string, unknown>;
-  } catch {
-  }
+  } catch {}
   return { status: res.status(), json };
 }
 

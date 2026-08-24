@@ -10,7 +10,7 @@ test("the gateway refuses runs past the heavy bucket with a Retry-After", async 
       }),
     ),
   );
-  const statuses = responses.map((r) => r.status());
+  const _statuses = responses.map((r) => r.status());
   const limited = responses.filter((r) => r.status() === 429);
 
   expect(limited.length).toBeGreaterThan(0);

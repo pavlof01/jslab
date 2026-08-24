@@ -29,19 +29,30 @@ function withRetryAfter(payload: unknown, retryAfter: string): unknown {
 export function registerTraceRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { config } = ctx;
 
-  async function proxy(req: FastifyRequest, reply: FastifyReply, upstreamPath: string, body: unknown): Promise<void> {
+  async function proxy(
+    req: FastifyRequest,
+    reply: FastifyReply,
+    upstreamPath: string,
+    body: unknown,
+  ): Promise<void> {
     const url = joinUrl(config.TRACE_SERVICE_URL, upstreamPath);
     const res = await postJson("trace-service", url, body, config.MAX_TIMEOUT_MS + 1000);
 
     if (!res.ok) {
-      req.log.error({ err: res.error, traceServiceUrl: url, kind: res.kind }, "trace-service request failed");
+      req.log.error(
+        { err: res.error, traceServiceUrl: url, kind: res.kind },
+        "trace-service request failed",
+      );
       reply.code(502).send({ ok: false, error: res.message });
       return;
     }
 
     const payload = parseJson<unknown>(res.text);
     if (payload === undefined) {
-      req.log.error({ status: res.status, sample: res.text.slice(0, 2000) }, "trace-service returned non-json");
+      req.log.error(
+        { status: res.status, sample: res.text.slice(0, 2000) },
+        "trace-service returned non-json",
+      );
       reply.code(502).send({ ok: false, error: "trace-service returned invalid response" });
       return;
     }
@@ -68,7 +79,9 @@ export function registerTraceRoutes(app: FastifyInstance, ctx: AppContext): void
     app.post(`/api/trace/execute/${name}`, async (req, reply) => {
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) {
-        reply.code(400).send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
+        reply
+          .code(400)
+          .send({ ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" });
         return;
       }
       if (await limited(req, reply)) return;

@@ -1,4 +1,3 @@
-
 const DEFAULT_ORIGIN = "https://jslab.su";
 
 function resolveOrigin(): string {

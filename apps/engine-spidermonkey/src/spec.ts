@@ -1,4 +1,4 @@
-import { matchVersion, type EngineSpec } from "@jslab/engine-runtime";
+import { type EngineSpec, matchVersion } from "@jslab/engine-runtime";
 import type { EngineConfig } from "./config.js";
 
 const BYTECODE_WRAPPER = String.raw`(() => {

@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
-import { mockUpstream, type MockUpstream } from "./test-support/mockUpstream.js";
+import { type MockUpstream, mockUpstream } from "./test-support/mockUpstream.js";
 
 const REDIS_URL = process.env.TEST_REDIS_URL;
 const describeRedis = REDIS_URL ? describe : describe.skip;
@@ -23,7 +23,12 @@ describeRedis("gateway against a real Redis", () => {
   }
 
   const run = (app: ReturnType<typeof buildApp>, body: Record<string, unknown>) =>
-    app.inject({ method: "POST", url: "/api/run", payload: body, headers: { "content-type": "application/json" } });
+    app.inject({
+      method: "POST",
+      url: "/api/run",
+      payload: body,
+      headers: { "content-type": "application/json" },
+    });
 
   const okEngine = () =>
     upstream.reply(ORIGIN, "/run", 200, {

@@ -1,5 +1,11 @@
+import {
+  ENGINE_KINDS,
+  type FlagSpec,
+  flagCatalog,
+  type SanitizedFlags,
+  sanitizeFlags,
+} from "@jslab/engine-runtime";
 import { z } from "zod";
-import { ENGINE_KINDS, flagCatalog, sanitizeFlags, type FlagSpec, type SanitizedFlags } from "@jslab/engine-runtime";
 import type { EngineKind, RunRequest, TraceExecuteInput, TraceExecuteRequest } from "./types.js";
 
 /** Full catalog entries for an engine, for the /api/flags documentation route. */
@@ -88,6 +94,10 @@ export function validationMessage(err: unknown): string {
  * the same catalog, so a flag can never be accepted here and dropped there.
  * Rejected flags come back in `dropped` and are reported to the caller.
  */
-export function normalizeFlags(engine: EngineKind, flags: string[], maxFlags: number): SanitizedFlags {
+export function normalizeFlags(
+  engine: EngineKind,
+  flags: string[],
+  maxFlags: number,
+): SanitizedFlags {
   return sanitizeFlags(engine, flags, { maxFlags });
 }

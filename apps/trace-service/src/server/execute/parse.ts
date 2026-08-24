@@ -1,4 +1,11 @@
-import { evalQ, inspect, NormalCompletion, ThrowCompletion, type ManagedRealm, type Value } from "../../trace/index.mts";
+import {
+  evalQ,
+  inspect,
+  type ManagedRealm,
+  NormalCompletion,
+  ThrowCompletion,
+  type Value,
+} from "../../trace/index.mts";
 import {
   ADDITIVE_OPERATORS,
   EQUALITY_OPERATORS,
@@ -15,7 +22,16 @@ import {
 
 const OPERAND_EXPECTED = /[+\-*/%<>=!&|^~([{,:?;]/;
 
-const WORD_UNARY = new Set(["typeof", "void", "delete", "new", "in", "instanceof", "await", "yield"]);
+const WORD_UNARY = new Set([
+  "typeof",
+  "void",
+  "delete",
+  "new",
+  "in",
+  "instanceof",
+  "await",
+  "yield",
+]);
 
 const IDENT_CHAR = /[A-Za-z0-9_$]/;
 
@@ -73,7 +89,9 @@ function skipRegexLiteral(input: string, index: number): number {
   return i;
 }
 
-export function detectOperator(input: string): { operator: SupportedOperator; index: number } | null {
+export function detectOperator(
+  input: string,
+): { operator: SupportedOperator; index: number } | null {
   const len = input.length;
   let i = 0;
   let inString: '"' | "'" | "`" | null = null;
@@ -192,5 +210,7 @@ export function describeValue(value: Value, realm?: ManagedRealm): string {
   } catch {
     // Fall through: a bare type name still beats "[object Object]".
   }
-  return (value as { type?: string })?.type ? `[${(value as { type?: string }).type}]` : String(value);
+  return (value as { type?: string })?.type
+    ? `[${(value as { type?: string }).type}]`
+    : String(value);
 }

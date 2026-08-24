@@ -2,7 +2,7 @@ import type { Redis } from "ioredis";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildApp } from "./app.js";
 import { cacheKey } from "./cache.js";
-import { loadConfig, type ApiConfig } from "./config.js";
+import { type ApiConfig, loadConfig } from "./config.js";
 import type { ApiResponse } from "./types.js";
 
 /**
@@ -37,7 +37,10 @@ class FakeRedis {
     const replies: Array<() => [null, unknown]> = [];
     const chain = {
       incr: (key: string) => {
-        replies.push(() => [null, this.counters.set(key, (this.counters.get(key) ?? 0) + 1).get(key)]);
+        replies.push(() => [
+          null,
+          this.counters.set(key, (this.counters.get(key) ?? 0) + 1).get(key),
+        ]);
         return chain;
       },
       expire: () => {
@@ -71,8 +74,18 @@ function makeApp(overrides: Partial<ApiConfig> = {}) {
   return { app, redis, config };
 }
 
-const post = (app: ReturnType<typeof makeApp>["app"], url: string, payload: unknown, headers: Record<string, string> = {}) =>
-  app.inject({ method: "POST", url, payload: payload as object, headers: { "content-type": "application/json", ...headers } });
+const post = (
+  app: ReturnType<typeof makeApp>["app"],
+  url: string,
+  payload: unknown,
+  headers: Record<string, string> = {},
+) =>
+  app.inject({
+    method: "POST",
+    url,
+    payload: payload as object,
+    headers: { "content-type": "application/json", ...headers },
+  });
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -81,14 +94,19 @@ afterEach(() => {
 describe("gateway routes", () => {
   it("reports Redis state on /healthz", async () => {
     const { app } = makeApp();
-    expect((await app.inject({ method: "GET", url: "/healthz" })).json()).toEqual({ ok: true, redis: "ready" });
+    expect((await app.inject({ method: "GET", url: "/healthz" })).json()).toEqual({
+      ok: true,
+      redis: "ready",
+    });
   });
 
   it("documents every engine in the catalog on /api/flags", async () => {
     const { app } = makeApp();
     const body = (await app.inject({ method: "GET", url: "/api/flags" })).json();
     expect(Object.keys(body.engines)).toEqual(["v8", "hermes", "sm", "jsc"]);
-    expect(body.engines.v8.some((spec: { flag: string }) => spec.flag === "--print-bytecode")).toBe(true);
+    expect(body.engines.v8.some((spec: { flag: string }) => spec.flag === "--print-bytecode")).toBe(
+      true,
+    );
   });
 
   it("rejects a malformed run request with the offending field", async () => {
@@ -115,7 +133,12 @@ describe("gateway routes", () => {
 
   it("answers 401 for a key that is not on file", async () => {
     const { app } = makeApp();
-    const res = await post(app, "/api/run", { engine: "v8", sourceText: "1;" }, { "x-api-key": `jslab_${"a".repeat(32)}` });
+    const res = await post(
+      app,
+      "/api/run",
+      { engine: "v8", sourceText: "1;" },
+      { "x-api-key": `jslab_${"a".repeat(32)}` },
+    );
     expect(res.statusCode).toBe(401);
   });
 
@@ -193,7 +216,11 @@ describe("gateway routes", () => {
 
   it("requires a JSON content type to mint a key", async () => {
     const { app } = makeApp();
-    const res = await app.inject({ method: "POST", url: "/api/keys", headers: { "content-type": "text/plain" } });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/keys",
+      headers: { "content-type": "text/plain" },
+    });
     expect(res.statusCode).toBe(415);
   });
 

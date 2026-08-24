@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
 import type { FastifyReply } from "fastify";
 import type { Redis } from "ioredis";
+import { describe, expect, it, vi } from "vitest";
 import { enforceLimit, hashIdentity } from "./rateLimit.js";
 import { createFakeRedis } from "./test-support/fakeRedis.js";
 
@@ -113,7 +113,11 @@ describe("enforceLimit", () => {
           incr: () => chain,
           expire: () => chain,
           ttl: () => chain,
-          exec: async () => [[new Error("WRONGTYPE"), undefined], [null, 1], [null, 60]],
+          exec: async () => [
+            [new Error("WRONGTYPE"), undefined],
+            [null, 1],
+            [null, 60],
+          ],
         };
         return chain;
       },
@@ -155,7 +159,11 @@ describe("enforceLimit", () => {
           incr: () => chain,
           expire: () => chain,
           ttl: () => chain,
-          exec: async () => [[null, 9], [null, 1], [null, -1]],
+          exec: async () => [
+            [null, 9],
+            [null, 1],
+            [null, -1],
+          ],
         };
         return chain;
       },

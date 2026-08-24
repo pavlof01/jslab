@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildEngineApp, type EngineSpec } from "./app.js";
 import { engineEnvBase } from "./config.js";
@@ -12,7 +12,8 @@ import { engineEnvBase } from "./config.js";
  * which makes both the contents and the LOAD ORDER of the prelude observable in
  * stdout. Nothing here needs d8/jsc installed.
  */
-const CAT_FILES = 'const fs = require("fs"); for (const p of process.argv.slice(1)) process.stdout.write(fs.readFileSync(p, "utf8"));';
+const CAT_FILES =
+  'const fs = require("fs"); for (const p of process.argv.slice(1)) process.stdout.write(fs.readFileSync(p, "utf8"));';
 
 const baseConfig = engineEnvBase.parse({ MAX_CONCURRENCY: "4", LOG_LEVEL: "silent" });
 
@@ -89,14 +90,23 @@ describe("buildEngineApp", () => {
     // Cleanup runs in the handler's `finally`, which the reply does not wait
     // on — the caller gets its output without paying for the rm. So poll rather
     // than assert the directory is already gone the instant the response lands.
-    await expect.poll(() => fs.stat(seen).then(() => true, () => false)).toBe(false);
+    await expect
+      .poll(() =>
+        fs.stat(seen).then(
+          () => true,
+          () => false,
+        ),
+      )
+      .toBe(false);
   });
 
   it("reports flags the catalog rejected instead of swallowing them", async () => {
-    const body = (await run(makeApp(), {
-      sourceText: "1;",
-      options: { flags: ["--print-bytecode", "--definitely-not-a-flag"] },
-    })).json();
+    const body = (
+      await run(makeApp(), {
+        sourceText: "1;",
+        options: { flags: ["--print-bytecode", "--definitely-not-a-flag"] },
+      })
+    ).json();
     expect(body.meta.droppedFlags).toEqual(["--definitely-not-a-flag"]);
   });
 
@@ -116,7 +126,10 @@ describe("buildEngineApp", () => {
       invoke: () => ({ cmd: process.execPath, args: ["-e", "setTimeout(() => {}, 300);"] }),
     });
 
-    const [first, second] = await Promise.all([run(app, { sourceText: "1;" }), run(app, { sourceText: "2;" })]);
+    const [first, second] = await Promise.all([
+      run(app, { sourceText: "1;" }),
+      run(app, { sourceText: "2;" }),
+    ]);
     const statuses = [first.statusCode, second.statusCode].sort();
     expect(statuses).toEqual([200, 429]);
 
@@ -128,7 +141,9 @@ describe("buildEngineApp", () => {
   });
 
   it("answers 408 when the snippet outruns its timeout", async () => {
-    const app = makeApp({ invoke: () => ({ cmd: process.execPath, args: ["-e", "while (true) {}"] }) });
+    const app = makeApp({
+      invoke: () => ({ cmd: process.execPath, args: ["-e", "while (true) {}"] }),
+    });
     const res = await run(app, { sourceText: "1;", options: { timeoutMs: 200 } });
     expect(res.statusCode).toBe(408);
   });

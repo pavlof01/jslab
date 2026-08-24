@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
 import vm from "node:vm";
+import { afterEach, describe, expect, it } from "vitest";
 import { buildEngineApp, type EngineSpec } from "./app.js";
 import { engineEnvBase } from "./config.js";
 import { buildLockdownShim } from "./lockdown.js";

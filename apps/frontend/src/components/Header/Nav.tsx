@@ -2,10 +2,9 @@
 
 import { Box, Button, HStack, Menu, Portal, Text } from "@chakra-ui/react";
 import Link from "next/link";
-import { navSections, type NavSection } from "./nav.types";
-import { useSectionActive } from "./useSectionActive";
-import { MobileNavSection } from "./MobileNavSection";
 import { NavItemBody } from "./NavItemBody";
+import { navSections } from "./nav.types";
+import { useSectionActive } from "./useSectionActive";
 
 const menuContentStyles = {
   minW: "300px",
@@ -17,7 +16,12 @@ const Nav: React.FC = () => {
 
   return (
     <Box>
-      <HStack as="nav" display={{ base: "none", md: "flex" }} gap={{ base: 6, lg: 8 }} justify="center">
+      <HStack
+        as="nav"
+        display={{ base: "none", md: "flex" }}
+        gap={{ base: 6, lg: 8 }}
+        justify="center"
+      >
         {navSections.map((section) => {
           const active = isSectionActive(section);
 

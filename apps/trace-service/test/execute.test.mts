@@ -25,8 +25,11 @@ afterAll(async () => {
   await sandbox?.close();
 });
 
-const convert = (functionName: string, input: string, preferredType?: "string" | "number"): Promise<ExecuteResponse> =>
-  sandbox.run({ kind: "unary", functionName, input, preferredType });
+const convert = (
+  functionName: string,
+  input: string,
+  preferredType?: "string" | "number",
+): Promise<ExecuteResponse> => sandbox.run({ kind: "unary", functionName, input, preferredType });
 
 const compare = (input: string): Promise<ExecuteResponse> => sandbox.run({ kind: "binary", input });
 
@@ -66,10 +69,18 @@ describe("type conversion", () => {
   });
 
   it("honours the preferredType hint on ToPrimitive", async () => {
-    const asString = await convert("ToPrimitive", "{ valueOf: () => 1, toString: () => 'one' }", "string");
+    const asString = await convert(
+      "ToPrimitive",
+      "{ valueOf: () => 1, toString: () => 'one' }",
+      "string",
+    );
     expect(asString.result).toEqual({ type: "String", value: "one" });
 
-    const asNumber = await convert("ToPrimitive", "{ valueOf: () => 1, toString: () => 'one' }", "number");
+    const asNumber = await convert(
+      "ToPrimitive",
+      "{ valueOf: () => 1, toString: () => 'one' }",
+      "number",
+    );
     expect(asNumber.result).toEqual({ type: "Number", value: 1 });
   });
 
@@ -84,7 +95,10 @@ describe("type conversion", () => {
   });
 
   it("carries a user-thrown error's own message", async () => {
-    const response = await convert("ToNumber", "({ valueOf: () => { throw new TypeError('custom'); } })");
+    const response = await convert(
+      "ToNumber",
+      "({ valueOf: () => { throw new TypeError('custom'); } })",
+    );
     expect(response.success).toBe(false);
     expect(response.error).toContain("TypeError: custom");
   });
@@ -199,7 +213,13 @@ describe("through the HTTP route, with the real worker", () => {
    */
   const app = () =>
     buildTraceApp({
-      config: { PORT: 0, HOST: "127.0.0.1", MAX_TIMEOUT_MS: 30_000, MAX_SOURCE_LENGTH: 20_000, LOG_LEVEL: "silent" },
+      config: {
+        PORT: 0,
+        HOST: "127.0.0.1",
+        MAX_TIMEOUT_MS: 30_000,
+        MAX_SOURCE_LENGTH: 20_000,
+        LOG_LEVEL: "silent",
+      },
       sandbox,
     });
 

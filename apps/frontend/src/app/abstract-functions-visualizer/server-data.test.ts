@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { DEFAULTS_BY_CATEGORY, EMPTY_FUNCTION_CATALOG, type AlgoCategory } from "./model";
+import { type AlgoCategory, DEFAULTS_BY_CATEGORY, EMPTY_FUNCTION_CATALOG } from "./model";
 
 /**
  * The spec pages are server-rendered with a prefetched trace. That prefetch is
@@ -46,7 +46,9 @@ const catalog = {
 };
 
 /** Route each upstream path to a canned reply; anything unrouted is a 404. */
-function routes(over: Partial<Record<"functions" | "spec" | "execute", Response>> = {}): jest.Mock<Handler> {
+function routes(
+  over: Partial<Record<"functions" | "spec" | "execute", Response>> = {},
+): jest.Mock<Handler> {
   return jest.fn(((url: string) => {
     if (url.includes("/functions")) return over.functions ?? json(200, catalog);
     if (url.includes("/spec/")) return over.spec ?? html("<emu-alg>steps</emu-alg>");
@@ -64,7 +66,8 @@ async function load() {
 }
 
 function install(handler: jest.Mock<Handler>) {
-  global.fetch = (async (url: string, init?: RequestInit) => handler(String(url), init)) as unknown as typeof fetch;
+  global.fetch = (async (url: string, init?: RequestInit) =>
+    handler(String(url), init)) as unknown as typeof fetch;
   return handler;
 }
 
@@ -176,7 +179,9 @@ describe("getVisualizerInitialData — degraded upstreams", () => {
     install(routes({ execute: json(503, {}) }));
     const { getVisualizerInitialData } = await load();
 
-    expect((await getVisualizerInitialData("typeConversion")).trace.error).toBe("Service Unavailable");
+    expect((await getVisualizerInitialData("typeConversion")).trace.error).toBe(
+      "Service Unavailable",
+    );
   });
 
   it("reports a 200 that says success:false as a failed trace", async () => {
@@ -192,7 +197,9 @@ describe("getVisualizerInitialData — degraded upstreams", () => {
     install(routes({ execute: json(200, { success: false }) }));
     const { getVisualizerInitialData } = await load();
 
-    expect((await getVisualizerInitialData("typeConversion")).trace.error).toBe("trace-service returned failure");
+    expect((await getVisualizerInitialData("typeConversion")).trace.error).toBe(
+      "trace-service returned failure",
+    );
   });
 
   it("survives the trace service being unreachable entirely", async () => {

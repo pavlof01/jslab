@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react";
-
-import { useSharedStateRestore } from "./useSharedStateRestore";
-import { useEngineOutputsStore } from "@/store/useEngineOutputs";
-import { EngineKey, createEngineSelection } from "@/lib/types";
 import { encodeShareState } from "@/lib/shareState";
+import { createEngineSelection, EngineKey } from "@/lib/types";
+import { useEngineOutputsStore } from "@/store/useEngineOutputs";
+import { useSharedStateRestore } from "./useSharedStateRestore";
 
 function setSearch(search: string) {
   window.history.replaceState(null, "", `/playground${search}`);
@@ -40,7 +39,10 @@ describe("useSharedStateRestore", () => {
 
   it("leaves the store untouched when there is no share param", () => {
     setSearch("");
-    useEngineOutputsStore.setState({ code: "original", engines: createEngineSelection([EngineKey.v8]) });
+    useEngineOutputsStore.setState({
+      code: "original",
+      engines: createEngineSelection([EngineKey.v8]),
+    });
 
     renderHook(() => useSharedStateRestore());
 

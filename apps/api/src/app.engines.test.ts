@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createFakeRedis } from "./test-support/fakeRedis.js";
-import { mockUpstream, type MockUpstream } from "./test-support/mockUpstream.js";
+import { type MockUpstream, mockUpstream } from "./test-support/mockUpstream.js";
 
 const ORIGINS = {
   v8: "http://engine-v8:8080",
@@ -30,11 +30,18 @@ function makeApp(redis = createFakeRedis()) {
 
 function healthy(upstream: MockUpstream, versions: Record<string, string | null>, persist = false) {
   for (const [engine, origin] of Object.entries(ORIGINS)) {
-    upstream.replyGet(origin, "/healthz", 200, { ok: true, engine, version: versions[engine] ?? null }, persist);
+    upstream.replyGet(
+      origin,
+      "/healthz",
+      200,
+      { ok: true, engine, version: versions[engine] ?? null },
+      persist,
+    );
   }
 }
 
-const engines = (app: ReturnType<typeof buildApp>) => app.inject({ method: "GET", url: "/api/engines" });
+const engines = (app: ReturnType<typeof buildApp>) =>
+  app.inject({ method: "GET", url: "/api/engines" });
 
 let upstream: MockUpstream;
 let open: ReturnType<typeof buildApp>[] = [];
@@ -51,7 +58,12 @@ afterEach(async () => {
 
 describe("GET /api/engines", () => {
   it("reports the version each engine probed from its binary", async () => {
-    healthy(upstream, { v8: "14.9.0 (candidate)", hermes: "1.0.0 (HBC 98)", sm: "134.0", jsc: null });
+    healthy(upstream, {
+      v8: "14.9.0 (candidate)",
+      hermes: "1.0.0 (HBC 98)",
+      sm: "134.0",
+      jsc: null,
+    });
     const app = makeApp();
     open.push(app);
 
@@ -68,7 +80,11 @@ describe("GET /api/engines", () => {
 
   it("keeps answering when one engine is unreachable", async () => {
     upstream.replyGet(ORIGINS.v8, "/healthz", 200, { ok: true, engine: "v8", version: "14.9.0" });
-    upstream.replyGet(ORIGINS.hermes, "/healthz", 200, { ok: true, engine: "hermes", version: "1.0.0" });
+    upstream.replyGet(ORIGINS.hermes, "/healthz", 200, {
+      ok: true,
+      engine: "hermes",
+      version: "1.0.0",
+    });
     upstream.replyGet(ORIGINS.sm, "/healthz", 503, { ok: false });
     upstream.replyGet(ORIGINS.jsc, "/healthz", 200, { ok: true, engine: "jsc", version: null });
     const app = makeApp();
@@ -77,7 +93,9 @@ describe("GET /api/engines", () => {
     const res = await engines(app);
 
     expect(res.statusCode).toBe(200);
-    const byEngine = Object.fromEntries(res.json().engines.map((e: { engine: string }) => [e.engine, e]));
+    const byEngine = Object.fromEntries(
+      res.json().engines.map((e: { engine: string }) => [e.engine, e]),
+    );
     expect(byEngine.sm).toEqual({ engine: "sm", ok: false, version: null });
     expect(byEngine.v8.version).toBe("14.9.0");
   });
@@ -112,7 +130,8 @@ describe("GET /api/engines", () => {
   });
 
   it("does not cache a fan-out in which every engine failed", async () => {
-    for (const origin of Object.values(ORIGINS)) upstream.replyGet(origin, "/healthz", 503, { ok: false });
+    for (const origin of Object.values(ORIGINS))
+      upstream.replyGet(origin, "/healthz", 503, { ok: false });
     const redis = createFakeRedis();
     const app = makeApp(redis);
     open.push(app);
@@ -135,6 +154,9 @@ describe("GET /api/engines", () => {
     await engines(app);
 
     const counters = redis.keys().filter((key) => key.startsWith("ratelimit:general:"));
-    expect(counters.length, `no general-bucket counter among ${redis.keys().join(", ")}`).toBeGreaterThan(0);
+    expect(
+      counters.length,
+      `no general-bucket counter among ${redis.keys().join(", ")}`,
+    ).toBeGreaterThan(0);
   });
 });

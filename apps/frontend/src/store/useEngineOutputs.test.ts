@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
-
-import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { formatRunMeta } from "@/lib/runMessages";
+import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
 import { useEngineOutputsStore } from "./useEngineOutputs";
 
 type FakeResponse = { ok: boolean; status: number; body: unknown };
@@ -27,7 +26,8 @@ const queueResponses = (...responses: (FakeResponse | Promise<FakeResponse>)[]) 
   });
 };
 
-const run = (code: string) => useEngineOutputsStore.getState().runEngines({ code, engines: [EngineKey.v8] });
+const run = (code: string) =>
+  useEngineOutputsStore.getState().runEngines({ code, engines: [EngineKey.v8] });
 
 describe("useEngineOutputsStore.runEngines", () => {
   beforeEach(() => {
@@ -66,7 +66,9 @@ describe("useEngineOutputsStore.runEngines", () => {
   });
 
   it("marks the duration as cached when every engine hit the cache", async () => {
-    queueResponses(okResponse({ ok: true, stdout: "out", stderr: "", meta: { durationMs: 7, cacheHit: true } }));
+    queueResponses(
+      okResponse({ ok: true, stdout: "out", stderr: "", meta: { durationMs: 7, cacheHit: true } }),
+    );
 
     await run("1 + 1");
 
@@ -82,11 +84,15 @@ describe("useEngineOutputsStore.runEngines", () => {
     // Flags used to be a single V8 list, and every other engine was handed an
     // empty options object no matter what the catalog allowed it.
     const calls: Array<{ engine: string; flags: string[] }> = [];
-    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(async (_url: unknown, init: unknown) => {
-      const body = JSON.parse((init as { body: string }).body);
-      calls.push({ engine: body.engine, flags: body.options?.flags });
-      return toResponse(okResponse({ ok: true, stdout: "", stderr: "", meta: { durationMs: 1 } }));
-    });
+    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(
+      async (_url: unknown, init: unknown) => {
+        const body = JSON.parse((init as { body: string }).body);
+        calls.push({ engine: body.engine, flags: body.options?.flags });
+        return toResponse(
+          okResponse({ ok: true, stdout: "", stderr: "", meta: { durationMs: 1 } }),
+        );
+      },
+    );
 
     await useEngineOutputsStore.getState().runEngines({
       code: "1 + 1",
@@ -102,10 +108,14 @@ describe("useEngineOutputsStore.runEngines", () => {
 
   it("sends an empty flag list for an engine nothing was picked for", async () => {
     const calls: string[][] = [];
-    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(async (_url: unknown, init: unknown) => {
-      calls.push(JSON.parse((init as { body: string }).body).options?.flags);
-      return toResponse(okResponse({ ok: true, stdout: "", stderr: "", meta: { durationMs: 1 } }));
-    });
+    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(
+      async (_url: unknown, init: unknown) => {
+        calls.push(JSON.parse((init as { body: string }).body).options?.flags);
+        return toResponse(
+          okResponse({ ok: true, stdout: "", stderr: "", meta: { durationMs: 1 } }),
+        );
+      },
+    );
 
     await useEngineOutputsStore.getState().runEngines({
       code: "1 + 1",
@@ -120,7 +130,10 @@ describe("useEngineOutputsStore.runEngines", () => {
     let resolveSlow: (value: FakeResponse) => void = () => {};
     const slowResponse = new Promise<FakeResponse>((resolve) => (resolveSlow = resolve));
 
-    queueResponses(slowResponse, okResponse({ ok: true, stdout: "fast", stderr: "", meta: { durationMs: 1 } }));
+    queueResponses(
+      slowResponse,
+      okResponse({ ok: true, stdout: "fast", stderr: "", meta: { durationMs: 1 } }),
+    );
 
     const slow = run("slow");
     const fast = run("fast");

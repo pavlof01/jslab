@@ -1,4 +1,4 @@
-import { startEngineServer, type EngineSpec } from "@jslab/engine-runtime";
+import type { EngineSpec } from "@jslab/engine-runtime";
 import type { EngineConfig } from "./config.js";
 
 const BYTECODE_FLAG = "-d" as const;

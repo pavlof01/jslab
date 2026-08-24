@@ -14,8 +14,8 @@ describe("finiteOr", () => {
     expect(finiteOr("abc", 7)).toBe(7);
     expect(finiteOr(undefined, 7)).toBe(7);
     expect(finiteOr(null, 7)).toBe(0); // Number(null) === 0, which is finite
-    expect(finiteOr(NaN, 7)).toBe(7);
-    expect(finiteOr(Infinity, 7)).toBe(7);
+    expect(finiteOr(Number.NaN, 7)).toBe(7);
+    expect(finiteOr(Number.POSITIVE_INFINITY, 7)).toBe(7);
     expect(finiteOr({}, 7)).toBe(7);
   });
 });
@@ -31,7 +31,7 @@ describe("toPositiveInt", () => {
     expect(toPositiveInt(0)).toBeUndefined();
     expect(toPositiveInt(-3)).toBeUndefined();
     expect(toPositiveInt("nope")).toBeUndefined();
-    expect(toPositiveInt(Infinity)).toBeUndefined();
+    expect(toPositiveInt(Number.POSITIVE_INFINITY)).toBeUndefined();
     expect(toPositiveInt(undefined)).toBeUndefined();
   });
 });

@@ -1,22 +1,22 @@
 import {
-  Value,
+  Agent,
   callGenerator,
   evalQ,
   ManagedRealm,
   NormalCompletion,
-  ThrowCompletion,
-  Agent,
   setSurroundingAgent,
+  ThrowCompletion,
   type TraceRecord,
+  type Value,
   type ValueCompletion,
 } from "../../trace/index.mts";
-import type { ExecuteResponse } from "../types.ts";
 import {
   callBinaryAlgorithm,
   callUnaryOperation,
   getOperatorDispatch,
   SUPPORTED_OPERATORS,
 } from "../operations.ts";
+import type { ExecuteResponse } from "../types.ts";
 import { describeValue, detectOperator, parseStringToValue } from "./parse.ts";
 import { fromEngineValue, serializeNode } from "./serialize.ts";
 
@@ -44,7 +44,11 @@ function finishTrace(
   realm?: ManagedRealm,
 ): ExecuteResponse {
   if (evalResult instanceof ThrowCompletion) {
-    return { success: false, functionName, error: `Execution threw: ${describeValue(evalResult.Value, realm)}` };
+    return {
+      success: false,
+      functionName,
+      error: `Execution threw: ${describeValue(evalResult.Value, realm)}`,
+    };
   }
 
   const execResult = (evalResult as NormalCompletion<Value | ThrowCompletion>).Value;
@@ -109,7 +113,10 @@ export async function executeUnaryConversion(
     let raw: ValueCompletion<Value>;
     try {
       raw = realm.scope<ValueCompletion<Value>>(
-        () => callGenerator(callUnaryOperation(functionName, inputValue, preferredType)) as ValueCompletion<Value>,
+        () =>
+          callGenerator(
+            callUnaryOperation(functionName, inputValue, preferredType),
+          ) as ValueCompletion<Value>,
       );
     } catch (error) {
       // An operation this service does not implement, or a conversion that
@@ -197,7 +204,10 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
     inputTrace = lhs.trace;
 
     const raw = realm.scope<ValueCompletion<Value>>(
-      () => callGenerator(callBinaryAlgorithm(dispatch.algoName, lhs, rhs, dispatch.leftFirst)) as ValueCompletion<Value>,
+      () =>
+        callGenerator(
+          callBinaryAlgorithm(dispatch.algoName, lhs, rhs, dispatch.leftFirst),
+        ) as ValueCompletion<Value>,
     );
 
     if (raw instanceof ThrowCompletion) {
@@ -214,8 +224,17 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
     return { success: false, functionName: "BinaryExpression", error: parseError };
   }
   if (thrownText) {
-    return { success: false, functionName: "BinaryExpression", error: thrownText, effectiveAlgoId, detectedOperator };
+    return {
+      success: false,
+      functionName: "BinaryExpression",
+      error: thrownText,
+      effectiveAlgoId,
+      detectedOperator,
+    };
   }
 
-  return finishTrace("BinaryExpression", evalResult, inputTrace, { effectiveAlgoId, detectedOperator });
+  return finishTrace("BinaryExpression", evalResult, inputTrace, {
+    effectiveAlgoId,
+    detectedOperator,
+  });
 }

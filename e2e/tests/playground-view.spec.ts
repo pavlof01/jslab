@@ -33,7 +33,9 @@ test.describe("playground: reading the output", () => {
     const opcode = page.getByRole("button", { name: /^(Ldar|Star|Return|Add)/ }).first();
     await opcode.click();
 
-    await expect(page.getByRole("dialog").or(page.locator("[data-scope='popover']")).first()).toBeVisible();
+    await expect(
+      page.getByRole("dialog").or(page.locator("[data-scope='popover']")).first(),
+    ).toBeVisible();
   });
 
   test("opens the V8 intrinsics reference and closes it again", async ({ page }) => {

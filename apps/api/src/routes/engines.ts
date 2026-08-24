@@ -30,7 +30,11 @@ export function registerEngineRoutes(app: FastifyInstance, ctx: AppContext): voi
   let inFlight: Promise<EngineStatus[]> | null = null;
 
   async function probe(engine: EngineKind): Promise<EngineStatus> {
-    const res = await getJson(`engine-${engine}`, joinUrl(baseUrls[engine], "/healthz"), PROBE_TIMEOUT_MS);
+    const res = await getJson(
+      `engine-${engine}`,
+      joinUrl(baseUrls[engine], "/healthz"),
+      PROBE_TIMEOUT_MS,
+    );
     if (!res.ok || res.status !== 200) return { engine, ok: false, version: null };
 
     const body = parseJson<HealthzBody>(res.text);

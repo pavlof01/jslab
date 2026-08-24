@@ -29,14 +29,7 @@ export type SpecValue =
   | { type: "Array"; value: unknown[] }
   | { type: "TypeTag"; value: TypeTag };
 
-export type TraceStepKind =
-  | "if"
-  | "operation"
-  | "call"
-  | "return"
-  | "throw"
-  | "assert"
-  | "note";
+export type TraceStepKind = "if" | "operation" | "call" | "return" | "throw" | "assert" | "note";
 
 export interface TraceStep {
   kind: TraceStepKind;

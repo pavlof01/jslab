@@ -14,9 +14,6 @@ describe("engine descriptors", () => {
     const langs = allEngines.map((engine) => ENGINES[engine].lang);
     expect(new Set(langs).size).toBe(langs.length);
   });
-
-
-
 });
 
 describe("engineLabel / engineLang", () => {

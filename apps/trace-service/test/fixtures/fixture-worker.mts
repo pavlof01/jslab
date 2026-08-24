@@ -33,7 +33,11 @@ port.on("message", ({ id, task }: { id: number; task: { input: string } }) => {
       port.postMessage({
         id,
         ok: true,
-        value: { success: true, functionName: "Fixture", result: { type: "String", value: task.input } },
+        value: {
+          success: true,
+          functionName: "Fixture",
+          result: { type: "String", value: task.input },
+        },
       });
   }
 });

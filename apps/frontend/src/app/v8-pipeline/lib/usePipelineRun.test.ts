@@ -77,7 +77,9 @@ describe("analyze", () => {
   });
 
   it("strips the tracing diagnostic d8 prints ahead of the real output", async () => {
-    runEngine.mockResolvedValue(ok("Concurrent maglev has been disabled for tracing.\nreal output"));
+    runEngine.mockResolvedValue(
+      ok("Concurrent maglev has been disabled for tracing.\nreal output"),
+    );
     const { result } = renderHook(() => usePipelineRun("const x = 1;"));
 
     await act(async () => {
@@ -164,7 +166,12 @@ describe("failures", () => {
   });
 
   it("clears a previous error on the next run", async () => {
-    runEngine.mockResolvedValue({ stdout: "", stderr: "", failure: { status: 500, message: "boom" }, meta: {} });
+    runEngine.mockResolvedValue({
+      stdout: "",
+      stderr: "",
+      failure: { status: 500, message: "boom" },
+      meta: {},
+    });
     const { result } = renderHook(() => usePipelineRun("const x = 1;"));
     await act(async () => {
       await result.current.analyze();

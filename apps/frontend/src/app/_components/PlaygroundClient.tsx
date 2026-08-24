@@ -1,27 +1,27 @@
 "use client";
 
-import { useCallback } from "react";
 import { Box } from "@chakra-ui/react";
+import { useCallback } from "react";
 
 import { EditorPanel } from "@/components/EditorPanel";
 import { SplitRow } from "@/components/ui";
-import { formatRunMeta } from "@/lib/runMessages";
 import { pushHistory } from "@/lib/runHistory";
+import { formatRunMeta } from "@/lib/runMessages";
 import { enabledEngines } from "@/lib/types";
 import {
   useCode,
+  useEngineFlags,
   useEngineSelection,
   useRunEngines,
   useRunStatus,
   useSetCode,
-  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
-import { useSharedStateRestore } from "./useSharedStateRestore";
 import { OutputPane } from "./OutputPane";
 import { PlaygroundToolbar } from "./PlaygroundToolbar";
+import * as styles from "./playground.styles";
 import RunAnnouncer from "./RunAnnouncer";
 import { RunMessage } from "./RunMessage";
-import * as styles from "./playground.styles";
+import { useSharedStateRestore } from "./useSharedStateRestore";
 
 export default function PlaygroundClient() {
   const code = useCode();
@@ -67,7 +67,9 @@ export default function PlaygroundClient() {
         }
       />
 
-      <Box css={styles.footerLine}>{footerText(formatRunMeta(durationMs, cacheHit), active.length)}</Box>
+      <Box css={styles.footerLine}>
+        {footerText(formatRunMeta(durationMs, cacheHit), active.length)}
+      </Box>
     </Box>
   );
 }

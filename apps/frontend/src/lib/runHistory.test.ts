@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { loadHistory, pushHistory, clearHistory, MAX_HISTORY, RUN_HISTORY_KEY } from "./runHistory";
+import { beforeEach, describe, expect, it } from "@jest/globals";
 import { EngineKey } from "@/lib/types";
+import { clearHistory, loadHistory, MAX_HISTORY, pushHistory, RUN_HISTORY_KEY } from "./runHistory";
 
 // jsdom provides localStorage; reset between tests.
 beforeEach(() => window.localStorage.clear());
@@ -48,8 +48,16 @@ describe("runHistory", () => {
   });
 
   it("keeps flags per engine and treats a flag change as a new run", () => {
-    pushHistory({ code: "x", engines: [EngineKey.v8], flags: { [EngineKey.v8]: ["--print-bytecode"] } }, makeId, 1);
-    pushHistory({ code: "x", engines: [EngineKey.v8], flags: { [EngineKey.v8]: ["--trace-opt"] } }, makeId, 2);
+    pushHistory(
+      { code: "x", engines: [EngineKey.v8], flags: { [EngineKey.v8]: ["--print-bytecode"] } },
+      makeId,
+      1,
+    );
+    pushHistory(
+      { code: "x", engines: [EngineKey.v8], flags: { [EngineKey.v8]: ["--trace-opt"] } },
+      makeId,
+      2,
+    );
 
     const history = loadHistory();
     expect(history).toHaveLength(2);
@@ -59,7 +67,9 @@ describe("runHistory", () => {
   it("replays history written when flags were a flat V8 list", () => {
     window.localStorage.setItem(
       RUN_HISTORY_KEY,
-      JSON.stringify([{ id: "old", ts: 1, code: "x", engines: [EngineKey.v8], v8Flags: ["--print-bytecode"] }]),
+      JSON.stringify([
+        { id: "old", ts: 1, code: "x", engines: [EngineKey.v8], v8Flags: ["--print-bytecode"] },
+      ]),
     );
     expect(loadHistory()[0].flags).toEqual({ [EngineKey.v8]: ["--print-bytecode"] });
   });

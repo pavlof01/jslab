@@ -11,11 +11,18 @@ export class PlaygroundPage {
     return pg;
   }
 
-  static async openWith(page: Page, code: string, engines: string[] = ["v8"]): Promise<PlaygroundPage> {
+  static async openWith(
+    page: Page,
+    code: string,
+    engines: string[] = ["v8"],
+  ): Promise<PlaygroundPage> {
     const pg = new PlaygroundPage(page);
-    await page.goto(shareUrl(code, engines, { v8: ["--print-bytecode", "--allow-natives-syntax"] }));
+    await page.goto(
+      shareUrl(code, engines, { v8: ["--print-bytecode", "--allow-natives-syntax"] }),
+    );
     await pg.editorReady();
-    if (code.trim()) await expect(pg.editor).toContainText(code.trim().slice(0, 24), { timeout: 20_000 });
+    if (code.trim())
+      await expect(pg.editor).toContainText(code.trim().slice(0, 24), { timeout: 20_000 });
     return pg;
   }
 
@@ -69,7 +76,9 @@ export class PlaygroundPage {
   }
 
   async waitForRunToSettle(): Promise<void> {
-    await expect(this.page.getByRole("button", { name: /^running$/i })).toHaveCount(0, { timeout: 30_000 });
+    await expect(this.page.getByRole("button", { name: /^running$/i })).toHaveCount(0, {
+      timeout: 30_000,
+    });
   }
 
   engineChip(label: string): Locator {
@@ -133,6 +142,7 @@ export class PlaygroundPage {
   }
 }
 
-export const runMessage = (page: Page, text: string | RegExp): Locator => page.getByText(text).last();
+export const runMessage = (page: Page, text: string | RegExp): Locator =>
+  page.getByText(text).last();
 
 export const V8_BYTECODE = /Ldar|Star|Return|Add|LdaSmi|CallUndefinedReceiver/;

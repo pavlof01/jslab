@@ -14,7 +14,13 @@ function run(script: string, opts: { timeoutMs?: number; maxOutputBytes?: number
 describe("runCommand", () => {
   it("captures stdout and stderr separately", async () => {
     const result = await run('process.stdout.write("out"); process.stderr.write("err");');
-    expect(result).toMatchObject({ stdout: "out", stderr: "err", exitCode: 0, timedOut: false, outputTruncated: false });
+    expect(result).toMatchObject({
+      stdout: "out",
+      stderr: "err",
+      exitCode: 0,
+      timedOut: false,
+      outputTruncated: false,
+    });
   });
 
   it("keeps multi-byte characters intact across chunk boundaries", async () => {
@@ -49,7 +55,9 @@ describe("runCommand", () => {
       { maxOutputBytes: 32 * 1024 },
     );
     expect(result.outputTruncated).toBe(true);
-    expect(Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr)).toBeLessThanOrEqual(32 * 1024);
+    expect(Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr)).toBeLessThanOrEqual(
+      32 * 1024,
+    );
   });
 
   it("keeps a stderr message alive when stdout floods the budget", async () => {
@@ -62,15 +70,20 @@ describe("runCommand", () => {
     expect(result.outputTruncated).toBe(true);
     expect(result.stderr).toBe("boom");
     expect(result.stdout.length).toBeGreaterThan(0);
-    expect(Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr)).toBeLessThanOrEqual(32 * 1024);
+    expect(Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr)).toBeLessThanOrEqual(
+      32 * 1024,
+    );
   });
 
   it("gives an under-budget run both streams in full", async () => {
     // The fair split must not truncate output that fits: a small stderr does
     // not cost stdout its half.
-    const result = await run('process.stdout.write("a".repeat(900)); process.stderr.write("b".repeat(90));', {
-      maxOutputBytes: 1024,
-    });
+    const result = await run(
+      'process.stdout.write("a".repeat(900)); process.stderr.write("b".repeat(90));',
+      {
+        maxOutputBytes: 1024,
+      },
+    );
     expect(result.outputTruncated).toBe(false);
     expect(result.stdout).toBe("a".repeat(900));
     expect(result.stderr).toBe("b".repeat(90));
@@ -78,7 +91,9 @@ describe("runCommand", () => {
 
   it("does not cut a character in half at the truncation point", async () => {
     // "☃" is 3 bytes, so a byte-aligned cut of an odd budget lands mid-character.
-    const result = await run('for (let i = 0; i < 1e6; i++) process.stdout.write("☃");', { maxOutputBytes: 1000 });
+    const result = await run('for (let i = 0; i < 1e6; i++) process.stdout.write("☃");', {
+      maxOutputBytes: 1000,
+    });
     expect(result.outputTruncated).toBe(true);
     expect(result.stdout).not.toContain("�");
   });
@@ -89,11 +104,15 @@ describe("runCommand", () => {
   });
 
   it("pipes stdin when an input payload is given", async () => {
-    const result = await runCommand(node, ["-e", 'process.stdin.on("data", (d) => process.stdout.write(d));'], {
-      timeoutMs: 5000,
-      maxOutputBytes: 1024,
-      input: "piped",
-    });
+    const result = await runCommand(
+      node,
+      ["-e", 'process.stdin.on("data", (d) => process.stdout.write(d));'],
+      {
+        timeoutMs: 5000,
+        maxOutputBytes: 1024,
+        input: "piped",
+      },
+    );
     expect(result.stdout).toBe("piped");
   });
 
@@ -113,7 +132,10 @@ describe("runCommand", () => {
   });
 
   it("reports a missing binary instead of throwing", async () => {
-    const result = await runCommand("/nonexistent/engine-binary", [], { timeoutMs: 1000, maxOutputBytes: 1024 });
+    const result = await runCommand("/nonexistent/engine-binary", [], {
+      timeoutMs: 1000,
+      maxOutputBytes: 1024,
+    });
     expect(result.exitCode).toBe(-1);
     expect(result.stderr).toContain("ENOENT");
   });

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Providers } from "./providers";
 import { ConditionalHeader } from "@/components/ConditionalHeader";
 import { SITE_ORIGIN } from "@/lib/site";
+import { Providers } from "./providers";
 
 import "./globals.css";
 
@@ -80,7 +80,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="google-site-verification" content="Ef6TZgGnNnoYy5eVp7xsHN73inP9oT5izQak78uVwuQ" />
+        <meta
+          name="google-site-verification"
+          content="Ef6TZgGnNnoYy5eVp7xsHN73inP9oT5izQak78uVwuQ"
+        />
       </head>
       <body suppressHydrationWarning>
         {/*

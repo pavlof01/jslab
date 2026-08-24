@@ -1,5 +1,5 @@
 import { base64UrlToBytes, bytesToBase64Url } from "@/lib/base64url";
-import { EngineKey, isEngineKey } from "@/lib/types";
+import { type EngineKey, isEngineKey } from "@/lib/types";
 
 export interface EmbedSnapshot {
   /** Source that produced the output; shown above it and used by "Open in JSLab". */
@@ -120,7 +120,10 @@ export async function buildSnapshotUrl(origin: string, snapshot: EmbedSnapshot):
   return `${origin}${BYTECODE_EMBED_PATH}?${SNAPSHOT_PARAM}=${await encodeSnapshot(snapshot)}`;
 }
 
-export function estimateEmbedHeight(output: string, opts: { min?: number; max?: number } = {}): number {
+export function estimateEmbedHeight(
+  output: string,
+  opts: { min?: number; max?: number } = {},
+): number {
   const min = opts.min ?? 220;
   const max = opts.max ?? 520;
   const lines = output ? output.split("\n").length : 0;

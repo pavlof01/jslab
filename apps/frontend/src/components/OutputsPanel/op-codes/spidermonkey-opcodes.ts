@@ -5,7 +5,8 @@ export const OPCODE_INFO = {
   // Environments / scopes
   PushLexicalEnv: "Push a new lexical environment (block/function lexical scope).",
   PopLexicalEnv: "Pop the current lexical environment.",
-  DebugLeaveLexicalEnv: "Debug-only marker for leaving a lexical environment (affects debugger/stepping).",
+  DebugLeaveLexicalEnv:
+    "Debug-only marker for leaving a lexical environment (affects debugger/stepping).",
   InitLexical: "Initialize a lexical binding slot (let/const) from the current stack value.",
   InitAliasedLexical: "Initialize an aliased lexical binding (stored in an environment object).",
   SetAliasedVar: "Store to an aliased variable (stored in an environment object).",
@@ -20,7 +21,8 @@ export const OPCODE_INFO = {
   GetLocal: "Push a local slot value onto the stack.",
 
   // Constants / literals
-  Uninitialized: "Push the internal 'uninitialized' sentinel (used for TDZ and lexical init tracking).",
+  Uninitialized:
+    "Push the internal 'uninitialized' sentinel (used for TDZ and lexical init tracking).",
   Undefined: "Push JavaScript undefined.",
   Null: "Push JavaScript null.",
   True: "Push boolean true.",
@@ -29,7 +31,8 @@ export const OPCODE_INFO = {
 
   // Functions / closures
   Lambda: "Create a function object (lambda/closure).",
-  FunWithProto: "Create a function with an explicit prototype object (used for classes/constructors).",
+  FunWithProto:
+    "Create a function with an explicit prototype object (used for classes/constructors).",
 
   // Calls / returns
   CallIgnoresRv: "Call a function and ignore its return value.",
@@ -89,7 +92,8 @@ function describeInlineCacheKeyValue(token: string): string | undefined {
   const key = m[1];
   const value = m[2];
   if (key === "ic") return `Inline cache (IC) index: ${value}.`;
-  if (key === "hops") return `Environment hops: ${value} (number of environment links to traverse).`;
+  if (key === "hops")
+    return `Environment hops: ${value} (number of environment links to traverse).`;
   if (key === "slot") return `Environment slot index: ${value}.`;
   return undefined;
 }

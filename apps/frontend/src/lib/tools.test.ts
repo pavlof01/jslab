@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { externalLinks, NAV_GROUPS, navEntries, tools, type NavGroup } from "./tools";
+import { externalLinks, NAV_GROUPS, type NavGroup, navEntries, tools } from "./tools";
 
 describe("tool catalog", () => {
   it("gives every tool a unique route", () => {

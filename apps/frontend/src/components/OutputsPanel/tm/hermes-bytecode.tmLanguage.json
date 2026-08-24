@@ -37,10 +37,20 @@
       ]
     },
     "label": {
-      "patterns": [{ "name": "entity.name.tag.label.hermesbc", "match": "^\\s*([A-Za-z_.$][A-Za-z0-9_.$]*):\\s*$" }]
+      "patterns": [
+        {
+          "name": "entity.name.tag.label.hermesbc",
+          "match": "^\\s*([A-Za-z_.$][A-Za-z0-9_.$]*):\\s*$"
+        }
+      ]
     },
     "section-head": {
-      "patterns": [{ "name": "markup.heading.section.hermesbc", "match": "^[A-Za-z][A-Za-z0-9 \\-_/()]*:\\s*$" }]
+      "patterns": [
+        {
+          "name": "markup.heading.section.hermesbc",
+          "match": "^[A-Za-z][A-Za-z0-9 \\-_/()]*:\\s*$"
+        }
+      ]
     },
     "string-table-entry": {
       "patterns": [
@@ -53,7 +63,11 @@
             "3": { "name": "constant.numeric.hex.hermesbc" }
           },
           "end": "$",
-          "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
+          "patterns": [
+            { "include": "#operands" },
+            { "include": "#numbers" },
+            { "include": "#inline-comment" }
+          ]
         }
       ]
     },
@@ -97,7 +111,11 @@
             "1": { "name": "variable.parameter.key.hermesbc" }
           },
           "end": "$",
-          "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
+          "patterns": [
+            { "include": "#operands" },
+            { "include": "#numbers" },
+            { "include": "#inline-comment" }
+          ]
         }
       ]
     },
@@ -110,7 +128,11 @@
             "1": { "name": "keyword.operator.opcode.hermesbc" }
           },
           "end": "$",
-          "patterns": [{ "include": "#operands" }, { "include": "#numbers" }, { "include": "#inline-comment" }]
+          "patterns": [
+            { "include": "#operands" },
+            { "include": "#numbers" },
+            { "include": "#inline-comment" }
+          ]
         }
       ]
     },
@@ -118,7 +140,10 @@
       "patterns": [
         { "name": "variable.language.register.hermesbc", "match": "\\br\\d+\\b" },
         { "name": "entity.name.tag.label.hermesbc", "match": "\\bL\\d+\\b" },
-        { "name": "entity.name.function.ref.hermesbc", "match": "\\b(?:Function|NCFunction|Constructor)<[^>]+>\\d+\\b" },
+        {
+          "name": "entity.name.function.ref.hermesbc",
+          "match": "\\b(?:Function|NCFunction|Constructor)<[^>]+>\\d+\\b"
+        },
         { "name": "constant.other.string-index.hermesbc", "match": "\\b[si]\\d+\\b" },
         { "name": "constant.language.hermesbc", "match": "\\b(?:null|true|false|undefined)\\b" },
         { "name": "entity.name.type.hermesbc", "match": "<[^>]+>" },

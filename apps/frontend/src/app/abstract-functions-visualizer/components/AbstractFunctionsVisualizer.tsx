@@ -1,15 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
 import { Box, createListCollection, Portal, Select } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
-import { SpecTraceScreen, type SpecTracePreset } from "@/app/abstract-functions-visualizer/components/SpecTraceScreen";
-import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
-import { VisualizerStoreProvider } from "@/app/abstract-functions-visualizer/StoreProvider";
+import {
+  type SpecTracePreset,
+  SpecTraceScreen,
+} from "@/app/abstract-functions-visualizer/components/SpecTraceScreen";
+import type {
+  AlgoCategory,
+  VisualizerInitialData,
+} from "@/app/abstract-functions-visualizer/model";
 import { fallbackInitialData } from "@/app/abstract-functions-visualizer/model";
+import { VisualizerStoreProvider } from "@/app/abstract-functions-visualizer/StoreProvider";
+import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
 import { HINTS, PRESETS } from "./categoryContent";
-import type { AlgoCategory, VisualizerInitialData } from "@/app/abstract-functions-visualizer/model";
 
 function AlgoPicker({
   value,
@@ -130,7 +136,13 @@ function VisualizerScreen({ initialData }: { initialData: VisualizerInitialData 
         hint={HINTS[category]}
         presets={presets}
         extraControl={algoPicker}
-        specPane={<EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />}
+        specPane={
+          <EcmaSpecPanel
+            flatEntries={flatEntries}
+            selectedIndex={selectedIndex}
+            specHtml={specHtml}
+          />
+        }
       />
     </Box>
   );

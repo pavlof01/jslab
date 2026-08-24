@@ -1,5 +1,5 @@
 import { decodeText, encodeText } from "@/lib/base64url";
-import { ENGINE_KEYS, EngineKey, isEngineKey, type EngineFlags } from "@/lib/types";
+import { ENGINE_KEYS, type EngineFlags, EngineKey, isEngineKey } from "@/lib/types";
 
 export interface ShareState {
   code: string;

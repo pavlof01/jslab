@@ -7,7 +7,13 @@ import { getGlobalDispatcher, MockAgent, setGlobalDispatcher } from "undici";
  */
 export interface MockUpstream {
   /** Reply to one POST to `origin + path`. */
-  reply(origin: string, path: string, status: number, body: unknown, headers?: Record<string, string>): void;
+  reply(
+    origin: string,
+    path: string,
+    status: number,
+    body: unknown,
+    headers?: Record<string, string>,
+  ): void;
   replyGet(origin: string, path: string, status: number, body: unknown, persist?: boolean): void;
   /** Fail the next POST the way an unreachable service does. */
   refuse(origin: string, path: string, error?: Error): void;
@@ -38,10 +44,14 @@ export function mockUpstream(): MockUpstream {
     const interceptor = agent
       .get(origin)
       .intercept({ path, method })
-      .reply(status, (opts: { body?: unknown }) => {
-        seen.push({ origin, path, body: String(opts.body ?? "") });
-        return typeof body === "string" ? body : JSON.stringify(body);
-      }, { headers });
+      .reply(
+        status,
+        (opts: { body?: unknown }) => {
+          seen.push({ origin, path, body: String(opts.body ?? "") });
+          return typeof body === "string" ? body : JSON.stringify(body);
+        },
+        { headers },
+      );
     if (persist) interceptor.persist();
   }
 

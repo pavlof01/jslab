@@ -15,7 +15,14 @@ describe("pipeline stages", () => {
 
   it("treats exactly the flag-bearing stages as engine calls", () => {
     // The tokenizer runs locally; everything else needs a d8 run.
-    expect(API_STAGES.map((stage) => stage.id)).toEqual(["ast", "bytecode", "sparkplug", "maglev", "turbofan", "deopt"]);
+    expect(API_STAGES.map((stage) => stage.id)).toEqual([
+      "ast",
+      "bytecode",
+      "sparkplug",
+      "maglev",
+      "turbofan",
+      "deopt",
+    ]);
     expect(STAGES.find((stage) => stage.id === "tokens")!.flags).toBeUndefined();
   });
 
@@ -49,7 +56,8 @@ describe("pipeline stages", () => {
 
 describe("stripDiagnostics", () => {
   it("removes the tracing notice d8 prints before the real output", () => {
-    const raw = "Concurrent maglev has been disabled for tracing.\n--- Optimized code ---\nkind = MAGLEV";
+    const raw =
+      "Concurrent maglev has been disabled for tracing.\n--- Optimized code ---\nkind = MAGLEV";
     expect(stripDiagnostics(raw)).toBe("--- Optimized code ---\nkind = MAGLEV");
   });
 

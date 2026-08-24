@@ -1,12 +1,18 @@
 export type TokenContext = { nextToken?: string | null };
 
-export type TokenDescriber = (raw: string | null | undefined, ctx?: TokenContext) => string | undefined;
+export type TokenDescriber = (
+  raw: string | null | undefined,
+  ctx?: TokenContext,
+) => string | undefined;
 
 export type Resolver = (key: string) => string | undefined;
 
 export type DescribeStep = Resolver | { joinNext: Resolver; onlyDigits?: boolean };
 
-export function stripEdges(token: string, { keepColon = true }: { keepColon?: boolean } = {}): string {
+export function stripEdges(
+  token: string,
+  { keepColon = true }: { keepColon?: boolean } = {},
+): string {
   const trailing = keepColon ? /[)\]}.,]+$/ : /[)\]}.,:]+$/;
   return token.replace(/^[([{]+/, "").replace(trailing, "");
 }

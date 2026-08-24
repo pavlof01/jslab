@@ -1,19 +1,18 @@
 import { create } from "zustand";
-
-import {
-  createEngineSelection,
-  enabledEngines,
-  ENGINE_KEYS,
-  EngineKey,
-  flagsFor,
-  RunStatus,
-  type EngineFlags,
-  type EngineResult,
-} from "@/lib/types";
 import { runEngine } from "@/lib/api";
 import { aggregateRunResults, cloneOut, createEmptyOut } from "@/lib/runAggregate";
 import { describeRunFailure, describeRunNotice } from "@/lib/runMessages";
 import { samples } from "@/lib/samples";
+import {
+  createEngineSelection,
+  ENGINE_KEYS,
+  type EngineFlags,
+  EngineKey,
+  type EngineResult,
+  enabledEngines,
+  flagsFor,
+  RunStatus,
+} from "@/lib/types";
 
 let latestRunToken = 0;
 
@@ -97,7 +96,8 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
       return { engines, activeTab: ENGINE_KEYS.find((key) => engines[key]) ?? EngineKey.v8 };
     }),
   setActiveTab: (activeTab) => set({ activeTab }),
-  setEngineFlags: (engine, engineFlags) => set((state) => ({ flags: { ...state.flags, [engine]: engineFlags } })),
+  setEngineFlags: (engine, engineFlags) =>
+    set((state) => ({ flags: { ...state.flags, [engine]: engineFlags } })),
   setFlags: (flags) => set({ flags }),
 
   runEngines: async ({ code: codeArg, engines: enginesArg, flags: flagsArg } = {}) => {
@@ -172,4 +172,4 @@ export const useEngineOutputsStore = create<EngineOutputsStore>((set, get) => ({
   },
 }));
 
-export type { EngineOutputsState, EngineOutputsActions, RunContext, PreviousRunSnapshot };
+export type { EngineOutputsActions, EngineOutputsState, PreviousRunSnapshot, RunContext };

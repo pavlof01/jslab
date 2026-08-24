@@ -54,7 +54,15 @@ export interface UnaryOperation {
  * Reaching JS from a conversion always goes through the same chain, so it is
  * named once instead of being retyped in nine lists.
  */
-const TO_PRIMITIVE_CHAIN = ["ToPrimitive", "OrdinaryToPrimitive", "GetMethod", "GetV", "ToObject", "Get", "Call"] as const;
+const TO_PRIMITIVE_CHAIN = [
+  "ToPrimitive",
+  "OrdinaryToPrimitive",
+  "GetMethod",
+  "GetV",
+  "ToObject",
+  "Get",
+  "Call",
+] as const;
 
 export const UNARY_OPERATIONS = {
   ToNumber: {
@@ -110,7 +118,10 @@ export type UnaryOperationName = keyof typeof UNARY_OPERATIONS;
 export const AVAILABLE_FUNCTIONS: string[] = Object.keys(UNARY_OPERATIONS);
 
 export const FUNCTION_META: Record<string, FunctionMeta> = Object.fromEntries(
-  Object.entries(UNARY_OPERATIONS).map(([name, op]) => [name, { category: op.category, arity: "unary" as const }]),
+  Object.entries(UNARY_OPERATIONS).map(([name, op]) => [
+    name,
+    { category: op.category, arity: "unary" as const },
+  ]),
 );
 
 /** Run one unary abstract operation by name. */
@@ -236,26 +247,71 @@ function transformLessOrEqual(raw: Value): Value {
 export function getOperatorDispatch(operator: SupportedOperator): OperatorDispatch {
   switch (operator) {
     case "==":
-      return { algoName: "IsLooselyEqual", swap: false, leftFirst: true, transform: transformIdentity };
+      return {
+        algoName: "IsLooselyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformIdentity,
+      };
     case "===":
-      return { algoName: "IsStrictlyEqual", swap: false, leftFirst: true, transform: transformIdentity };
+      return {
+        algoName: "IsStrictlyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformIdentity,
+      };
     case "!=":
-      return { algoName: "IsLooselyEqual", swap: false, leftFirst: true, transform: transformNegate };
+      return {
+        algoName: "IsLooselyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformNegate,
+      };
     case "!==":
-      return { algoName: "IsStrictlyEqual", swap: false, leftFirst: true, transform: transformNegate };
+      return {
+        algoName: "IsStrictlyEqual",
+        swap: false,
+        leftFirst: true,
+        transform: transformNegate,
+      };
     case "<":
-      return { algoName: "AbstractRelationalComparison", swap: false, leftFirst: true, transform: transformIdentity };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: false,
+        leftFirst: true,
+        transform: transformIdentity,
+      };
     case ">":
       // a > b ≡ b < a (with LeftFirst=false to preserve evaluation order)
-      return { algoName: "AbstractRelationalComparison", swap: true, leftFirst: false, transform: transformIdentity };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: true,
+        leftFirst: false,
+        transform: transformIdentity,
+      };
     case "<=":
       // a <= b ≡ !(b < a) treating undefined as false
-      return { algoName: "AbstractRelationalComparison", swap: true, leftFirst: false, transform: transformLessOrEqual };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: true,
+        leftFirst: false,
+        transform: transformLessOrEqual,
+      };
     case ">=":
       // a >= b ≡ !(a < b) treating undefined as false
-      return { algoName: "AbstractRelationalComparison", swap: false, leftFirst: true, transform: transformLessOrEqual };
+      return {
+        algoName: "AbstractRelationalComparison",
+        swap: false,
+        leftFirst: true,
+        transform: transformLessOrEqual,
+      };
     case "+":
-      return { algoName: "ApplyStringOrNumericBinaryOperator", swap: false, leftFirst: true, transform: transformRaw };
+      return {
+        algoName: "ApplyStringOrNumericBinaryOperator",
+        swap: false,
+        leftFirst: true,
+        transform: transformRaw,
+      };
   }
 }
 
@@ -302,7 +358,9 @@ const BINARY_EXPRESSION_ALGOS = [
 /** Which spec clauses each traceable entry point can reach, for the spec panel. */
 export const FUNCTION_ALGOS: Record<string, readonly string[]> = {
   ...Object.fromEntries(Object.entries(UNARY_OPERATIONS).map(([name, op]) => [name, op.algos])),
-  ...Object.fromEntries(Object.entries(BINARY_ALGORITHMS).map(([name, algo]) => [name, algo.algos])),
+  ...Object.fromEntries(
+    Object.entries(BINARY_ALGORITHMS).map(([name, algo]) => [name, algo.algos]),
+  ),
   BinaryExpression: BINARY_EXPRESSION_ALGOS,
 };
 

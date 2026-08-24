@@ -1,6 +1,12 @@
-import { deserialize, serialize } from "node:v8";
+import {
+  CompressionStream,
+  DecompressionStream,
+  ReadableStream,
+  TransformStream,
+  WritableStream,
+} from "node:stream/web";
 import { TextDecoder, TextEncoder } from "node:util";
-import { CompressionStream, DecompressionStream, ReadableStream, TransformStream, WritableStream } from "node:stream/web";
+import { deserialize, serialize } from "node:v8";
 
 type Fillable = Record<string, unknown>;
 const g = globalThis as unknown as Fillable;
@@ -12,7 +18,7 @@ function fill(name: string, value: unknown) {
 // Used by the embed snapshot codec and anything doing byte-level work.
 fill("TextEncoder", TextEncoder);
 fill("TextDecoder", TextDecoder);
-fill("structuredClone", <T,>(value: T): T => deserialize(serialize(value)) as T);
+fill("structuredClone", <T>(value: T): T => deserialize(serialize(value)) as T);
 fill(
   "matchMedia",
   (query: string): MediaQueryList =>

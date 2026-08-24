@@ -1,5 +1,5 @@
-import NextLink from "next/link";
 import { Link, type LinkProps } from "@chakra-ui/react";
+import NextLink from "next/link";
 
 export type QuietLinkProps = {
   href: string;
@@ -7,7 +7,13 @@ export type QuietLinkProps = {
   external?: boolean;
 } & Omit<LinkProps, "href">;
 
-export function QuietLink({ href, mono = false, external = false, children, ...rest }: QuietLinkProps) {
+export function QuietLink({
+  href,
+  mono = false,
+  external = false,
+  children,
+  ...rest
+}: QuietLinkProps) {
   const typeface = mono ? "mono" : "sans";
 
   if (external) {

@@ -15,7 +15,9 @@ test.describe("failure handling", () => {
     await pg.setCode("1 + 1");
     await pg.runButton.click();
 
-    await expect(runMessage(page, "Too many runs — the rate limit kicked in. Try again in 7 seconds.")).toBeVisible();
+    await expect(
+      runMessage(page, "Too many runs — the rate limit kicked in. Try again in 7 seconds."),
+    ).toBeVisible();
   });
 
   test("explains an unreachable gateway", async ({ page }) => {
@@ -51,7 +53,13 @@ test.describe("failure handling", () => {
           stdout: "Ldar a0\n".repeat(50),
           stderr: "",
           artifacts: [],
-          meta: { engine: "v8", durationMs: 5, cacheHit: false, outputTruncated: true, outputLimitBytes: 2097152 },
+          meta: {
+            engine: "v8",
+            durationMs: 5,
+            cacheHit: false,
+            outputTruncated: true,
+            outputLimitBytes: 2097152,
+          },
         }),
       }),
     );

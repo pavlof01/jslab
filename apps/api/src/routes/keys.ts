@@ -37,9 +37,10 @@ export function registerKeyRoutes(app: FastifyInstance, ctx: AppContext): void {
 
     if (!result.ok) {
       if (result.reason === "owner_limit") {
-        reply
-          .code(429)
-          .send({ ok: false, error: "too many live keys for this address; revoke one before minting another" });
+        reply.code(429).send({
+          ok: false,
+          error: "too many live keys for this address; revoke one before minting another",
+        });
         return;
       }
       reply.code(503).send({ ok: false, error: "could not issue key" });
@@ -51,7 +52,8 @@ export function registerKeyRoutes(app: FastifyInstance, ctx: AppContext): void {
       apiKey: result.key,
       rateLimitPerMin: config.API_KEY_RATE_LIMIT_PER_MIN,
       expiresInSeconds: config.API_KEY_TTL_SECONDS,
-      usage: "Send the key as an 'x-api-key' header or 'Authorization: Bearer <key>' on /api/run and /api/trace/*.",
+      usage:
+        "Send the key as an 'x-api-key' header or 'Authorization: Bearer <key>' on /api/run and /api/trace/*.",
     });
   });
 

@@ -61,7 +61,10 @@ test.describe("frontend API proxy: /api/run", () => {
 
   test("runs on every engine key the catalog advertises", async ({ request }) => {
     for (const engine of ["v8", "hermes", "sm", "jsc"]) {
-      const { status, json } = await runViaProxy(request, { engine, sourceText: `/* ${engine} */ 1 + 1` });
+      const { status, json } = await runViaProxy(request, {
+        engine,
+        sourceText: `/* ${engine} */ 1 + 1`,
+      });
       expect(status, `${engine} failed`).toBe(200);
       expect(json.ok, `${engine} returned not-ok`).toBe(true);
     }
@@ -104,7 +107,9 @@ test.describe("frontend API proxy: trace routes", () => {
     expect(body.result).toMatchObject({ type: "String", value: "[object Object]" });
   });
 
-  test("requires input to be source text, the way all three schemas now agree", async ({ request }) => {
+  test("requires input to be source text, the way all three schemas now agree", async ({
+    request,
+  }) => {
     for (const input of [0, null, false, [], {}]) {
       const res = await request.post("/api/trace/execute/type-conversion", {
         data: { functionName: "ToNumber", input },
@@ -123,7 +128,10 @@ test.describe("frontend API proxy: trace routes", () => {
   });
 
   test("404s an unknown trace category without calling upstream", async ({ request }) => {
-    const res = await request.post("/api/trace/execute/nonsense", { data: { input: "1" }, failOnStatusCode: false });
+    const res = await request.post("/api/trace/execute/nonsense", {
+      data: { input: "1" },
+      failOnStatusCode: false,
+    });
     expect(res.status()).toBe(404);
   });
 
@@ -132,7 +140,9 @@ test.describe("frontend API proxy: trace routes", () => {
     expect(res.status()).toBe(200);
 
     const body = await res.json();
-    expect(body.available_functions).toEqual(expect.arrayContaining(["ToNumber", "ToString", "ToPrimitive"]));
+    expect(body.available_functions).toEqual(
+      expect.arrayContaining(["ToNumber", "ToString", "ToPrimitive"]),
+    );
     expect(body.supported_operators).toEqual(expect.arrayContaining(["==", "===", "+"]));
   });
 
@@ -145,7 +155,9 @@ test.describe("frontend API proxy: trace routes", () => {
 
   test("refuses a spec name that tries to escape the allowlist", async ({ request }) => {
     for (const name of ["../../etc/passwd", "ToNumber?x=1", "1Bad"]) {
-      const res = await request.get(`/api/spec/${encodeURIComponent(name)}`, { failOnStatusCode: false });
+      const res = await request.get(`/api/spec/${encodeURIComponent(name)}`, {
+        failOnStatusCode: false,
+      });
       expect(res.status(), `${name} must be refused`).toBeGreaterThanOrEqual(400);
     }
   });

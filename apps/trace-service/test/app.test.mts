@@ -4,12 +4,17 @@
  * real one owns a worker thread and engine262, whose behaviour is covered by
  * execute.test.mts and sandbox.test.mts.
  */
-import { afterEach, describe, expect, it } from "vitest";
+
 import type { FastifyInstance } from "fastify";
-import { buildTraceApp, type SandboxLike } from "../src/server/app.ts";
-import type { ExecuteResponse } from "../src/server/types.ts";
-import { BudgetExceededError, SandboxBusyError, type SandboxTask } from "../src/server/execute/sandbox.ts";
+import { afterEach, describe, expect, it } from "vitest";
 import type { TraceServiceConfig } from "../config.ts";
+import { buildTraceApp, type SandboxLike } from "../src/server/app.ts";
+import {
+  BudgetExceededError,
+  SandboxBusyError,
+  type SandboxTask,
+} from "../src/server/execute/sandbox.ts";
+import type { ExecuteResponse } from "../src/server/types.ts";
 
 const config: TraceServiceConfig = {
   PORT: 0,
@@ -22,7 +27,8 @@ const config: TraceServiceConfig = {
 type StubSandbox = SandboxLike & { tasks: SandboxTask[]; closed: boolean };
 
 function stubSandbox(
-  run: (task: SandboxTask) => ExecuteResponse | Promise<ExecuteResponse> = () => ({ success: true }) as ExecuteResponse,
+  run: (task: SandboxTask) => ExecuteResponse | Promise<ExecuteResponse> = () =>
+    ({ success: true }) as ExecuteResponse,
 ): StubSandbox {
   const stub: StubSandbox = {
     tasks: [],
@@ -40,7 +46,10 @@ function stubSandbox(
 
 let open: FastifyInstance[] = [];
 
-function makeApp(sandbox: StubSandbox, overrides: Partial<TraceServiceConfig> = {}): FastifyInstance {
+function makeApp(
+  sandbox: StubSandbox,
+  overrides: Partial<TraceServiceConfig> = {},
+): FastifyInstance {
   const app = buildTraceApp({ config: { ...config, ...overrides }, sandbox });
   open.push(app);
   return app;
@@ -80,7 +89,11 @@ describe("GET /functions", () => {
 
 describe("POST /execute/type-conversion", () => {
   it("hands the request to the sandbox as a unary task", async () => {
-    const sandbox = stubSandbox(() => ({ success: true, functionName: "ToNumber", result: { type: "Number", value: 1 } }));
+    const sandbox = stubSandbox(() => ({
+      success: true,
+      functionName: "ToNumber",
+      result: { type: "Number", value: 1 },
+    }));
     const res = await makeApp(sandbox).inject({
       method: "POST",
       url: "/execute/type-conversion",
@@ -97,7 +110,11 @@ describe("POST /execute/type-conversion", () => {
   });
 
   it("answers 400 when the trace itself reports failure", async () => {
-    const sandbox = stubSandbox(() => ({ success: false, functionName: "ToNumber", error: "nope" }));
+    const sandbox = stubSandbox(() => ({
+      success: false,
+      functionName: "ToNumber",
+      error: "nope",
+    }));
     const res = await makeApp(sandbox).inject({
       method: "POST",
       url: "/execute/type-conversion",
@@ -159,14 +176,22 @@ describe("POST /execute/equality", () => {
     const sandbox = stubSandbox(() => {
       throw new Error("worker died");
     });
-    const res = await makeApp(sandbox).inject({ method: "POST", url: "/execute/equality", payload: { input: "1 == 1" } });
+    const res = await makeApp(sandbox).inject({
+      method: "POST",
+      url: "/execute/equality",
+      payload: { input: "1 == 1" },
+    });
 
     expect(res.statusCode).toBe(500);
     expect(res.json().functionName).toBe("BinaryExpression");
   });
 
   it("rejects an empty expression", async () => {
-    const res = await makeApp(stubSandbox()).inject({ method: "POST", url: "/execute/equality", payload: { input: "" } });
+    const res = await makeApp(stubSandbox()).inject({
+      method: "POST",
+      url: "/execute/equality",
+      payload: { input: "" },
+    });
     expect(res.statusCode).toBe(400);
   });
 });
@@ -183,7 +208,11 @@ describe("sandbox failure mapping", () => {
     });
 
     expect(res.statusCode).toBe(400);
-    expect(res.json()).toMatchObject({ success: false, code: "execution_budget_exceeded", functionName: "ToNumber" });
+    expect(res.json()).toMatchObject({
+      success: false,
+      code: "execution_budget_exceeded",
+      functionName: "ToNumber",
+    });
   });
 
   it("turns backpressure into a 429 with Retry-After", async () => {

@@ -1,4 +1,4 @@
-import { NAV_GROUPS, navEntries, type NavEntry } from "@/lib/tools";
+import { NAV_GROUPS, type NavEntry, navEntries } from "@/lib/tools";
 
 export type NavItem = NavEntry;
 
