@@ -145,7 +145,10 @@ export const BINARY_ALGORITHMS = {
     ],
   },
   IsStrictlyEqual: {
+    // IsStrictlyEqual needs no steps of its own, but every entry is driven by
+    // callGenerator, so it still has to hand back a generator.
     call: (lhs, rhs) =>
+      // biome-ignore lint/correctness/useYield: a generator that only returns is the point here.
       (function* () {
         return IsStrictlyEqual(lhs, rhs);
       })(),
