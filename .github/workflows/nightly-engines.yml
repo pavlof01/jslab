@@ -1,0 +1,88 @@
+name: nightly-engines
+
+# The only place a REAL engine binary meets the HTTP wrapper end to end. CI's
+# matrix runs the shared runtime against `node` as a stand-in; here each engine
+# service runs on top of its real base image (d8, hermes, jsc, js) and answers
+# real requests — including the security probe that the lockdown shim actually
+# stops a snippet reading a file inside a real d8/jsc realm.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-engines
+  cancel-in-progress: true
+
+jobs:
+  real-binaries:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bring up the engine services on their real base images
+        run: |
+          docker compose up --build -d engine-v8 engine-hermes engine-spidermonkey engine-jsc
+          for port in 8087 8082 8083 8084; do
+            for i in $(seq 1 60); do
+              if curl -fsS "http://localhost:$port/healthz" >/dev/null 2>&1; then break; fi
+              if [ "$i" = "60" ]; then echo "engine on :$port never became healthy" >&2; docker compose logs >&2; exit 1; fi
+              sleep 5
+            done
+          done
+
+      - name: V8 produces real Ignition bytecode
+        run: |
+          out=$(curl -fsS http://localhost:8087/run -H 'content-type: application/json' \
+            -d '{"sourceText":"function add(a,b){return a+b} add(1,2)","options":{"flags":["--print-bytecode"]}}')
+          echo "$out"
+          echo "$out" | grep -Eq 'Ldar|Return|Add' || { echo "no bytecode mnemonic in V8 output" >&2; exit 1; }
+
+      - name: Lockdown neutralizes file reads inside REAL d8
+        run: |
+          # The one thing no unit test can prove: the shim actually stops a
+          # snippet reading a file in a real d8 realm. read() must not return the
+          # file's contents.
+          out=$(curl -fsS http://localhost:8087/run -H 'content-type: application/json' \
+            -d '{"sourceText":"try { print(read(\"/etc/hostname\")); } catch (e) { print(\"BLOCKED:\" + e.message); }"}')
+          echo "$out"
+          if echo "$out" | grep -Eq 'BLOCKED|is disabled|is not (defined|a function)'; then
+            echo "read() is neutralized in real d8"
+          else
+            echo "SECURITY: read() was NOT neutralized in real d8 — output above" >&2
+            exit 1
+          fi
+
+      - name: Lockdown neutralizes file reads inside REAL jsc
+        run: |
+          out=$(curl -fsS http://localhost:8084/run -H 'content-type: application/json' \
+            -d '{"sourceText":"try { print(readFile(\"/etc/hostname\")); } catch (e) { print(\"BLOCKED:\" + e.message); }"}')
+          echo "$out"
+          if echo "$out" | grep -Eq 'BLOCKED|is disabled|is not (defined|a function)'; then
+            echo "readFile() is neutralized in real jsc"
+          else
+            echo "SECURITY: readFile() was NOT neutralized in real jsc — output above" >&2
+            exit 1
+          fi
+
+      - name: Hermes dumps bytecode
+        run: |
+          out=$(curl -fsS http://localhost:8082/run -H 'content-type: application/json' \
+            -d '{"sourceText":"function f(){return 1+1} f()"}')
+          echo "$out"
+          echo "$out" | grep -Eiq '"ok":true' || { echo "hermes did not return ok" >&2; exit 1; }
+
+      - name: SpiderMonkey disassembles
+        run: |
+          out=$(curl -fsS http://localhost:8083/run -H 'content-type: application/json' \
+            -d '{"sourceText":"function f(){return 1+1} f()"}')
+          echo "$out"
+          echo "$out" | grep -Eiq '"ok":true' || { echo "spidermonkey did not return ok" >&2; exit 1; }
+
+      - name: Engine logs on failure
+        if: ${{ failure() }}
+        run: docker compose logs --no-color | tail -300
