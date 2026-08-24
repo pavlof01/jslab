@@ -44,6 +44,30 @@ type Artifact      = { kind: "bytecode"; mime: string; dataBase64: string }
 
 ## Development commands
 
+### Formatting and linting (repo root)
+
+Biome is the formatter and linter for the entire tree; `biome.jsonc` at the root
+is the only config, and it explains each choice inline. Run `npm install` at the
+root once (tooling only — it is not an npm workspace root and does not change how
+services install).
+
+```bash
+npm run check      # what CI runs: format + lint + import order, read-only
+npm run check:fix  # apply the safe fixes
+npm run format     # formatting only
+```
+
+Notes:
+- Suppress a rule at the site with a single-line `// biome-ignore lint/<group>/<rule>: reason`
+  directly above the code. A multi-line reason silently breaks the suppression.
+- ESLint still runs in `apps/frontend/src` for the Next.js and React-hooks rules
+  Biome cannot express. Biome's `useExhaustiveDependencies` is off so the two
+  never report the same thing.
+- Warnings (e.g. `noExplicitAny`) do not fail CI; errors do.
+- `apps/frontend/src/next.config.ts` pins `turbopack.root`/`outputFileTracingRoot`
+  to that directory — the root lockfile would otherwise make Next guess the
+  workspace root and warn.
+
 ### Frontend (`apps/frontend/src/`)
 ```bash
 npm run dev          # Next.js dev server with Turbopack → localhost:3000
