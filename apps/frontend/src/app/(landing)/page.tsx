@@ -1,4 +1,5 @@
 import { Box } from "@chakra-ui/react";
+
 import { AlsoSection } from "./sections/also";
 import { FooterSection } from "./sections/footer";
 import { HeroSection } from "./sections/hero";

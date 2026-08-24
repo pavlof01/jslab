@@ -5,6 +5,7 @@
  */
 import fastify from "fastify";
 import { describe, expect, it } from "vitest";
+
 import { buildEqualityBodySchema, buildTypeConversionBodySchema } from "../src/server/schema.ts";
 
 const MAX_SOURCE_LENGTH = 32;

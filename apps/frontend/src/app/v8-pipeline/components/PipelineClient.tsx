@@ -6,6 +6,7 @@ import { CiPlay1 } from "react-icons/ci";
 
 import { EditorPanel } from "@/components/EditorPanel";
 import { LogoLoader } from "@/components/ui";
+
 import { type ApiStageId, STAGES, type StageId } from "../lib/stages";
 import { usePipelineRun } from "../lib/usePipelineRun";
 import { StageContent } from "./StageContent";

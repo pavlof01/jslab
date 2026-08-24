@@ -1,5 +1,6 @@
 import { diffArrays } from "diff";
 import type { ThemedToken, TokensResult } from "shiki";
+
 import { DiffKind } from "@/lib/types";
 
 type DiffTokensResult = Omit<TokensResult, "tokens"> & {

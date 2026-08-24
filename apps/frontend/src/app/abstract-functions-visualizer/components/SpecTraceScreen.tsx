@@ -3,6 +3,7 @@
 import { Box } from "@chakra-ui/react";
 
 import { SplitRow } from "@/components/ui";
+
 import type { TraceNode } from "../spec-runner";
 import { formatSpecValue } from "../traceModel";
 import { DecisionTree } from "./spec-trace/DecisionTree";

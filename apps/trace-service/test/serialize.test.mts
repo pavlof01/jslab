@@ -6,6 +6,7 @@
  * straight off the engine262 Value instead; the cases below pin the difference.
  */
 import { describe, expect, it } from "vitest";
+
 import {
   type EngineValue,
   fromEngineValue,

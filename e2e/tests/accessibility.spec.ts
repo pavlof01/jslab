@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage } from "../helpers/playground";
 
 test.describe("accessibility", () => {

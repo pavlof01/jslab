@@ -2,6 +2,7 @@
 
 import { Box, Button, HStack, Menu, Portal, Text } from "@chakra-ui/react";
 import Link from "next/link";
+
 import { NavItemBody } from "./NavItemBody";
 import { navSections } from "./nav.types";
 import { useSectionActive } from "./useSectionActive";

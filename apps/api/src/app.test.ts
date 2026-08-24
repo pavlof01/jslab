@@ -1,5 +1,6 @@
 import type { Redis } from "ioredis";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { buildApp } from "./app.js";
 import { cacheKey } from "./cache.js";
 import { type ApiConfig, loadConfig } from "./config.js";

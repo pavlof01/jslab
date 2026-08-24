@@ -4,6 +4,7 @@
  * thread, without pulling engine262 into the test process.
  */
 import { afterEach, describe, expect, it } from "vitest";
+
 import {
   BudgetExceededError,
   SandboxBusyError,

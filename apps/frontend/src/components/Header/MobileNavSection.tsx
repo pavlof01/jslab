@@ -4,6 +4,7 @@ import { Box, Button, Collapsible, HStack, Text, VStack } from "@chakra-ui/react
 import Link from "next/link";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
+
 import { NavItemBody } from "./NavItemBody";
 import type { NavSection } from "./nav.types";
 

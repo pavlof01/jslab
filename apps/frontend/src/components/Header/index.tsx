@@ -1,5 +1,7 @@
 import { Box, Container, HStack, Link } from "@chakra-ui/react";
+
 import { REPO_URL } from "@/lib/site";
+
 import Logo from "../Logo";
 import { MobileNav } from "./MobileNav";
 import Nav from "./Nav";

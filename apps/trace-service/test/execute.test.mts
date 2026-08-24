@@ -9,6 +9,7 @@
  * expensive part, and it is paid once.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
 import { buildTraceApp } from "../src/server/app.ts";
 import { TraceSandbox } from "../src/server/execute/sandbox.ts";
 import type { ExecuteResponse } from "../src/server/types.ts";

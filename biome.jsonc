@@ -48,7 +48,27 @@
     "enabled": true,
     "actions": {
       "source": {
-        "organizeImports": "on"
+        // Imports are grouped, not just sorted: node builtins, then packages,
+        // then the "@/" alias the frontend uses, then relative paths, with a
+        // blank line between groups. Bare imports are left where they
+        // are — `sortBareImports` stays off so a polyfill or a CSS side effect
+        // cannot be reordered past the code that depends on it.
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":NODE:",
+              ":BLANK_LINE:",
+              [":PACKAGE_WITH_PROTOCOL:", ":URL:", ":PACKAGE:"],
+              ":BLANK_LINE:",
+              ":ALIAS:",
+              ":BLANK_LINE:",
+              ":PATH:",
+              ":BLANK_LINE:",
+              ":STYLE:"
+            ]
+          }
+        }
       }
     }
   },

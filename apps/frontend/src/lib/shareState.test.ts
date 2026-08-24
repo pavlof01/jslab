@@ -1,6 +1,8 @@
 import { describe, expect, it } from "@jest/globals";
+
 import { encodeText } from "@/lib/base64url";
 import { EngineKey } from "@/lib/types";
+
 import {
   buildEmbedSnippet,
   buildShareUrl,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { runCommand } from "./run.js";
 
 const node = process.execPath;

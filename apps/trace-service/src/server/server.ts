@@ -1,5 +1,4 @@
 import { loadConfig } from "../../config.ts";
-
 import { buildTraceApp } from "./app.ts";
 import { TraceSandbox } from "./execute/sandbox.ts";
 

@@ -1,6 +1,8 @@
 import type { ThemedToken } from "shiki";
+
 import type { EngineKey } from "@/lib/types";
 import { DiffKind } from "@/lib/types";
+
 import TokenSpan from "./CodeToken";
 import LineNumber from "./LineNumber";
 

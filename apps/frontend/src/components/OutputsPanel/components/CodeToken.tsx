@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import type { ThemedToken } from "shiki";
 
 import type { EngineKey } from "@/lib/types";
+
 import { describeEngineToken } from "../op-codes";
 import ClickPopoverToken from "./ClickPopoverToken";
 

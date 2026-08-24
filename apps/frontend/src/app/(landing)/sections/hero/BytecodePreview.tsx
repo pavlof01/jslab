@@ -6,8 +6,8 @@ import { useState } from "react";
 import { QuietLink } from "@/components/ui";
 import { Band } from "@/components/ui/band";
 import { Label } from "@/components/ui/label";
-import { DUMPS, SNIPPET } from "../../landing-data";
 
+import { DUMPS, SNIPPET } from "../../landing-data";
 import { RuleTab } from "./RuleTab";
 
 export function BytecodePreview() {

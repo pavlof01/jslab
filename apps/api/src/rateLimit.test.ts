@@ -1,6 +1,7 @@
 import type { FastifyReply } from "fastify";
 import type { Redis } from "ioredis";
 import { describe, expect, it, vi } from "vitest";
+
 import { enforceLimit, hashIdentity } from "./rateLimit.js";
 import { createFakeRedis } from "./test-support/fakeRedis.js";
 

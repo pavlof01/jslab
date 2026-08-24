@@ -1,4 +1,5 @@
 import type { FastifyBaseLogger, FastifyInstance } from "fastify";
+
 import { cacheKey, readCache, writeCache } from "../cache.js";
 import type { AppContext } from "../context.js";
 import { engineBaseUrls } from "../engines.js";

@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import type { FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
+
 import s from "./EcmaSpecPanel.module.css";
 
 function extractStepId(hint: string | undefined): string | null {

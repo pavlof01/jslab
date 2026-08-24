@@ -1,5 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
+
 import { EngineKey } from "@/lib/types";
+
 import {
   decodeSnapshot,
   type EmbedSnapshot,

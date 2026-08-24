@@ -2,6 +2,7 @@ import { CodeBlock, createShikiAdapter, Flex, Float, IconButton } from "@chakra-
 import type { HighlighterGeneric } from "shiki";
 
 import { getSourceHighlighter, MACHINE_CODE_LANG, THEME } from "@/lib/shiki";
+
 import DefaultEmptyCodeBlockState, {
   type Props as DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";

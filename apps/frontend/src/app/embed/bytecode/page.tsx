@@ -8,6 +8,7 @@ import {
   OEMBED_PATH,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
+
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
 export const metadata: Metadata = {

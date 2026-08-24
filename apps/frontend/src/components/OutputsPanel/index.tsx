@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { engineLabel } from "@/lib/engines";
 import { ENGINE_KEYS, EngineKey, isEngineKey, RunStatus } from "@/lib/types";
 import { useActiveTab, useOutputPane } from "@/store/engineOutputsSelectors";
+
 import { HighlightedCode } from "./CodeBlock";
 
 export function OutputsPanel() {

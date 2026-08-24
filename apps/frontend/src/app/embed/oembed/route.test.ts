@@ -3,8 +3,10 @@
  */
 import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
+
 import { buildSnapshotUrl } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
+
 import { GET } from "./route";
 
 const SITE = "https://jslab.su";

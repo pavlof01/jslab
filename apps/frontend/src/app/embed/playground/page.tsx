@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { FlagCatalogProvider } from "@/components/FlagSelector/context";
 import { fetchFlagCatalog } from "@/lib/server/flags";
+
 import EmbedPlaygroundClient from "./EmbedPlaygroundClient";
 
 export const metadata: Metadata = {

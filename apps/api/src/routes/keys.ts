@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+
 import { extractApiKey, issueApiKey, revokeApiKey } from "../apiKeys.js";
 import type { AppContext } from "../context.js";
 import { hashIdentity } from "../rateLimit.js";

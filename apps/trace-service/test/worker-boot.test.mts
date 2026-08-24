@@ -9,6 +9,7 @@
  * behind a worker that died with `SyntaxError: Invalid or unexpected token`.
  */
 import { afterEach, describe, expect, it } from "vitest";
+
 import { TraceSandbox } from "../src/server/execute/sandbox.ts";
 
 let sandbox: TraceSandbox | null = null;

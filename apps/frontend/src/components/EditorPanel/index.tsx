@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { completableIntrinsics, V8_NATIVES_FLAG } from "@/lib/v8Intrinsics";
+
 import { EDITOR_OPTIONS, JSL_THEME } from "./monacoConfig";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });

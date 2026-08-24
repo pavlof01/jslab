@@ -4,6 +4,7 @@ import { Box, Button, SimpleGrid, Text } from "@chakra-ui/react";
 
 import type { CustomSample } from "@/lib/customSamples";
 import { type SampleKey, sampleCatalog, samples } from "@/lib/samples";
+
 import { SampleCard } from "./SampleCard";
 
 export function SampleLibrary({

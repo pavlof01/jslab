@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
 import type { NextConfig } from "next";
 
 // This app's package.json and lockfile live here, in apps/frontend/src, while

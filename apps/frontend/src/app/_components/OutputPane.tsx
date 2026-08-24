@@ -1,6 +1,7 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
+
 import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import { engineLabel } from "@/lib/engines";
@@ -12,6 +13,7 @@ import {
   useEngineSelection,
   useOutputPane as useOutputPaneState,
 } from "@/store/engineOutputsSelectors";
+
 import { EngineTabs } from "./EngineTabs";
 import * as styles from "./playground.styles";
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage, V8_BYTECODE } from "../helpers/playground";
 
 test.describe("playground: reading the output", () => {

@@ -5,6 +5,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { Providers } from "@/app/providers";
 import type { EmbedSnapshot } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
+
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
 const snapshot: EmbedSnapshot = {

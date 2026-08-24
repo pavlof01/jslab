@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { GATEWAY_URL } from "../helpers/api";
 
 test.describe("api gateway", () => {

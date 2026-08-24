@@ -1,6 +1,7 @@
 import underPressure from "@fastify/under-pressure";
 import apiReference from "@scalar/fastify-api-reference";
 import fastify, { type FastifyInstance } from "fastify";
+
 import type { AppContext } from "./context.js";
 import { ENGINE_KINDS } from "./engines.js";
 import { registry } from "./metrics.js";

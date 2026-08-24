@@ -12,6 +12,7 @@
  * fork bomb on a 4-CPU node.
  */
 import { Worker } from "node:worker_threads";
+
 import type { ExecuteResponse } from "../types.ts";
 
 export type SandboxTask =

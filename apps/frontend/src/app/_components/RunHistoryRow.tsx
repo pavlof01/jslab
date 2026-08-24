@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Flex, Text } from "@chakra-ui/react";
+
 import type { RunHistoryEntry } from "@/lib/runHistory";
 import { type EngineFlags, flagCount } from "@/lib/types";
 

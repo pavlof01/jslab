@@ -6,6 +6,7 @@
  * Value fidelity itself is covered by serialize.test.mts.
  */
 import { describe, expect, it } from "vitest";
+
 import {
   serializeNode,
   serializeStep,

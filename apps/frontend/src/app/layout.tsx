@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+
 import { ConditionalHeader } from "@/components/ConditionalHeader";
 import { SITE_ORIGIN } from "@/lib/site";
+
 import { Providers } from "./providers";
 
 import "./globals.css";

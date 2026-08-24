@@ -9,6 +9,7 @@
  * drifting again.
  */
 import { describe, expect, it } from "vitest";
+
 import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
 import {
   AVAILABLE_FUNCTIONS,

@@ -4,6 +4,7 @@
  * end-to-end behaviour lives in execute.test.mts.
  */
 import { describe, expect, it } from "vitest";
+
 import { detectOperator } from "../src/server/execute/parse.ts";
 import {
   AVAILABLE_FUNCTIONS,

@@ -16,9 +16,11 @@ import {
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { LuX } from "react-icons/lu";
+
 import { clearHistory, loadHistory, type RunHistoryEntry } from "@/lib/runHistory";
 import { selectionFrom } from "@/lib/types";
 import { useStateRestore } from "@/store/engineOutputsSelectors";
+
 import { RunHistoryRow } from "./RunHistoryRow";
 
 export default function RunHistory() {

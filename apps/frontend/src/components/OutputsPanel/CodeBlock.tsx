@@ -10,6 +10,7 @@ import { type BytecodeLang, engineLang } from "@/lib/engines";
 import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
 import { compareOutputs } from "@/utils/diff-bytecode";
+
 import CodeDisplay from "./components/Code";
 import CopyButton from "./components/CopyButton";
 import DefaultEmptyCodeBlockState, {

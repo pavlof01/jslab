@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { runViaProxy, uniqueSnippet } from "../helpers/api";
 
 test.describe("frontend API proxy: /api/run", () => {

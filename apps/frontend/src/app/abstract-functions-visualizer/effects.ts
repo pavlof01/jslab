@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { getJson, getText } from "@/lib/http";
+
 import type { FunctionCatalog, VisualizerInitialData } from "./model";
 import { useVisualizerStore } from "./StoreProvider";
 

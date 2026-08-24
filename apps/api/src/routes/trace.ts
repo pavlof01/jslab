@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
+
 import type { AppContext } from "../context.js";
 import { traceExecuteEqualitySchema, traceExecuteRequestSchema } from "../schemas.js";
 import { consume, resolveBudget } from "../security.js";

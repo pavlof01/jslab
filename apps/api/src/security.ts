@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+
 import { extractApiKey, lookupApiKey } from "./apiKeys.js";
 import type { ApiConfig } from "./config.js";
 import type { AppContext } from "./context.js";

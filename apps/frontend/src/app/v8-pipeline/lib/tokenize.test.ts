@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
+
 import { tokenize } from "./tokenize";
 
 const kinds = (src: string) => tokenize(src).map((t) => t.kind);

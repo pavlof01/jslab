@@ -7,6 +7,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
+
 import type { TraceServiceConfig } from "../config.ts";
 import { buildTraceApp, type SandboxLike } from "../src/server/app.ts";
 import {

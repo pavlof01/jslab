@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { type CatalogEngine, flagCatalog, sanitizeFlags } from "./flags.js";
 
 describe("flag catalog contents", () => {

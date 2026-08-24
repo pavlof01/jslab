@@ -9,6 +9,7 @@ type MockFn = ReturnType<typeof JestGlobals.fn>;
 jest.mock("./traceApi", () => ({ __esModule: true, executeTrace: jest.fn() }));
 
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
+
 import type { VisualizerInitialData } from "./model";
 import type { TraceNode } from "./spec-runner";
 import { createVisualizerStore, DEFAULTS_BY_CATEGORY } from "./store";

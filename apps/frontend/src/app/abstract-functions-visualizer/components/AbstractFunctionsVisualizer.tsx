@@ -15,6 +15,7 @@ import type {
 import { fallbackInitialData } from "@/app/abstract-functions-visualizer/model";
 import { VisualizerStoreProvider } from "@/app/abstract-functions-visualizer/StoreProvider";
 import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
+
 import { HINTS, PRESETS } from "./categoryContent";
 
 function AlgoPicker({

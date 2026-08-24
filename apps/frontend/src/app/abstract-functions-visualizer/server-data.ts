@@ -1,5 +1,6 @@
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
 import { traceServiceUrl } from "@/lib/server/traceService";
+
 import {
   type AlgoCategory,
   EMPTY_FUNCTION_CATALOG,

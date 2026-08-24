@@ -6,6 +6,7 @@ import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import CodeBlockShiki from "@/components/OutputsPanel/CodeBlockShiki";
 import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
 import { EngineKey } from "@/lib/types";
+
 import type { Stage } from "../lib/stages";
 import type { Token } from "../lib/tokenize";
 import type { StageOutput } from "../lib/usePipelineRun";

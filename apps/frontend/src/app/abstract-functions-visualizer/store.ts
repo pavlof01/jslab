@@ -1,6 +1,8 @@
 import { createStore } from "zustand/vanilla";
+
 import { type FlatEntry, flattenTrace } from "@/app/abstract-functions-visualizer/flatten";
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
+
 import {
   type AlgoCategory,
   DEFAULTS_BY_CATEGORY,

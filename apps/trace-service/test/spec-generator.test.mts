@@ -5,7 +5,9 @@
  * and that a clause carries the id and outbound link the UI depends on.
  */
 import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
+
 import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
 import { AVAILABLE_FUNCTIONS, SUPPORTED_SPEC_FUNCTIONS } from "../src/server/operations.ts";
 import { ALGO_SPEC_URL, buildSpecHtmlForFunction } from "../src/server/spec-generator.ts";

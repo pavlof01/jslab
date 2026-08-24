@@ -1,4 +1,5 @@
 import type { SpawnOptions } from "node:child_process";
+
 import { runCommand } from "./run.js";
 
 export interface VersionProbe {

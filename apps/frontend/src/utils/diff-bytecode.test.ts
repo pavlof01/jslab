@@ -1,6 +1,8 @@
 import { describe, expect, it } from "@jest/globals";
 import type { ThemedToken, TokensResult } from "shiki";
+
 import { DiffKind } from "@/lib/types";
+
 import { compareOutputs } from "./diff-bytecode";
 
 // Build a TokensResult where each source line becomes a single token whose

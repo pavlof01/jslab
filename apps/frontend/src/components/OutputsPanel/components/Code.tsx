@@ -1,6 +1,8 @@
 import { Flex } from "@chakra-ui/react";
 import type { ThemedToken, TokensResult } from "shiki";
+
 import type { EngineKey } from "@/lib/types";
+
 import PlainCodeRow from "./CodeRow";
 
 type Props = TokensResult & { engineKey: EngineKey };

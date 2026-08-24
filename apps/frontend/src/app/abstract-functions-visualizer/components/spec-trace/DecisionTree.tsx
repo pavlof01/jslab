@@ -4,6 +4,7 @@ import { Box, Flex, Span } from "@chakra-ui/react";
 import { useMemo } from "react";
 
 import { StepNode } from "@/components/ui";
+
 import { buildDecisionTree } from "../../decision-tree";
 import type { TraceNode } from "../../spec-runner";
 
