@@ -60,6 +60,41 @@ jobs:
         # CI=true (set by GitHub) makes vitest/jest run once instead of watching.
         run: ${{ matrix.test }}
 
+  api-redis:
+    name: api-redis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      # The gateway consumes @jslab/engine-runtime as a file: dependency.
+      - name: Build shared engine runtime
+        working-directory: packages/engine-runtime
+        run: npm ci && npm run build
+      - name: Install
+        working-directory: apps/api
+        run: npm ci
+      # Only the Redis-gated suite; the hermetic matrix leg already ran the rest.
+      - name: Test against real Redis
+        working-directory: apps/api
+        env:
+          TEST_REDIS_URL: redis://localhost:6379
+        run: npx vitest run src/app.redis.test.ts
+
   manifests:
     name: k8s-manifests
     runs-on: ubuntu-24.04
