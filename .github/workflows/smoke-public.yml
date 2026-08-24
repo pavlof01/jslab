@@ -1,0 +1,36 @@
+name: smoke-public
+
+# The full-path smoke check (browser edge -> frontend -> gateway -> engine ->
+# binary) that scripts/smoke-test.sh has always performed by hand. Nothing ran
+# it automatically, so a break anywhere across the public request path — DNS,
+# ingress routing, a NetworkPolicy, the gateway proxy — surfaced only when a
+# person happened to run the script.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Site to smoke-test"
+        required: false
+        default: "https://jslab.su"
+        type: string
+  schedule:
+    # Every two hours; cheap, and it catches a silent breakage between deploys.
+    - cron: "0 */2 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-public
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run public smoke test
+        env:
+          JSLAB_BASE_URL: ${{ github.event.inputs.base_url || 'https://jslab.su' }}
+        run: bash scripts/smoke-test.sh

@@ -30,6 +30,11 @@ jobs:
       container: api
       verify_command: npm run lint && npm test
       image_tag: ${{ github.event.inputs.image_tag || '' }}
-      # Keeps the default smoke path: /healthz is the gateway's own probe route.
-      smoke_expect: '"ok":true'
+      # The gateway's own value is proving the whole path works, not just that it
+      # booted: POST /api/run reaches engine-v8 over the real Service network and
+      # runs d8, so "42" in the reply means gateway -> engine -> binary all work.
+      # /healthz alone (the old check) never left the api pod.
+      smoke_path: /api/run
+      smoke_body: '{"engine":"v8","sourceText":"print(6*7)"}'
+      smoke_expect: "42"
     secrets: inherit
