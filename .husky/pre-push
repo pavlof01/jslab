@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Delegates to the bash guard: husky owns core.hooksPath, so hooks in .githooks/
+# only run if something forwards to them. The guard blocks pushing a submodule
+# gitlink that is missing from the submodule's own remote.
+exec bash .githooks/pre-push "$@"

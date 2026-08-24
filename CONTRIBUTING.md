@@ -34,14 +34,15 @@ clone so git pushes the submodule for you:
 
 ```bash
 git config push.recurseSubmodules on-demand
-git config core.hooksPath .githooks
 ```
 
-The first line makes `git push` push `apps/trace-service/engine262` first. The
-second installs `.githooks/pre-push`, which blocks the push outright if a gitlink
-is missing from the submodule's remote and prints the command to fix it. CI
-checks the same thing in the `submodule-gitlinks` job, so a slip is one clear
-red check rather than eight cryptic ones.
+That makes `git push` push `apps/trace-service/engine262` first. On top of it,
+`npm install` at the repo root installs the husky hooks: `.husky/pre-push`
+blocks a push outright when a gitlink is missing from the submodule's remote
+(and prints the command to fix it), and `.husky/commit-msg` validates the
+commit subject against `commitlint.config.mjs`. CI checks both again — the
+`submodule-gitlinks` and `commit-subjects` jobs — so a skipped hook costs a
+clear red check, not a broken main.
 
 ## Quick start
 
@@ -164,6 +165,12 @@ kubectl apply -k infra/k8s/base        # one-off deploy (namespace: jslab)
 
 See the README's Kubernetes quickstart and [`docs/infra.md`](docs/infra.md)
 for the topology, NetworkPolicies, and Apple Silicon notes.
+
+## Releases
+
+Releases are automated — see [docs/releasing.md](docs/releasing.md). Commit
+subjects are the changelog: `feat`/`fix` land in it verbatim, so write them for
+a reader of the release notes, not just for `git log`.
 
 ## Pull requests
 
