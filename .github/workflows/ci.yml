@@ -13,6 +13,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  quality:
+    name: biome
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install
+        run: npm ci
+      # `biome ci` never writes; it fails on anything `biome check --write`
+      # would have changed. --reporter=github puts each finding on its line in
+      # the PR diff.
+      - name: Check formatting, lint and import order
+        run: npm run ci
+
   apps:
     name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
@@ -159,3 +178,38 @@ jobs:
   # deny rules checks that every ingress TLS secret has a Secret/Certificate in
   # the same namespace, but those are provisioned out-of-band (see infra/README),
   # so it can only pass against a live cluster. Run it in a cluster-aware job.
+
+  # Single required status check for branch protection. Without this, protecting
+  # `main` means naming every leg by hand and editing the setting whenever the
+  # matrix gains a service — and a leg that is renamed silently stops being
+  # required. Point branch protection at "quality-gate" and nothing else.
+  quality-gate:
+    name: quality-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [quality, apps, submodules, api-redis, manifests]
+    # `always()` so this job still runs (and fails) when a dependency fails or
+    # is cancelled; without it the job would be skipped, which branch protection
+    # reads as success.
+    if: always()
+    steps:
+      - name: Verify every job succeeded
+        run: |
+          set -euo pipefail
+          results="quality=${{ needs.quality.result }}"
+          results="$results apps=${{ needs.apps.result }}"
+          results="$results submodules=${{ needs.submodules.result }}"
+          results="$results api-redis=${{ needs['api-redis'].result }}"
+          results="$results manifests=${{ needs.manifests.result }}"
+          echo "$results"
+          for entry in $results; do
+            case "${entry#*=}" in
+              success) ;;
+              *) echo "::error::$entry"; failed=1 ;;
+            esac
+          done
+          if [ "${failed:-0}" = "1" ]; then
+            echo "One or more CI jobs did not succeed."
+            exit 1
+          fi
+          echo "All CI jobs succeeded."

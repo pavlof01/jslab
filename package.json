@@ -1,0 +1,24 @@
+{
+  "name": "jslab",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Repo-root tooling only. Each service under apps/ and packages/ keeps its own package.json and lockfile — this one exists so formatting and linting have a single version and a single config for the whole tree.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "biome check",
+    "check:fix": "biome check --write",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
+    "ci": "biome ci --reporter=github",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.9",
+    "husky": "^9.1.7"
+  }
+}

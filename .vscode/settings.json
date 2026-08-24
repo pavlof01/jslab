@@ -1,0 +1,20 @@
+{
+  // Editor side of the same gate CI runs. Nothing here is required — the hook
+  // and `biome ci` still catch an unformatted file — but with this you never
+  // see the failure in the first place.
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit"
+  },
+  // Biome's config lives at the repo root, while VS Code is often opened on a
+  // single service. Point the extension at the root so it finds biome.jsonc.
+  "biome.configurationPath": "./biome.jsonc",
+  "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[javascriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[json]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[jsonc]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[css]": { "editor.defaultFormatter": "biomejs.biome" }
+}
