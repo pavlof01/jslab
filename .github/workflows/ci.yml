@@ -106,6 +106,34 @@ jobs:
           done < <(git ls-tree -r HEAD)
           exit $status
 
+  commits:
+    name: commit-subjects
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install
+        run: npm ci
+      # On a PR every commit in the branch is checked; on a push, only what the
+      # push introduced. Merge commits are ignored by commitlint's defaults, and
+      # history from before the convention was enforced is never re-litigated.
+      - name: Validate commit subjects
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}"
+          else
+            npx commitlint --from "${{ github.event.before }}" --to "${{ github.sha }}" ||
+              npx commitlint --last
+          fi
+
   api-redis:
     name: api-redis
     runs-on: ubuntu-24.04
@@ -187,7 +215,7 @@ jobs:
     name: quality-gate
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    needs: [quality, apps, submodules, api-redis, manifests]
+    needs: [quality, apps, commits, submodules, api-redis, manifests]
     # `always()` so this job still runs (and fails) when a dependency fails or
     # is cancelled; without it the job would be skipped, which branch protection
     # reads as success.
@@ -198,6 +226,7 @@ jobs:
           set -euo pipefail
           results="quality=${{ needs.quality.result }}"
           results="$results apps=${{ needs.apps.result }}"
+          results="$results commits=${{ needs.commits.result }}"
           results="$results submodules=${{ needs.submodules.result }}"
           results="$results api-redis=${{ needs['api-redis'].result }}"
           results="$results manifests=${{ needs.manifests.result }}"

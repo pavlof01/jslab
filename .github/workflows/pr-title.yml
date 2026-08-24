@@ -1,0 +1,39 @@
+name: pr-title
+
+# A squash merge turns the PR title into the commit subject on main, so the
+# title has to satisfy the same convention as a commit. pull_request_target on
+# purpose: the job never checks out or executes PR code, and the rules cannot be
+# altered by the PR itself.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Validate the PR title as a commit subject
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          types='feat|fix|chore|docs|ci|test|refactor|perf|style|infra|revert'
+          scopes='api|ci|deps|e2e|engine-hermes|engine-jsc|engine-runtime|engine-spidermonkey|engine-v8|engines|frontend|infra|jslab|landing|main|repo|trace|trace-service|v8-pipeline'
+          if [ "${#TITLE}" -gt 100 ]; then
+            echo "::error::PR title is ${#TITLE} chars; the limit is 100."
+            exit 1
+          fi
+          if printf '%s' "$TITLE" | grep -qE "^($types)(\(($scopes)\))?(!)?: .+"; then
+            echo "PR title OK: $TITLE"
+          else
+            echo "::error::PR title must read like a commit subject: type(scope): summary — e.g. feat(frontend): add opcode pages. Allowed types: $types"
+            exit 1
+          fi
