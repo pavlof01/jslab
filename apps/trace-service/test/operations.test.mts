@@ -77,6 +77,30 @@ describe("execute", () => {
     expect(result.root).toBeDefined();
   });
 
+  it.each([
+    ["ToNumber", "'42'", { type: "Number", value: 42 }],
+    ["ToNumeric", "10n", { type: "BigInt", value: "10" }],
+    ["ToString", "123", { type: "String", value: "123" }],
+    ["ToBoolean", "''", { type: "Boolean", value: false }],
+    ["ToPrimitive", "{ valueOf: () => 7 }", { type: "Number", value: 7 }],
+    ["ToObject", "'hi'", { type: "Object" }],
+    ["ToPropertyKey", "2", { type: "String", value: "2" }],
+    ["ToLength", "-5", { type: "Number", value: 0 }],
+  ])("executes %s through engine262 end to end", async (fn, input, expected) => {
+    const result = await executeUnaryConversion(fn, input);
+    expect(result.success, `${fn}(${input}) failed: ${result.error}`).toBe(true);
+    expect(result.functionName).toBe(fn);
+    expect(result.result).toMatchObject(expected);
+    expect(result.root, `${fn} produced no trace tree`).toBeDefined();
+  });
+
+  it("executes ToIndex, whose spec return is a mathematical value, not a language value", async () => {
+    const result = await executeUnaryConversion("ToIndex", "3");
+    expect(result.success, result.error).toBe(true);
+    expect(result.functionName).toBe("ToIndex");
+    expect(JSON.stringify(result.root)).toContain("Valid index: 3");
+  });
+
   it("reports the algorithm an expression actually reached", async () => {
     const result = await executeBinaryExpression("{} == ![]");
     expect(result.success).toBe(true);

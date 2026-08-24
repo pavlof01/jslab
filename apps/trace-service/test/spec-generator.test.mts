@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { executeBinaryExpression } from "../src/server/execute/index.ts";
+import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
 import { ALGO_SPEC_URL, buildSpecHtmlForFunction } from "../src/server/spec-generator.ts";
 import { AVAILABLE_FUNCTIONS, SUPPORTED_SPEC_FUNCTIONS } from "../src/server/operations.ts";
 
@@ -100,17 +100,73 @@ describe("step anchors", () => {
     }
   };
 
-  it.each([["[] + {}"], ["1n + 2n"], ["[] == ![]"]])("resolves every step hint of %s to a clause id", async (expression) => {
+  const hasAnchors = (algoId: string) => specHtml.includes(`"${algoId}-step-`);
+
+  const binaryInputs = ["[] + {}", "1n + 2n", "[] == ![]", "1 < 2", "'a' === 'a'"];
+  const unaryInputs: Array<[string, string]> = [
+    ["ToNumber", "'42'"],
+    ["ToNumeric", "10n"],
+    ["ToString", "{ toString: () => 'x' }"],
+    ["ToBoolean", "0"],
+    ["ToPrimitive", "{ valueOf: () => 1 }"],
+    ["ToObject", "'hi'"],
+    ["ToPropertyKey", "2"],
+    ["ToLength", "-5"],
+    ["ToIndex", "3"],
+  ];
+
+  it.each(binaryInputs)("resolves every step hint of %s to a clause id", async (expression) => {
     const result = await executeBinaryExpression(expression);
-    expect(result.success).toBe(true);
+    expect(result.success, result.error).toBe(true);
 
     const pairs: Array<[string, string]> = [];
     collect(result.root as Node, pairs);
     expect(pairs.length).toBeGreaterThan(0);
 
     for (const [algoId, stepId] of pairs) {
-      if (!specHtml.includes(`"${algoId}-step-`)) continue;
+      if (!hasAnchors(algoId)) continue;
       expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(`"${algoId}-step-${stepId}"`);
+    }
+  });
+
+  it.each(unaryInputs)("resolves every step hint of %s to a clause id", async (fn, input) => {
+    const result = await executeUnaryConversion(fn, input);
+    expect(result.success, result.error).toBe(true);
+
+    const pairs: Array<[string, string]> = [];
+    collect(result.root as Node, pairs);
+
+    for (const [algoId, stepId] of pairs) {
+      if (!hasAnchors(algoId)) continue;
+      expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(`"${algoId}-step-${stepId}"`);
+    }
+  });
+
+  it("actually checks anchored algorithms, so a dropped anchor set cannot pass by skipping", async () => {
+    const checked = new Set<string>();
+    const record = (pairs: Array<[string, string]>) => {
+      for (const [algoId, stepId] of pairs) {
+        if (!hasAnchors(algoId)) continue;
+        expect(specHtml, `${algoId} step ${stepId} unanchored`).toContain(`"${algoId}-step-${stepId}"`);
+        checked.add(algoId);
+      }
+    };
+
+    for (const expr of binaryInputs) {
+      const r = await executeBinaryExpression(expr);
+      const pairs: Array<[string, string]> = [];
+      collect(r.root as Node, pairs);
+      record(pairs);
+    }
+    for (const [fn, input] of unaryInputs) {
+      const r = await executeUnaryConversion(fn, input);
+      const pairs: Array<[string, string]> = [];
+      collect(r.root as Node, pairs);
+      record(pairs);
+    }
+
+    for (const core of ["ToNumber", "ToString", "ApplyStringOrNumericBinaryOperator"]) {
+      expect(checked, `${core} never had an anchor checked — its clause lost its step ids`).toContain(core);
     }
   });
 });
