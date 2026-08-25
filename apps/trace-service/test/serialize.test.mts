@@ -27,7 +27,7 @@ const jsObject = (
   slots: Record<string, EngineValue> = {},
 ): EngineValue => ({ type: "Object", internalSlotsList, ...slots }) as EngineValue;
 
-const GOLDEN: ReadonlyArray<[label: string, value: EngineValue, expected: SerializedValue]> = [
+const GOLDEN: readonly [label: string, value: EngineValue, expected: SerializedValue][] = [
   ['ToString(true) → the String "true"', jsString("true"), { type: "String", value: "true" }],
   ['ToString(42) → the String "42"', jsString("42"), { type: "String", value: "42" }],
   ['ToString(null) → the String "null"', jsString("null"), { type: "String", value: "null" }],
@@ -45,9 +45,17 @@ const GOLDEN: ReadonlyArray<[label: string, value: EngineValue, expected: Serial
   ['ToNumber("42") → the Number 42', jsNumber(42), { type: "Number", value: 42 }],
   ['ToNumber("") → the Number +0', jsNumber(0), { type: "Number", value: 0 }],
   ['ToNumber("-0") → the Number -0', jsNumber(-0), { type: "Number", value: "-0" }],
-  ['ToNumber("abc") → NaN', jsNumber(NaN), { type: "Number", value: "NaN" }],
-  ['ToNumber("Infinity") → +∞', jsNumber(Infinity), { type: "Number", value: "Infinity" }],
-  ['ToNumber("-Infinity") → -∞', jsNumber(-Infinity), { type: "Number", value: "-Infinity" }],
+  ['ToNumber("abc") → NaN', jsNumber(Number.NaN), { type: "Number", value: "NaN" }],
+  [
+    'ToNumber("Infinity") → +∞',
+    jsNumber(Number.POSITIVE_INFINITY),
+    { type: "Number", value: "Infinity" },
+  ],
+  [
+    'ToNumber("-Infinity") → -∞',
+    jsNumber(Number.NEGATIVE_INFINITY),
+    { type: "Number", value: "-Infinity" },
+  ],
   ['ToBoolean("0") → the Boolean true', jsBoolean(true), { type: "Boolean", value: true }],
   ['ToBoolean("") → the Boolean false', jsBoolean(false), { type: "Boolean", value: false }],
   ['ToBigInt("7") → the BigInt 7', jsBigInt(7n), { type: "BigInt", value: "7" }],
@@ -99,7 +107,12 @@ describe("fromEngineValue", () => {
   }
 
   it("survives the JSON transport the frontend receives", () => {
-    const nonFinite = [jsNumber(NaN), jsNumber(Infinity), jsNumber(-Infinity), jsNumber(-0)];
+    const nonFinite = [
+      jsNumber(Number.NaN),
+      jsNumber(Number.POSITIVE_INFINITY),
+      jsNumber(Number.NEGATIVE_INFINITY),
+      jsNumber(-0),
+    ];
     const rendered = nonFinite.map((value) => JSON.parse(JSON.stringify(fromEngineValue(value))));
     expect(rendered).toEqual([
       { type: "Number", value: "NaN" },

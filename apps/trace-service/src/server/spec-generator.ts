@@ -5,10 +5,12 @@
  * This module reads the file once, builds the full ecmarkup document, then
  * extracts individual <emu-clause> elements by id for per-function requests.
  */
+
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { build } from "ecmarkup";
-import { readFile } from "fs/promises";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 
 import { FUNCTION_ALGOS } from "./operations.ts";
 
@@ -141,7 +143,8 @@ export async function buildSpecHtmlForFunction(functionName: string): Promise<st
   const algoIds = FUNCTION_ALGOS[functionName];
   if (!algoIds) return null;
 
-  if (!IS_DEV && _cache.has(functionName)) return _cache.get(functionName)!;
+  const cached = IS_DEV ? undefined : _cache.get(functionName);
+  if (cached !== undefined) return cached;
 
   const clauses = await getClauseById();
   const html = algoIds

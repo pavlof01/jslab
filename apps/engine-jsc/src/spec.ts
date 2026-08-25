@@ -1,4 +1,4 @@
-import { type EngineSpec, startEngineServer } from "@jslab/engine-runtime";
+import type { EngineSpec } from "@jslab/engine-runtime";
 
 import type { EngineConfig } from "./config.js";
 
@@ -7,6 +7,8 @@ const BYTECODE_FLAG = "-d" as const;
 const CONSOLE_SHIM = `void (globalThis.console ??= { log: print, info: print, warn: print, error: print, debug: print });\n`;
 
 const scrubbedEnv = { ...process.env };
+// The rule's fix (assigning undefined) would keep JSC_PATH as an own key of the
+// object handed to spawn(); it has to be absent, not blank.
 delete (scrubbedEnv as Record<string, string | undefined>).JSC_PATH;
 
 export function buildEngineSpec(config: EngineConfig): EngineSpec {

@@ -84,7 +84,7 @@ describe("step anchors", () => {
     steps?: Array<{ hint?: string; algoId?: string; steps?: unknown }>;
   };
 
-  const collect = (node: Node | undefined, into: Array<[string, string]>): void => {
+  const collect = (node: Node | undefined, into: [string, string][]): void => {
     const algoId = node?.algoId;
     for (const step of node?.steps ?? []) {
       const stepId = extractStepId(step.hint);
@@ -96,7 +96,7 @@ describe("step anchors", () => {
   const hasAnchors = (algoId: string) => specHtml.includes(`"${algoId}-step-`);
 
   const binaryInputs = ["[] + {}", "1n + 2n", "[] == ![]", "1 < 2", "'a' === 'a'"];
-  const unaryInputs: Array<[string, string]> = [
+  const unaryInputs: [string, string][] = [
     ["ToNumber", "'42'"],
     ["ToNumeric", "10n"],
     ["ToString", "{ toString: () => 'x' }"],
@@ -112,7 +112,7 @@ describe("step anchors", () => {
     const result = await executeBinaryExpression(expression);
     expect(result.success, result.error).toBe(true);
 
-    const pairs: Array<[string, string]> = [];
+    const pairs: [string, string][] = [];
     collect(result.root as Node, pairs);
     expect(pairs.length).toBeGreaterThan(0);
 
@@ -128,7 +128,7 @@ describe("step anchors", () => {
     const result = await executeUnaryConversion(fn, input);
     expect(result.success, result.error).toBe(true);
 
-    const pairs: Array<[string, string]> = [];
+    const pairs: [string, string][] = [];
     collect(result.root as Node, pairs);
 
     for (const [algoId, stepId] of pairs) {
@@ -141,7 +141,7 @@ describe("step anchors", () => {
 
   it("actually checks anchored algorithms, so a dropped anchor set cannot pass by skipping", async () => {
     const checked = new Set<string>();
-    const record = (pairs: Array<[string, string]>) => {
+    const record = (pairs: [string, string][]) => {
       for (const [algoId, stepId] of pairs) {
         if (!hasAnchors(algoId)) continue;
         expect(specHtml, `${algoId} step ${stepId} unanchored`).toContain(
@@ -153,13 +153,13 @@ describe("step anchors", () => {
 
     for (const expr of binaryInputs) {
       const r = await executeBinaryExpression(expr);
-      const pairs: Array<[string, string]> = [];
+      const pairs: [string, string][] = [];
       collect(r.root as Node, pairs);
       record(pairs);
     }
     for (const [fn, input] of unaryInputs) {
       const r = await executeUnaryConversion(fn, input);
-      const pairs: Array<[string, string]> = [];
+      const pairs: [string, string][] = [];
       collect(r.root as Node, pairs);
       record(pairs);
     }

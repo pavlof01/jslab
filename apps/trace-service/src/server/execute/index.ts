@@ -7,7 +7,7 @@ import {
   setSurroundingAgent,
   ThrowCompletion,
   type TraceRecord,
-  Value,
+  type Value,
   type ValueCompletion,
 } from "../../trace/index.mts";
 import {
@@ -93,7 +93,7 @@ export async function executeUnaryConversion(
     setSurroundingAgent(agent);
     realm = new ManagedRealm();
 
-    let inputResult;
+    let inputResult: ReturnType<typeof parseStringToValue>;
     try {
       inputResult = parseStringToValue(input, realm);
     } catch (error) {
@@ -173,7 +173,7 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
       return null as unknown as Value;
     }
 
-    let leftResult;
+    let leftResult: ReturnType<typeof parseStringToValue>;
     try {
       leftResult = parseStringToValue(leftSrc, realm);
     } catch (error) {
@@ -185,7 +185,7 @@ export async function executeBinaryExpression(input: string): Promise<ExecuteRes
       parseError = `Failed to parse left operand: ${leftResult.Value}`;
       return null as unknown as Value;
     }
-    let rightResult;
+    let rightResult: ReturnType<typeof parseStringToValue>;
     try {
       rightResult = parseStringToValue(rightSrc, realm);
     } catch (error) {

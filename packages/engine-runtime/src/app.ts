@@ -1,8 +1,9 @@
-import { type SpawnOptions } from "child_process";
+import type { SpawnOptions } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import fastify, { type FastifyInstance } from "fastify";
-import fs from "fs/promises";
-import os from "os";
-import path from "path";
 import { z } from "zod";
 
 import type { EngineRuntimeConfig } from "./config.js";
@@ -202,8 +203,10 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
     let parsed: z.infer<typeof requestSchema>;
     try {
       parsed = requestSchema.parse(req.body);
-    } catch (err: any) {
-      reply.code(400).send({ ok: false, error: err?.message || "invalid payload" });
+    } catch (err) {
+      reply
+        .code(400)
+        .send({ ok: false, error: err instanceof Error ? err.message : "invalid payload" });
       return;
     }
 
@@ -272,8 +275,10 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
           ...(sanitized.dropped.length ? { droppedFlags: sanitized.dropped } : {}),
         },
       });
-    } catch (err: any) {
-      reply.code(500).send({ ok: false, error: err?.message || "execution failed" });
+    } catch (err) {
+      reply
+        .code(500)
+        .send({ ok: false, error: err instanceof Error ? err.message : "execution failed" });
     } finally {
       gate.release();
       await workspace?.dispose();

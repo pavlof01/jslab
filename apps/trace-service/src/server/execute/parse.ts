@@ -189,7 +189,9 @@ export function parseStringToValue(input: string, realm: ManagedRealm) {
   } catch (error) {
     // engine262 throws a ThrowCompletion; the SyntaxError itself is its Value.
     const thrown = error instanceof ThrowCompletion ? error.Value : (error as Value);
-    throw new Error(`Failed to parse input "${input}": ${describeValue(thrown, realm)}`);
+    throw new Error(`Failed to parse input "${input}": ${describeValue(thrown, realm)}`, {
+      cause: error,
+    });
   }
 }
 

@@ -46,6 +46,7 @@ export class PlaygroundPage {
   }
 
   async codeText(): Promise<string> {
+    // eslint-disable-next-line no-irregular-whitespace -- the class matches the non-breaking space Monaco renders, which is the point of the replace.
     return (await this.editor.innerText()).replace(/ /g, " ");
   }
 

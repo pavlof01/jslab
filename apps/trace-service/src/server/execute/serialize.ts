@@ -104,8 +104,8 @@ function capString(s: string, max: number = MAX_STRING_LENGTH): string {
 
 function numberPayload(n: number): NumberPayload {
   if (Number.isNaN(n)) return "NaN";
-  if (n === Infinity) return "Infinity";
-  if (n === -Infinity) return "-Infinity";
+  if (n === Number.POSITIVE_INFINITY) return "Infinity";
+  if (n === Number.NEGATIVE_INFINITY) return "-Infinity";
   if (Object.is(n, -0)) return "-0";
   return n;
 }

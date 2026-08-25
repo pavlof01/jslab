@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
-import { createFakeRedis, type FakeRedis } from "./test-support/fakeRedis.js";
+import { createFakeRedis } from "./test-support/fakeRedis.js";
 import { type MockUpstream, mockUpstream } from "./test-support/mockUpstream.js";
 
 /**

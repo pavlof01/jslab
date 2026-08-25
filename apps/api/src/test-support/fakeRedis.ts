@@ -126,10 +126,12 @@ export function createFakeRedis(): FakeRedis {
   };
 
   type MultiEntry = { run: () => unknown };
+  /** Redis takes strings and numbers; nothing here needs a looser argument type. */
+  type RedisArg = string | number;
 
   function multi() {
     const queued: MultiEntry[] = [];
-    const chain: Record<string, (...args: any[]) => unknown> = {
+    const chain: Record<string, (...args: RedisArg[]) => unknown> = {
       // ioredis rejects the whole exec() when the connection itself is broken,
       // rather than reporting a per-command error, so `failCommands` does too.
       exec: async () => {
@@ -144,8 +146,8 @@ export function createFakeRedis(): FakeRedis {
       },
     };
     for (const [name, fn] of Object.entries(ops)) {
-      chain[name] = (...args: any[]) => {
-        queued.push({ run: () => (fn as (...a: any[]) => unknown)(...args) });
+      chain[name] = (...args: RedisArg[]) => {
+        queued.push({ run: () => (fn as (...a: RedisArg[]) => unknown)(...args) });
         return chain;
       };
     }
@@ -154,7 +156,7 @@ export function createFakeRedis(): FakeRedis {
 
   const client: Record<string, unknown> = { status: "ready", multi };
   for (const [name, fn] of Object.entries(ops)) {
-    client[name] = async (...args: any[]) => (fn as (...a: any[]) => unknown)(...args);
+    client[name] = async (...args: RedisArg[]) => (fn as (...a: RedisArg[]) => unknown)(...args);
   }
 
   return {

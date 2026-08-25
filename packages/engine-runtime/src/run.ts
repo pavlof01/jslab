@@ -1,5 +1,5 @@
-import { spawn, type SpawnOptions } from "child_process";
-import { StringDecoder } from "string_decoder";
+import { spawn, type SpawnOptions } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
 
 /**
  * Spawning half of the engine runtime: one child process, one wall-clock

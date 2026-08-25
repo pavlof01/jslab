@@ -7,7 +7,7 @@ test.describe("api gateway", () => {
     const probe = await request
       .get(`${GATEWAY_URL}/healthz`, { failOnStatusCode: false })
       .catch(() => null);
-    test.skip(!probe || !probe.ok(), `gateway not reachable at ${GATEWAY_URL}`);
+    test.skip(!probe?.ok(), `gateway not reachable at ${GATEWAY_URL}`);
   });
 
   test("reports its own health and its Redis connection", async ({ request }) => {

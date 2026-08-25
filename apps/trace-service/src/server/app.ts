@@ -2,8 +2,12 @@ import fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 
 import type { TraceServiceConfig } from "../../config.ts";
 import { BudgetExceededError, SandboxBusyError, type SandboxTask } from "./execute/sandbox.ts";
-import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS } from "./operations.ts";
-import { SUPPORTED_SPEC_FUNCTIONS } from "./operations.ts";
+import {
+  AVAILABLE_FUNCTIONS,
+  FUNCTION_META,
+  SUPPORTED_OPERATORS,
+  SUPPORTED_SPEC_FUNCTIONS,
+} from "./operations.ts";
 import { buildEqualityBodySchema, buildTypeConversionBodySchema } from "./schema.ts";
 import { buildSpecHtmlForFunction } from "./spec-generator.ts";
 import type { ExecuteResponse } from "./types.ts";

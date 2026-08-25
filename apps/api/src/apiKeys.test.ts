@@ -54,8 +54,8 @@ function fakeRedis() {
     zremrangebyscore(key: string, min: string | number, max: string | number): number {
       const set = zsets.get(key);
       if (!set) return 0;
-      const lo = min === "-inf" ? -Infinity : Number(min);
-      const hi = max === "+inf" ? Infinity : Number(max);
+      const lo = min === "-inf" ? Number.NEGATIVE_INFINITY : Number(min);
+      const hi = max === "+inf" ? Number.POSITIVE_INFINITY : Number(max);
       let removed = 0;
       for (const [member, score] of set) {
         if (score >= lo && score <= hi) {
@@ -92,7 +92,7 @@ describe("isValidKeyFormat", () => {
     expect(isValidKeyFormat(`${KEY_PREFIX}${"a".repeat(32)}`)).toBe(true);
   });
   it("rejects wrong prefix, length, or charset", () => {
-    expect(isValidKeyFormat("nope_" + "a".repeat(32))).toBe(false);
+    expect(isValidKeyFormat(`nope_${"a".repeat(32)}`)).toBe(false);
     expect(isValidKeyFormat(`${KEY_PREFIX}${"a".repeat(31)}`)).toBe(false);
     expect(isValidKeyFormat(`${KEY_PREFIX}${"Z".repeat(32)}`)).toBe(false);
     expect(isValidKeyFormat("")).toBe(false);
@@ -148,7 +148,7 @@ describe("issueApiKey / lookupApiKey / revokeApiKey", () => {
     // instead assert the *documented* key name (a hash) resolves, and that
     // asking Redis for something keyed by the plaintext key itself finds
     // nothing — i.e. the plaintext never became a Redis key name.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const raw = await (redis as any).get(`apikey:${result.key}`);
     expect(raw).toBeNull();
   });

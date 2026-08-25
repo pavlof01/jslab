@@ -144,7 +144,8 @@ export class TraceSandbox {
     if (!this.#ready) return;
 
     const now = Date.now();
-    const pending = this.#queue.shift()!;
+    const pending = this.#queue.shift();
+    if (!pending) return;
     const remaining = pending.deadlineAt - now;
     if (remaining <= 0) {
       pending.reject(new BudgetExceededError(this.#budgetMs));

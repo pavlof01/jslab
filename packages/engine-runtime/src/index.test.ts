@@ -1,7 +1,8 @@
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import type { FastifyInstance } from "fastify";
-import fs from "fs/promises";
-import os from "os";
-import path from "path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -383,7 +384,7 @@ describe("POST /run — invocation contract", () => {
     });
     const stdout = (await run(app, { sourceText: "1" })).json().stdout;
     const [cwd, secret] = stdout.split("|");
-    expect(cwd.startsWith(os.tmpdir()) || cwd.startsWith("/private" + os.tmpdir())).toBe(true);
+    expect(cwd.startsWith(os.tmpdir()) || cwd.startsWith(`/private${os.tmpdir()}`)).toBe(true);
     // A scrubbed env must not inherit this process's variables.
     expect(secret).toBe("unset");
   });

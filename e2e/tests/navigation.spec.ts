@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const ROUTES: Array<[path: string, marker: RegExp]> = [
+const ROUTES: [path: string, marker: RegExp][] = [
   ["/playground", /run/i],
   ["/v8-pipeline", /V8 Compilation Pipeline/],
   ["/type-conversion", /expression/i],

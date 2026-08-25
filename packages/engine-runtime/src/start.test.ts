@@ -1,5 +1,6 @@
+import net from "node:net";
+
 import type { FastifyInstance } from "fastify";
-import net from "net";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { type EngineRuntimeConfig, startEngineServer } from "./index.js";

@@ -4,6 +4,7 @@
  * real one owns a worker thread and engine262, whose behaviour is covered by
  * execute.test.mts and sandbox.test.mts.
  */
+
 import type { FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 

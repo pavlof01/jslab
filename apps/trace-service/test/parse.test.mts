@@ -79,7 +79,7 @@ describe("detectOperator", () => {
   });
 
   it("scans a long expression without a top-level operator in linear time", () => {
-    const long = "f(" + "a + ".repeat(5_000) + "b)";
+    const long = `f(${"a + ".repeat(5_000)}b)`;
     const started = performance.now();
     expect(detectOperator(long)).toBeNull();
     expect(performance.now() - started).toBeLessThan(50);

@@ -10,7 +10,9 @@ export async function runViaProxy(
   let json: Record<string, unknown> = {};
   try {
     json = (await res.json()) as Record<string, unknown>;
-  } catch {}
+  } catch {
+    // A non-JSON body (an HTML error page, an empty 429) leaves json as {}.
+  }
   return { status: res.status(), json };
 }
 

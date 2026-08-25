@@ -1,4 +1,5 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
+
 import type { FastifyBaseLogger } from "fastify";
 import type { Redis as RedisClient } from "ioredis";
 
