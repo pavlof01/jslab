@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security report
+    url: https://github.com/pavlof01/jslab/security/policy
+    about: Please report vulnerabilities privately — see SECURITY.md, not a public issue.
