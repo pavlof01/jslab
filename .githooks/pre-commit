@@ -1,0 +1,78 @@
+#!/usr/bin/env sh
+# Format and lint what is about to be committed, nothing else — a whole-tree run
+# on every commit would be slower and would touch files the author did not.
+#
+# Skip with `git commit --no-verify`; CI runs Prettier and ESLint over everything
+# anyway, so a skipped hook costs a red build, not a bad merge.
+
+if [ ! -x "node_modules/.bin/prettier" ]; then
+  echo "pre-commit: Prettier is not installed — run 'npm install' at the repo root." >&2
+  echo "pre-commit: skipping (CI still enforces this)." >&2
+  exit 0
+fi
+
+# --diff-filter=ACMR already drops deletions, but a path can also be staged and
+# then removed from the working tree, and Prettier errors on a missing file.
+staged=""
+for path in $(git diff --cached --name-only --diff-filter=ACMR); do
+  [ -e "$path" ] && staged="$staged$path
+"
+done
+staged="${staged%
+}"
+[ -n "$staged" ] || exit 0
+
+# Files staged only in part (git add -p). Rewriting one would format the working
+# tree copy, and re-staging it afterwards would sweep in the hunk the author
+# deliberately left out — so these are checked, never written.
+unstaged_list="$(mktemp)"
+trap 'rm -f "$unstaged_list"' EXIT
+git diff --name-only --diff-filter=ACMR >"$unstaged_list"
+partial="$(printf '%s\n' "$staged" | grep -Fx -f "$unstaged_list" || true)"
+
+# apps/frontend/src has its own ESLint install (eslint-config-next) and its own
+# config, so staged paths are linted by whichever of the two owns them.
+lint_paths() {
+  mode="$1" # --fix or empty
+  front=""
+  rest=""
+  for path in $staged; do
+    case "$path" in
+      *.ts | *.tsx | *.mts | *.js | *.mjs | *.cjs) ;;
+      *) continue ;;
+    esac
+    case "$path" in
+      apps/frontend/src/*) front="$front ${path#apps/frontend/src/}" ;;
+      *) rest="$rest $path" ;;
+    esac
+  done
+  status=0
+  if [ -n "$rest" ]; then
+    # shellcheck disable=SC2086
+    node_modules/.bin/eslint $mode $rest || status=1
+  fi
+  if [ -n "$front" ] && [ -x "apps/frontend/src/node_modules/.bin/eslint" ]; then
+    # shellcheck disable=SC2086
+    (cd apps/frontend/src && node_modules/.bin/eslint $mode $front) || status=1
+  fi
+  return $status
+}
+
+if [ -n "$partial" ]; then
+  echo "pre-commit: staged only in part, so nothing here is rewritten:" >&2
+  printf '  %s\n' $partial >&2
+  echo "pre-commit: run 'npm run check:fix' yourself if the checks below fail." >&2
+  # shellcheck disable=SC2086
+  printf '%s\n' "$staged" | tr '\n' '\0' | xargs -0 node_modules/.bin/prettier --check --ignore-unknown || exit 1
+  lint_paths "" || exit 1
+  exit 0
+fi
+
+printf '%s\n' "$staged" | tr '\n' '\0' | xargs -0 node_modules/.bin/prettier --write --ignore-unknown >/dev/null || exit 1
+lint_paths "--fix" || exit 1
+
+# Every staged path was staged whole, so re-staging it can only pick up what
+# Prettier and ESLint just rewrote.
+printf '%s\n' "$staged" | while IFS= read -r path; do
+  [ -n "$path" ] && git add -- "$path"
+done
