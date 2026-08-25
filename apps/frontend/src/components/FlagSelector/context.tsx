@@ -1,15 +1,20 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext, useMemo } from "react";
 
-import { groupFlags, type EngineFlagCatalog, type FlagGroup } from "@/lib/flagCatalog";
+import { type EngineFlagCatalog, type FlagGroup, groupFlags } from "@/lib/flagCatalog";
 import type { EngineKey } from "@/lib/types";
 
 type GroupedCatalog = Partial<Record<EngineKey, FlagGroup[]>>;
 
 const FlagCatalogContext = createContext<GroupedCatalog>({});
 
-export function FlagCatalogProvider({ catalog, children }: { catalog: EngineFlagCatalog; children: ReactNode }) {
+type Props = {
+  catalog: EngineFlagCatalog;
+  children: ReactNode;
+};
+
+const FlagCatalogProvider: React.FC<Props> = ({ catalog, children }) => {
   const grouped = useMemo(
     () =>
       Object.fromEntries(
@@ -18,12 +23,18 @@ export function FlagCatalogProvider({ catalog, children }: { catalog: EngineFlag
     [catalog],
   );
   return <FlagCatalogContext.Provider value={grouped}>{children}</FlagCatalogContext.Provider>;
-}
+};
 
 /** Engines the catalog knows flags for, so the toolbar only renders live selectors. */
 export const useFlaggedEngines = (): EngineKey[] => {
   const catalog = useContext(FlagCatalogContext);
-  return useMemo(() => (Object.keys(catalog) as EngineKey[]).filter((engine) => catalog[engine]?.length), [catalog]);
+  return useMemo(
+    () => (Object.keys(catalog) as EngineKey[]).filter((engine) => catalog[engine]?.length),
+    [catalog],
+  );
 };
 
-export const useFlagGroups = (engine: EngineKey): FlagGroup[] => useContext(FlagCatalogContext)[engine] ?? [];
+export const useFlagGroups = (engine: EngineKey): FlagGroup[] =>
+  useContext(FlagCatalogContext)[engine] ?? [];
+
+export default FlagCatalogProvider;

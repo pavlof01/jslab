@@ -1,21 +1,21 @@
 "use client";
 
+import { Box, type BoxProps, Stack } from "@chakra-ui/react";
 import { memo, useEffect, useState } from "react";
-import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import type { TokensResult } from "shiki";
-import { Box, BoxProps, Stack } from "@chakra-ui/react";
+import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 
 import { LogoLoader } from "@/components/ui";
-
-import DefaultEmptyCodeBlockState, {
-  Props as DefaultEmptyCodeBlockStateProps,
-} from "./components/DefaultEmptyCodeBlockState";
-import { engineLang, type BytecodeLang } from "@/lib/engines";
+import { type BytecodeLang, engineLang } from "@/lib/engines";
 import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
-import CodeDisplay from "./components/Code";
 import { compareOutputs } from "@/utils/diff-bytecode";
+
+import CodeDisplay from "./components/Code";
 import CopyButton from "./components/CopyButton";
+import DefaultEmptyCodeBlockState, {
+  type DefaultEmptyCodeBlockStateProps,
+} from "./components/DefaultEmptyCodeBlockState";
 
 const normalizeForDiff = (line: string) =>
   line
@@ -26,7 +26,11 @@ const normalizeForDiff = (line: string) =>
     .replace(/^(\s*)\d+:(?=\s+[A-Za-z_])/, "$1<OFF>:")
     .replace(/\s+/g, " ");
 
-export async function highlight(code: string, lang: BundledLanguage | BytecodeLang, prevCode?: string) {
+export async function highlight(
+  code: string,
+  lang: BundledLanguage | BytecodeLang,
+  prevCode?: string,
+) {
   const highlighter = await getBytecodeHighlighter();
   const shikiLang = lang as BundledLanguage;
 
@@ -43,7 +47,7 @@ export async function highlight(code: string, lang: BundledLanguage | BytecodeLa
   return { tokens: diffTokens, highlighter };
 }
 
-interface Props {
+type Props = {
   engineKey: EngineKey;
   out?: string;
   prev?: string;
@@ -51,7 +55,7 @@ interface Props {
   isLoading?: boolean;
   EmptyCodeBlockState?: React.ComponentType<DefaultEmptyCodeBlockStateProps>;
   boxProps?: BoxProps;
-}
+};
 
 export const HighlightedCode = memo(function HighlightedCode({
   engineKey,
@@ -87,7 +91,14 @@ export const HighlightedCode = memo(function HighlightedCode({
 
   if (isLoading) {
     return (
-      <Stack flex={1} align="center" justify="center" p={6} aria-busy="true" aria-label="Running engine">
+      <Stack
+        flex={1}
+        align="center"
+        justify="center"
+        p={6}
+        aria-busy="true"
+        aria-label="Running engine"
+      >
         <LogoLoader size={64} />
       </Stack>
     );

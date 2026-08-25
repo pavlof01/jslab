@@ -1,8 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
-import { runEngine } from "./api";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
+
 import { EngineKey } from "@/lib/types";
 
-type FakeResponse = { ok: boolean; status: number; headers?: Record<string, string>; body: unknown };
+import { runEngine } from "./api";
+
+type FakeResponse = {
+  ok: boolean;
+  status: number;
+  headers?: Record<string, string>;
+  body: unknown;
+};
 
 const mockFetch = (response: FakeResponse | Error) => {
   const fetchMock = jest.fn(async () => {
@@ -33,7 +40,12 @@ describe("runEngine", () => {
     mockFetch({
       ok: true,
       status: 200,
-      body: { ok: true, stdout: "  bytecode\n", stderr: " warn ", meta: { durationMs: 42, cacheHit: true } },
+      body: {
+        ok: true,
+        stdout: "  bytecode\n",
+        stderr: " warn ",
+        meta: { durationMs: 42, cacheHit: true },
+      },
     });
 
     const result = await runEngine(EngineKey.v8, "1+1");
@@ -60,7 +72,11 @@ describe("runEngine", () => {
     // The old behaviour folded "HTTP 429" into stderr, where the bytecode
     // highlighter rendered it as if the engine had printed it.
     expect(result.stderr).toBe("");
-    expect(result.failure).toEqual({ status: 429, message: "rate limit exceeded", retryAfterSeconds: 17 });
+    expect(result.failure).toEqual({
+      status: 429,
+      message: "rate limit exceeded",
+      retryAfterSeconds: 17,
+    });
   });
 
   it("falls back to the Retry-After header when the body carries no retryAfter", async () => {
@@ -97,7 +113,10 @@ describe("runEngine", () => {
   it("reports a network error with status 0", async () => {
     mockFetch(new Error("Failed to fetch"));
 
-    expect((await runEngine(EngineKey.v8, "1+1")).failure).toEqual({ status: 0, message: "Failed to fetch" });
+    expect((await runEngine(EngineKey.v8, "1+1")).failure).toEqual({
+      status: 0,
+      message: "Failed to fetch",
+    });
   });
 
   it("surfaces truncated output and the flags the gateway rejected", async () => {
@@ -108,7 +127,12 @@ describe("runEngine", () => {
         ok: true,
         stdout: "partial",
         stderr: "",
-        meta: { durationMs: 7, cacheHit: false, outputTruncated: true, droppedFlags: ["--nope", 42] },
+        meta: {
+          durationMs: 7,
+          cacheHit: false,
+          outputTruncated: true,
+          droppedFlags: ["--nope", 42],
+        },
       },
     });
 
@@ -125,7 +149,12 @@ describe("runEngine", () => {
     mockFetch({
       ok: true,
       status: 200,
-      body: { ok: true, stdout: "", stderr: "SyntaxError: unexpected token", meta: { durationMs: 5 } },
+      body: {
+        ok: true,
+        stdout: "",
+        stderr: "SyntaxError: unexpected token",
+        meta: { durationMs: 5 },
+      },
     });
 
     const result = await runEngine(EngineKey.v8, "const =");

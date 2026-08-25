@@ -17,7 +17,9 @@ export async function getUpstream(url: string, init?: RequestInit): Promise<Fetc
     return { response: await fetch(url, init) };
   } catch (err) {
     const message = err instanceof Error ? err.message : "trace-service unavailable";
-    return { error: NextResponse.json({ error: `trace-service unavailable: ${message}` }, { status: 503 }) };
+    return {
+      error: NextResponse.json({ error: `trace-service unavailable: ${message}` }, { status: 503 }),
+    };
   }
 }
 

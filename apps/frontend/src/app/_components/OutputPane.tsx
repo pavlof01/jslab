@@ -1,22 +1,23 @@
 "use client";
 
+import { Box } from "@chakra-ui/react";
+
 import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import { engineLabel } from "@/lib/engines";
-import { Box } from "@chakra-ui/react";
-import { EngineKey, RunStatus } from "@/lib/types";
+import { enabledEngines, type EngineKey, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
   useDiffToggle,
+  useEngineFlags,
   useEngineSelection,
   useOutputPane as useOutputPaneState,
-  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
-import { enabledEngines } from "@/lib/types";
-import { EngineTabs } from "./EngineTabs";
+
+import EngineTabs from "./EngineTabs";
 import * as styles from "./playground.styles";
 
-export function OutputPane() {
+const OutputPane: React.FC = () => {
   const { engines } = useEngineSelection();
   const { activeTab, setActiveTab } = useActiveTab();
   const { showDiff } = useDiffToggle();
@@ -26,11 +27,16 @@ export function OutputPane() {
   const active = enabledEngines(engines);
   const result = out?.[activeTab];
   const previous = previousSnapshot?.out?.[activeTab];
-  const showingV8 = activeTab === EngineKey.v8;
 
   return (
     <>
-      <EngineTabs engines={active} activeTab={activeTab} onSelect={setActiveTab} out={out} status={status} />
+      <EngineTabs
+        engines={active}
+        activeTab={activeTab}
+        onSelect={setActiveTab}
+        out={out}
+        status={status}
+      />
 
       <Box css={styles.outputScroller}>
         <HighlightedCode
@@ -40,25 +46,31 @@ export function OutputPane() {
           showDiff={showDiff}
           isLoading={status === RunStatus.running}
         />
-        <StderrDump engine={activeTab} stderr={result?.stderr} previousStderr={previous?.stderr} showDiff={showDiff} />
+        <StderrDump
+          engine={activeTab}
+          stderr={result?.stderr}
+          previousStderr={previous?.stderr}
+          showDiff={showDiff}
+        />
       </Box>
 
-      <PaneFooter engine={activeTab} durationMs={result?.ms} flagCount={flagsFor(activeTab).length} />
+      <PaneFooter
+        engine={activeTab}
+        durationMs={result?.ms}
+        flagCount={flagsFor(activeTab).length}
+      />
     </>
   );
-}
+};
 
-function StderrDump({
-  engine,
-  stderr,
-  previousStderr,
-  showDiff,
-}: {
+type StderrDumpProps = {
   engine: EngineKey;
   stderr?: string;
   previousStderr?: string;
   showDiff: boolean;
-}) {
+};
+
+const StderrDump: React.FC<StderrDumpProps> = ({ engine, stderr, previousStderr, showDiff }) => {
   if (!stderr) return null;
 
   return (
@@ -70,17 +82,15 @@ function StderrDump({
       EmptyCodeBlockState={() => <></>}
     />
   );
-}
+};
 
-function PaneFooter({
-  engine,
-  durationMs,
-  flagCount,
-}: {
+type PaneFooterProps = {
   engine: EngineKey;
   durationMs?: number;
   flagCount: number;
-}) {
+};
+
+const PaneFooter: React.FC<PaneFooterProps> = ({ engine, durationMs, flagCount }) => {
   const version = useEngineVersion(engine);
 
   return (
@@ -98,4 +108,6 @@ function PaneFooter({
       ) : null}
     </Box>
   );
-}
+};
+
+export default OutputPane;

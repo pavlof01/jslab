@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
 import { createListCollection, Portal, Select, Span, Stack } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { engineLabel } from "@/lib/engines";
 import type { EngineKey } from "@/lib/types";
 import { useEngineFlags } from "@/store/engineOutputsSelectors";
+
 import { useFlagGroups } from "./context";
 
 type FlagItem = { value: string; label: string; description: string; group: string };
@@ -15,7 +16,9 @@ type FlagItem = { value: string; label: string; description: string; group: stri
  * gateway sanitizes flags per engine from one catalog, so the UI has no reason
  * to be V8-only either.
  */
-const FlagSelector = ({ engine }: { engine: EngineKey }) => {
+type Props = { engine: EngineKey };
+
+const FlagSelector: React.FC<Props> = ({ engine }) => {
   const { flagsFor, setEngineFlags } = useEngineFlags();
   const groups = useFlagGroups(engine);
   const selected = flagsFor(engine);

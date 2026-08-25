@@ -4,7 +4,7 @@
     "Solo-maintainer setup: one batched run per week, no automerge, majors only on request.",
     "Only image and action versions are managed here. npm dependencies are deliberately left out: eight lockfiles would drown the dashboard, and their versions are already pinned by lockfiles that CI installs with `npm ci`."
   ],
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
   "enabledManagers": ["dockerfile", "github-actions", "kubernetes"],
   "timezone": "Etc/UTC",
   "schedule": ["before 6am on monday"],
@@ -37,6 +37,11 @@
       "description": "Majors (node 22 -> 24, redis 7 -> 8, actions v4 -> v5) change runtime behaviour and are worth a deliberate look, so they wait on the dependency dashboard instead of opening PRs on their own.",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Actions move in their own weekly group, pinned to commit SHAs by the preset above \u2014 a tag like v4 is mutable and can be repointed by a compromised action repo.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
     }
   ],
   "vulnerabilityAlerts": {

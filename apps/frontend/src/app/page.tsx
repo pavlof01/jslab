@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import LandingPage from "./(landing)/page";
 
 export const metadata: Metadata = {
@@ -47,6 +48,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function Page() {
+const Page: React.FC = () => {
   return <LandingPage />;
-}
+};
+
+export default Page;

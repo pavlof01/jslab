@@ -1,0 +1,49 @@
+name: pr-title
+
+# A squash merge turns the PR title into the commit subject on main, so the
+# title has to satisfy the same convention as a commit. It is linted with the
+# repo's own commitlint config rather than a second copy of the rules: a
+# hand-written regex drifts, and it drifted in both directions before.
+# pull_request_target on purpose, and actions/checkout takes the base ref by
+# default under it — the job never checks out or runs PR code, so the rules
+# cannot be altered by the PR itself.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: pr-title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install
+        run: npm ci
+      # GitHub appends " (#123)" to the subject on squash, and that suffix
+      # counts against header-max-length — so lint the subject that will
+      # actually land, not the bare title.
+      - name: Validate the PR title as a commit subject
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          subject="$TITLE (#$NUMBER)"
+          echo "Linting squashed subject: $subject"
+          if ! printf '%s\n' "$subject" | npx --no-install commitlint; then
+            echo "::error::The PR title must read like a commit subject: type(scope): summary — e.g. feat(frontend): add opcode pages. It is linted with commitlint.config.mjs, and the ' (#$NUMBER)' squash suffix counts toward the 100-character limit."
+            exit 1
+          fi

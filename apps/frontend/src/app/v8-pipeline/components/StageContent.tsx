@@ -6,23 +6,21 @@ import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import CodeBlockShiki from "@/components/OutputsPanel/CodeBlockShiki";
 import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
 import { EngineKey } from "@/lib/types";
-import type { Token } from "../lib/tokenize";
+
 import type { Stage } from "../lib/stages";
+import type { Token } from "../lib/tokenize";
 import type { StageOutput } from "../lib/usePipelineRun";
 import DeoptView from "./DeoptView";
 import TokensPane from "./TokensPane";
 
-export function StageContent({
-  stage,
-  output,
-  tokens,
-  hasRun,
-}: {
+type StageContentProps = {
   stage: Stage;
   output?: StageOutput;
   tokens: Token[];
   hasRun: boolean;
-}) {
+};
+
+const StageContent: React.FC<StageContentProps> = ({ stage, output, tokens, hasRun }) => {
   return (
     <>
       {stage.hint ? <StageHint>{stage.hint}</StageHint> : null}
@@ -30,19 +28,16 @@ export function StageContent({
       <StageBody stage={stage} output={output} tokens={tokens} hasRun={hasRun} />
     </>
   );
-}
+};
 
-function StageBody({
-  stage,
-  output,
-  tokens,
-  hasRun,
-}: {
+type StageBodyProps = {
   stage: Stage;
   output?: StageOutput;
   tokens: Token[];
   hasRun: boolean;
-}) {
+};
+
+const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun }) => {
   if (stage.view === "tokens") {
     if (!hasRun) return <DefaultEmptyCodeBlockState />;
     return <TokensPane tokens={tokens} />;
@@ -57,9 +52,11 @@ function StageBody({
   }
 
   return <HighlightedCode engineKey={EngineKey.v8} out={output?.stdout} showDiff={false} />;
-}
+};
 
-function StageHint({ children }: { children: React.ReactNode }) {
+type StageHintProps = { children: React.ReactNode };
+
+const StageHint: React.FC<StageHintProps> = ({ children }) => {
   return (
     <Box bg="surface.accentSoft" py={2} px={4}>
       <Text fontSize="xs" color="ink.2">
@@ -70,9 +67,11 @@ function StageHint({ children }: { children: React.ReactNode }) {
       </Text>
     </Box>
   );
-}
+};
 
-function StageError({ output }: { output: StageOutput }) {
+type StageErrorProps = { output: StageOutput };
+
+const StageError: React.FC<StageErrorProps> = ({ output }) => {
   if (!output.stderr || output.stdout) return null;
 
   return (
@@ -93,4 +92,6 @@ function StageError({ output }: { output: StageOutput }) {
       {output.stderr}
     </Box>
   );
-}
+};
+
+export default StageContent;

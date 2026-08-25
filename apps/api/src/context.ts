@@ -1,4 +1,5 @@
 import type { Redis } from "ioredis";
+
 import type { ApiConfig } from "./config.js";
 
 /**

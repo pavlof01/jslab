@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
-import { FlagCatalogProvider } from "@/components/FlagSelector/context";
+import FlagCatalogProvider from "@/components/FlagSelector/context";
 import { fetchFlagCatalog } from "@/lib/server/flags";
+
 import EmbedPlaygroundClient from "./EmbedPlaygroundClient";
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function EmbedPlaygroundPage() {
+const EmbedPlaygroundPage = async () => {
   const catalog = await fetchFlagCatalog();
 
   return (
@@ -20,4 +21,6 @@ export default async function EmbedPlaygroundPage() {
       <EmbedPlaygroundClient />
     </FlagCatalogProvider>
   );
-}
+};
+
+export default EmbedPlaygroundPage;

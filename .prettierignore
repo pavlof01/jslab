@@ -1,0 +1,16 @@
+# Mirrors .gitignore plus what is not ours to format.
+node_modules
+dist
+.next
+coverage
+package-lock.json
+*.min.js
+
+# Vendored engine262 fork — upstream code.
+apps/trace-service/engine262
+
+# A copy of the ECMAScript spec the trace service parses at runtime.
+apps/trace-service/src/server/ecma-spec.html
+
+apps/frontend/src/public
+apps/frontend/src/next-env.d.ts

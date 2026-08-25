@@ -1,5 +1,5 @@
 import type { RunFailure, RunResult } from "@/lib/api";
-import { ENGINE_KEYS, EngineKey, type EngineResult } from "@/lib/types";
+import { ENGINE_KEYS, type EngineKey, type EngineResult } from "@/lib/types";
 
 export function pickPrimaryFailure(failures: readonly RunFailure[]): RunFailure | undefined {
   return failures.find((failure) => failure.status === 429) ?? failures[0];
@@ -8,13 +8,15 @@ export function pickPrimaryFailure(failures: readonly RunFailure[]): RunFailure 
 const EMPTY_RESULT: EngineResult = { stdout: "", stderr: "" };
 
 export const createEmptyOut = (): Record<EngineKey, EngineResult> =>
-  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...EMPTY_RESULT }])) as Record<EngineKey, EngineResult>;
-
-export const cloneOut = (out: Record<EngineKey, EngineResult>): Record<EngineKey, EngineResult> =>
-  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...(out[engine] ?? EMPTY_RESULT) }])) as Record<
+  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, { ...EMPTY_RESULT }])) as Record<
     EngineKey,
     EngineResult
   >;
+
+export const cloneOut = (out: Record<EngineKey, EngineResult>): Record<EngineKey, EngineResult> =>
+  Object.fromEntries(
+    ENGINE_KEYS.map((engine) => [engine, { ...(out[engine] ?? EMPTY_RESULT) }]),
+  ) as Record<EngineKey, EngineResult>;
 
 export interface RunAggregate {
   out: Record<EngineKey, EngineResult>;
@@ -26,7 +28,9 @@ export interface RunAggregate {
   allFailed: boolean;
 }
 
-export function aggregateRunResults(settled: ReadonlyArray<readonly [EngineKey, RunResult]>): RunAggregate {
+export function aggregateRunResults(
+  settled: ReadonlyArray<readonly [EngineKey, RunResult]>,
+): RunAggregate {
   const out = createEmptyOut();
   const failures: RunFailure[] = [];
   const droppedFlags = new Set<string>();

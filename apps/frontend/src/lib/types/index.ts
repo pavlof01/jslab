@@ -5,14 +5,24 @@ export enum EngineKey {
   jsc = "jsc",
 }
 
-export const ENGINE_KEYS: readonly EngineKey[] = [EngineKey.v8, EngineKey.sm, EngineKey.hermes, EngineKey.jsc];
+export const ENGINE_KEYS: readonly EngineKey[] = [
+  EngineKey.v8,
+  EngineKey.sm,
+  EngineKey.hermes,
+  EngineKey.jsc,
+];
 export const isEngineKey = (value: unknown): value is EngineKey =>
   typeof value === "string" && (ENGINE_KEYS as readonly string[]).includes(value);
 
 export const DEFAULT_ENGINES: readonly EngineKey[] = [EngineKey.v8];
 
-export const createEngineSelection = (on: readonly EngineKey[] = DEFAULT_ENGINES): Record<EngineKey, boolean> =>
-  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, on.includes(engine)])) as Record<EngineKey, boolean>;
+export const createEngineSelection = (
+  on: readonly EngineKey[] = DEFAULT_ENGINES,
+): Record<EngineKey, boolean> =>
+  Object.fromEntries(ENGINE_KEYS.map((engine) => [engine, on.includes(engine)])) as Record<
+    EngineKey,
+    boolean
+  >;
 
 export const selectionFrom = createEngineSelection;
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage, runMessage } from "../helpers/playground";
 
 test.describe("playground: flags", () => {
@@ -11,7 +12,10 @@ test.describe("playground: flags", () => {
     const pg = await PlaygroundPage.open(page);
     await pg.setCode("function f(a) { return a * 2; } f(21);");
 
-    await page.getByText(/v8 flags?/i).first().click();
+    await page
+      .getByText(/v8 flags?/i)
+      .first()
+      .click();
     await page.getByRole("option", { name: /^print-ast/ }).click();
     await page.keyboard.press("Escape");
 
@@ -36,7 +40,10 @@ test.describe("playground: flags", () => {
       const options = (body.options ?? {}) as Record<string, unknown>;
       const flags = Array.isArray(options.flags) ? options.flags : [];
       await route.continue({
-        postData: JSON.stringify({ ...body, options: { ...options, flags: [...flags, "--totally-made-up"] } }),
+        postData: JSON.stringify({
+          ...body,
+          options: { ...options, flags: [...flags, "--totally-made-up"] },
+        }),
       });
     });
 

@@ -26,7 +26,13 @@ export const STAGES: Stage[] = [
       "The real V8 scanner is written in C++ and handles edge cases (Unicode escapes, template literal nesting, regex disambiguation) differently.",
   },
   { id: "ast", label: "AST", tier: "Parser", view: "bytecode", flags: ["--print-ast", NATIVES] },
-  { id: "bytecode", label: "Bytecode", tier: "Ignition", view: "bytecode", flags: ["--print-bytecode", NATIVES] },
+  {
+    id: "bytecode",
+    label: "Bytecode",
+    tier: "Ignition",
+    view: "bytecode",
+    flags: ["--print-bytecode", NATIVES],
+  },
   {
     id: "sparkplug",
     label: "Sparkplug",

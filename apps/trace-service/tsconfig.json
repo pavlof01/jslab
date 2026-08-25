@@ -21,5 +21,12 @@
   // The service ships as TypeScript run through tsx (no build step), so every
   // source extension has to be in here — .ts was missing, which left server.ts,
   // the sandbox and the worker entirely untypechecked.
-  "include": ["src/**/*.mts", "src/**/*.mjs", "src/**/*.ts", "test/**/*.mts", "test/**/*.ts", "vitest.config.mts"]
+  "include": [
+    "src/**/*.mts",
+    "src/**/*.mjs",
+    "src/**/*.ts",
+    "test/**/*.mts",
+    "test/**/*.ts",
+    "vitest.config.mts"
+  ]
 }

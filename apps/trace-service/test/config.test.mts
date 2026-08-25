@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
 import { loadConfig } from "../config.ts";
 
 /**
@@ -39,7 +40,11 @@ describe("loadConfig", () => {
     process.env.MAX_TIMEOUT_MS = "1500";
     process.env.MAX_SOURCE_LENGTH = "500";
 
-    expect(loadConfig()).toMatchObject({ PORT: 9090, MAX_TIMEOUT_MS: 1500, MAX_SOURCE_LENGTH: 500 });
+    expect(loadConfig()).toMatchObject({
+      PORT: 9090,
+      MAX_TIMEOUT_MS: 1500,
+      MAX_SOURCE_LENGTH: 500,
+    });
   });
 
   it("rejects a non-numeric value where a number is required", () => {

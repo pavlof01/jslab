@@ -1,5 +1,5 @@
-import { spawn, type SpawnOptions } from "child_process";
-import { StringDecoder } from "string_decoder";
+import { spawn, type SpawnOptions } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
 
 /**
  * Spawning half of the engine runtime: one child process, one wall-clock
@@ -39,7 +39,11 @@ function decodeCapped(buf: Buffer, maxBytes: number): string {
  * to the other. Handing stdout the whole budget first would let a runaway print
  * loop starve the one stderr line that explains why it ran away.
  */
-function decodeBoth(stdoutChunks: Buffer[], stderrChunks: Buffer[], maxBytes: number): { stdout: string; stderr: string } {
+function decodeBoth(
+  stdoutChunks: Buffer[],
+  stderrChunks: Buffer[],
+  maxBytes: number,
+): { stdout: string; stderr: string } {
   const out = Buffer.concat(stdoutChunks);
   const err = Buffer.concat(stderrChunks);
   const half = Math.floor(maxBytes / 2);
@@ -51,7 +55,12 @@ function decodeBoth(stdoutChunks: Buffer[], stderrChunks: Buffer[], maxBytes: nu
 export async function runCommand(
   cmd: string,
   args: string[],
-  opts: { timeoutMs: number; maxOutputBytes: number; spawnOptions?: Pick<SpawnOptions, "cwd" | "env">; input?: string },
+  opts: {
+    timeoutMs: number;
+    maxOutputBytes: number;
+    spawnOptions?: Pick<SpawnOptions, "cwd" | "env">;
+    input?: string;
+  },
 ): Promise<RunResult> {
   const stdin = opts.input !== undefined ? "pipe" : "ignore";
   const child = spawn(cmd, args, { stdio: [stdin, "pipe", "pipe"], ...opts.spawnOptions });
@@ -114,8 +123,14 @@ export async function runCommand(
     });
     child.on("error", (err) => {
       clearTimeout(timer);
-      done({ stdout: "", stderr: String(err), exitCode: -1, timedOut, outputTruncated, spawnError: true });
+      done({
+        stdout: "",
+        stderr: String(err),
+        exitCode: -1,
+        timedOut,
+        outputTruncated,
+        spawnError: true,
+      });
     });
   });
 }
-

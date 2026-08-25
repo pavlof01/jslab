@@ -30,7 +30,9 @@ const makeFetchMock = (reply: () => Response) =>
 
 beforeEach(() => {
   process.env.JSLAB_BACKEND_URL = "http://api:8080";
-  fetchMock = makeFetchMock(() => new Response(JSON.stringify({ success: true, root: null }), { status: 200 }));
+  fetchMock = makeFetchMock(
+    () => new Response(JSON.stringify({ success: true, root: null }), { status: 200 }),
+  );
   global.fetch = fetchMock as unknown as typeof fetch;
   jest.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -110,10 +112,16 @@ describe("body validation", () => {
   });
 
   it("accepts only the two preferredType hints the spec defines", async () => {
-    const ok = await POST(post({ functionName: "ToPrimitive", input: "{}", preferredType: "string" }), params("type-conversion"));
+    const ok = await POST(
+      post({ functionName: "ToPrimitive", input: "{}", preferredType: "string" }),
+      params("type-conversion"),
+    );
     expect(ok.status).toBe(200);
 
-    const bad = await POST(post({ functionName: "ToPrimitive", input: "{}", preferredType: "default" }), params("type-conversion"));
+    const bad = await POST(
+      post({ functionName: "ToPrimitive", input: "{}", preferredType: "default" }),
+      params("type-conversion"),
+    );
     expect(bad.status).toBe(400);
     expect(await bad.json()).toEqual({ error: "preferredType must be 'string' or 'number'" });
   });
@@ -143,7 +151,8 @@ describe("upstream relaying", () => {
 
   it("relays an upstream failure with its status", async () => {
     global.fetch = jest.fn(
-      async () => new Response(JSON.stringify({ success: false, error: "budget exceeded" }), { status: 400 }),
+      async () =>
+        new Response(JSON.stringify({ success: false, error: "budget exceeded" }), { status: 400 }),
     ) as unknown as typeof fetch;
 
     const res = await POST(post({ input: "1 == 1" }), params("equality"));

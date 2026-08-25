@@ -6,8 +6,9 @@ import { runEngine, type RunFailure } from "@/lib/api";
 import { pickPrimaryFailure } from "@/lib/runAggregate";
 import { describeRunFailure } from "@/lib/runMessages";
 import { EngineKey } from "@/lib/types";
-import { tokenize, type Token } from "./tokenize";
-import { API_STAGES, stripDiagnostics, type ApiStageId, type StageId } from "./stages";
+
+import { API_STAGES, type ApiStageId, type StageId, stripDiagnostics } from "./stages";
+import { type Token, tokenize } from "./tokenize";
 
 export interface StageOutput {
   loading: boolean;
@@ -20,7 +21,10 @@ export type StageStatus = "idle" | "loading" | "ok" | "empty" | "error";
 const EMPTY_OUTPUT: StageOutput = { loading: false, stdout: "", stderr: "" };
 
 const emptyOutputs = (): Record<ApiStageId, StageOutput> =>
-  Object.fromEntries(API_STAGES.map((stage) => [stage.id, EMPTY_OUTPUT])) as Record<ApiStageId, StageOutput>;
+  Object.fromEntries(API_STAGES.map((stage) => [stage.id, EMPTY_OUTPUT])) as Record<
+    ApiStageId,
+    StageOutput
+  >;
 
 export function usePipelineRun(code: string) {
   const [hasRun, setHasRun] = useState(false);
@@ -29,7 +33,10 @@ export function usePipelineRun(code: string) {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [outputs, setOutputs] = useState<Record<ApiStageId, StageOutput>>(emptyOutputs);
 
-  const visibleTokens = useMemo(() => tokens.filter((token) => token.kind !== "Whitespace"), [tokens]);
+  const visibleTokens = useMemo(
+    () => tokens.filter((token) => token.kind !== "Whitespace"),
+    [tokens],
+  );
 
   const patch = useCallback((id: ApiStageId, change: Partial<StageOutput>) => {
     setOutputs((previous) => ({ ...previous, [id]: { ...previous[id], ...change } }));
@@ -60,10 +67,14 @@ export function usePipelineRun(code: string) {
       const failure = pickPrimaryFailure(failures);
       if (failure) setError(describeRunFailure(failure));
     } finally {
-      setOutputs((previous) =>
-        Object.fromEntries(
-          Object.entries(previous).map(([id, output]) => [id, output.loading ? { ...output, loading: false } : output]),
-        ) as Record<ApiStageId, StageOutput>,
+      setOutputs(
+        (previous) =>
+          Object.fromEntries(
+            Object.entries(previous).map(([id, output]) => [
+              id,
+              output.loading ? { ...output, loading: false } : output,
+            ]),
+          ) as Record<ApiStageId, StageOutput>,
       );
       setRunning(false);
     }

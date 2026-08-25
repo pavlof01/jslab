@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
-import { OEMBED_PATH, SNAPSHOT_PARAM, BYTECODE_EMBED_PATH, decodeSnapshot, type EmbedSnapshot } from "@/lib/embedState";
+import {
+  BYTECODE_EMBED_PATH,
+  decodeSnapshot,
+  type EmbedSnapshot,
+  OEMBED_PATH,
+  SNAPSHOT_PARAM,
+} from "@/lib/embedState";
+
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
 export const metadata: Metadata = {
@@ -16,11 +23,11 @@ async function requestOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-export default async function EmbedBytecodePage({
-  searchParams,
-}: {
+type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+};
+
+const EmbedBytecodePage = async ({ searchParams }: Props) => {
   const params = await searchParams;
   const raw = params[SNAPSHOT_PARAM];
   const snapshotParam = Array.isArray(raw) ? raw[0] : raw;
@@ -34,8 +41,15 @@ export default async function EmbedBytecodePage({
 
   return (
     <>
-      <link rel="alternate" type="application/json+oembed" href={discoveryHref} title="JSLab bytecode" />
+      <link
+        rel="alternate"
+        type="application/json+oembed"
+        href={discoveryHref}
+        title="JSLab bytecode"
+      />
       <EmbedBytecodeClient snapshot={snapshot} />
     </>
   );
-}
+};
+
+export default EmbedBytecodePage;

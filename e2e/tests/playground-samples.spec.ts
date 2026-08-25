@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage } from "../helpers/playground";
 
 test.describe("playground: samples", () => {
@@ -17,7 +18,10 @@ test.describe("playground: samples", () => {
     await pg.v8SamplesButton.click();
 
     await expect(page.getByRole("dialog", { name: "V8 internals" })).toBeVisible();
-    await page.getByRole("button", { name: /select .* sample/i }).first().click();
+    await page
+      .getByRole("button", { name: /select .* sample/i })
+      .first()
+      .click();
 
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
@@ -29,7 +33,10 @@ test.describe("playground: samples", () => {
     await pg.setCode("const custom = 'sample';");
     await pg.saveSampleButton.click();
     await page.getByPlaceholder("Sample name").fill(name);
-    await page.getByRole("button", { name: /^save$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^save$/i })
+      .last()
+      .click();
 
     await pg.samplesButton.click();
     const browse = page.getByRole("dialog", { name: "Select a sample" });
@@ -37,12 +44,21 @@ test.describe("playground: samples", () => {
     await expect(browse).toContainText(name);
 
     const renamed = `${name}-renamed`;
-    await page.getByRole("button", { name: /^rename$/i }).first().click();
+    await page
+      .getByRole("button", { name: /^rename$/i })
+      .first()
+      .click();
     await page.getByPlaceholder("Sample name").fill(renamed);
-    await page.getByRole("dialog", { name: "Rename snippet" }).getByRole("button", { name: /^save$/i }).click();
+    await page
+      .getByRole("dialog", { name: "Rename snippet" })
+      .getByRole("button", { name: /^save$/i })
+      .click();
     await expect(browse).toContainText(renamed);
 
-    await page.getByRole("button", { name: /^delete$/i }).first().click();
+    await page
+      .getByRole("button", { name: /^delete$/i })
+      .first()
+      .click();
     const confirm = page.getByRole("dialog", { name: "Delete snippet" });
     await expect(confirm).toBeVisible();
     await confirm.getByRole("button", { name: /^delete$/i }).click();
@@ -56,12 +72,18 @@ test.describe("playground: samples", () => {
     await pg.setCode("const first = 1;");
     await pg.saveSampleButton.click();
     await page.getByPlaceholder("Sample name").fill(name);
-    await page.getByRole("button", { name: /^save$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^save$/i })
+      .last()
+      .click();
 
     await pg.setCode("const second = 2;");
     await pg.saveSampleButton.click();
     await page.getByPlaceholder("Sample name").fill(name);
-    await page.getByRole("button", { name: /^save$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^save$/i })
+      .last()
+      .click();
 
     await expect(page.getByRole("dialog", { name: "Save current snippet" })).toBeVisible();
     await expect(page.getByText(/already|taken|exists/i).first()).toBeVisible();
@@ -74,7 +96,10 @@ test.describe("playground: samples", () => {
     await pg.setCode("const persisted = true;");
     await pg.saveSampleButton.click();
     await page.getByPlaceholder("Sample name").fill(name);
-    await page.getByRole("button", { name: /^save$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^save$/i })
+      .last()
+      .click();
 
     await page.reload();
     await pg.editorReady();

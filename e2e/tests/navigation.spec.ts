@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const ROUTES: Array<[path: string, marker: RegExp]> = [
+const ROUTES: [path: string, marker: RegExp][] = [
   ["/playground", /run/i],
   ["/v8-pipeline", /V8 Compilation Pipeline/],
   ["/type-conversion", /expression/i],
@@ -19,14 +19,20 @@ test.describe("navigation", () => {
     for (const [path, marker] of ROUTES) {
       const response = await page.goto(path);
       expect(response?.status(), `${path} did not return 200`).toBe(200);
-      await expect(page.getByText(marker).first(), `${path} rendered nothing recognizable`).toBeVisible();
+      await expect(
+        page.getByText(marker).first(),
+        `${path} rendered nothing recognizable`,
+      ).toBeVisible();
     }
   });
 
   test("the header offers each nav section and navigates", async ({ page }) => {
     await page.goto("/");
 
-    await page.getByRole("button", { name: /engines/i }).first().click();
+    await page
+      .getByRole("button", { name: /engines/i })
+      .first()
+      .click();
     const playground = page.getByRole("menuitem", { name: /playground/i });
     await expect(playground).toBeVisible();
     await playground.click();
@@ -36,7 +42,10 @@ test.describe("navigation", () => {
 
   test("the spec section links to both visualizers", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /ecma spec/i }).first().click();
+    await page
+      .getByRole("button", { name: /ecma spec/i })
+      .first()
+      .click();
 
     await expect(page.getByRole("menuitem", { name: /type conversion/i })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: /equality/i })).toBeVisible();

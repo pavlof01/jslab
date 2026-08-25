@@ -1,9 +1,15 @@
 import { Span } from "@chakra-ui/react";
 
-import { looping } from "./TraceSteps";
 import { tabName } from "./traceCycle";
+import { looping } from "./TraceSteps";
 
-export function TraceTab({ label, index, totalMs }: { label: string; index: number; totalMs: number }) {
+type Props = {
+  label: string;
+  index: number;
+  totalMs: number;
+};
+
+const TraceTab: React.FC<Props> = ({ label, index, totalMs }) => {
   return (
     <Span
       data-tab={index}
@@ -18,4 +24,6 @@ export function TraceTab({ label, index, totalMs }: { label: string; index: numb
       {label}
     </Span>
   );
-}
+};
+
+export default TraceTab;

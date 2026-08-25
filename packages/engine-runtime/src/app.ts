@@ -1,9 +1,11 @@
+import type { SpawnOptions } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import fastify, { type FastifyInstance } from "fastify";
-import { type SpawnOptions } from "child_process";
-import fs from "fs/promises";
-import os from "os";
-import path from "path";
 import { z } from "zod";
+
 import type { EngineRuntimeConfig } from "./config.js";
 import { sanitizeFlags } from "./flags.js";
 import { buildLockdownShim, LOCKDOWN_SHIM_FILE } from "./lockdown.js";
@@ -123,7 +125,10 @@ function preludeScripts(spec: EngineSpec): readonly PreludeScript[] {
   if (!spec.blockedGlobals?.length) return declared;
   // Lockdown loads first so the snippet never observes a dangerous global, not
   // even transiently through another prelude script.
-  return [{ file: LOCKDOWN_SHIM_FILE, contents: buildLockdownShim(spec.blockedGlobals) }, ...declared];
+  return [
+    { file: LOCKDOWN_SHIM_FILE, contents: buildLockdownShim(spec.blockedGlobals) },
+    ...declared,
+  ];
 }
 
 /** Temp dir holding the snippet plus its prelude, cleaned up by `dispose`. */
@@ -156,7 +161,12 @@ function openapiDocFor(title: string) {
     paths: {
       "/healthz": { get: { responses: { "200": { description: "ok" } } } },
       "/openapi.json": { get: { responses: { "200": { description: "openapi document" } } } },
-      "/run": { post: { requestBody: { description: "engine run request" }, responses: { "200": { description: "run response" } } } },
+      "/run": {
+        post: {
+          requestBody: { description: "engine run request" },
+          responses: { "200": { description: "run response" } },
+        },
+      },
     },
   };
 }
@@ -193,17 +203,24 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
     let parsed: z.infer<typeof requestSchema>;
     try {
       parsed = requestSchema.parse(req.body);
-    } catch (err: any) {
-      reply.code(400).send({ ok: false, error: err?.message || "invalid payload" });
+    } catch (err) {
+      reply
+        .code(400)
+        .send({ ok: false, error: err instanceof Error ? err.message : "invalid payload" });
       return;
     }
 
     if (parsed.sourceText.length > config.MAX_SOURCE_LENGTH) {
-      reply.code(400).send({ ok: false, error: `sourceText exceeds limit (${config.MAX_SOURCE_LENGTH})` });
+      reply
+        .code(400)
+        .send({ ok: false, error: `sourceText exceeds limit (${config.MAX_SOURCE_LENGTH})` });
       return;
     }
 
-    const timeoutMs = Math.min(parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS, config.MAX_TIMEOUT_MS);
+    const timeoutMs = Math.min(
+      parsed.options?.timeoutMs ?? config.DEFAULT_TIMEOUT_MS,
+      config.MAX_TIMEOUT_MS,
+    );
     const sanitized = sanitizeFlags(engine, parsed.options?.flags || [], {
       maxFlags: config.MAX_FLAGS,
       sort: spec.sortFlags,
@@ -252,12 +269,16 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
         meta: {
           durationMs: Date.now() - start,
           engine,
-          ...(result.outputTruncated ? { outputTruncated: true, outputLimitBytes: config.MAX_OUTPUT_BYTES } : {}),
+          ...(result.outputTruncated
+            ? { outputTruncated: true, outputLimitBytes: config.MAX_OUTPUT_BYTES }
+            : {}),
           ...(sanitized.dropped.length ? { droppedFlags: sanitized.dropped } : {}),
         },
       });
-    } catch (err: any) {
-      reply.code(500).send({ ok: false, error: err?.message || "execution failed" });
+    } catch (err) {
+      reply
+        .code(500)
+        .send({ ok: false, error: err instanceof Error ? err.message : "execution failed" });
     } finally {
       gate.release();
       await workspace?.dispose();

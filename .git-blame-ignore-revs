@@ -1,0 +1,18 @@
+# Commits that only moved whitespace and import lines around. Listing them here
+# keeps `git blame` pointing at whoever wrote a line, not at whoever reformatted it.
+#
+# GitHub applies this file automatically. For local git:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Two rules, because git and GitHub both skip an unknown SHA in silence:
+#
+#   1. Add a commit here only if it changed no behaviour at all.
+#   2. The SHA has to survive the merge. A squash or a rebase merge mints new
+#      commits, so a pure-formatting commit must reach `main` either through a
+#      merge commit or as its own squash, and the SHA recorded afterwards. CI
+#      (the `history` job) fails if a listed SHA is not an ancestor of the
+#      branch, so a squash that orphans one is loud rather than silent.
+
+# style(repo): format the tree with Prettier and group imports
+82f8986bea2c3e3baf0ee8f9b44d6abdb57facb8

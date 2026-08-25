@@ -1,7 +1,7 @@
 import { Box, Container, Grid, Text } from "@chakra-ui/react";
 
 import { ALSO } from "../landing-data";
-import { SectionHead } from "./SectionHead";
+import SectionHead from "./SectionHead";
 
 function withFlag(text: string) {
   const parts = text.split("--prof");
@@ -17,7 +17,7 @@ function withFlag(text: string) {
   );
 }
 
-export function AlsoSection() {
+const AlsoSection: React.FC = () => {
   return (
     <Box layerStyle="section" as="section" id="also" scrollMarginTop="64px">
       <Container maxW="1280px" px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}>
@@ -44,4 +44,6 @@ export function AlsoSection() {
       </Container>
     </Box>
   );
-}
+};
+
+export default AlsoSection;

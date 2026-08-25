@@ -1,6 +1,7 @@
-import { z } from "zod";
-import { executeRequestSchema } from "./schema.ts";
+import type { z } from "zod";
+
 import type { SerializedTraceNode, SerializedValue } from "./execute/serialize.ts";
+import type { executeRequestSchema } from "./schema.ts";
 
 export type ExecuteRequest = z.infer<typeof executeRequestSchema>;
 

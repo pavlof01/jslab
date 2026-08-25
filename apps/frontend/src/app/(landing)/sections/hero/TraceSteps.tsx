@@ -3,7 +3,6 @@ import { Box, Flex, Grid, Text } from "@chakra-ui/react";
 import type { Trace } from "../../landing-data";
 import { cursorName, stepName, verdictName } from "./traceCycle";
 
-
 const looping = (name: string, totalMs: number) => ({
   animationName: name,
   animationDuration: `${totalMs}ms`,
@@ -11,7 +10,13 @@ const looping = (name: string, totalMs: number) => ({
   animationTimingFunction: "linear" as const,
 });
 
-export function TraceSteps({ trace, index, totalMs }: { trace: Trace; index: number; totalMs: number }) {
+type Props = {
+  trace: Trace;
+  index: number;
+  totalMs: number;
+};
+
+const TraceSteps: React.FC<Props> = ({ trace, index, totalMs }) => {
   return (
     <Box mt={{ base: 5, md: "26px" }}>
       {trace.steps.map(([op, detail], step) => (
@@ -42,7 +47,13 @@ export function TraceSteps({ trace, index, totalMs }: { trace: Trace; index: num
           </Text>
 
           <Flex wrap="wrap" align="baseline" gap="2px 14px" minW={0}>
-            <Text textStyle="codeXl" flex="0 1 auto" minW="min(158px, 100%)" color="ink.1" overflowWrap="anywhere">
+            <Text
+              textStyle="codeXl"
+              flex="0 1 auto"
+              minW="min(158px, 100%)"
+              color="ink.1"
+              overflowWrap="anywhere"
+            >
               {op}
             </Text>
             <Text textStyle="codeLg" flex="1 1 190px" minW={0} color="ink.2">
@@ -71,6 +82,8 @@ export function TraceSteps({ trace, index, totalMs }: { trace: Trace; index: num
       </Flex>
     </Box>
   );
-}
+};
 
 export { looping };
+
+export default TraceSteps;

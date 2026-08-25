@@ -1,4 +1,5 @@
 import type { SpawnOptions } from "node:child_process";
+
 import { runCommand } from "./run.js";
 
 export interface VersionProbe {
@@ -33,6 +34,9 @@ export async function detectVersion(probe: VersionProbe): Promise<string | null>
   return null;
 }
 
+// The separator between the label and the value is left to `.trim()` rather than
+// matched: a `\s*` in front of a `[^\n]+` capture makes the two compete for the
+// same spaces, which is quadratic on a long run of them (CodeQL js/polynomial-redos).
 export function matchVersion(raw: string, pattern: RegExp): string | null {
   return raw.match(pattern)?.[1]?.trim() ?? null;
 }

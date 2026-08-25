@@ -1,6 +1,6 @@
-import { Flex, Box, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 
-import { type Token } from "../lib/tokenize";
+import type { Token } from "../lib/tokenize";
 
 const TOKEN_COLOR: Record<string, string> = {
   Keyword: "syn.keyword",
@@ -14,7 +14,10 @@ const TOKEN_COLOR: Record<string, string> = {
   LineComment: "syn.comment",
   BlockComment: "syn.comment",
 };
-const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
+
+type Props = { tokens: Token[] };
+
+const TokensPane: React.FC<Props> = ({ tokens }) => {
   if (tokens.length === 0) {
     return (
       <Flex h="60%" align="center" justify="center">
@@ -47,7 +50,11 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
         </Box>
         <Box as="tbody">
           {tokens.map((tok, i) => (
-            <Box key={`${tok.start}-${tok.kind}`} as="tr" _hover={{ bg: "rgba(255,255,255,0.025)" }}>
+            <Box
+              key={`${tok.start}-${tok.kind}`}
+              as="tr"
+              _hover={{ bg: "rgba(255,255,255,0.025)" }}
+            >
               <Box as="td" p="3px 10px" color="ink.6" w="48px" flexShrink={0}>
                 {i + 1}
               </Box>
@@ -73,7 +80,7 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
                 textOverflow="ellipsis"
                 whiteSpace="nowrap"
               >
-                {tok.value.length > 80 ? tok.value.slice(0, 77) + "…" : tok.value}
+                {tok.value.length > 80 ? `${tok.value.slice(0, 77)}…` : tok.value}
               </Box>
             </Box>
           ))}

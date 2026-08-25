@@ -33,4 +33,8 @@ jobs:
       - name: Run public smoke test
         env:
           JSLAB_BASE_URL: ${{ github.event.inputs.base_url || 'https://jslab.su' }}
+          # Only needed if Cloudflare challenges the runner on IP reputation even
+          # with a browser User-Agent. Pair it with a WAF skip rule on the
+          # x-smoke-token header; absent, the script simply does not send it.
+          JSLAB_SMOKE_TOKEN: ${{ secrets.JSLAB_SMOKE_TOKEN }}
         run: bash scripts/smoke-test.sh

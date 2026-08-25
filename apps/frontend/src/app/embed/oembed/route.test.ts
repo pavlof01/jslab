@@ -4,9 +4,10 @@
 import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
 
-import { GET } from "./route";
 import { buildSnapshotUrl } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
+
+import { GET } from "./route";
 
 const SITE = "https://jslab.su";
 
@@ -81,7 +82,11 @@ describe("GET /embed/oembed", () => {
   });
 
   it("clamps oversized maxwidth/maxheight into the allowed range", async () => {
-    const res = await oembed({ url: `${SITE}/embed/playground`, maxwidth: "9000", maxheight: "9000" });
+    const res = await oembed({
+      url: `${SITE}/embed/playground`,
+      maxwidth: "9000",
+      maxheight: "9000",
+    });
     const body = await res.json();
     expect(body.width).toBeLessThanOrEqual(1200);
     expect(body.height).toBeLessThanOrEqual(900);

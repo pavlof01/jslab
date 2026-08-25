@@ -1,0 +1,24 @@
+# Editor defaults. Prettier does not read this file, so the values here are for
+# editors only and must be kept in step with .prettierrc by hand: max_line_length
+# mirrors printWidth, indent_size mirrors tabWidth, end_of_line mirrors
+# endOfLine. Change both together.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[*.{yml,yaml}]
+indent_size = 2

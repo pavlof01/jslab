@@ -2,8 +2,9 @@ import { CodeBlock, createShikiAdapter, Flex, Float, IconButton } from "@chakra-
 import type { HighlighterGeneric } from "shiki";
 
 import { getSourceHighlighter, MACHINE_CODE_LANG, THEME } from "@/lib/shiki";
+
 import DefaultEmptyCodeBlockState, {
-  Props as DefaultEmptyCodeBlockStateProps,
+  type DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";
 
 type Props = {
@@ -11,7 +12,10 @@ type Props = {
   EmptyCodeBlockState?: React.ComponentType<DefaultEmptyCodeBlockStateProps>;
 };
 
-const CodeBlockShiki: React.FC<Props> = ({ code, EmptyCodeBlockState = DefaultEmptyCodeBlockState }) => {
+const CodeBlockShiki: React.FC<Props> = ({
+  code,
+  EmptyCodeBlockState = DefaultEmptyCodeBlockState,
+}) => {
   if (!code || code.length === 0) return <EmptyCodeBlockState />;
 
   return (

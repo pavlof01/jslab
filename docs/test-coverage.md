@@ -22,12 +22,12 @@ npm --prefix packages/engine-runtime run build # api and the engines import its 
 
 Measured on 2026-08-20 against `main`, from `coverage-summary.json`.
 
-| Package | Tests | Statements | Branches | Functions |
-|---|---:|---:|---:|---:|
-| `apps/api` | 102 | 76.4% | 63.4% | 85.9% |
-| `packages/engine-runtime` | 55 | 88.1% | 79.4% | 86.8% |
-| `apps/trace-service` | 178 | 10.2%¹ | 6.6% | 14.5% |
-| `apps/frontend/src` | 359 | 87.9% | 85.3% | 75.8% |
+| Package                   | Tests | Statements | Branches | Functions |
+| ------------------------- | ----: | ---------: | -------: | --------: |
+| `apps/api`                |   102 |      76.4% |    63.4% |     85.9% |
+| `packages/engine-runtime` |    55 |      88.1% |    79.4% |     86.8% |
+| `apps/trace-service`      |   178 |     10.2%¹ |     6.6% |     14.5% |
+| `apps/frontend/src`       |   359 |      87.9% |    85.3% |     75.8% |
 
 ¹ Not what it looks like. Almost all of trace-service's code runs **inside the
 trace worker thread**, which the coverage provider in the main process cannot

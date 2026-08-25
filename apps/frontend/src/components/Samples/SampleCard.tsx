@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Box, Card, CodeBlock, createShikiAdapter, HStack, Stack } from "@chakra-ui/react";
+import type { ReactNode } from "react";
 import type { HighlighterGeneric } from "shiki";
 
 import { getSourceHighlighter, SOURCE_LANG, THEME } from "@/lib/shiki";
@@ -21,7 +21,15 @@ type Props = {
   actions?: ReactNode;
 };
 
-export function SampleCard({ id, title, description, snippet, active, onSelect, actions }: Props) {
+const SampleCard: React.FC<Props> = ({
+  id,
+  title,
+  description,
+  snippet,
+  active,
+  onSelect,
+  actions,
+}) => {
   return (
     <Card.Root
       key={id}
@@ -52,7 +60,13 @@ export function SampleCard({ id, title, description, snippet, active, onSelect, 
           </HStack>
 
           <CodeBlock.AdapterProvider value={CODE_ADAPTER}>
-            <CodeBlock.Root code={snippet} language={SOURCE_LANG} size="sm" maxH="140px" overflow="auto">
+            <CodeBlock.Root
+              code={snippet}
+              language={SOURCE_LANG}
+              size="sm"
+              maxH="140px"
+              overflow="auto"
+            >
               <CodeBlock.Content>
                 <CodeBlock.Code>
                   <CodeBlock.CodeText />
@@ -64,4 +78,6 @@ export function SampleCard({ id, title, description, snippet, active, onSelect, 
       </Card.Body>
     </Card.Root>
   );
-}
+};
+
+export default SampleCard;

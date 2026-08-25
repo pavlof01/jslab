@@ -1,0 +1,32 @@
+{
+  "name": "jslab",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Repo-root tooling only. Each service under apps/ and packages/ keeps its own package.json and lockfile — this one exists so formatting and linting have a single version and a single config for the whole tree.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "npm run format:check && npm run lint",
+    "check:fix": "npm run format && npm run lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "ci": "prettier --check . && eslint .",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "commitlint": "commitlint"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.68.0"
+  }
+}

@@ -15,7 +15,9 @@ function reply(status: number, body: unknown): Response {
 let fetchMock: jest.Mock<(input: string, init?: RequestInit) => Promise<Response>>;
 
 beforeEach(() => {
-  fetchMock = jest.fn(async () => reply(200, { success: true, root: { algoId: "ToNumber", inputs: [], steps: [] } }));
+  fetchMock = jest.fn(async () =>
+    reply(200, { success: true, root: { algoId: "ToNumber", inputs: [], steps: [] } }),
+  );
   global.fetch = fetchMock as unknown as typeof fetch;
 });
 
@@ -75,12 +77,16 @@ describe("executeTrace", () => {
 
   it("throws the server's message on an HTTP error", async () => {
     fetchMock.mockResolvedValueOnce(reply(400, { error: "execution budget exceeded" }));
-    await expect(executeTrace("equality", "BinaryExpression", "x")).rejects.toThrow("execution budget exceeded");
+    await expect(executeTrace("equality", "BinaryExpression", "x")).rejects.toThrow(
+      "execution budget exceeded",
+    );
   });
 
   it("throws a status-bearing message when the error body has none", async () => {
     fetchMock.mockResolvedValueOnce(reply(503, {}));
-    await expect(executeTrace("equality", "BinaryExpression", "x")).rejects.toThrow("trace-service error 503");
+    await expect(executeTrace("equality", "BinaryExpression", "x")).rejects.toThrow(
+      "trace-service error 503",
+    );
   });
 
   it("throws when the body is not JSON at all", async () => {
@@ -92,20 +98,30 @@ describe("executeTrace", () => {
       },
     } as unknown as Response);
 
-    await expect(executeTrace("equality", "BinaryExpression", "x")).rejects.toThrow("trace-service error 502");
+    await expect(executeTrace("equality", "BinaryExpression", "x")).rejects.toThrow(
+      "trace-service error 502",
+    );
   });
 
   it("treats a 200 that reports failure as a failure", async () => {
     // The trace service answers 200 with success:false for spec-level errors.
-    fetchMock.mockResolvedValueOnce(reply(200, { success: false, error: "Unknown function: ToFoo" }));
-    await expect(executeTrace("typeConversion", "ToFoo", "1")).rejects.toThrow("Unknown function: ToFoo");
+    fetchMock.mockResolvedValueOnce(
+      reply(200, { success: false, error: "Unknown function: ToFoo" }),
+    );
+    await expect(executeTrace("typeConversion", "ToFoo", "1")).rejects.toThrow(
+      "Unknown function: ToFoo",
+    );
 
     fetchMock.mockResolvedValueOnce(reply(200, { success: false }));
-    await expect(executeTrace("typeConversion", "ToFoo", "1")).rejects.toThrow("trace-service returned failure");
+    await expect(executeTrace("typeConversion", "ToFoo", "1")).rejects.toThrow(
+      "trace-service returned failure",
+    );
   });
 
   it("lets a network failure propagate", async () => {
     fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-    await expect(executeTrace("equality", "BinaryExpression", "1 == 1")).rejects.toThrow("Failed to fetch");
+    await expect(executeTrace("equality", "BinaryExpression", "1 == 1")).rejects.toThrow(
+      "Failed to fetch",
+    );
   });
 });

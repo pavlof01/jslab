@@ -1,26 +1,26 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
 import { Button, Flex, Link, Text } from "@chakra-ui/react";
+import { useCallback, useMemo } from "react";
 import { CiPlay1 } from "react-icons/ci";
 import { LuExternalLink } from "react-icons/lu";
 
-import { EditorPanel } from "@/components/EditorPanel";
-import { OutputsPanel } from "@/components/OutputsPanel";
+import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
+import EditorPanel from "@/components/EditorPanel";
+import OutputsPanel from "@/components/OutputsPanel";
 import { LogoLoader } from "@/components/ui";
+import { buildShareUrl } from "@/lib/shareState";
 import { enabledEngines, RunStatus } from "@/lib/types";
 import {
   useCode,
+  useEngineFlags,
   useEngineSelection,
   useRunEngines,
   useRunStatus,
   useSetCode,
-  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
-import { useSharedStateRestore } from "@/app/_components/useSharedStateRestore";
-import { buildShareUrl } from "@/lib/shareState";
 
-export default function EmbedPlaygroundClient() {
+const EmbedPlaygroundClient: React.FC = () => {
   const { status } = useRunStatus();
   const code = useCode();
   const setCode = useSetCode();
@@ -87,4 +87,6 @@ export default function EmbedPlaygroundClient() {
       </Flex>
     </Flex>
   );
-}
+};
+
+export default EmbedPlaygroundClient;

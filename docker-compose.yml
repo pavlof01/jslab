@@ -7,7 +7,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 3s
       retries: 5
@@ -28,13 +28,12 @@ services:
       - ./apps/engine-v8/src:/app/src
       - ./apps/engine-v8/tsconfig.json:/app/tsconfig.json
     healthcheck:
-      test:
-        [
+      test: [
           "CMD",
           "node",
           "-e",
           "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok
-            ? 0 : 1)).catch(() => process.exit(1))",
+          ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s
@@ -57,13 +56,12 @@ services:
       - ./apps/engine-hermes/src:/app/src
       - ./apps/engine-hermes/tsconfig.json:/app/tsconfig.json
     healthcheck:
-      test:
-        [
+      test: [
           "CMD",
           "node",
           "-e",
           "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok
-            ? 0 : 1)).catch(() => process.exit(1))",
+          ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s
@@ -85,13 +83,12 @@ services:
       - ./apps/engine-spidermonkey/src:/app/src
       - ./apps/engine-spidermonkey/tsconfig.json:/app/tsconfig.json
     healthcheck:
-      test:
-        [
+      test: [
           "CMD",
           "node",
           "-e",
           "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok
-            ? 0 : 1)).catch(() => process.exit(1))",
+          ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s
@@ -113,13 +110,12 @@ services:
       - ./apps/engine-jsc/src:/app/src
       - ./apps/engine-jsc/tsconfig.json:/app/tsconfig.json
     healthcheck:
-      test:
-        [
+      test: [
           "CMD",
           "node",
           "-e",
           "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok
-            ? 0 : 1)).catch(() => process.exit(1))",
+          ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s
@@ -144,13 +140,12 @@ services:
       - ./apps/trace-service/config.ts:/app/config.ts
       - ./apps/trace-service/tsconfig.json:/app/tsconfig.json
     healthcheck:
-      test:
-        [
+      test: [
           "CMD",
           "node",
           "-e",
           "fetch('http://localhost:8080/healthz').then((res) =>
-            process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))",
+          process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s
@@ -198,13 +193,12 @@ services:
       trace-service:
         condition: service_healthy
     healthcheck:
-      test:
-        [
+      test: [
           "CMD",
           "node",
           "-e",
           "fetch('http://localhost:8080/healthz').then(r => process.exit(r.ok
-            ? 0 : 1)).catch(() => process.exit(1))",
+          ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s

@@ -11,6 +11,7 @@ export async function runViaProxy(
   try {
     json = (await res.json()) as Record<string, unknown>;
   } catch {
+    // A non-JSON body (an HTML error page, an empty 429) leaves json as {}.
   }
   return { status: res.status(), json };
 }

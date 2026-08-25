@@ -1,0 +1,30 @@
+# The api and engine images build from the repo root (-f apps/<svc>/Dockerfile .)
+# because they bake in packages/engine-runtime. Everything they COPY is either
+# packages/engine-runtime or apps/<svc>/{package.json,package-lock.json,.npmrc,
+# tsconfig.json,src}; node_modules and dist are rebuilt inside the image. Without
+# this file the whole tree — the root tooling install, the frontend's
+# node_modules, the engine262 submodule and .git — is uploaded to the daemon five
+# times over on every build.
+#
+# The frontend and trace-service images build from their own directories and
+# keep their own .dockerignore; this file does not apply to them.
+
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/*.tsbuildinfo
+**/npm-debug.log*
+
+.git
+.github
+.githooks
+.vscode
+
+apps/frontend
+apps/trace-service
+e2e
+docs
+infra
+scripts
+*.md

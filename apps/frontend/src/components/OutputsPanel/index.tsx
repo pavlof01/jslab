@@ -1,12 +1,13 @@
-import { useMemo } from "react";
 import { Stack, Tabs } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { engineLabel } from "@/lib/engines";
 import { ENGINE_KEYS, EngineKey, isEngineKey, RunStatus } from "@/lib/types";
 import { useActiveTab, useOutputPane } from "@/store/engineOutputsSelectors";
+
 import { HighlightedCode } from "./CodeBlock";
 
-export function OutputsPanel() {
+const OutputsPanel: React.FC = () => {
   const { out, previousSnapshot, showDiff, status, engines } = useOutputPane();
   const { activeTab, setActiveTab } = useActiveTab();
 
@@ -38,7 +39,15 @@ export function OutputsPanel() {
         </Tabs.List>
 
         <Tabs.Content value={activeKey} display="flex" flex="1" minH="20vh">
-          <Stack flex="1" minH={0} gap={4} borderRadius="md" bgColor="surface.base" p={4} overflow="auto">
+          <Stack
+            flex="1"
+            minH={0}
+            gap={4}
+            borderRadius="md"
+            bgColor="surface.base"
+            p={4}
+            overflow="auto"
+          >
             <HighlightedCode
               engineKey={activeKey}
               out={result?.stdout}
@@ -58,4 +67,6 @@ export function OutputsPanel() {
       </Stack>
     </Tabs.Root>
   );
-}
+};
+
+export default OutputsPanel;

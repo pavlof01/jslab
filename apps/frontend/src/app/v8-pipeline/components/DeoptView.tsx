@@ -1,11 +1,7 @@
 "use client";
 
-/* eslint-disable react/no-array-index-key -- Trace events are a sequence: two
-   identical deopts of the same function are distinct events, told apart only by
-   position. */
-
-import { useMemo } from "react";
 import { Badge, Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { parseV8Trace, summarizeV8Trace, type V8TraceEvent } from "@/lib/parseV8Trace";
 
@@ -15,7 +11,9 @@ const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }>
   ic: { label: "IC", color: "status.info" },
 };
 
-export default function DeoptView({ output }: { output: string }) {
+type Props = { output: string };
+
+const DeoptView: React.FC<Props> = ({ output }) => {
   const events = useMemo(() => parseV8Trace(output), [output]);
   const summary = useMemo(() => summarizeV8Trace(events), [events]);
 
@@ -23,8 +21,9 @@ export default function DeoptView({ output }: { output: string }) {
     return (
       <Box p={6}>
         <Text color="ink.label" fontSize="sm">
-          Run to trace optimization and deoptimization events. Deopts happen when V8 has to throw away optimized code —
-          usually because a value’s type changed from what the optimizer assumed.
+          Run to trace optimization and deoptimization events. Deopts happen when V8 has to throw
+          away optimized code — usually because a value’s type changed from what the optimizer
+          assumed.
         </Text>
       </Box>
     );
@@ -34,8 +33,8 @@ export default function DeoptView({ output }: { output: string }) {
     return (
       <Box p={6}>
         <Text color="ink.2" fontSize="sm">
-          No optimization or deoptimization events. Try a hot loop (e.g. call a function a few hundred times) so V8
-          tiers it up — then feed it a changing type to force a deopt.
+          No optimization or deoptimization events. Try a hot loop (e.g. call a function a few
+          hundred times) so V8 tiers it up — then feed it a changing type to force a deopt.
         </Text>
       </Box>
     );
@@ -59,6 +58,7 @@ export default function DeoptView({ output }: { output: string }) {
           const style = KIND_STYLE[e.kind];
           return (
             <Flex
+              // eslint-disable-next-line react/no-array-index-key -- trace events are a sequence: two identical deopts of the same function are distinct events, told apart only by position.
               key={i}
               gap={3}
               align="baseline"
@@ -69,7 +69,13 @@ export default function DeoptView({ output }: { output: string }) {
               borderColor={style.color}
               bg="surface.hover"
             >
-              <Text fontFamily="mono" fontSize="10px" fontWeight="700" color={style.color} minW={12}>
+              <Text
+                fontFamily="mono"
+                fontSize="10px"
+                fontWeight="700"
+                color={style.color}
+                minW={12}
+              >
                 {style.label}
                 {e.bailout ? `·${e.bailout}` : ""}
               </Text>
@@ -98,4 +104,6 @@ export default function DeoptView({ output }: { output: string }) {
       </VStack>
     </VStack>
   );
-}
+};
+
+export default DeoptView;

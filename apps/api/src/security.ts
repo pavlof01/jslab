@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+
 import { extractApiKey, lookupApiKey } from "./apiKeys.js";
 import type { ApiConfig } from "./config.js";
 import type { AppContext } from "./context.js";
@@ -94,7 +95,10 @@ export function budgetFor(config: ApiConfig, caller: Caller): Budget {
   return {
     id: caller.id,
     general: { suffix: "key-general", limit: caller.rpm },
-    heavy: { suffix: "key-heavy", limit: Math.min(caller.rpm, config.API_KEY_HEAVY_RATE_LIMIT_PER_MIN) },
+    heavy: {
+      suffix: "key-heavy",
+      limit: Math.min(caller.rpm, config.API_KEY_HEAVY_RATE_LIMIT_PER_MIN),
+    },
     trace: { suffix: "key-trace", limit: caller.rpm },
   };
 }

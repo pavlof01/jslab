@@ -1,19 +1,35 @@
 "use client";
 
-import Samples from "@/components/Samples";
+import { Box, Button } from "@chakra-ui/react";
+
 import FlagSelector from "@/components/FlagSelector";
 import { useFlaggedEngines } from "@/components/FlagSelector/context";
-import V8Intrinsics from "@/components/V8Intrinsics";
-import { Box, Button } from "@chakra-ui/react";
+import Samples from "@/components/Samples";
 import { Chip, ShortcutHint } from "@/components/ui";
+import V8Intrinsics from "@/components/V8Intrinsics";
 import { engineLabel } from "@/lib/engines";
-import { createEngineSelection, enabledEngines, ENGINE_KEYS, EngineKey, RunStatus } from "@/lib/types";
-import { useCode, useDiffToggle, useEngineSelection, useRunStatus, useSetCode } from "@/store/engineOutputsSelectors";
+import {
+  createEngineSelection,
+  enabledEngines,
+  ENGINE_KEYS,
+  EngineKey,
+  RunStatus,
+} from "@/lib/types";
+import {
+  useCode,
+  useDiffToggle,
+  useEngineSelection,
+  useRunStatus,
+  useSetCode,
+} from "@/store/engineOutputsSelectors";
+
+import * as styles from "./playground.styles";
 import RunHistory from "./RunHistory";
 import ShareButton from "./ShareButton";
-import * as styles from "./playground.styles";
 
-export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
+type Props = { onRun: () => void };
+
+const PlaygroundToolbar: React.FC<Props> = ({ onRun }) => {
   const code = useCode();
   const setCode = useSetCode();
   const { engines, setEngines } = useEngineSelection();
@@ -66,4 +82,6 @@ export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
       </Box>
     </Box>
   );
-}
+};
+
+export default PlaygroundToolbar;

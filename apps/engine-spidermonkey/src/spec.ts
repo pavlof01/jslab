@@ -1,4 +1,5 @@
-import { matchVersion, type EngineSpec } from "@jslab/engine-runtime";
+import { type EngineSpec, matchVersion } from "@jslab/engine-runtime";
+
 import type { EngineConfig } from "./config.js";
 
 const BYTECODE_WRAPPER = String.raw`(() => {
@@ -43,7 +44,7 @@ export function buildEngineSpec(config: EngineConfig): EngineSpec {
     version: {
       cmd: binary,
       candidates: [["--version"]],
-      parse: (raw) => matchVersion(raw, /JavaScript-C\s*([^\n]+)/),
+      parse: (raw) => matchVersion(raw, /JavaScript-C([^\n]*)/),
     },
     invoke: ({ tmpDir, flags }) => ({
       cmd: binary,

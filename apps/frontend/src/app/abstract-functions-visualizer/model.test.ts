@@ -1,11 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
 
 import {
+  type AlgoCategory,
   DEFAULTS_BY_CATEGORY,
   EMPTY_FUNCTION_CATALOG,
   fallbackInitialData,
   getDefaultsForCategory,
-  type AlgoCategory,
 } from "./model";
 
 const categories: AlgoCategory[] = ["typeConversion", "equality"];

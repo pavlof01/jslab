@@ -1,13 +1,18 @@
 // scripts/test-shiki.ts
-import { createHighlighter } from "shiki";
+
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { createHighlighter } from "shiki";
+
 async function main() {
   // --- load grammar JSON synchronously (no top-level await) ---
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  const grammarPath = resolve(__dirname, "../components/OutputsPanel/tm/v8-bytecode.tmLanguage.json");
+  const grammarPath = resolve(
+    __dirname,
+    "../components/OutputsPanel/tm/v8-bytecode.tmLanguage.json",
+  );
   const v8GrammarJson = JSON.parse(readFileSync(grammarPath, "utf8"));
 
   const highlighter = await createHighlighter({

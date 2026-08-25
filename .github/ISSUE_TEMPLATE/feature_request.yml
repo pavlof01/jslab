@@ -1,0 +1,15 @@
+name: Feature request
+description: An engine view, spec operation, flag, or tool jslab should have
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What it does and who it helps. Existing plans live in the open issues.
+    validations:
+      required: true
+  - type: textarea
+    id: alternative
+    attributes:
+      label: What you do today instead

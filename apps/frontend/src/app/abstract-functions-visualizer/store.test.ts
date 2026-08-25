@@ -10,10 +10,10 @@ jest.mock("./traceApi", () => ({ __esModule: true, executeTrace: jest.fn() }));
 
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 
-import type { TraceNode } from "./spec-runner";
-import { executeTrace as executeTraceImpl } from "./traceApi";
-import { createVisualizerStore, DEFAULTS_BY_CATEGORY } from "./store";
 import type { VisualizerInitialData } from "./model";
+import type { TraceNode } from "./spec-runner";
+import { createVisualizerStore, DEFAULTS_BY_CATEGORY } from "./store";
+import { executeTrace as executeTraceImpl } from "./traceApi";
 
 /**
  * The visualizer store owns everything the spec pages do: hold a trace, walk
@@ -85,7 +85,11 @@ describe("initial state", () => {
   });
 
   it("carries a server-side trace error into the store", () => {
-    const store = createVisualizerStore(serverData({ trace: { root: null, effectiveAlgoId: null, detectedOperator: null, error: "boom" } }));
+    const store = createVisualizerStore(
+      serverData({
+        trace: { root: null, effectiveAlgoId: null, detectedOperator: null, error: "boom" },
+      }),
+    );
     expect(store.getState().error).toBe("boom");
     expect(store.getState().flatEntries).toEqual([]);
   });
@@ -327,7 +331,11 @@ describe("runNow", () => {
     let rejectFirst: (reason: unknown) => void = () => {};
     executeTrace
       .mockImplementationOnce(() => new Promise((_resolve, reject) => (rejectFirst = reject)))
-      .mockResolvedValueOnce({ root: trace("winner"), effectiveAlgoId: "winner", detectedOperator: null });
+      .mockResolvedValueOnce({
+        root: trace("winner"),
+        effectiveAlgoId: "winner",
+        detectedOperator: null,
+      });
 
     const store = createVisualizerStore();
     const first = store.getState().runNow();

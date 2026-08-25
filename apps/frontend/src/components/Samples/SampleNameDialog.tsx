@@ -1,9 +1,19 @@
 "use client";
 
+import {
+  Button,
+  CloseButton,
+  Dialog,
+  HStack,
+  Input,
+  Portal,
+  Stack,
+  Text,
+  Textarea,
+} from "@chakra-ui/react";
 import { useState } from "react";
-import { Button, CloseButton, Dialog, HStack, Input, Portal, Stack, Text, Textarea } from "@chakra-ui/react";
 
-import { NAME_ERROR_TEXT, validateName, type CustomSample } from "@/lib/customSamples";
+import { type CustomSample, NAME_ERROR_TEXT, validateName } from "@/lib/customSamples";
 
 type Props = {
   open: boolean;
@@ -16,11 +26,11 @@ type Props = {
   onConfirm: (name: string, description: string) => void;
 };
 
-export function SampleNameDialog(props: Props) {
+const SampleNameDialog: React.FC<Props> = (props) => {
   return <NameForm key={`${props.open}:${props.editing?.id ?? "new"}`} {...props} />;
-}
+};
 
-function NameForm({
+const NameForm: React.FC<Props> = ({
   open,
   onOpenChange,
   title,
@@ -29,7 +39,7 @@ function NameForm({
   editing,
   withDescription = false,
   onConfirm,
-}: Props) {
+}) => {
   const [name, setName] = useState(editing?.name ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +55,13 @@ function NameForm({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={(e) => onOpenChange(e.open)} placement="center" lazyMount unmountOnExit>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(e) => onOpenChange(e.open)}
+      placement="center"
+      lazyMount
+      unmountOnExit
+    >
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
@@ -101,4 +117,6 @@ function NameForm({
       </Portal>
     </Dialog.Root>
   );
-}
+};
+
+export default SampleNameDialog;

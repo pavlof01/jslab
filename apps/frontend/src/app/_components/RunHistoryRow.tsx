@@ -2,8 +2,8 @@
 
 import { Box, Flex, Text } from "@chakra-ui/react";
 
-import { flagCount, type EngineFlags } from "@/lib/types";
 import type { RunHistoryEntry } from "@/lib/runHistory";
+import { type EngineFlags, flagCount } from "@/lib/types";
 
 export function relativeTime(then: number, now: number): string {
   const seconds = Math.max(0, Math.round((now - then) / 1000));
@@ -21,15 +21,13 @@ function flagSummary(flags: EngineFlags): string {
   return ` · ${count} flag${count === 1 ? "" : "s"}`;
 }
 
-export function RunHistoryRow({
-  entry,
-  now,
-  onRestore,
-}: {
+type Props = {
   entry: RunHistoryEntry;
   now: number;
   onRestore: () => void;
-}) {
+};
+
+const RunHistoryRow: React.FC<Props> = ({ entry, now, onRestore }) => {
   return (
     <Box
       as="button"
@@ -50,9 +48,17 @@ export function RunHistoryRow({
           {relativeTime(entry.ts, now)}
         </Text>
       </Flex>
-      <Text textStyle="code" color="ink.body" lineClamp={2} whiteSpace="pre-wrap" wordBreak="break-all">
+      <Text
+        textStyle="code"
+        color="ink.body"
+        lineClamp={2}
+        whiteSpace="pre-wrap"
+        wordBreak="break-all"
+      >
         {entry.code.slice(0, 160) || "(empty)"}
       </Text>
     </Box>
   );
-}
+};
+
+export default RunHistoryRow;

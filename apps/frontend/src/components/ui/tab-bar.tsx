@@ -16,7 +16,7 @@ export type TabBarProps = {
   underline?: boolean;
 } & Omit<Tabs.RootProps, "value" | "onValueChange" | "children" | "onChange">;
 
-export function TabBar({ items, value, onChange, underline = false, ...rest }: TabBarProps) {
+const TabBar: React.FC<TabBarProps> = ({ items, value, onChange, underline = false, ...rest }) => {
   return (
     <Tabs.Root
       value={value}
@@ -34,12 +34,16 @@ export function TabBar({ items, value, onChange, underline = false, ...rest }: T
       </Tabs.List>
     </Tabs.Root>
   );
-}
+};
 
-function TabMeta({ text, color }: { text: string; color?: string }) {
+type TabMetaProps = { text: string; color?: string };
+
+const TabMeta: React.FC<TabMetaProps> = ({ text, color }) => {
   return (
     <Span textStyle="labelSm" color={color ?? "ink.6"}>
       {text}
     </Span>
   );
-}
+};
+
+export default TabBar;

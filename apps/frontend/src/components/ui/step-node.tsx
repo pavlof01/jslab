@@ -1,4 +1,4 @@
-import { Box, Flex, Grid, Span, type BoxProps } from "@chakra-ui/react";
+import { Box, type BoxProps, Flex, Grid, Span } from "@chakra-ui/react";
 
 export type StepRowState = "pending" | "current" | "done";
 
@@ -43,7 +43,7 @@ function rowStyles(state: StepRowState) {
   } as const;
 }
 
-export function StepNode({
+const StepNode: React.FC<StepNodeProps> = ({
   op,
   args,
   specId,
@@ -57,7 +57,7 @@ export function StepNode({
   onClick,
   onSelectTest,
   ...rest
-}: StepNodeProps) {
+}) => {
   const nested = depth > 0;
 
   return (
@@ -99,25 +99,31 @@ export function StepNode({
       </Box>
     </Box>
   );
-}
+};
 
-function ParentElbow() {
-  return <Box aria-hidden="true" position="absolute" left={0} top="23px" w="19px" h="1px" bg="rule.panel" />;
-}
+const ParentElbow: React.FC = () => {
+  return (
+    <Box
+      aria-hidden="true"
+      position="absolute"
+      left={0}
+      top="23px"
+      w="19px"
+      h="1px"
+      bg="rule.panel"
+    />
+  );
+};
 
-function FrameHeader({
-  op,
-  args,
-  specId,
-  result,
-  active,
-}: {
+type FrameHeaderProps = {
   op: string;
   args: React.ReactNode;
   specId?: string;
   result?: string;
   active: boolean;
-}) {
+};
+
+const FrameHeader: React.FC<FrameHeaderProps> = ({ op, args, specId, result, active }) => {
   return (
     <Flex
       wrap="wrap"
@@ -152,9 +158,11 @@ function FrameHeader({
       </Flex>
     </Flex>
   );
-}
+};
 
-function TestRow({ test, onSelect }: { test: StepTest; onSelect?: () => void }) {
+type TestRowProps = { test: StepTest; onSelect?: () => void };
+
+const TestRow: React.FC<TestRowProps> = ({ test, onSelect }) => {
   return (
     <Grid
       onClick={
@@ -179,14 +187,21 @@ function TestRow({ test, onSelect }: { test: StepTest; onSelect?: () => void }) 
           {test.clause}
         </Span>
       ) : null}
-      <Span textStyle="code" lineHeight="1.5" color={test.taken ? "ink.code" : "ink.label"} textWrap="pretty">
+      <Span
+        textStyle="code"
+        lineHeight="1.5"
+        color={test.taken ? "ink.code" : "ink.label"}
+        textWrap="pretty"
+      >
         {test.label}
       </Span>
     </Grid>
   );
-}
+};
 
-function ActionRow({ state, children }: { state: StepRowState; children: React.ReactNode }) {
+type ActionRowProps = { state: StepRowState; children: React.ReactNode };
+
+const ActionRow: React.FC<ActionRowProps> = ({ state, children }) => {
   return (
     <Grid
       gridTemplateColumns="12px minmax(0,1fr)"
@@ -207,4 +222,6 @@ function ActionRow({ state, children }: { state: StepRowState; children: React.R
       </Span>
     </Grid>
   );
-}
+};
+
+export default StepNode;

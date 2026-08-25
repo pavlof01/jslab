@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage, V8_BYTECODE } from "../helpers/playground";
 
 test.describe("playground: sharing", () => {
@@ -6,7 +7,10 @@ test.describe("playground: sharing", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   });
 
-  test("a copied link restores code, engines and flags in a fresh page", async ({ page, context }) => {
+  test("a copied link restores code, engines and flags in a fresh page", async ({
+    page,
+    context,
+  }) => {
     const pg = await PlaygroundPage.open(page);
     const marker = `const SHARED_${Date.now()} = 42;`;
     await pg.toggleEngine("Hermes");
@@ -14,7 +18,9 @@ test.describe("playground: sharing", () => {
 
     await pg.shareButton.click();
     await page.getByRole("menuitem", { name: /copy link/i }).click();
-    await expect(page.getByRole("button", { name: /share this snippet/i })).toContainText(/link copied/i);
+    await expect(page.getByRole("button", { name: /share this snippet/i })).toContainText(
+      /link copied/i,
+    );
 
     const url = await page.evaluate(() => navigator.clipboard.readText());
     expect(url).toContain("?s=");
@@ -59,7 +65,10 @@ test.describe("playground: sharing", () => {
     expect(url).toContain("/embed/bytecode?b=");
   });
 
-  test("an article link renders the captured dump in the bytecode embed", async ({ page, context }) => {
+  test("an article link renders the captured dump in the bytecode embed", async ({
+    page,
+    context,
+  }) => {
     const pg = await PlaygroundPage.open(page);
     await pg.setCode("function snapshotMe(a) { return a + 1; } snapshotMe(1);");
     await pg.run();

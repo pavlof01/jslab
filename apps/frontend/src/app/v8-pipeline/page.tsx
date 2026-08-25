@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import PipelineClient from "./components/PipelineClient";
 
 export const metadata: Metadata = {
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function V8PipelinePage() {
+const V8PipelinePage: React.FC = () => {
   return <PipelineClient />;
-}
+};
+
+export default V8PipelinePage;

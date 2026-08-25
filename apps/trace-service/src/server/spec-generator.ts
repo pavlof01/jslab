@@ -5,9 +5,11 @@
  * This module reads the file once, builds the full ecmarkup document, then
  * extracts individual <emu-clause> elements by id for per-function requests.
  */
-import { readFile } from "fs/promises";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { build } from "ecmarkup";
 
 import { FUNCTION_ALGOS } from "./operations.ts";
@@ -21,7 +23,8 @@ export const ALGO_SPEC_URL: Record<string, string> = {
   ToPrimitive: "https://262.ecma-international.org/#sec-toprimitive",
   OrdinaryToPrimitive: "https://262.ecma-international.org/#sec-ordinarytoprimitive",
   StringToNumber: "https://262.ecma-international.org/#sec-stringtonumber",
-  StringNumericValue: "https://262.ecma-international.org/#sec-runtime-semantics-stringnumericvalue",
+  StringNumericValue:
+    "https://262.ecma-international.org/#sec-runtime-semantics-stringnumericvalue",
   ToNumber: "https://262.ecma-international.org/#sec-tonumber",
   ToString: "https://262.ecma-international.org/#sec-tostring",
   ToBoolean: "https://262.ecma-international.org/#sec-toboolean",
@@ -36,7 +39,8 @@ export const ALGO_SPEC_URL: Record<string, string> = {
   Call: "https://262.ecma-international.org/#sec-call",
   IsLooselyEqual: "https://262.ecma-international.org/#sec-islooselyequal",
   IsStrictlyEqual: "https://262.ecma-international.org/#sec-isstrictlyequal",
-  AbstractRelationalComparison: "https://262.ecma-international.org/#sec-abstract-relational-comparison",
+  AbstractRelationalComparison:
+    "https://262.ecma-international.org/#sec-abstract-relational-comparison",
   ApplyStringOrNumericBinaryOperator:
     "https://262.ecma-international.org/#sec-applystringornumericbinaryoperator",
   SameType: "https://262.ecma-international.org/#sec-sametype",
@@ -45,18 +49,22 @@ export const ALGO_SPEC_URL: Record<string, string> = {
   "Number::equal": "https://262.ecma-international.org/#sec-numeric-types-number-equal",
   "Number::lessThan": "https://262.ecma-international.org/#sec-numeric-types-number-lessThan",
   "Number::sameValue": "https://262.ecma-international.org/#sec-numeric-types-number-sameValue",
-  "Number::sameValueZero": "https://262.ecma-international.org/#sec-numeric-types-number-sameValueZero",
+  "Number::sameValueZero":
+    "https://262.ecma-international.org/#sec-numeric-types-number-sameValueZero",
   "Number::unaryMinus": "https://262.ecma-international.org/#sec-numeric-types-number-unaryMinus",
   "Number::bitwiseNOT": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseNOT",
-  "Number::exponentiate": "https://262.ecma-international.org/#sec-numeric-types-number-exponentiate",
+  "Number::exponentiate":
+    "https://262.ecma-international.org/#sec-numeric-types-number-exponentiate",
   "Number::multiply": "https://262.ecma-international.org/#sec-numeric-types-number-multiply",
   "Number::divide": "https://262.ecma-international.org/#sec-numeric-types-number-divide",
   "Number::remainder": "https://262.ecma-international.org/#sec-numeric-types-number-remainder",
   "Number::add": "https://262.ecma-international.org/#sec-numeric-types-number-add",
   "Number::subtract": "https://262.ecma-international.org/#sec-numeric-types-number-subtract",
   "Number::leftShift": "https://262.ecma-international.org/#sec-numeric-types-number-leftShift",
-  "Number::signedRightShift": "https://262.ecma-international.org/#sec-numeric-types-number-signedRightShift",
-  "Number::unsignedRightShift": "https://262.ecma-international.org/#sec-numeric-types-number-unsignedRightShift",
+  "Number::signedRightShift":
+    "https://262.ecma-international.org/#sec-numeric-types-number-signedRightShift",
+  "Number::unsignedRightShift":
+    "https://262.ecma-international.org/#sec-numeric-types-number-unsignedRightShift",
   "Number::bitwiseAND": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseAND",
   "Number::bitwiseXOR": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseXOR",
   "Number::bitwiseOR": "https://262.ecma-international.org/#sec-numeric-types-number-bitwiseOR",
@@ -90,11 +98,15 @@ async function getClauseById(): Promise<Map<string, string>> {
 
   const source = await readFile(SPEC_FILE, "utf-8");
 
-  const spec = await build("spec.html", async (path: string) => (path === "spec.html" ? source : ""), {
-    assets: "none",
-    toc: false,
-    copyright: false,
-  });
+  const spec = await build(
+    "spec.html",
+    async (path: string) => (path === "spec.html" ? source : ""),
+    {
+      assets: "none",
+      toc: false,
+      copyright: false,
+    },
+  );
 
   const map = new Map<string, string>();
   // ecmarkup's Spec.d.ts omits the public `doc` field (set at runtime to dom.window.document).
@@ -131,7 +143,8 @@ export async function buildSpecHtmlForFunction(functionName: string): Promise<st
   const algoIds = FUNCTION_ALGOS[functionName];
   if (!algoIds) return null;
 
-  if (!IS_DEV && _cache.has(functionName)) return _cache.get(functionName)!;
+  const cached = IS_DEV ? undefined : _cache.get(functionName);
+  if (cached !== undefined) return cached;
 
   const clauses = await getClauseById();
   const html = algoIds

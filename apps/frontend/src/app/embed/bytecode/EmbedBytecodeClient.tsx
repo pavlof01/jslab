@@ -4,19 +4,31 @@ import { Box, Flex, Link, Text } from "@chakra-ui/react";
 import { LuExternalLink } from "react-icons/lu";
 
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
+import type { EmbedSnapshot } from "@/lib/embedState";
 import { engineLabel } from "@/lib/engines";
 import { buildShareUrl } from "@/lib/shareState";
-import type { EmbedSnapshot } from "@/lib/embedState";
 
-function PlainDump({ text }: { text: string }) {
+type PlainDumpProps = { text: string };
+
+const PlainDump: React.FC<PlainDumpProps> = ({ text }) => {
   return (
-    <Box textStyle="code" as="pre" lineHeight="1.55" color="ink.1" whiteSpace="pre" overflowX="auto" m={0}>
+    <Box
+      textStyle="code"
+      as="pre"
+      lineHeight="1.55"
+      color="ink.1"
+      whiteSpace="pre"
+      overflowX="auto"
+      m={0}
+    >
       {text}
     </Box>
   );
-}
+};
 
-export default function EmbedBytecodeClient({ snapshot }: { snapshot: EmbedSnapshot | null }) {
+type EmbedBytecodeClientProps = { snapshot: EmbedSnapshot | null };
+
+const EmbedBytecodeClient: React.FC<EmbedBytecodeClientProps> = ({ snapshot }) => {
   if (!snapshot) {
     return (
       <Flex height="100dvh" align="center" justify="center" bg="surface.band" px={4}>
@@ -98,4 +110,6 @@ export default function EmbedBytecodeClient({ snapshot }: { snapshot: EmbedSnaps
       </Box>
     </Flex>
   );
-}
+};
+
+export default EmbedBytecodeClient;

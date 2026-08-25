@@ -24,12 +24,12 @@ yet; see [Roadmap](#-roadmap-overview).
 
 ### 🔸 Supported Engines
 
-| Engine             | Binary | Output types                                            | Notable flags                                                              |
-| ------------------ | ------ | ------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **V8**             | `d8`   | AST, Ignition bytecode, Maglev/TurboFan code, IC & deopt traces | `--print-bytecode`, `--print-ast`, `--trace-opt`, `--allow-natives-syntax` |
-| **SpiderMonkey**   | `js`   | Bytecode (`dis()`)                                       | `--baseline-eager`, `--ion-eager`                                          |
-| **JavaScriptCore** | `jsc`  | Bytecode (`-d`)                                          | — (`-d` is applied server-side)                                            |
-| **Hermes**         | `hermes` | Bytecode (`-dump-bytecode`)                            | `-O`, `-strict`, `-gc-sanitize-handles`                                    |
+| Engine             | Binary   | Output types                                                    | Notable flags                                                              |
+| ------------------ | -------- | --------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **V8**             | `d8`     | AST, Ignition bytecode, Maglev/TurboFan code, IC & deopt traces | `--print-bytecode`, `--print-ast`, `--trace-opt`, `--allow-natives-syntax` |
+| **SpiderMonkey**   | `js`     | Bytecode (`dis()`)                                              | `--baseline-eager`, `--ion-eager`                                          |
+| **JavaScriptCore** | `jsc`    | Bytecode (`-d`)                                                 | — (`-d` is applied server-side)                                            |
+| **Hermes**         | `hermes` | Bytecode (`-dump-bytecode`)                                     | `-O`, `-strict`, `-gc-sanitize-handles`                                    |
 
 Flags are validated against a per-engine allowlist — the full catalog lives in
 [`packages/engine-runtime/src/flags.ts`](packages/engine-runtime/src/flags.ts)
@@ -236,17 +236,17 @@ kubectl -n jslab exec -it debug-shell -- \
 The gateway's own OpenAPI document is served at `GET /api/openapi.json`, with a
 browsable rendering at `/api/docs`.
 
-| Endpoint | Purpose |
-| --- | --- |
-| `POST /api/run` | Run a snippet on one engine (see below) |
-| `GET /api/flags` | The per-engine flag catalog, with descriptions and categories |
-| `GET /api/engines` | Each engine key with the version string its binary reports (`null` when the shell cannot say) |
-| `POST /api/trace/execute/type-conversion` | `{ functionName, input, preferredType? }` → spec trace |
-| `POST /api/trace/execute/equality` | `{ input }` (a binary expression such as `{} == ![]`) → spec trace |
-| `POST /api/keys` | Mint a self-service API key (raises the general and trace quotas) |
-| `DELETE /api/keys` | Revoke the key presented in `x-api-key` / `Authorization: Bearer` |
-| `GET /api/openapi.json`, `/api/docs` | OpenAPI document and API reference UI |
-| `GET /healthz`, `GET /metrics` | Liveness probe and Prometheus metrics |
+| Endpoint                                  | Purpose                                                                                       |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `POST /api/run`                           | Run a snippet on one engine (see below)                                                       |
+| `GET /api/flags`                          | The per-engine flag catalog, with descriptions and categories                                 |
+| `GET /api/engines`                        | Each engine key with the version string its binary reports (`null` when the shell cannot say) |
+| `POST /api/trace/execute/type-conversion` | `{ functionName, input, preferredType? }` → spec trace                                        |
+| `POST /api/trace/execute/equality`        | `{ input }` (a binary expression such as `{} == ![]`) → spec trace                            |
+| `POST /api/keys`                          | Mint a self-service API key (raises the general and trace quotas)                             |
+| `DELETE /api/keys`                        | Revoke the key presented in `x-api-key` / `Authorization: Bearer`                             |
+| `GET /api/openapi.json`, `/api/docs`      | OpenAPI document and API reference UI                                                         |
+| `GET /healthz`, `GET /metrics`            | Liveness probe and Prometheus metrics                                                         |
 
 - Endpoint: `POST /api/run`
 - Request:

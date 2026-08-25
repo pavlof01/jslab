@@ -44,13 +44,16 @@ export async function runEngine(
           status: response.status,
           message: payload?.error ?? `HTTP ${response.status}`,
           retryAfterSeconds:
-            toPositiveInt(payload?.meta?.retryAfter) ?? toPositiveInt(response.headers.get("retry-after")),
+            toPositiveInt(payload?.meta?.retryAfter) ??
+            toPositiveInt(response.headers.get("retry-after")),
         },
       };
     }
 
     const droppedFlags = Array.isArray(payload.meta?.droppedFlags)
-      ? payload.meta.droppedFlags.filter((flag: unknown): flag is string => typeof flag === "string")
+      ? payload.meta.droppedFlags.filter(
+          (flag: unknown): flag is string => typeof flag === "string",
+        )
       : undefined;
 
     return {

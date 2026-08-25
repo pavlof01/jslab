@@ -1,7 +1,15 @@
-import { describe, it, expect } from "@jest/globals";
-import { encodeShareState, decodeShareState, buildShareUrl, buildEmbedSnippet, SHARE_PARAM } from "./shareState";
+import { describe, expect, it } from "@jest/globals";
+
 import { encodeText } from "@/lib/base64url";
 import { EngineKey } from "@/lib/types";
+
+import {
+  buildEmbedSnippet,
+  buildShareUrl,
+  decodeShareState,
+  encodeShareState,
+  SHARE_PARAM,
+} from "./shareState";
 
 const state = {
   code: "const x = 1;\nconsole.log(x)",
@@ -32,18 +40,25 @@ describe("shareState", () => {
 
   it("carries flags for every engine, not just V8", () => {
     const decoded = decodeShareState(encodeShareState(state));
-    expect(decoded?.flags).toEqual({ [EngineKey.v8]: ["--print-bytecode"], [EngineKey.hermes]: ["-O"] });
+    expect(decoded?.flags).toEqual({
+      [EngineKey.v8]: ["--print-bytecode"],
+      [EngineKey.hermes]: ["-O"],
+    });
   });
 
   it("still opens links minted when flags were a flat V8 list", () => {
     // Those payloads carry `f` as a bare array; dropping them would break every
     // share URL in the wild.
-    const legacy = encodeText(JSON.stringify({ c: "1 + 1", e: [EngineKey.v8], f: ["--print-bytecode"] }));
+    const legacy = encodeText(
+      JSON.stringify({ c: "1 + 1", e: [EngineKey.v8], f: ["--print-bytecode"] }),
+    );
     expect(decodeShareState(legacy)?.flags).toEqual({ [EngineKey.v8]: ["--print-bytecode"] });
   });
 
   it("drops flags filed under an engine it does not know", () => {
-    const encoded = encodeText(JSON.stringify({ c: "1", e: [EngineKey.v8], f: { quickjs: ["--fast"] } }));
+    const encoded = encodeText(
+      JSON.stringify({ c: "1", e: [EngineKey.v8], f: { quickjs: ["--fast"] } }),
+    );
     expect(decodeShareState(encoded)?.flags).toEqual({});
   });
 

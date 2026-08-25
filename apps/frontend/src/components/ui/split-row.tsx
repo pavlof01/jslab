@@ -1,6 +1,6 @@
 "use client";
 
-import { Splitter, useBreakpointValue, type SplitterRootProps } from "@chakra-ui/react";
+import { Splitter, type SplitterRootProps, useBreakpointValue } from "@chakra-ui/react";
 import { useCallback } from "react";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -17,7 +17,7 @@ export type SplitRowProps = {
 
 const UNKEYED = "jsl-split-unkeyed";
 
-export function SplitRow({
+const SplitRow: React.FC<SplitRowProps> = ({
   left,
   right,
   storageKey,
@@ -25,7 +25,7 @@ export function SplitRow({
   minLeftPercent = 15,
   minRightPercent = 25,
   ...rest
-}: SplitRowProps) {
+}) => {
   const [stored, setStored] = useLocalStorage<number>(storageKey ?? UNKEYED, defaultPercent);
   const percent = withinOr(stored, { min: 0, max: 100, fallback: defaultPercent });
 
@@ -54,4 +54,6 @@ export function SplitRow({
       <Splitter.Panel id="right">{right}</Splitter.Panel>
     </Splitter.Root>
   );
-}
+};
+
+export default SplitRow;

@@ -6,16 +6,16 @@ commands here, not in `apps/frontend/`.
 
 ## Pages
 
-| Route | File | Description |
-| --- | --- | --- |
-| `/` | `app/(landing)/page.tsx` | Landing page with feature sections |
-| `/playground` | `app/playground/page.tsx` → `app/_components/PlaygroundClient.tsx` | Multi-engine JS playground (V8, SM, Hermes, JSC) |
-| `/v8-pipeline` | `app/v8-pipeline/page.tsx` → `app/v8-pipeline/components/PipelineClient.tsx` | V8 compilation pipeline: Tokens → AST → Ignition → Sparkplug → Maglev → TurboFan → Deopt |
-| `/type-conversion` | `app/type-conversion/page.tsx` | Spec step-through for type conversion (`ToNumber`, `ToPrimitive`, `ToString`, …) |
-| `/equality` | `app/equality/page.tsx` | Spec step-through for `==` / `===` |
-| `/embed/playground` | `app/embed/playground/page.tsx` | Embeddable playground widget (`noindex`) |
-| `/embed/bytecode` | `app/embed/bytecode/page.tsx` | Embeddable bytecode snapshot widget (`noindex`) |
-| `/embed/oembed` | `app/embed/oembed/route.ts` | oEmbed provider endpoint for the widgets above |
+| Route               | File                                                                         | Description                                                                              |
+| ------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `/`                 | `app/(landing)/page.tsx`                                                     | Landing page with feature sections                                                       |
+| `/playground`       | `app/playground/page.tsx` → `app/_components/PlaygroundClient.tsx`           | Multi-engine JS playground (V8, SM, Hermes, JSC)                                         |
+| `/v8-pipeline`      | `app/v8-pipeline/page.tsx` → `app/v8-pipeline/components/PipelineClient.tsx` | V8 compilation pipeline: Tokens → AST → Ignition → Sparkplug → Maglev → TurboFan → Deopt |
+| `/type-conversion`  | `app/type-conversion/page.tsx`                                               | Spec step-through for type conversion (`ToNumber`, `ToPrimitive`, `ToString`, …)         |
+| `/equality`         | `app/equality/page.tsx`                                                      | Spec step-through for `==` / `===`                                                       |
+| `/embed/playground` | `app/embed/playground/page.tsx`                                              | Embeddable playground widget (`noindex`)                                                 |
+| `/embed/bytecode`   | `app/embed/bytecode/page.tsx`                                                | Embeddable bytecode snapshot widget (`noindex`)                                          |
+| `/embed/oembed`     | `app/embed/oembed/route.ts`                                                  | oEmbed provider endpoint for the widgets above                                           |
 
 `/type-conversion` and `/equality` are two entry points into the same client
 component, `app/abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx`,
@@ -24,12 +24,12 @@ that shared implementation — it is **not** itself a route.
 
 ## Route handlers (server side)
 
-| Route | Talks to |
-| --- | --- |
-| `app/api/run/route.ts` | api gateway `POST /api/run` |
+| Route                                       | Talks to                                                         |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| `app/api/run/route.ts`                      | api gateway `POST /api/run`                                      |
 | `app/api/trace/execute/[category]/route.ts` | api gateway `POST /api/trace/execute/{type-conversion,equality}` |
-| `app/api/trace/functions/route.ts` | trace-service `GET /functions` (directly) |
-| `app/api/spec/[functionName]/route.ts` | trace-service `GET /spec/:functionName` (directly) |
+| `app/api/trace/functions/route.ts`          | trace-service `GET /functions` (directly)                        |
+| `app/api/spec/[functionName]/route.ts`      | trace-service `GET /spec/:functionName` (directly)               |
 
 The two direct trace-service calls (plus the SSR fetch in
 `app/abstract-functions-visualizer/server-data.ts`) are the reason the

@@ -2,23 +2,24 @@
 
 import { Code, Text } from "@chakra-ui/react";
 
-import { v8Samples, v8SampleCatalog, type V8SampleKey } from "@/lib/samples";
+import { v8SampleCatalog, type V8SampleKey, v8Samples } from "@/lib/samples";
 import { V8_NATIVES_FLAG } from "@/lib/v8Intrinsics";
-import { SampleCard } from "./SampleCard";
+
+import SampleCard from "./SampleCard";
 import { SampleGrid } from "./SampleLibrary";
 
-export function V8SampleLibrary({
-  loadedId,
-  onLoad,
-}: {
+type Props = {
   loadedId: string | null;
   onLoad: (code: string, id: string) => void;
-}) {
+};
+
+const V8SampleLibrary: React.FC<Props> = ({ loadedId, onLoad }) => {
   return (
     <>
       <Text fontSize="sm" color="ink.2">
-        Examples exploring V8 engine internals: element kinds, hidden classes, inline caches, and bytecode. Run with{" "}
-        <Code>{V8_NATIVES_FLAG}</Code> or <Code>--print-bytecode</Code> as noted in each sample.
+        Examples exploring V8 engine internals: element kinds, hidden classes, inline caches, and
+        bytecode. Run with <Code>{V8_NATIVES_FLAG}</Code> or <Code>--print-bytecode</Code> as noted
+        in each sample.
       </Text>
       <SampleGrid>
         {v8SampleCatalog.map(({ key, label, description }) => (
@@ -35,4 +36,6 @@ export function V8SampleLibrary({
       </SampleGrid>
     </>
   );
-}
+};
+
+export default V8SampleLibrary;

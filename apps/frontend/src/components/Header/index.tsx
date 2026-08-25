@@ -1,10 +1,12 @@
 import { Box, Container, HStack, Link } from "@chakra-ui/react";
-import Logo from "../Logo";
-import Nav from "./Nav";
-import { MobileNav } from "./MobileNav";
+
 import { REPO_URL } from "@/lib/site";
 
-export function Header() {
+import Logo from "../Logo";
+import MobileNav from "./MobileNav";
+import Nav from "./Nav";
+
+const Header: React.FC = () => {
   return (
     <Box
       as="header"
@@ -60,4 +62,6 @@ export function Header() {
       </Container>
     </Box>
   );
-}
+};
+
+export default Header;

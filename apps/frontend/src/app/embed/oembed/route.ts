@@ -1,16 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import {
   BYTECODE_EMBED_PATH,
-  EMBED_DEFAULT_WIDTH,
-  EMBED_DEFAULT_HEIGHT,
-  SNAPSHOT_PARAM,
   decodeSnapshot,
+  EMBED_DEFAULT_HEIGHT,
+  EMBED_DEFAULT_WIDTH,
   estimateEmbedHeight,
+  SNAPSHOT_PARAM,
 } from "@/lib/embedState";
 import { clamp, finiteOr } from "@/lib/numbers";
 import { EMBED_PATH } from "@/lib/shareState";
-
 
 /** Only our own embed paths may be turned into an iframe. */
 const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH];
@@ -66,7 +65,12 @@ export async function GET(req: NextRequest) {
     if (decoded) naturalHeight = estimateEmbedHeight(decoded.output);
   }
 
-  const width = clampDimension(req.nextUrl.searchParams.get("maxwidth"), EMBED_DEFAULT_WIDTH, 240, 1200);
+  const width = clampDimension(
+    req.nextUrl.searchParams.get("maxwidth"),
+    EMBED_DEFAULT_WIDTH,
+    240,
+    1200,
+  );
   const height = clampDimension(req.nextUrl.searchParams.get("maxheight"), naturalHeight, 160, 900);
 
   const src = target.toString();

@@ -1,6 +1,12 @@
 import { Button } from "@chakra-ui/react";
 
-export function RuleTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+type Props = {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+};
+
+const RuleTab: React.FC<Props> = ({ label, active, onClick }) => {
   return (
     <Button
       variant="rule"
@@ -17,4 +23,6 @@ export function RuleTab({ label, active, onClick }: { label: string; active: boo
       {label}
     </Button>
   );
-}
+};
+
+export default RuleTab;

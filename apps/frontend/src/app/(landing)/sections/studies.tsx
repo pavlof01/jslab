@@ -3,9 +3,9 @@ import { Box, Container, Flex, Grid, Text } from "@chakra-ui/react";
 import { QuietLink } from "@/components/ui";
 
 import { STUDIES, studyHref } from "../landing-data";
-import { IndexRow, SectionHead } from "./SectionHead";
+import SectionHead, { IndexRow } from "./SectionHead";
 
-export function StudiesSection() {
+const StudiesSection: React.FC = () => {
   return (
     <Box layerStyle="section" as="section" id="studies" scrollMarginTop="64px">
       <Container maxW="1280px" px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}>
@@ -55,4 +55,6 @@ export function StudiesSection() {
       </Container>
     </Box>
   );
-}
+};
+
+export default StudiesSection;

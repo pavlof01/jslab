@@ -14,13 +14,37 @@ export type SampleDescriptor = { key: SampleKey; label: string; description: str
 
 export const sampleCatalog: SampleDescriptor[] = [
   { key: "add", label: "Add", description: "Minimal function call returning 42." },
-  { key: "closure", label: "Closure", description: "Capturing outer scope and invoking inner function." },
+  {
+    key: "closure",
+    label: "Closure",
+    description: "Capturing outer scope and invoking inner function.",
+  },
   { key: "loop", label: "Loop", description: "Simple for-loop summing integer range." },
-  { key: "try", label: "Try/catch", description: "Exception handling flow returning a computed value." },
-  { key: "d8Native", label: "d8 native", description: "Uses V8 % intrinsics to optimise a hot function." },
-  { key: "typedarray", label: "Typed arrays", description: "Manipulates ArrayBuffer via DataView, prints bytes." },
-  { key: "asyncFlow", label: "Async flow", description: "Async/await fetching mock users in parallel." },
-  { key: "generator", label: "Generator", description: "Generates Fibonacci numbers via iterator." },
+  {
+    key: "try",
+    label: "Try/catch",
+    description: "Exception handling flow returning a computed value.",
+  },
+  {
+    key: "d8Native",
+    label: "d8 native",
+    description: "Uses V8 % intrinsics to optimise a hot function.",
+  },
+  {
+    key: "typedarray",
+    label: "Typed arrays",
+    description: "Manipulates ArrayBuffer via DataView, prints bytes.",
+  },
+  {
+    key: "asyncFlow",
+    label: "Async flow",
+    description: "Async/await fetching mock users in parallel.",
+  },
+  {
+    key: "generator",
+    label: "Generator",
+    description: "Generates Fibonacci numbers via iterator.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -369,16 +393,64 @@ export type V8SampleKey = keyof typeof v8Samples;
 export type V8SampleDescriptor = { key: V8SampleKey; label: string; description: string };
 
 export const v8SampleCatalog: V8SampleDescriptor[] = [
-  { key: "smiVsHeap", label: "Smi vs HeapNumber", description: "Number boxing: when integers escape to the heap." },
-  { key: "arrayLengthHoley", label: "Length → Holey", description: "Setting arr.length creates holes: PACKED → HOLEY." },
-  { key: "arrayTypeTransitions", label: "Element Kind Cascade", description: "One-way ratchet: SMI → DOUBLE → OBJECT elements." },
-  { key: "arrayDeleteVsUndefined", label: "delete vs undefined", description: "Two ways to clear a slot — only one punches a hole." },
-  { key: "arrayDictionaryMode", label: "Dictionary Mode", description: "Sparse arrays switch from flat memory to a hash table." },
-  { key: "hiddenClassOrder", label: "Hidden Class Order", description: "Property insertion order determines object shape (Map)." },
-  { key: "hiddenClassDelete", label: "delete → Slow Props", description: "Deleting a property invalidates the hidden class chain." },
-  { key: "bytecodeDestructuring", label: "Destructuring Bytecode", description: "Array destructuring vs index access: bytecode cost." },
-  { key: "consString", label: "ConsString", description: "String concatenation defers character copying lazily." },
-  { key: "deoptTypeChange", label: "Deoptimization", description: "Passing an unexpected type bails out of optimized code." },
-  { key: "icMonomorphic", label: "Inline Caches", description: "Monomorphic → polymorphic → megamorphic IC degradation." },
-  { key: "argumentsVsRest", label: "arguments vs Rest", description: "Legacy arguments object vs rest params: bytecode diff." },
+  {
+    key: "smiVsHeap",
+    label: "Smi vs HeapNumber",
+    description: "Number boxing: when integers escape to the heap.",
+  },
+  {
+    key: "arrayLengthHoley",
+    label: "Length → Holey",
+    description: "Setting arr.length creates holes: PACKED → HOLEY.",
+  },
+  {
+    key: "arrayTypeTransitions",
+    label: "Element Kind Cascade",
+    description: "One-way ratchet: SMI → DOUBLE → OBJECT elements.",
+  },
+  {
+    key: "arrayDeleteVsUndefined",
+    label: "delete vs undefined",
+    description: "Two ways to clear a slot — only one punches a hole.",
+  },
+  {
+    key: "arrayDictionaryMode",
+    label: "Dictionary Mode",
+    description: "Sparse arrays switch from flat memory to a hash table.",
+  },
+  {
+    key: "hiddenClassOrder",
+    label: "Hidden Class Order",
+    description: "Property insertion order determines object shape (Map).",
+  },
+  {
+    key: "hiddenClassDelete",
+    label: "delete → Slow Props",
+    description: "Deleting a property invalidates the hidden class chain.",
+  },
+  {
+    key: "bytecodeDestructuring",
+    label: "Destructuring Bytecode",
+    description: "Array destructuring vs index access: bytecode cost.",
+  },
+  {
+    key: "consString",
+    label: "ConsString",
+    description: "String concatenation defers character copying lazily.",
+  },
+  {
+    key: "deoptTypeChange",
+    label: "Deoptimization",
+    description: "Passing an unexpected type bails out of optimized code.",
+  },
+  {
+    key: "icMonomorphic",
+    label: "Inline Caches",
+    description: "Monomorphic → polymorphic → megamorphic IC degradation.",
+  },
+  {
+    key: "argumentsVsRest",
+    label: "arguments vs Rest",
+    description: "Legacy arguments object vs rest params: bytecode diff.",
+  },
 ];

@@ -4,7 +4,9 @@ const STAGES = ["Tokens", "AST", "Bytecode", "Sparkplug", "Maglev", "TurboFan", 
 
 async function runPipeline(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: /^run$/i }).click();
-  await expect(page.getByRole("button", { name: /^running$/i })).toHaveCount(0, { timeout: 40_000 });
+  await expect(page.getByRole("button", { name: /^running$/i })).toHaveCount(0, {
+    timeout: 40_000,
+  });
 }
 
 test.describe("v8 pipeline", () => {
@@ -46,7 +48,10 @@ test.describe("v8 pipeline", () => {
 
     for (const stage of ["Bytecode", "Sparkplug", "Maglev", "TurboFan", "Deopts"]) {
       await page.getByRole("tab", { name: new RegExp(stage) }).click();
-      await expect(page.getByRole("tab", { name: new RegExp(stage) })).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("tab", { name: new RegExp(stage) })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
     }
   });
 
@@ -54,7 +59,9 @@ test.describe("v8 pipeline", () => {
     await page.goto("/v8-pipeline");
     await runPipeline(page);
 
-    await expect(page.locator("[data-scope='status'], [data-part='indicator']").first()).toBeVisible();
+    await expect(
+      page.locator("[data-scope='status'], [data-part='indicator']").first(),
+    ).toBeVisible();
   });
 
   test("explains a stage that a cold function never reaches", async ({ page }) => {

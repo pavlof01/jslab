@@ -44,14 +44,16 @@ export const INTRINSICS: Intrinsic[] = [
   {
     name: "FinalizeOptimization",
     category: "Optimisation (plan/trigger)",
-    description: "Waits for background optimisation work to finish, so what you print afterwards is settled.",
+    description:
+      "Waits for background optimisation work to finish, so what you print afterwards is settled.",
     snippet: "%FinalizeOptimization();",
     completion: "%FinalizeOptimization();",
   },
   {
     name: "OptimizeOsr",
     category: "Optimisation (plan/trigger)",
-    description: "Forces an on-stack replacement, optimising a function while it is still inside a running loop.",
+    description:
+      "Forces an on-stack replacement, optimising a function while it is still inside a running loop.",
     snippet: "%OptimizeOsr(fn);",
     completion: "%OptimizeOsr(${1:fn});",
   },
@@ -66,7 +68,8 @@ export const INTRINSICS: Intrinsic[] = [
   {
     name: "DeoptimizeNow",
     category: "Deoptimisation / transitions",
-    description: "Deoptimises the current frame immediately — the bail-out shows up in --trace-deopt output.",
+    description:
+      "Deoptimises the current frame immediately — the bail-out shows up in --trace-deopt output.",
     snippet: "%DeoptimizeNow();",
     completion: "%DeoptimizeNow();",
   },
@@ -83,7 +86,8 @@ export const INTRINSICS: Intrinsic[] = [
   {
     name: "DisassembleFunction",
     category: "Status / code analysis",
-    description: "Disassembles and prints the code generated for a function, at whichever tier compiled it.",
+    description:
+      "Disassembles and prints the code generated for a function, at whichever tier compiled it.",
     snippet: "%DisassembleFunction(fn);",
     completion: "%DisassembleFunction(${1:fn});",
   },
@@ -109,7 +113,8 @@ export const INTRINSICS: Intrinsic[] = [
   {
     name: "HasFastProperties",
     category: "Array & map inspection",
-    description: "Answers whether an object still uses fast in-object properties or has fallen back to a dictionary.",
+    description:
+      "Answers whether an object still uses fast in-object properties or has fallen back to a dictionary.",
     snippet: "%HasFastProperties(obj);",
     completion: "%HasFastProperties(${1:obj});",
     featured: true,
@@ -136,7 +141,8 @@ export const INTRINSICS: Intrinsic[] = [
   {
     name: "HaveSameMap",
     category: "Array & map inspection",
-    description: "Compares the hidden classes (maps) of two objects — the direct way to see a shape divergence.",
+    description:
+      "Compares the hidden classes (maps) of two objects — the direct way to see a shape divergence.",
     snippet: "%HaveSameMap(a, b);",
     completion: "%HaveSameMap(${1:a}, ${2:b});",
   },
@@ -181,17 +187,19 @@ export const INTRINSICS: Intrinsic[] = [
   },
 ];
 
-export const INTRINSIC_CATEGORIES: IntrinsicCategory[] = INTRINSICS.reduce<IntrinsicCategory[]>(
-  (order, intrinsic) => (order.includes(intrinsic.category) ? order : [...order, intrinsic.category]),
-  [],
-);
+export const INTRINSIC_CATEGORIES: IntrinsicCategory[] = [
+  ...new Set(INTRINSICS.map((intrinsic) => intrinsic.category)),
+];
 
 export const intrinsicsByCategory = (category: IntrinsicCategory): Intrinsic[] =>
   INTRINSICS.filter((intrinsic) => intrinsic.category === category);
 
 export const completableIntrinsics = (): Array<Intrinsic & { completion: string }> =>
-  INTRINSICS.filter((intrinsic): intrinsic is Intrinsic & { completion: string } => Boolean(intrinsic.completion));
+  INTRINSICS.filter((intrinsic): intrinsic is Intrinsic & { completion: string } =>
+    Boolean(intrinsic.completion),
+  );
 
-export const featuredIntrinsics = (): Intrinsic[] => INTRINSICS.filter((intrinsic) => intrinsic.featured);
+export const featuredIntrinsics = (): Intrinsic[] =>
+  INTRINSICS.filter((intrinsic) => intrinsic.featured);
 
 export const V8_NATIVES_FLAG = "--allow-natives-syntax";

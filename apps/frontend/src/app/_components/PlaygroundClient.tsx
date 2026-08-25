@@ -1,29 +1,30 @@
 "use client";
 
-import { useCallback } from "react";
 import { Box } from "@chakra-ui/react";
+import { useCallback } from "react";
 
-import { EditorPanel } from "@/components/EditorPanel";
+import EditorPanel from "@/components/EditorPanel";
 import { SplitRow } from "@/components/ui";
-import { formatRunMeta } from "@/lib/runMessages";
 import { pushHistory } from "@/lib/runHistory";
+import { formatRunMeta } from "@/lib/runMessages";
 import { enabledEngines } from "@/lib/types";
 import {
   useCode,
+  useEngineFlags,
   useEngineSelection,
   useRunEngines,
   useRunStatus,
   useSetCode,
-  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
-import { useSharedStateRestore } from "./useSharedStateRestore";
-import { OutputPane } from "./OutputPane";
-import { PlaygroundToolbar } from "./PlaygroundToolbar";
-import RunAnnouncer from "./RunAnnouncer";
-import { RunMessage } from "./RunMessage";
-import * as styles from "./playground.styles";
 
-export default function PlaygroundClient() {
+import OutputPane from "./OutputPane";
+import * as styles from "./playground.styles";
+import PlaygroundToolbar from "./PlaygroundToolbar";
+import RunAnnouncer from "./RunAnnouncer";
+import RunMessage from "./RunMessage";
+import { useSharedStateRestore } from "./useSharedStateRestore";
+
+const PlaygroundClient: React.FC = () => {
   const code = useCode();
   const setCode = useSetCode();
   const { engines } = useEngineSelection();
@@ -67,12 +68,16 @@ export default function PlaygroundClient() {
         }
       />
 
-      <Box css={styles.footerLine}>{footerText(formatRunMeta(durationMs, cacheHit), active.length)}</Box>
+      <Box css={styles.footerLine}>
+        {footerText(formatRunMeta(durationMs, cacheHit), active.length)}
+      </Box>
     </Box>
   );
-}
+};
 
 function footerText(runMeta: string, engineCount: number): string {
   if (runMeta) return runMeta;
   return `${engineCount} engine${engineCount === 1 ? "" : "s"} · click any opcode for its reference`;
 }
+
+export default PlaygroundClient;

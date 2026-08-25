@@ -1,22 +1,23 @@
 "use client";
 
-import { useCallback, useState } from "react";
 import { Button } from "@chakra-ui/react";
+import { useCallback, useState } from "react";
 
 import type { CustomSample } from "@/lib/customSamples";
-import { DeleteSampleDialog } from "./DeleteSampleDialog";
-import { SampleBrowseDialog } from "./SampleBrowseDialog";
-import { SampleLibrary } from "./SampleLibrary";
-import { SampleNameDialog } from "./SampleNameDialog";
-import { V8SampleLibrary } from "./V8SampleLibrary";
+
+import DeleteSampleDialog from "./DeleteSampleDialog";
+import SampleBrowseDialog from "./SampleBrowseDialog";
+import SampleLibrary from "./SampleLibrary";
+import SampleNameDialog from "./SampleNameDialog";
 import { useCustomSamples } from "./useCustomSamples";
+import V8SampleLibrary from "./V8SampleLibrary";
 
 type Props = {
   currentCode: string;
   onSelectSample: (code: string) => void;
 };
 
-function Samples({ currentCode, onSelectSample }: Props) {
+const Samples: React.FC<Props> = ({ currentCode, onSelectSample }) => {
   const { samples: custom, add, rename, remove } = useCustomSamples();
 
   const [saveOpen, setSaveOpen] = useState(false);
@@ -118,6 +119,6 @@ function Samples({ currentCode, onSelectSample }: Props) {
       />
     </>
   );
-}
+};
 
 export default Samples;

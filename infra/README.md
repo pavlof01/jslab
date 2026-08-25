@@ -22,12 +22,12 @@ Kustomize manifests for the `jslab` namespace on k3s (Traefik ingress).
 Four Ingress objects share the same hosts and are disambiguated by explicit
 Traefik router priorities (higher wins):
 
-| Priority | Ingress | Paths | Backend | Middleware |
-|---|---|---|---|---|
-| 2000 | `jslab-frontend-api` | `/api/trace/functions`, `/api/spec` | frontend | `jslab-security-headers` |
-| 1000 | `jslab-api` | `/api` | api | `jslab-security-headers` |
-| 500 | `jslab-embed` | `/embed` | frontend | `jslab-embed-headers` |
-| 10 | `jslab-frontend` | `/` | frontend | `jslab-security-headers` |
+| Priority | Ingress              | Paths                               | Backend  | Middleware               |
+| -------- | -------------------- | ----------------------------------- | -------- | ------------------------ |
+| 2000     | `jslab-frontend-api` | `/api/trace/functions`, `/api/spec` | frontend | `jslab-security-headers` |
+| 1000     | `jslab-api`          | `/api`                              | api      | `jslab-security-headers` |
+| 500      | `jslab-embed`        | `/embed`                            | frontend | `jslab-embed-headers`    |
+| 10       | `jslab-frontend`     | `/`                                 | frontend | `jslab-security-headers` |
 
 `/api/trace/execute/*` intentionally matches no rule at priority 2000, so it
 falls through to `/api` and is served by the **api gateway**. That is the only
@@ -74,12 +74,12 @@ The gateway rate-limits and issues API keys per client IP, so getting the
 right IP matters. Two settings in `apps/api/src/config.ts` control this:
 
 - `TRUST_PROXY_HOPS` (default `1`) — passed to Fastify's `trustProxy`. It is a
-  hop *count*, not a "trust everything" switch: with a fixed count, Fastify
+  hop _count_, not a "trust everything" switch: with a fixed count, Fastify
   reads the address that many entries in from the client end of
   `X-Forwarded-For`, so a client prepending fake entries cannot influence the
   result as long as exactly that many real proxies sit between the client and
   this pod. `jslab.su`'s only hop is Traefik, hence `1`.
-- `CLIENT_IP_HEADER` (default `cf-connecting-ip`) — checked *before*
+- `CLIENT_IP_HEADER` (default `cf-connecting-ip`) — checked _before_
   `req.ip`. Cloudflare overwrites this header on every request that reaches
   its edge (unlike `X-Forwarded-For`, which it appends to rather than
   replaces), so it cannot be forged by the client. This is what actually
@@ -90,6 +90,26 @@ If you deploy without Cloudflare (or another edge that overwrites a header
 the same way), set `CLIENT_IP_HEADER=""` and make sure `TRUST_PROXY_HOPS`
 matches your real proxy chain — otherwise `req.ip` (and therefore every rate
 limit and the API-key-issuance cap) is attacker-controlled.
+
+## Smoke checks through Cloudflare (`scripts/smoke-test.sh`)
+
+The public smoke check runs from a GitHub runner, i.e. from a datacenter IP
+that Cloudflare treats with suspicion. Two things keep it working, and both
+live outside this repo:
+
+- The script presents a browser `User-Agent` (`JSLAB_SMOKE_UA` overrides it).
+  A default `curl` UA is answered with 403 before the request ever reaches
+  Traefik, which reads exactly like a broken deploy.
+- If the edge challenges the runner on IP reputation alone, the escape hatch
+  is a **WAF skip rule** on `jslab.su`: _Skip → all remaining custom rules and
+  managed rules_ when `http.request.headers["x-smoke-token"][0] eq "<token>"`.
+  Provision it by hand in the Cloudflare dashboard and put the same value in
+  the `JSLAB_SMOKE_TOKEN` repo secret; the script sends the header whenever
+  that variable is set.
+
+No such rule is provisioned today — the UA alone has been enough. The script
+says so when it detects a block, so if the smoke job starts failing with a
+Cloudflare block page, this section is the fix, not a rollback.
 
 ## Secrets / certs (provisioned out-of-band, not in git)
 

@@ -1,5 +1,5 @@
-import type { Highlighter } from "shiki/bundle/web";
 import type { HighlighterGeneric } from "shiki";
+import type { Highlighter } from "shiki/bundle/web";
 
 import hermesbc from "@/components/OutputsPanel/tm/hermes-bytecode.tmLanguage.json";
 import jscbc from "@/components/OutputsPanel/tm/jsc-bytecode.tmLanguage.json";

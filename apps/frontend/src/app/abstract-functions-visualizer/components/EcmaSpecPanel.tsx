@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import type { FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
+
 import s from "./EcmaSpecPanel.module.css";
 
 function extractStepId(hint: string | undefined): string | null {
@@ -30,10 +31,13 @@ type Props = {
   specHtml: string;
 };
 
-export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, specHtml }) => {
+const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, specHtml }) => {
   const panelRef = React.useRef<HTMLDivElement | null>(null);
 
-  const active = React.useMemo(() => getActiveSteps(flatEntries, selectedIndex), [flatEntries, selectedIndex]);
+  const active = React.useMemo(
+    () => getActiveSteps(flatEntries, selectedIndex),
+    [flatEntries, selectedIndex],
+  );
   const currentAlgoId = flatEntries[selectedIndex]?.algoId;
   const currentStepId = currentAlgoId ? active.get(currentAlgoId) : undefined;
 
@@ -55,7 +59,9 @@ export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, spe
     const panel = panelRef.current;
     if (!panel || !currentAlgoId || !currentStepId) return;
 
-    const step = panel.querySelector<HTMLElement>(`[id="${cssAttrValue(`${currentAlgoId}-step-${currentStepId}`)}"]`);
+    const step = panel.querySelector<HTMLElement>(
+      `[id="${cssAttrValue(`${currentAlgoId}-step-${currentStepId}`)}"]`,
+    );
     if (!step) return;
 
     panel.scrollTo({
@@ -67,7 +73,10 @@ export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, spe
   return (
     <div ref={panelRef} className={s.panel}>
       {highlightCss ? <style>{highlightCss}</style> : null}
+      {/* eslint-disable-next-line react/no-danger -- specHtml is spec markup rendered by our own trace-service (ecmarkup over the ECMAScript spec) and fetched server-side in server-data.ts. Rendering it as markup is the point of this panel; nothing user-supplied is interpolated. */}
       <div dangerouslySetInnerHTML={{ __html: specHtml }} />
     </div>
   );
 };
+
+export default EcmaSpecPanel;

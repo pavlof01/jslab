@@ -4,7 +4,7 @@ export type LogoLoaderProps = {
   size?: number;
 };
 
-export function LogoLoader({ size = 16 }: LogoLoaderProps) {
+const LogoLoader: React.FC<LogoLoaderProps> = ({ size = 16 }) => {
   return (
     <Image
       src="/jslab-logo.svg"
@@ -16,4 +16,6 @@ export function LogoLoader({ size = 16 }: LogoLoaderProps) {
       style={{ display: "block", width: "auto", height: size }}
     />
   );
-}
+};
+
+export default LogoLoader;

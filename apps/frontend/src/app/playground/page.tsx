@@ -1,6 +1,6 @@
 import PlaygroundClient from "@/app/_components/PlaygroundClient";
-import { EngineVersionProvider } from "@/components/EngineVersion/context";
-import { FlagCatalogProvider } from "@/components/FlagSelector/context";
+import EngineVersionProvider from "@/components/EngineVersion/context";
+import FlagCatalogProvider from "@/components/FlagSelector/context";
 import { fetchEngineVersions } from "@/lib/server/engineVersions";
 import { fetchFlagCatalog } from "@/lib/server/flags";
 
@@ -15,7 +15,7 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function PlaygroundPage() {
+const PlaygroundPage = async () => {
   const [catalog, versions] = await Promise.all([fetchFlagCatalog(), fetchEngineVersions()]);
 
   return (
@@ -25,4 +25,6 @@ export default async function PlaygroundPage() {
       </EngineVersionProvider>
     </FlagCatalogProvider>
   );
-}
+};
+
+export default PlaygroundPage;

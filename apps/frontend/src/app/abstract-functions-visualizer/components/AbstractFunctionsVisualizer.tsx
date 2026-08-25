@@ -1,25 +1,29 @@
 "use client";
 
-import { useMemo } from "react";
 import { Box, createListCollection, Portal, Select } from "@chakra-ui/react";
+import { useMemo } from "react";
 
-import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
-import { SpecTraceScreen, type SpecTracePreset } from "@/app/abstract-functions-visualizer/components/SpecTraceScreen";
-import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
-import { VisualizerStoreProvider } from "@/app/abstract-functions-visualizer/StoreProvider";
+import EcmaSpecPanel from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
+import SpecTraceScreen, {
+  type SpecTracePreset,
+} from "@/app/abstract-functions-visualizer/components/SpecTraceScreen";
+import type {
+  AlgoCategory,
+  VisualizerInitialData,
+} from "@/app/abstract-functions-visualizer/model";
 import { fallbackInitialData } from "@/app/abstract-functions-visualizer/model";
-import { HINTS, PRESETS } from "./categoryContent";
-import type { AlgoCategory, VisualizerInitialData } from "@/app/abstract-functions-visualizer/model";
+import VisualizerStoreProvider from "@/app/abstract-functions-visualizer/StoreProvider";
+import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
 
-function AlgoPicker({
-  value,
-  options,
-  onChange,
-}: {
+import { HINTS, PRESETS } from "./categoryContent";
+
+type AlgoPickerProps = {
   value: string;
   options: string[];
   onChange: (next: string) => void;
-}) {
+};
+
+const AlgoPicker: React.FC<AlgoPickerProps> = ({ value, options, onChange }) => {
   const collection = useMemo(() => createListCollection({ items: options }), [options]);
 
   return (
@@ -53,15 +57,17 @@ function AlgoPicker({
       </Portal>
     </Select.Root>
   );
-}
+};
 
-export function AbstractFunctionsVisualizer({
-  initialCategory = "typeConversion",
-  initialData,
-}: {
+type AbstractFunctionsVisualizerProps = {
   initialCategory?: AlgoCategory;
   initialData?: VisualizerInitialData;
-}) {
+};
+
+const AbstractFunctionsVisualizer: React.FC<AbstractFunctionsVisualizerProps> = ({
+  initialCategory = "typeConversion",
+  initialData,
+}) => {
   const resolved = initialData ?? fallbackInitialData(initialCategory);
 
   return (
@@ -69,9 +75,11 @@ export function AbstractFunctionsVisualizer({
       <VisualizerScreen initialData={resolved} />
     </VisualizerStoreProvider>
   );
-}
+};
 
-function VisualizerScreen({ initialData }: { initialData: VisualizerInitialData }) {
+type VisualizerScreenProps = { initialData: VisualizerInitialData };
+
+const VisualizerScreen: React.FC<VisualizerScreenProps> = ({ initialData }) => {
   const {
     root,
     error,
@@ -130,8 +138,16 @@ function VisualizerScreen({ initialData }: { initialData: VisualizerInitialData 
         hint={HINTS[category]}
         presets={presets}
         extraControl={algoPicker}
-        specPane={<EcmaSpecPanel flatEntries={flatEntries} selectedIndex={selectedIndex} specHtml={specHtml} />}
+        specPane={
+          <EcmaSpecPanel
+            flatEntries={flatEntries}
+            selectedIndex={selectedIndex}
+            specHtml={specHtml}
+          />
+        }
       />
     </Box>
   );
-}
+};
+
+export default AbstractFunctionsVisualizer;

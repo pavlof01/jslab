@@ -1,10 +1,10 @@
 "use client";
 
+import { Box, Flex, Span } from "@chakra-ui/react";
 import { useMemo } from "react";
 
-import { Box, Flex, Span } from "@chakra-ui/react";
-
 import { StepNode } from "@/components/ui";
+
 import { buildDecisionTree } from "../../decision-tree";
 import type { TraceNode } from "../../spec-runner";
 
@@ -22,7 +22,13 @@ type Props = {
   complete: boolean;
 };
 
-export function DecisionTree({ root, selectedIndex, onSelectIndex, result, complete }: Props) {
+const DecisionTree: React.FC<Props> = ({
+  root,
+  selectedIndex,
+  onSelectIndex,
+  result,
+  complete,
+}) => {
   const nodes = useMemo(() => (root ? buildDecisionTree(root) : []), [root]);
   const frameCount = nodes.length;
 
@@ -34,7 +40,8 @@ export function DecisionTree({ root, selectedIndex, onSelectIndex, result, compl
         </Box>
       ) : (
         nodes.map((node) => {
-          const lastOwn = node.actionIndex ?? node.tests[node.tests.length - 1]?.index ?? node.index;
+          const lastOwn =
+            node.actionIndex ?? node.tests[node.tests.length - 1]?.index ?? node.index;
           const onFrame =
             selectedIndex === node.index ||
             node.tests.some((test) => test.index === selectedIndex) ||
@@ -49,9 +56,14 @@ export function DecisionTree({ root, selectedIndex, onSelectIndex, result, compl
               depth={node.depth}
               active={onFrame}
               pending={node.index > selectedIndex}
-              tests={node.tests.map((test) => ({ ...test, state: rowStateAt(test.index, selectedIndex) }))}
+              tests={node.tests.map((test) => ({
+                ...test,
+                state: rowStateAt(test.index, selectedIndex),
+              }))}
               action={node.action}
-              actionState={node.actionIndex == null ? "done" : rowStateAt(node.actionIndex, selectedIndex)}
+              actionState={
+                node.actionIndex == null ? "done" : rowStateAt(node.actionIndex, selectedIndex)
+              }
               onClick={() => onSelectIndex(node.index)}
               onSelectTest={(i) => onSelectIndex(node.tests[i].index)}
             />
@@ -75,7 +87,12 @@ export function DecisionTree({ root, selectedIndex, onSelectIndex, result, compl
           <Span textStyle="label" color="ink.label">
             returns
           </Span>
-          <Span fontFamily="mono" fontSize="clamp(16px, 1.6vw, 20px)" color="accent" overflowWrap="anywhere">
+          <Span
+            fontFamily="mono"
+            fontSize="clamp(16px, 1.6vw, 20px)"
+            color="accent"
+            overflowWrap="anywhere"
+          >
             {result}
           </Span>
           <Span textStyle="code" color="ink.label">
@@ -85,4 +102,6 @@ export function DecisionTree({ root, selectedIndex, onSelectIndex, result, compl
       ) : null}
     </Box>
   );
-}
+};
+
+export default DecisionTree;

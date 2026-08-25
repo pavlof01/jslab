@@ -1,10 +1,12 @@
 import { describe, expect, it } from "@jest/globals";
+
 import { EngineKey } from "@/lib/types";
+
 import {
   decodeSnapshot,
+  type EmbedSnapshot,
   encodeSnapshot,
   estimateEmbedHeight,
-  type EmbedSnapshot,
 } from "./embedState";
 
 const snapshot: EmbedSnapshot = {
@@ -21,12 +23,20 @@ describe("encode/decode round trip", () => {
   });
 
   it("carries stderr and title when present", async () => {
-    const full: EmbedSnapshot = { ...snapshot, stderr: "warning: something", title: "Adding two smis" };
+    const full: EmbedSnapshot = {
+      ...snapshot,
+      stderr: "warning: something",
+      title: "Adding two smis",
+    };
     expect(await decodeSnapshot(await encodeSnapshot(full))).toEqual(full);
   });
 
   it("survives non-Latin1 source, which plain btoa cannot encode", async () => {
-    const unicode: EmbedSnapshot = { ...snapshot, code: "const переменная = '🚀'", output: "λ → ∀" };
+    const unicode: EmbedSnapshot = {
+      ...snapshot,
+      code: "const переменная = '🚀'",
+      output: "λ → ∀",
+    };
     const decoded = await decodeSnapshot(await encodeSnapshot(unicode));
     expect(decoded?.code).toBe(unicode.code);
     expect(decoded?.output).toBe(unicode.output);
@@ -45,7 +55,10 @@ describe("encode/decode round trip", () => {
   it("handles a dump far larger than the chunk size of the base64 encoder", async () => {
     // The encoder batches at 0x8000 bytes; spreading the whole array instead
     // would overflow the argument limit and throw.
-    const big: EmbedSnapshot = { ...snapshot, output: "Ldar a1\nAdd a0, [0]\nReturn\n".repeat(6000) };
+    const big: EmbedSnapshot = {
+      ...snapshot,
+      output: "Ldar a1\nAdd a0, [0]\nReturn\n".repeat(6000),
+    };
     const decoded = await decodeSnapshot(await encodeSnapshot(big));
     expect(decoded?.output).toBe(big.output);
   });
@@ -66,12 +79,12 @@ describe("decode rejects unusable input", () => {
   });
 
   it("returns null when the engine is not one we render", async () => {
-    const forged = "0" + Buffer.from(JSON.stringify({ c: "x", n: "brainfuck", o: "y" })).toString("base64url");
+    const forged = `0${Buffer.from(JSON.stringify({ c: "x", n: "brainfuck", o: "y" })).toString("base64url")}`;
     expect(await decodeSnapshot(forged)).toBeNull();
   });
 
   it("returns null when the output field is missing", async () => {
-    const forged = "0" + Buffer.from(JSON.stringify({ c: "x", n: "v8" })).toString("base64url");
+    const forged = `0${Buffer.from(JSON.stringify({ c: "x", n: "v8" })).toString("base64url")}`;
     expect(await decodeSnapshot(forged)).toBeNull();
   });
 });

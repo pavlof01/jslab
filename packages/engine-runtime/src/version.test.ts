@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { detectVersion, matchVersion } from "./version.js";
 
 const nodePrinting = (text: string) => ({

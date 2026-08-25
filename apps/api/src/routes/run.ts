@@ -1,4 +1,5 @@
 import type { FastifyBaseLogger, FastifyInstance } from "fastify";
+
 import { cacheKey, readCache, writeCache } from "../cache.js";
 import type { AppContext } from "../context.js";
 import { engineBaseUrls } from "../engines.js";
@@ -45,23 +46,39 @@ export function registerRunRoute(app: FastifyInstance, ctx: AppContext): void {
       fallback: config.DEFAULT_TIMEOUT_MS,
     });
 
-    const { flags, dropped } = normalizeFlags(parsed.engine, parsed.options?.flags ?? [], config.MAX_FLAGS);
+    const { flags, dropped } = normalizeFlags(
+      parsed.engine,
+      parsed.options?.flags ?? [],
+      config.MAX_FLAGS,
+    );
 
     if (parsed.sourceText.length > config.MAX_SOURCE_LENGTH) {
       throw new Error(`sourceText exceeds limit (${config.MAX_SOURCE_LENGTH} chars)`);
     }
 
-    return { engine: parsed.engine, sourceText: parsed.sourceText, flags, timeoutMs, droppedFlags: dropped };
+    return {
+      engine: parsed.engine,
+      sourceText: parsed.sourceText,
+      flags,
+      timeoutMs,
+      droppedFlags: dropped,
+    };
   }
 
-  async function executeRun(normalized: NormalizedRunRequest, log: FastifyBaseLogger): Promise<RunResult> {
+  async function executeRun(
+    normalized: NormalizedRunRequest,
+    log: FastifyBaseLogger,
+  ): Promise<RunResult> {
     const start = Date.now();
     const engineUrl = joinUrl(engineBase[normalized.engine], "/run");
 
     const res = await postJson(
       "engine",
       engineUrl,
-      { sourceText: normalized.sourceText, options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs } },
+      {
+        sourceText: normalized.sourceText,
+        options: { flags: normalized.flags, timeoutMs: normalized.timeoutMs },
+      },
       normalized.timeoutMs + 1000,
     );
 
@@ -71,7 +88,10 @@ export function registerRunRoute(app: FastifyInstance, ctx: AppContext): void {
     }
 
     if (res.status < 200 || res.status >= 300) {
-      log.error({ engineUrl, status: res.status, sample: res.text.slice(0, 500) }, "engine returned non-2xx");
+      log.error(
+        { engineUrl, status: res.status, sample: res.text.slice(0, 500) },
+        "engine returned non-2xx",
+      );
     }
 
     if (res.status === 429) {
@@ -85,13 +105,24 @@ export function registerRunRoute(app: FastifyInstance, ctx: AppContext): void {
     }
 
     if (res.status >= 500) {
-      return { status: 502, body: { ok: false, error: `engine unavailable (${res.status})` }, cache: "none" };
+      return {
+        status: 502,
+        body: { ok: false, error: `engine unavailable (${res.status})` },
+        cache: "none",
+      };
     }
 
     const enginePayload = parseJson<EngineResponse>(res.text);
     if (!enginePayload) {
-      log.error({ status: res.status, sample: res.text.slice(0, 2000) }, "engine returned non-json");
-      return { status: 502, body: { ok: false, error: "engine returned invalid response" }, cache: "none" };
+      log.error(
+        { status: res.status, sample: res.text.slice(0, 2000) },
+        "engine returned non-json",
+      );
+      return {
+        status: 502,
+        body: { ok: false, error: "engine returned invalid response" },
+        cache: "none",
+      };
     }
 
     if (!enginePayload.ok) {
@@ -143,7 +174,11 @@ export function registerRunRoute(app: FastifyInstance, ctx: AppContext): void {
         cached.status === 200 && cached.body && "meta" in cached.body
           ? {
               ...(cached.body as ApiResponse),
-              meta: { ...(cached.body as ApiResponse).meta, cacheHit: true, durationMs: Date.now() - start },
+              meta: {
+                ...(cached.body as ApiResponse).meta,
+                cacheHit: true,
+                durationMs: Date.now() - start,
+              },
             }
           : cached.body;
       reply.code(cached.status).send(withDroppedFlags(body, normalized.droppedFlags));
@@ -168,7 +203,10 @@ export function registerRunRoute(app: FastifyInstance, ctx: AppContext): void {
         inFlight.delete(key);
       }
       if (!isDev && result.cache !== "none") {
-        const ttl = result.cache === "positive" ? config.CACHE_TTL_SECONDS : config.NEGATIVE_CACHE_TTL_SECONDS;
+        const ttl =
+          result.cache === "positive"
+            ? config.CACHE_TTL_SECONDS
+            : config.NEGATIVE_CACHE_TTL_SECONDS;
         await writeCache(redis, key, { status: result.status, body: result.body }, ttl, req.log);
       }
     }
