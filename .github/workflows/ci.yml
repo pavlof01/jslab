@@ -145,6 +145,63 @@ jobs:
           done < <(git ls-tree -r HEAD)
           exit $status
 
+  commits:
+    name: history
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install
+        run: npm ci
+      # On a PR every commit in the branch is checked; on a push, only what the
+      # push introduced. Merge commits are ignored by commitlint's defaults, and
+      # history from before the convention was enforced is never re-litigated.
+      - name: Validate commit subjects
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ]; then
+            exec npx --no-install commitlint --from "$BASE" --to "$HEAD"
+          fi
+          # A new branch or a force-push leaves `before` unusable (all zeroes, or
+          # a commit this checkout does not have). Pick the range first and lint
+          # once: `range-check || --last` cannot tell an unusable range from a
+          # commit that genuinely failed, and would pass a bad subject whenever
+          # the tip of a multi-commit push happens to be well formed.
+          if [ "$BEFORE" != "0000000000000000000000000000000000000000" ] &&
+             git rev-parse -q --verify "$BEFORE^{commit}" >/dev/null; then
+            exec npx --no-install commitlint --from "$BEFORE" --to "$SHA"
+          fi
+          echo "No usable push range ($BEFORE); linting the tip commit only." >&2
+          exec npx --no-install commitlint --last
+
+      # git and GitHub both ignore an unknown SHA in this file without a word,
+      # so a squash merge that rewrites a formatting commit would leave blame
+      # quietly unfiltered. Fail here instead.
+      - name: Check .git-blame-ignore-revs entries are reachable
+        run: |
+          set -euo pipefail
+          rc=0
+          while read -r sha; do
+            if ! git merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then
+              echo "::error file=.git-blame-ignore-revs::$sha is not an ancestor of this branch — the commit was rewritten (squash/rebase merge). Replace it with the SHA that actually landed, or drop the line."
+              rc=1
+            fi
+          done < <(grep -oE '^[0-9a-f]{40}' .git-blame-ignore-revs)
+          exit $rc
+
   api-redis:
     name: api-redis
     runs-on: ubuntu-24.04
@@ -217,3 +274,36 @@ jobs:
   # deny rules checks that every ingress TLS secret has a Secret/Certificate in
   # the same namespace, but those are provisioned out-of-band (see infra/README),
   # so it can only pass against a live cluster. Run it in a cluster-aware job.
+
+  # Single required status check for branch protection. Without this, protecting
+  # `main` means naming every leg by hand and editing the setting whenever the
+  # matrix gains a service — and a leg that is renamed silently stops being
+  # required. Point branch protection at "quality-gate" and nothing else.
+  quality-gate:
+    name: quality-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [quality, apps, commits, submodules, api-redis, manifests]
+    # `always()` so this job still runs (and fails) when a dependency fails or
+    # is cancelled; without it the job would be skipped, which branch protection
+    # reads as success.
+    if: always()
+    steps:
+      # Read straight out of `needs` instead of naming each job a second time:
+      # a job added to `needs:` above but forgotten here used to be silently
+      # unchecked, which is the exact failure this gate exists to prevent.
+      - name: Verify every job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key)=\(.value.result)"'
+          failed="$(echo "$RESULTS" | jq -r 'to_entries[] | select(.value.result != "success") | .key')"
+          if [ -n "$failed" ]; then
+            for job in $failed; do
+              echo "::error::job '$job' did not succeed"
+            done
+            echo "One or more CI jobs did not succeed."
+            exit 1
+          fi
+          echo "All CI jobs succeeded."
