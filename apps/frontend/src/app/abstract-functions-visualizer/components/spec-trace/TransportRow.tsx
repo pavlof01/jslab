@@ -2,7 +2,7 @@
 
 import { Button, Flex, Span } from "@chakra-ui/react";
 
-import { Label } from "@/components/ui/label";
+import Label from "@/components/ui/label";
 
 export type SpecTracePreset = {
   label: string;
@@ -32,7 +32,7 @@ function transportLabel({
   return "play";
 }
 
-export function TransportRow({
+const TransportRow: React.FC<Props> = ({
   presets,
   selectedIndex,
   stepCount,
@@ -40,7 +40,7 @@ export function TransportRow({
   complete,
   onSelectIndex,
   onTogglePlay,
-}: Props) {
+}) => {
   return (
     <Flex
       wrap="wrap"
@@ -109,4 +109,6 @@ export function TransportRow({
       </Flex>
     </Flex>
   );
-}
+};
+
+export default TransportRow;

@@ -13,8 +13,8 @@ import {
 } from "./model";
 import { executeTrace } from "./traceApi";
 
-export { DEFAULTS_BY_CATEGORY };
 export type { AlgoCategory, FunctionCatalog, FunctionMetaShape, VisualizerInitialData };
+export { DEFAULTS_BY_CATEGORY };
 
 const DEFAULT_CATEGORY: AlgoCategory = "typeConversion";
 const DEFAULT_ALGO = DEFAULTS_BY_CATEGORY[DEFAULT_CATEGORY].algo;

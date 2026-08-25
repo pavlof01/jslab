@@ -8,7 +8,7 @@ import {
   tabsAnatomy,
 } from "@chakra-ui/react/anatomy";
 
-import { controlLabel, controlTransition, fieldBase, overlayPanel } from "./recipes";
+import { controlLabel, controlTransition, overlayPanel } from "./recipes";
 
 export const menuSlotRecipe = defineSlotRecipe({
   slots: menuAnatomy.keys(),

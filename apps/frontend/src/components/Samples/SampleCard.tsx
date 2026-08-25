@@ -21,7 +21,15 @@ type Props = {
   actions?: ReactNode;
 };
 
-export function SampleCard({ id, title, description, snippet, active, onSelect, actions }: Props) {
+const SampleCard: React.FC<Props> = ({
+  id,
+  title,
+  description,
+  snippet,
+  active,
+  onSelect,
+  actions,
+}) => {
   return (
     <Card.Root
       key={id}
@@ -70,4 +78,6 @@ export function SampleCard({ id, title, description, snippet, active, onSelect, 
       </Card.Body>
     </Card.Root>
   );
-}
+};
+
+export default SampleCard;

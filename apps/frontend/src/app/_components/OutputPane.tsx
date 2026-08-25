@@ -5,8 +5,7 @@ import { Box } from "@chakra-ui/react";
 import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import { engineLabel } from "@/lib/engines";
-import { EngineKey, RunStatus } from "@/lib/types";
-import { enabledEngines } from "@/lib/types";
+import { enabledEngines, type EngineKey, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
   useDiffToggle,
@@ -15,10 +14,10 @@ import {
   useOutputPane as useOutputPaneState,
 } from "@/store/engineOutputsSelectors";
 
-import { EngineTabs } from "./EngineTabs";
+import EngineTabs from "./EngineTabs";
 import * as styles from "./playground.styles";
 
-export function OutputPane() {
+const OutputPane: React.FC = () => {
   const { engines } = useEngineSelection();
   const { activeTab, setActiveTab } = useActiveTab();
   const { showDiff } = useDiffToggle();
@@ -28,7 +27,6 @@ export function OutputPane() {
   const active = enabledEngines(engines);
   const result = out?.[activeTab];
   const previous = previousSnapshot?.out?.[activeTab];
-  const showingV8 = activeTab === EngineKey.v8;
 
   return (
     <>
@@ -63,19 +61,16 @@ export function OutputPane() {
       />
     </>
   );
-}
+};
 
-function StderrDump({
-  engine,
-  stderr,
-  previousStderr,
-  showDiff,
-}: {
+type StderrDumpProps = {
   engine: EngineKey;
   stderr?: string;
   previousStderr?: string;
   showDiff: boolean;
-}) {
+};
+
+const StderrDump: React.FC<StderrDumpProps> = ({ engine, stderr, previousStderr, showDiff }) => {
   if (!stderr) return null;
 
   return (
@@ -87,17 +82,15 @@ function StderrDump({
       EmptyCodeBlockState={() => <></>}
     />
   );
-}
+};
 
-function PaneFooter({
-  engine,
-  durationMs,
-  flagCount,
-}: {
+type PaneFooterProps = {
   engine: EngineKey;
   durationMs?: number;
   flagCount: number;
-}) {
+};
+
+const PaneFooter: React.FC<PaneFooterProps> = ({ engine, durationMs, flagCount }) => {
   const version = useEngineVersion(engine);
 
   return (
@@ -115,4 +108,6 @@ function PaneFooter({
       ) : null}
     </Box>
   );
-}
+};
+
+export default OutputPane;

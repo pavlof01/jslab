@@ -1,17 +1,14 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import Link from "next/link";
 
-export function SectionHead({
-  number,
-  label,
-  heading,
-  lede,
-}: {
+type SectionHeadProps = {
   number: string;
   label: string;
   heading: string;
   lede?: string;
-}) {
+};
+
+const SectionHead: React.FC<SectionHeadProps> = ({ number, label, heading, lede }) => {
   return (
     <Flex
       wrap="wrap"
@@ -53,17 +50,9 @@ export function SectionHead({
       </Box>
     </Flex>
   );
-}
+};
 
-export function IndexRow({
-  n,
-  href,
-  name,
-  kind,
-  desc,
-  nameSize = "17px",
-  external = false,
-}: {
+type IndexRowProps = {
   n: string;
   href: string;
   name: string;
@@ -71,7 +60,17 @@ export function IndexRow({
   desc: string;
   nameSize?: string;
   external?: boolean;
-}) {
+};
+
+export const IndexRow: React.FC<IndexRowProps> = ({
+  n,
+  href,
+  name,
+  kind,
+  desc,
+  nameSize = "17px",
+  external = false,
+}) => {
   return (
     <Link href={href} {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>
       <Box
@@ -114,4 +113,6 @@ export function IndexRow({
       </Box>
     </Link>
   );
-}
+};
+
+export default SectionHead;

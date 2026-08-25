@@ -27,7 +27,9 @@ import * as styles from "./playground.styles";
 import RunHistory from "./RunHistory";
 import ShareButton from "./ShareButton";
 
-export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
+type Props = { onRun: () => void };
+
+const PlaygroundToolbar: React.FC<Props> = ({ onRun }) => {
   const code = useCode();
   const setCode = useSetCode();
   const { engines, setEngines } = useEngineSelection();
@@ -80,4 +82,6 @@ export function PlaygroundToolbar({ onRun }: { onRun: () => void }) {
       </Box>
     </Box>
   );
-}
+};
+
+export default PlaygroundToolbar;

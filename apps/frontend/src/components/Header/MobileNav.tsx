@@ -4,11 +4,11 @@ import { CloseButton, Dialog, HStack, IconButton, Portal, VStack } from "@chakra
 import { useState } from "react";
 import { LuMenu } from "react-icons/lu";
 
-import { MobileNavSection } from "./MobileNavSection";
+import MobileNavSection from "./MobileNavSection";
 import { navSections } from "./nav.types";
 import { useSectionActive } from "./useSectionActive";
 
-export const MobileNav: React.FC = () => {
+const MobileNav: React.FC = () => {
   const isSectionActive = useSectionActive();
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleMobileNavigate = () => {
@@ -65,3 +65,5 @@ export const MobileNav: React.FC = () => {
     </Dialog.Root>
   );
 };
+
+export default MobileNav;

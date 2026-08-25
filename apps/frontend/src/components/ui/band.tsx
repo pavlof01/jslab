@@ -4,6 +4,6 @@ import { createRecipeContext, type HTMLChakraProps, type RecipeProps } from "@ch
 
 const { withContext } = createRecipeContext({ key: "band" });
 
-export interface BandProps extends HTMLChakraProps<"div", RecipeProps<"band">> {}
+export type BandProps = HTMLChakraProps<"div", RecipeProps<"band">>;
 
 export const Band = withContext<HTMLDivElement, BandProps>("div");

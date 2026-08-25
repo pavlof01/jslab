@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { Providers } from "@/app/providers";
+import Providers from "@/app/providers";
 import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
 import { useEngineOutputsStore } from "@/store/useEngineOutputs";
 

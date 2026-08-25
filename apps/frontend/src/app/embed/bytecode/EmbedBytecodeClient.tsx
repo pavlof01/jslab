@@ -8,7 +8,9 @@ import type { EmbedSnapshot } from "@/lib/embedState";
 import { engineLabel } from "@/lib/engines";
 import { buildShareUrl } from "@/lib/shareState";
 
-function PlainDump({ text }: { text: string }) {
+type PlainDumpProps = { text: string };
+
+const PlainDump: React.FC<PlainDumpProps> = ({ text }) => {
   return (
     <Box
       textStyle="code"
@@ -22,9 +24,11 @@ function PlainDump({ text }: { text: string }) {
       {text}
     </Box>
   );
-}
+};
 
-export default function EmbedBytecodeClient({ snapshot }: { snapshot: EmbedSnapshot | null }) {
+type EmbedBytecodeClientProps = { snapshot: EmbedSnapshot | null };
+
+const EmbedBytecodeClient: React.FC<EmbedBytecodeClientProps> = ({ snapshot }) => {
   if (!snapshot) {
     return (
       <Flex height="100dvh" align="center" justify="center" bg="surface.band" px={4}>
@@ -106,4 +110,6 @@ export default function EmbedBytecodeClient({ snapshot }: { snapshot: EmbedSnaps
       </Box>
     </Flex>
   );
-}
+};
+
+export default EmbedBytecodeClient;

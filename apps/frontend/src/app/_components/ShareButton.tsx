@@ -18,7 +18,7 @@ const COPIED_LABEL: Record<CopyTarget, string> = {
 
 const IDLE_LABEL = "share";
 
-export default function ShareButton() {
+const ShareButton: React.FC = () => {
   const { code, engines, flags, out, activeTab } = useShareableState();
   const [copied, setCopied] = useState<CopyTarget | null>(null);
 
@@ -99,4 +99,6 @@ export default function ShareButton() {
       </Portal>
     </Menu.Root>
   );
-}
+};
+
+export default ShareButton;

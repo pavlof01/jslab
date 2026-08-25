@@ -13,20 +13,18 @@ type Props = {
   engineKey: EngineKey;
 };
 
-const FONT_STYLES: Array<[bit: number, style: CSSProperties]> = [
-  [1, { fontStyle: "italic" }],
-  [2, { fontWeight: "bold" }],
-  [4, { textDecoration: "underline" }],
-];
+const ITALIC = 1;
+const BOLD = 2;
+const UNDERLINE = 4;
 
 const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey }) => {
+  const fontStyle = token.fontStyle ?? 0;
   const style: CSSProperties = {
     color: token.color ?? "inherit",
     whiteSpace: "pre",
-    ...FONT_STYLES.reduce(
-      (acc, [bit, css]) => (token.fontStyle && token.fontStyle & bit ? { ...acc, ...css } : acc),
-      {} as CSSProperties,
-    ),
+    ...(fontStyle & ITALIC ? { fontStyle: "italic" } : null),
+    ...(fontStyle & BOLD ? { fontWeight: "bold" } : null),
+    ...(fontStyle & UNDERLINE ? { textDecoration: "underline" } : null),
   };
 
   const description = describeEngineToken(engineKey, token.content, nextToken?.content ?? null);

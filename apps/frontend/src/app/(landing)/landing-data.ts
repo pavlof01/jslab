@@ -8,7 +8,7 @@ export type Trace = {
   label: string;
   expr: string;
   result: string;
-  steps: Array<[op: string, detail: string]>;
+  steps: [op: string, detail: string][];
 };
 
 export const TRACES: Trace[] = [
@@ -177,7 +177,7 @@ export const SNIPPET = `function add(a, b) {
   return a + b;
 }`;
 
-export const INTRINSICS: Array<[signature: string, explanation: string]> = featuredIntrinsics().map(
+export const INTRINSICS: [signature: string, explanation: string][] = featuredIntrinsics().map(
   (intrinsic) => [intrinsic.snippet.replace(/;$/, ""), intrinsic.description],
 );
 
@@ -276,7 +276,7 @@ export const TOOL_ROWS: ToolRow[] = tools.map((tool, i) => ({
   desc: tool.detail ?? tool.description,
 }));
 
-export const ALSO: Array<[label: string, text: string]> = [
+export const ALSO: [label: string, text: string][] = [
   [
     "opcode reference",
     "Every opcode of all four engines, documented. Click one anywhere and the explanation opens.",

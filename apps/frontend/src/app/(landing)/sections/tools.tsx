@@ -1,9 +1,9 @@
 import { Box, Container, Grid } from "@chakra-ui/react";
 
 import { TOOL_ROWS } from "../landing-data";
-import { IndexRow, SectionHead } from "./SectionHead";
+import SectionHead, { IndexRow } from "./SectionHead";
 
-export function ToolsSection() {
+const ToolsSection: React.FC = () => {
   return (
     <Box layerStyle="section" as="section" id="tools" scrollMarginTop="64px">
       <Container maxW="1280px" px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}>
@@ -35,4 +35,6 @@ export function ToolsSection() {
       </Container>
     </Box>
   );
-}
+};
+
+export default ToolsSection;

@@ -21,15 +21,13 @@ function flagSummary(flags: EngineFlags): string {
   return ` · ${count} flag${count === 1 ? "" : "s"}`;
 }
 
-export function RunHistoryRow({
-  entry,
-  now,
-  onRestore,
-}: {
+type Props = {
   entry: RunHistoryEntry;
   now: number;
   onRestore: () => void;
-}) {
+};
+
+const RunHistoryRow: React.FC<Props> = ({ entry, now, onRestore }) => {
   return (
     <Box
       as="button"
@@ -61,4 +59,6 @@ export function RunHistoryRow({
       </Text>
     </Box>
   );
-}
+};
+
+export default RunHistoryRow;

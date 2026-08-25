@@ -1,4 +1,4 @@
-import { ThemedToken } from "shiki";
+import type { ThemedToken } from "shiki";
 
 import type { EngineKey } from "@/lib/types";
 import { DiffKind } from "@/lib/types";

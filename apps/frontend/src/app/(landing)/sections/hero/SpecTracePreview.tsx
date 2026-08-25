@@ -2,19 +2,20 @@ import { Box, Flex, Grid, Text } from "@chakra-ui/react";
 
 import { QuietLink } from "@/components/ui";
 import { Band } from "@/components/ui/band";
-import { Label } from "@/components/ui/label";
+import Label from "@/components/ui/label";
 
 import { TRACES } from "../../landing-data";
 import { blockName, cycleStylesheet, planCycle, verdictName } from "./traceCycle";
-import { looping, TraceSteps } from "./TraceSteps";
-import { TraceTab } from "./TraceTab";
+import TraceSteps, { looping } from "./TraceSteps";
+import TraceTab from "./TraceTab";
 
 const cycle = planCycle(TRACES);
 const stylesheet = cycleStylesheet(TRACES);
 
-export function SpecTracePreview() {
+const SpecTracePreview: React.FC = () => {
   return (
     <Flex layerStyle="panel" direction="column" minW={0}>
+      {/* eslint-disable-next-line react/no-danger -- the stylesheet is generated at module scope by cycleStylesheet() from TRACES, a constant in this repo. No user input reaches it, and <style> takes no children. */}
       <style dangerouslySetInnerHTML={{ __html: stylesheet }} />
 
       <Band edge="top">
@@ -89,4 +90,6 @@ export function SpecTracePreview() {
       </Box>
     </Flex>
   );
-}
+};
+
+export default SpecTracePreview;

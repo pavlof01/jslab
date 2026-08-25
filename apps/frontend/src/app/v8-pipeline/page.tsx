@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function V8PipelinePage() {
+const V8PipelinePage: React.FC = () => {
   return <PipelineClient />;
-}
+};
+
+export default V8PipelinePage;

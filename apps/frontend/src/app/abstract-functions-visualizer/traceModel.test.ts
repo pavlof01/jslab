@@ -25,7 +25,7 @@ describe("formatNodePath", () => {
 });
 
 describe("formatSpecValue", () => {
-  const cases: Array<[string, SpecValue, string]> = [
+  const cases: [string, SpecValue, string][] = [
     ["undefined", { type: "Undefined" }, "undefined"],
     ["null", { type: "Null", value: null }, "null"],
     ["true", { type: "Boolean", value: true }, "true"],

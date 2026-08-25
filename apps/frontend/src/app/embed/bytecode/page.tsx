@@ -23,11 +23,11 @@ async function requestOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-export default async function EmbedBytecodePage({
-  searchParams,
-}: {
+type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+};
+
+const EmbedBytecodePage = async ({ searchParams }: Props) => {
   const params = await searchParams;
   const raw = params[SNAPSHOT_PARAM];
   const snapshotParam = Array.isArray(raw) ? raw[0] : raw;
@@ -50,4 +50,6 @@ export default async function EmbedBytecodePage({
       <EmbedBytecodeClient snapshot={snapshot} />
     </>
   );
-}
+};
+
+export default EmbedBytecodePage;

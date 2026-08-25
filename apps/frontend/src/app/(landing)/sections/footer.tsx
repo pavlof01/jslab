@@ -1,7 +1,7 @@
 import { Box, Container, Flex, Text } from "@chakra-ui/react";
 import Image from "next/image";
 
-export const FooterSection: React.FC = () => {
+const FooterSection: React.FC = () => {
   return (
     <Box layerStyle="section" as="footer">
       <Container
@@ -54,3 +54,5 @@ export const FooterSection: React.FC = () => {
     </Box>
   );
 };
+
+export default FooterSection;

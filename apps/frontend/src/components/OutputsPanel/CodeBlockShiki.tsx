@@ -4,7 +4,7 @@ import type { HighlighterGeneric } from "shiki";
 import { getSourceHighlighter, MACHINE_CODE_LANG, THEME } from "@/lib/shiki";
 
 import DefaultEmptyCodeBlockState, {
-  Props as DefaultEmptyCodeBlockStateProps,
+  type DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";
 
 type Props = {

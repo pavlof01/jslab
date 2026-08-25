@@ -187,11 +187,9 @@ export const INTRINSICS: Intrinsic[] = [
   },
 ];
 
-export const INTRINSIC_CATEGORIES: IntrinsicCategory[] = INTRINSICS.reduce<IntrinsicCategory[]>(
-  (order, intrinsic) =>
-    order.includes(intrinsic.category) ? order : [...order, intrinsic.category],
-  [],
-);
+export const INTRINSIC_CATEGORIES: IntrinsicCategory[] = [
+  ...new Set(INTRINSICS.map((intrinsic) => intrinsic.category)),
+];
 
 export const intrinsicsByCategory = (category: IntrinsicCategory): Intrinsic[] =>
   INTRINSICS.filter((intrinsic) => intrinsic.category === category);

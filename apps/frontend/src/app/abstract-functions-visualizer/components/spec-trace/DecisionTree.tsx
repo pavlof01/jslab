@@ -22,7 +22,13 @@ type Props = {
   complete: boolean;
 };
 
-export function DecisionTree({ root, selectedIndex, onSelectIndex, result, complete }: Props) {
+const DecisionTree: React.FC<Props> = ({
+  root,
+  selectedIndex,
+  onSelectIndex,
+  result,
+  complete,
+}) => {
   const nodes = useMemo(() => (root ? buildDecisionTree(root) : []), [root]);
   const frameCount = nodes.length;
 
@@ -96,4 +102,6 @@ export function DecisionTree({ root, selectedIndex, onSelectIndex, result, compl
       ) : null}
     </Box>
   );
-}
+};
+
+export default DecisionTree;

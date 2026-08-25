@@ -1,8 +1,10 @@
 // scripts/test-shiki.ts
-import { createHighlighter } from "shiki";
+
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { createHighlighter } from "shiki";
 
 async function main() {
   // --- load grammar JSON synchronously (no top-level await) ---

@@ -6,10 +6,10 @@ import { SplitRow } from "@/components/ui";
 
 import type { TraceNode } from "../spec-runner";
 import { formatSpecValue } from "../traceModel";
-import { DecisionTree } from "./spec-trace/DecisionTree";
-import { ExpressionRow } from "./spec-trace/ExpressionRow";
+import DecisionTree from "./spec-trace/DecisionTree";
+import ExpressionRow from "./spec-trace/ExpressionRow";
 import { SpecPaneHeader, TreePaneHeader } from "./spec-trace/PaneHeaders";
-import { type SpecTracePreset, TransportRow } from "./spec-trace/TransportRow";
+import TransportRow, { type SpecTracePreset } from "./spec-trace/TransportRow";
 import { usePlaybackKeys } from "./spec-trace/usePlaybackKeys";
 
 export type { SpecTracePreset };
@@ -36,7 +36,7 @@ export type SpecTraceScreenProps = {
   extraControl?: React.ReactNode;
 };
 
-export function SpecTraceScreen({
+const SpecTraceScreen: React.FC<SpecTraceScreenProps> = ({
   root,
   error,
   tracing = false,
@@ -53,8 +53,8 @@ export function SpecTraceScreen({
   hint,
   presets,
   extraControl,
-}: SpecTraceScreenProps) {
-  const result = root?.output ? formatSpecValue(root.output, Infinity) : undefined;
+}) => {
+  const result = root?.output ? formatSpecValue(root.output, Number.POSITIVE_INFINITY) : undefined;
   const complete = stepCount > 0 && selectedIndex >= stepCount - 1;
 
   usePlaybackKeys({ selectedIndex, onSelectIndex, onTogglePlay });
@@ -111,4 +111,6 @@ export function SpecTraceScreen({
       </Box>
     </Box>
   );
-}
+};
+
+export default SpecTraceScreen;

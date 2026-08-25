@@ -3,9 +3,8 @@
 import { Box, Button, HStack, Menu, Portal, Text } from "@chakra-ui/react";
 import Link from "next/link";
 
-import { MobileNavSection } from "./MobileNavSection";
-import { type NavSection, navSections } from "./nav.types";
-import { NavItemBody } from "./NavItemBody";
+import { navSections } from "./nav.types";
+import NavItemBody from "./NavItemBody";
 import { useSectionActive } from "./useSectionActive";
 
 const menuContentStyles = {

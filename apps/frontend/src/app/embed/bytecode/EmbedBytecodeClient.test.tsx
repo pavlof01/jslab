@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/jest-globals";
 import { describe, expect, it } from "@jest/globals";
 import { render, screen, waitFor } from "@testing-library/react";
 
-import { Providers } from "@/app/providers";
+import Providers from "@/app/providers";
 import type { EmbedSnapshot } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
 

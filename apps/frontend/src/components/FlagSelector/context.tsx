@@ -9,13 +9,12 @@ type GroupedCatalog = Partial<Record<EngineKey, FlagGroup[]>>;
 
 const FlagCatalogContext = createContext<GroupedCatalog>({});
 
-export function FlagCatalogProvider({
-  catalog,
-  children,
-}: {
+type Props = {
   catalog: EngineFlagCatalog;
   children: ReactNode;
-}) {
+};
+
+const FlagCatalogProvider: React.FC<Props> = ({ catalog, children }) => {
   const grouped = useMemo(
     () =>
       Object.fromEntries(
@@ -24,7 +23,7 @@ export function FlagCatalogProvider({
     [catalog],
   );
   return <FlagCatalogContext.Provider value={grouped}>{children}</FlagCatalogContext.Provider>;
-}
+};
 
 /** Engines the catalog knows flags for, so the toolbar only renders live selectors. */
 export const useFlaggedEngines = (): EngineKey[] => {
@@ -37,3 +36,5 @@ export const useFlaggedEngines = (): EngineKey[] => {
 
 export const useFlagGroups = (engine: EngineKey): FlagGroup[] =>
   useContext(FlagCatalogContext)[engine] ?? [];
+
+export default FlagCatalogProvider;

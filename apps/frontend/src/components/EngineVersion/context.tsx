@@ -7,15 +7,16 @@ import type { EngineKey } from "@/lib/types";
 
 const EngineVersionContext = createContext<EngineVersions>({});
 
-export function EngineVersionProvider({
-  versions,
-  children,
-}: {
+type Props = {
   versions: EngineVersions;
   children: ReactNode;
-}) {
+};
+
+const EngineVersionProvider: React.FC<Props> = ({ versions, children }) => {
   return <EngineVersionContext.Provider value={versions}>{children}</EngineVersionContext.Provider>;
-}
+};
 
 export const useEngineVersion = (engine: EngineKey): string | undefined =>
   useContext(EngineVersionContext)[engine];
+
+export default EngineVersionProvider;

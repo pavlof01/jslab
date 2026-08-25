@@ -3,7 +3,7 @@
 import { Box } from "@chakra-ui/react";
 import { useCallback } from "react";
 
-import { EditorPanel } from "@/components/EditorPanel";
+import EditorPanel from "@/components/EditorPanel";
 import { SplitRow } from "@/components/ui";
 import { pushHistory } from "@/lib/runHistory";
 import { formatRunMeta } from "@/lib/runMessages";
@@ -17,14 +17,14 @@ import {
   useSetCode,
 } from "@/store/engineOutputsSelectors";
 
-import { OutputPane } from "./OutputPane";
+import OutputPane from "./OutputPane";
 import * as styles from "./playground.styles";
-import { PlaygroundToolbar } from "./PlaygroundToolbar";
+import PlaygroundToolbar from "./PlaygroundToolbar";
 import RunAnnouncer from "./RunAnnouncer";
-import { RunMessage } from "./RunMessage";
+import RunMessage from "./RunMessage";
 import { useSharedStateRestore } from "./useSharedStateRestore";
 
-export default function PlaygroundClient() {
+const PlaygroundClient: React.FC = () => {
   const code = useCode();
   const setCode = useSetCode();
   const { engines } = useEngineSelection();
@@ -73,9 +73,11 @@ export default function PlaygroundClient() {
       </Box>
     </Box>
   );
-}
+};
 
 function footerText(runMeta: string, engineCount: number): string {
   if (runMeta) return runMeta;
   return `${engineCount} engine${engineCount === 1 ? "" : "s"} · click any opcode for its reference`;
 }
+
+export default PlaygroundClient;

@@ -9,7 +9,7 @@ import {
 
 const { withContext } = createRecipeContext({ key: "chip" });
 
-export interface ChipRootProps extends HTMLChakraProps<"button", RecipeProps<"chip">> {}
+export type ChipRootProps = HTMLChakraProps<"button", RecipeProps<"chip">>;
 
 const ChipRoot = withContext<HTMLButtonElement, ChipRootProps>("button");
 
@@ -20,14 +20,14 @@ export type ChipProps = {
   onToggle?: () => void;
 } & Omit<ChipRootProps, "type" | "onToggle">;
 
-export function Chip({
+const Chip: React.FC<ChipProps> = ({
   label,
   checked = false,
   shape = "box",
   disabled,
   onToggle,
   ...rest
-}: ChipProps) {
+}) => {
   return (
     <ChipRoot
       type="button"
@@ -43,4 +43,6 @@ export function Chip({
       {label}
     </ChipRoot>
   );
-}
+};
+
+export default Chip;

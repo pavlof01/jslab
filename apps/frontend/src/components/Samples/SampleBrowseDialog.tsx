@@ -3,17 +3,19 @@
 import { Button, CloseButton, Dialog, Portal, Stack } from "@chakra-ui/react";
 import { type ReactNode, useState } from "react";
 
-export function SampleBrowseDialog({
-  triggerLabel,
-  triggerLabelForScreenReader,
-  title,
-  children,
-}: {
+type Props = {
   triggerLabel: string;
   triggerLabelForScreenReader: string;
   title: string;
   children: (close: () => void) => ReactNode;
-}) {
+};
+
+const SampleBrowseDialog: React.FC<Props> = ({
+  triggerLabel,
+  triggerLabelForScreenReader,
+  title,
+  children,
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -49,4 +51,6 @@ export function SampleBrowseDialog({
       </Portal>
     </Dialog.Root>
   );
-}
+};
+
+export default SampleBrowseDialog;

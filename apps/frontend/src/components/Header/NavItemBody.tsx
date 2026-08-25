@@ -8,7 +8,7 @@ type Props = {
   item: NavItem;
 };
 
-export const NavItemBody: React.FC<Props> = ({ item }) => {
+const NavItemBody: React.FC<Props> = ({ item }) => {
   return (
     <VStack
       align="start"
@@ -41,3 +41,5 @@ export const NavItemBody: React.FC<Props> = ({ item }) => {
     </VStack>
   );
 };
+
+export default NavItemBody;

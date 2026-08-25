@@ -1,9 +1,9 @@
 import { Box, Container, Flex, Grid, Text } from "@chakra-ui/react";
 
-import { BytecodePreview } from "./hero/BytecodePreview";
-import { SpecTracePreview } from "./hero/SpecTracePreview";
+import BytecodePreview from "./hero/BytecodePreview";
+import SpecTracePreview from "./hero/SpecTracePreview";
 
-export function HeroSection() {
+const HeroSection: React.FC = () => {
   return (
     <Box as="section" id="trace" scrollMarginTop="64px" bg="surface.base">
       <Container maxW="1280px" px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}>
@@ -64,4 +64,6 @@ export function HeroSection() {
       </Container>
     </Box>
   );
-}
+};
+
+export default HeroSection;

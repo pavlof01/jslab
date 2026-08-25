@@ -1,9 +1,5 @@
 "use client";
 
-/* eslint-disable react/no-array-index-key -- Trace events are a sequence: two
-   identical deopts of the same function are distinct events, told apart only by
-   position. */
-
 import { Badge, Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
 import { useMemo } from "react";
 
@@ -15,7 +11,9 @@ const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }>
   ic: { label: "IC", color: "status.info" },
 };
 
-export default function DeoptView({ output }: { output: string }) {
+type Props = { output: string };
+
+const DeoptView: React.FC<Props> = ({ output }) => {
   const events = useMemo(() => parseV8Trace(output), [output]);
   const summary = useMemo(() => summarizeV8Trace(events), [events]);
 
@@ -60,6 +58,7 @@ export default function DeoptView({ output }: { output: string }) {
           const style = KIND_STYLE[e.kind];
           return (
             <Flex
+              // eslint-disable-next-line react/no-array-index-key -- trace events are a sequence: two identical deopts of the same function are distinct events, told apart only by position.
               key={i}
               gap={3}
               align="baseline"
@@ -105,4 +104,6 @@ export default function DeoptView({ output }: { output: string }) {
       </VStack>
     </VStack>
   );
-}
+};
+
+export default DeoptView;

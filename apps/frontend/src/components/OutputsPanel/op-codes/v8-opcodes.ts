@@ -293,7 +293,7 @@ function stripAngleBrackets(key: string): string {
 
 /** Describe tokens like ObjectBoilerplateDescription[4], SharedFunctionInfo name, ClassBoilerplate, ScopeInfo CLASS_SCOPE, String[6]: #Object. */
 function resolveHeapMetaToken(raw: string): string | undefined {
-  let key = stripAngleBrackets(raw);
+  const key = stripAngleBrackets(raw);
   let m: RegExpMatchArray | null;
 
   // ObjectBoilerplateDescription[4]

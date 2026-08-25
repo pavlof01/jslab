@@ -1,12 +1,14 @@
 import { Box } from "@chakra-ui/react";
-import React from "react";
 
-export type Props = {
+export type DefaultEmptyCodeBlockStateProps = {
   title?: string;
   description?: string;
 };
 
-const DefaultEmptyCodeBlockState: React.FC<Props> = ({ title = "⌘↵ to run", description }) => {
+const DefaultEmptyCodeBlockState: React.FC<DefaultEmptyCodeBlockStateProps> = ({
+  title = "⌘↵ to run",
+  description,
+}) => {
   return (
     <Box textStyle="code" px="12px" py="10px" lineHeight="21px" color="ink.5">
       <Box>{title}</Box>

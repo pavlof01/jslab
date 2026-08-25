@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, BoxProps, Stack } from "@chakra-ui/react";
+import { Box, type BoxProps, Stack } from "@chakra-ui/react";
 import { memo, useEffect, useState } from "react";
 import type { TokensResult } from "shiki";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
@@ -14,7 +14,7 @@ import { compareOutputs } from "@/utils/diff-bytecode";
 import CodeDisplay from "./components/Code";
 import CopyButton from "./components/CopyButton";
 import DefaultEmptyCodeBlockState, {
-  Props as DefaultEmptyCodeBlockStateProps,
+  type DefaultEmptyCodeBlockStateProps,
 } from "./components/DefaultEmptyCodeBlockState";
 
 const normalizeForDiff = (line: string) =>
@@ -47,7 +47,7 @@ export async function highlight(
   return { tokens: diffTokens, highlighter };
 }
 
-interface Props {
+type Props = {
   engineKey: EngineKey;
   out?: string;
   prev?: string;
@@ -55,7 +55,7 @@ interface Props {
   isLoading?: boolean;
   EmptyCodeBlockState?: React.ComponentType<DefaultEmptyCodeBlockStateProps>;
   boxProps?: BoxProps;
-}
+};
 
 export const HighlightedCode = memo(function HighlightedCode({
   engineKey,

@@ -5,12 +5,12 @@ import { useState } from "react";
 
 import { QuietLink } from "@/components/ui";
 import { Band } from "@/components/ui/band";
-import { Label } from "@/components/ui/label";
+import Label from "@/components/ui/label";
 
 import { DUMPS, SNIPPET } from "../../landing-data";
-import { RuleTab } from "./RuleTab";
+import RuleTab from "./RuleTab";
 
-export function BytecodePreview() {
+const BytecodePreview: React.FC = () => {
   const [engineIndex, setEngineIndex] = useState(0);
   const [opcode, setOpcode] = useState<string | null>(null);
 
@@ -120,4 +120,6 @@ export function BytecodePreview() {
       </Box>
     </Flex>
   );
-}
+};
+
+export default BytecodePreview;

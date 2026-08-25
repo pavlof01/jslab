@@ -4,15 +4,13 @@ import { Button, CloseButton, Dialog, HStack, Portal, Text } from "@chakra-ui/re
 
 import type { CustomSample } from "@/lib/customSamples";
 
-export function DeleteSampleDialog({
-  target,
-  onDismiss,
-  onConfirm,
-}: {
+type Props = {
   target: CustomSample | null;
   onDismiss: () => void;
   onConfirm: (sample: CustomSample) => void;
-}) {
+};
+
+const DeleteSampleDialog: React.FC<Props> = ({ target, onDismiss, onConfirm }) => {
   return (
     <Dialog.Root
       open={target !== null}
@@ -55,4 +53,6 @@ export function DeleteSampleDialog({
       </Portal>
     </Dialog.Root>
   );
-}
+};
+
+export default DeleteSampleDialog;

@@ -79,13 +79,12 @@ describe("decode rejects unusable input", () => {
   });
 
   it("returns null when the engine is not one we render", async () => {
-    const forged =
-      "0" + Buffer.from(JSON.stringify({ c: "x", n: "brainfuck", o: "y" })).toString("base64url");
+    const forged = `0${Buffer.from(JSON.stringify({ c: "x", n: "brainfuck", o: "y" })).toString("base64url")}`;
     expect(await decodeSnapshot(forged)).toBeNull();
   });
 
   it("returns null when the output field is missing", async () => {
-    const forged = "0" + Buffer.from(JSON.stringify({ c: "x", n: "v8" })).toString("base64url");
+    const forged = `0${Buffer.from(JSON.stringify({ c: "x", n: "v8" })).toString("base64url")}`;
     expect(await decodeSnapshot(forged)).toBeNull();
   });
 });

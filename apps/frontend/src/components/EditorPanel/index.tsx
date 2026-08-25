@@ -23,13 +23,13 @@ const javascriptDefaults = (languages: typeof Monaco.languages): JavascriptDefau
   (languages as unknown as { typescript: { javascriptDefaults: JavascriptDefaults } }).typescript
     .javascriptDefaults;
 
-interface EditorPanelProps {
+type Props = {
   code: string;
   onCodeChange: (value?: string) => void;
   onRun?: () => void;
-}
+};
 
-export function EditorPanel({ code, onCodeChange, onRun }: EditorPanelProps) {
+const EditorPanel: React.FC<Props> = ({ code, onCodeChange, onRun }) => {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
   const decorationsRef = useRef<string[]>([]);
@@ -137,4 +137,6 @@ export function EditorPanel({ code, onCodeChange, onRun }: EditorPanelProps) {
       />
     </Box>
   );
-}
+};
+
+export default EditorPanel;

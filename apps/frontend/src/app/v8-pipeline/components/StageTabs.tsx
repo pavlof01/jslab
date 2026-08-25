@@ -14,11 +14,11 @@ const STATUS_COLOR: Partial<Record<StageStatus, string>> = {
   error: "status.error",
 };
 
-export function StageTabs({
-  statusOf,
-}: {
+type Props = {
   statusOf: (id: (typeof STAGES)[number]["id"]) => StageStatus;
-}) {
+};
+
+const StageTabs: React.FC<Props> = ({ statusOf }) => {
   return (
     <Box
       borderBottom="1px solid rgba(255,255,255,0.06)"
@@ -53,9 +53,11 @@ export function StageTabs({
       </Tabs.List>
     </Box>
   );
-}
+};
 
-function StageIndicator({ status }: { status: StageStatus }) {
+type StageIndicatorProps = { status: StageStatus };
+
+const StageIndicator: React.FC<StageIndicatorProps> = ({ status }) => {
   const color = STATUS_COLOR[status];
 
   return (
@@ -64,12 +66,14 @@ function StageIndicator({ status }: { status: StageStatus }) {
       {color ? <Status.Indicator bg={color} /> : null}
     </Status.Root>
   );
-}
+};
 
-function StageArrow() {
+const StageArrow: React.FC = () => {
   return (
     <Flex align="center" px={2} aria-hidden="true">
       <FaLongArrowAltRight />
     </Flex>
   );
-}
+};
+
+export default StageTabs;

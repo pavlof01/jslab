@@ -1,5 +1,3 @@
-import type { TokenBase } from "shiki";
-
 import type { DiffKind, DiffResult } from ".";
 
 declare module "shiki" {

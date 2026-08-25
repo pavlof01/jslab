@@ -5,16 +5,15 @@ import { Code, Text } from "@chakra-ui/react";
 import { v8SampleCatalog, type V8SampleKey, v8Samples } from "@/lib/samples";
 import { V8_NATIVES_FLAG } from "@/lib/v8Intrinsics";
 
-import { SampleCard } from "./SampleCard";
+import SampleCard from "./SampleCard";
 import { SampleGrid } from "./SampleLibrary";
 
-export function V8SampleLibrary({
-  loadedId,
-  onLoad,
-}: {
+type Props = {
   loadedId: string | null;
   onLoad: (code: string, id: string) => void;
-}) {
+};
+
+const V8SampleLibrary: React.FC<Props> = ({ loadedId, onLoad }) => {
   return (
     <>
       <Text fontSize="sm" color="ink.2">
@@ -37,4 +36,6 @@ export function V8SampleLibrary({
       </SampleGrid>
     </>
   );
-}
+};
+
+export default V8SampleLibrary;

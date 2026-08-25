@@ -23,19 +23,15 @@ function outcomeLabel(status: RunStatus, result: PaneResult): string | undefined
   return result?.stderr ? "stderr" : "ok";
 }
 
-export function EngineTabs({
-  engines,
-  activeTab,
-  onSelect,
-  out,
-  status,
-}: {
+type Props = {
   engines: EngineKey[];
   activeTab: EngineKey;
   onSelect: (engine: EngineKey) => void;
   out: Record<EngineKey, EngineResult>;
   status: RunStatus;
-}) {
+};
+
+const EngineTabs: React.FC<Props> = ({ engines, activeTab, onSelect, out, status }) => {
   return (
     <TabBar
       items={engines.map((engine) => ({
@@ -50,4 +46,6 @@ export function EngineTabs({
       }}
     />
   );
-}
+};
+
+export default EngineTabs;

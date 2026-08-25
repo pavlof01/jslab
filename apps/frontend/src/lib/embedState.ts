@@ -1,5 +1,5 @@
 import { base64UrlToBytes, bytesToBase64Url } from "@/lib/base64url";
-import { EngineKey, isEngineKey } from "@/lib/types";
+import { type EngineKey, isEngineKey } from "@/lib/types";
 
 export interface EmbedSnapshot {
   /** Source that produced the output; shown above it and used by "Open in JSLab". */

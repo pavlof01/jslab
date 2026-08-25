@@ -10,7 +10,7 @@ type Props = {
   children: ReactNode;
 };
 
-export const Providers: React.FC<Props> = ({ children }) => {
+const Providers: React.FC<Props> = ({ children }) => {
   return (
     <ThemeProvider
       attribute="class"
@@ -23,3 +23,5 @@ export const Providers: React.FC<Props> = ({ children }) => {
     </ThemeProvider>
   );
 };
+
+export default Providers;

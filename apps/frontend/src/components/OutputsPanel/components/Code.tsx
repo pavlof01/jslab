@@ -1,5 +1,5 @@
 import { Flex } from "@chakra-ui/react";
-import { ThemedToken, TokensResult } from "shiki";
+import type { ThemedToken, TokensResult } from "shiki";
 
 import type { EngineKey } from "@/lib/types";
 

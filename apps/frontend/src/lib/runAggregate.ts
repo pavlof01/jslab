@@ -1,5 +1,5 @@
 import type { RunFailure, RunResult } from "@/lib/api";
-import { ENGINE_KEYS, EngineKey, type EngineResult } from "@/lib/types";
+import { ENGINE_KEYS, type EngineKey, type EngineResult } from "@/lib/types";
 
 export function pickPrimaryFailure(failures: readonly RunFailure[]): RunFailure | undefined {
   return failures.find((failure) => failure.status === 429) ?? failures[0];

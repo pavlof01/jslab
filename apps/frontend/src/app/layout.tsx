@@ -2,10 +2,10 @@ import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
 
-import { ConditionalHeader } from "@/components/ConditionalHeader";
+import ConditionalHeader from "@/components/ConditionalHeader";
 import { SITE_ORIGIN } from "@/lib/site";
 
-import { Providers } from "./providers";
+import Providers from "./providers";
 
 export const viewport: Viewport = {
   themeColor: "#111827",
@@ -74,11 +74,11 @@ export const metadata: Metadata = {
   category: "developer tools",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+const RootLayout: React.FC<
+  Readonly<{
+    children: React.ReactNode;
+  }>
+> = ({ children }) => {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -118,4 +118,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

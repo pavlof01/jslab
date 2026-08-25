@@ -16,7 +16,7 @@ const srOnly: React.CSSProperties = {
   border: 0,
 };
 
-export default function RunAnnouncer() {
+const RunAnnouncer: React.FC = () => {
   const { status, durationMs, cacheHit, error, notice } = useRunStatus();
 
   const announcement = (() => {
@@ -36,4 +36,6 @@ export default function RunAnnouncer() {
       {announcement}
     </div>
   );
-}
+};
+
+export default RunAnnouncer;

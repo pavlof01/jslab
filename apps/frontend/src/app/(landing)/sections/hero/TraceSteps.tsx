@@ -10,15 +10,13 @@ const looping = (name: string, totalMs: number) => ({
   animationTimingFunction: "linear" as const,
 });
 
-export function TraceSteps({
-  trace,
-  index,
-  totalMs,
-}: {
+type Props = {
   trace: Trace;
   index: number;
   totalMs: number;
-}) {
+};
+
+const TraceSteps: React.FC<Props> = ({ trace, index, totalMs }) => {
   return (
     <Box mt={{ base: 5, md: "26px" }}>
       {trace.steps.map(([op, detail], step) => (
@@ -84,6 +82,8 @@ export function TraceSteps({
       </Flex>
     </Box>
   );
-}
+};
 
 export { looping };
+
+export default TraceSteps;

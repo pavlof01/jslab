@@ -6,9 +6,9 @@ import { useState } from "react";
 import { QuietLink } from "@/components/ui";
 
 import { INTRINSICS } from "../landing-data";
-import { SectionHead } from "./SectionHead";
+import SectionHead from "./SectionHead";
 
-export function IntrinsicsSection() {
+const IntrinsicsSection: React.FC = () => {
   const [selected, setSelected] = useState(0);
   const [signature, explanation] = INTRINSICS[selected];
 
@@ -84,4 +84,6 @@ export function IntrinsicsSection() {
       </Container>
     </Box>
   );
-}
+};
+
+export default IntrinsicsSection;

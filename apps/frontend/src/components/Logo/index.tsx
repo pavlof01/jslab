@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react";
 import Image from "next/image";
 import Link from "next/link";
 
-export const Logo = () => {
+const Logo: React.FC = () => {
   return (
     <Link href="/">
       <Box cursor="pointer" _hover={{ opacity: 0.9 }}>

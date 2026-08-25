@@ -7,7 +7,7 @@ import { useActiveTab, useOutputPane } from "@/store/engineOutputsSelectors";
 
 import { HighlightedCode } from "./CodeBlock";
 
-export function OutputsPanel() {
+const OutputsPanel: React.FC = () => {
   const { out, previousSnapshot, showDiff, status, engines } = useOutputPane();
   const { activeTab, setActiveTab } = useActiveTab();
 
@@ -67,4 +67,6 @@ export function OutputsPanel() {
       </Stack>
     </Tabs.Root>
   );
-}
+};
+
+export default OutputsPanel;

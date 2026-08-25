@@ -21,9 +21,9 @@ import { clearHistory, loadHistory, type RunHistoryEntry } from "@/lib/runHistor
 import { selectionFrom } from "@/lib/types";
 import { useStateRestore } from "@/store/engineOutputsSelectors";
 
-import { RunHistoryRow } from "./RunHistoryRow";
+import RunHistoryRow from "./RunHistoryRow";
 
-export default function RunHistory() {
+const RunHistory: React.FC = () => {
   const { setCode, setEngines, setFlags } = useStateRestore();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<RunHistoryEntry[]>([]);
@@ -109,4 +109,6 @@ export default function RunHistory() {
       </DrawerPositioner>
     </DrawerRoot>
   );
-}
+};
+
+export default RunHistory;

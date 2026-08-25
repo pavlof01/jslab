@@ -4,7 +4,7 @@ import { Box, Button, Flex, Input, Span } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
 import { Band, ShortcutHint } from "@/components/ui";
-import { Label } from "@/components/ui/label";
+import Label from "@/components/ui/label";
 
 type Props = {
   expression: string;
@@ -17,7 +17,7 @@ type Props = {
   extraControl?: ReactNode;
 };
 
-export function ExpressionRow({
+const ExpressionRow: React.FC<Props> = ({
   expression,
   onExpressionChange,
   onTrace,
@@ -26,7 +26,7 @@ export function ExpressionRow({
   error,
   hint,
   extraControl,
-}: Props) {
+}) => {
   return (
     <Band>
       <Label>your expression</Label>
@@ -110,4 +110,6 @@ export function ExpressionRow({
       </Box>
     </Band>
   );
-}
+};
+
+export default ExpressionRow;

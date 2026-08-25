@@ -4,13 +4,13 @@ import { Box, Button, Flex, Splitter, Tabs, Text, useBreakpointValue } from "@ch
 import { useState } from "react";
 import { CiPlay1 } from "react-icons/ci";
 
-import { EditorPanel } from "@/components/EditorPanel";
+import EditorPanel from "@/components/EditorPanel";
 import { LogoLoader } from "@/components/ui";
 
 import { type ApiStageId, type StageId, STAGES } from "../lib/stages";
 import { usePipelineRun } from "../lib/usePipelineRun";
-import { StageContent } from "./StageContent";
-import { StageTabs } from "./StageTabs";
+import StageContent from "./StageContent";
+import StageTabs from "./StageTabs";
 
 const SAMPLE = `function add(a, b) {
   return a + b;
@@ -30,7 +30,7 @@ for (let i = 0; i < 400; i++) add(i, i + 1);
 
 // add(1, 2)`;
 
-export default function PipelineClient() {
+const PipelineClient: React.FC = () => {
   const [code, setCode] = useState(SAMPLE);
   const [active, setActive] = useState<StageId>("tokens");
   const { hasRun, running, error, outputs, visibleTokens, analyze, statusOf } =
@@ -131,9 +131,9 @@ export default function PipelineClient() {
       </Splitter.Root>
     </Flex>
   );
-}
+};
 
-function RunError({ children }: { children: React.ReactNode }) {
+const RunError: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <Box
       role="alert"
@@ -149,4 +149,6 @@ function RunError({ children }: { children: React.ReactNode }) {
       {children}
     </Box>
   );
-}
+};
+
+export default PipelineClient;

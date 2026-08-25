@@ -6,7 +6,7 @@ import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 
 import type { NavSection } from "./nav.types";
-import { NavItemBody } from "./NavItemBody";
+import NavItemBody from "./NavItemBody";
 
 type Props = {
   section: NavSection;
@@ -14,7 +14,7 @@ type Props = {
   onNavigate: () => void;
 };
 
-export const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, onNavigate }) => {
+const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, onNavigate }) => {
   const [open, setOpen] = useState(isSectionActive(section));
 
   return (
@@ -84,3 +84,5 @@ export const MobileNavSection: React.FC<Props> = ({ section, isSectionActive, on
     </Collapsible.Root>
   );
 };
+
+export default MobileNavSection;

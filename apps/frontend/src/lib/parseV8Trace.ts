@@ -83,7 +83,6 @@ export function parseV8Trace(output: string): V8TraceEvent[] {
     if (icMatch && line.startsWith("[")) {
       const transition = /\((\w+->\w+|\w+)\)/.exec(line)?.[1];
       events.push({ kind: "ic", fn: fnOf(line), reason: transition, raw: line });
-      continue;
     }
   }
 

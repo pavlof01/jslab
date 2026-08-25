@@ -3,30 +3,27 @@
 import { Box, createListCollection, Portal, Select } from "@chakra-ui/react";
 import { useMemo } from "react";
 
-import { EcmaSpecPanel } from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
-import {
+import EcmaSpecPanel from "@/app/abstract-functions-visualizer/components/EcmaSpecPanel";
+import SpecTraceScreen, {
   type SpecTracePreset,
-  SpecTraceScreen,
 } from "@/app/abstract-functions-visualizer/components/SpecTraceScreen";
 import type {
   AlgoCategory,
   VisualizerInitialData,
 } from "@/app/abstract-functions-visualizer/model";
 import { fallbackInitialData } from "@/app/abstract-functions-visualizer/model";
-import { VisualizerStoreProvider } from "@/app/abstract-functions-visualizer/StoreProvider";
+import VisualizerStoreProvider from "@/app/abstract-functions-visualizer/StoreProvider";
 import { useVisualizerRuntime } from "@/app/abstract-functions-visualizer/useVisualizerRuntime";
 
 import { HINTS, PRESETS } from "./categoryContent";
 
-function AlgoPicker({
-  value,
-  options,
-  onChange,
-}: {
+type AlgoPickerProps = {
   value: string;
   options: string[];
   onChange: (next: string) => void;
-}) {
+};
+
+const AlgoPicker: React.FC<AlgoPickerProps> = ({ value, options, onChange }) => {
   const collection = useMemo(() => createListCollection({ items: options }), [options]);
 
   return (
@@ -60,15 +57,17 @@ function AlgoPicker({
       </Portal>
     </Select.Root>
   );
-}
+};
 
-export function AbstractFunctionsVisualizer({
-  initialCategory = "typeConversion",
-  initialData,
-}: {
+type AbstractFunctionsVisualizerProps = {
   initialCategory?: AlgoCategory;
   initialData?: VisualizerInitialData;
-}) {
+};
+
+const AbstractFunctionsVisualizer: React.FC<AbstractFunctionsVisualizerProps> = ({
+  initialCategory = "typeConversion",
+  initialData,
+}) => {
   const resolved = initialData ?? fallbackInitialData(initialCategory);
 
   return (
@@ -76,9 +75,11 @@ export function AbstractFunctionsVisualizer({
       <VisualizerScreen initialData={resolved} />
     </VisualizerStoreProvider>
   );
-}
+};
 
-function VisualizerScreen({ initialData }: { initialData: VisualizerInitialData }) {
+type VisualizerScreenProps = { initialData: VisualizerInitialData };
+
+const VisualizerScreen: React.FC<VisualizerScreenProps> = ({ initialData }) => {
   const {
     root,
     error,
@@ -147,4 +148,6 @@ function VisualizerScreen({ initialData }: { initialData: VisualizerInitialData 
       />
     </Box>
   );
-}
+};
+
+export default AbstractFunctionsVisualizer;

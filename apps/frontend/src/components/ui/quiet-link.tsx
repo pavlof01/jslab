@@ -7,13 +7,13 @@ export type QuietLinkProps = {
   external?: boolean;
 } & Omit<LinkProps, "href">;
 
-export function QuietLink({
+const QuietLink: React.FC<QuietLinkProps> = ({
   href,
   mono = false,
   external = false,
   children,
   ...rest
-}: QuietLinkProps) {
+}) => {
   const typeface = mono ? "mono" : "sans";
 
   if (external) {
@@ -29,4 +29,6 @@ export function QuietLink({
       <NextLink href={href}>{children}</NextLink>
     </Link>
   );
-}
+};
+
+export default QuietLink;
