@@ -1,0 +1,32 @@
+name: release
+
+# release-please maintains a rolling release PR: every conventional commit on
+# main updates the PR's version and CHANGELOG; merging the PR cuts the tag and
+# the GitHub Release. Docker images stay addressed by commit SHA — the release
+# only records which point of main a version name refers to.
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # The default GITHUB_TOKEN cannot trigger workflows on the PRs it
+          # opens, so the required quality-gate check would never run on the
+          # release PR and it could not be merged. RELEASE_PLEASE_TOKEN is a
+          # fine-grained PAT with contents:write + pull-requests:write.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
