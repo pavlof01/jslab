@@ -13,7 +13,7 @@ export function buildEngineSpec(config: EngineConfig): EngineSpec {
     version: {
       cmd: binary,
       candidates: [["-e", "print(version())"]],
-      parse: (raw) => matchVersion(raw, /^\s*(\d+\.\d+[^\n]*)$/m),
+      parse: (raw) => matchVersion(raw, /^[ \t]*(\d+\.\d+[^\n]*)$/m),
     },
     invoke: ({ scriptPath, flags, preludePaths }) => ({
       cmd: binary,
