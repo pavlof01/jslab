@@ -54,6 +54,47 @@ type Artifact = { kind: "bytecode"; mime: string; dataBase64: string };
 
 ## Development commands
 
+### Formatting and linting (repo root)
+
+Prettier formats the entire tree and ESLint lints it. `.prettierrc` and
+`eslint.config.mjs` at the root are the configs, and the root ESLint covers every
+workspace except `apps/frontend`, which keeps its own install and config for
+`eslint-config-next`. Run `npm install` at the root once (tooling only — it is
+not an npm workspace root and does not change how services install); it also
+points `core.hooksPath` at `.githooks/`, which is where the pre-commit,
+commit-msg and pre-push hooks live.
+
+Commits are conventional and enforced twice — by `.githooks/commit-msg` locally
+and by CI's `history` job. `commitlint.config.mjs` lists the allowed types
+(`feat`, `fix`, `chore`, `docs`, `ci`, `test`, `refactor`, `perf`, `style`,
+`infra`, `revert`); scopes are open, and the header is capped at 100 characters
+including the ` (#123)` GitHub appends when squashing.
+
+```bash
+npm run ci         # what CI runs: prettier --check . && eslint .
+npm run check      # the same two checks
+npm run check:fix  # apply the safe fixes from both
+npm run format     # formatting only
+```
+
+Notes:
+
+- Suppress a rule at the site: `// eslint-disable-next-line <rule> -- reason` on
+  the line directly above the code it applies to. It must be a single line and
+  immediately precede the code — a second comment line in between makes the
+  directive target that comment instead. Between JSX children use
+  `{/* eslint-disable-next-line <rule> -- reason */}`. Both configs set
+  `reportUnusedDisableDirectives: "error"`, so a stale suppression fails CI
+  rather than lingering.
+- Two ESLint installs, no overlap: `apps/frontend/src` has its own (it needs
+  `eslint-config-next`), and the root one ignores `apps/frontend/**` and covers
+  everything else. `eslint-config-prettier` is last in both, so no lint rule
+  fights the formatter.
+- Warnings (e.g. `@typescript-eslint/no-explicit-any`) do not fail CI; errors do.
+- `apps/frontend/src/next.config.ts` pins `turbopack.root`/`outputFileTracingRoot`
+  to that directory — the root lockfile would otherwise make Next guess the
+  workspace root and warn.
+
 ### Frontend (`apps/frontend/src/`)
 
 ```bash
@@ -138,6 +179,8 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 **Flags**: `lib/server/flags.ts` fetches the whole `/api/flags` catalog server-side; `components/FlagSelector` renders one engine's flags, grouped by category. Share links and run history carry the per-engine map and still decode the older flat V8 list.
 
 **UI**: Chakra UI v3, and the design system _is_ the theme (`src/style/`). `theme.ts` holds the tokens and registers everything; `textStyles.ts` names the kinds of text (`label`, `code`, `body`, …), `layerStyles.ts` the kinds of surface (`panel`, `section`, `overlay`), `recipes.ts` the controls (`button` with variant × typeface × size, `band`, `chip`, `link`, `input`) and `slotRecipes.ts` the components that portal (menu, select, dialog, drawer, popover — kept apart because their Ark anatomies cannot enter a server module). Call sites wear it through props: `textStyle`, `layerStyle`, `variant`. There is no second styling layer and no `chakra.*` factory use — portal components stay Chakra, presentational ones are compositions in `src/components/ui/`. Colour comes from one vocabulary (`surface.*`, `rule.*`, `ink.*`, `accent`, `status.*`); the header's height is the `sizes.header` token (`h="header"`, `top="header"`), not a CSS variable. Run `npm run typegen` after changing a recipe or a style so the variant props stay typed.
+
+**Components**: `const Name: React.FC<Props> = () => {}` with `export default Name;` at the end of the file — never a function declaration (ESLint `react/function-component-definition` is set to `arrow-function` and enforces it). A second component in the same file keeps a named `export const`; an async server component (`app/**/page.tsx`) cannot be typed `React.FC`, so it stays `const Page = async ({ ... }: Props) => {}`. Props are a `type`, not an `interface` (`@typescript-eslint/consistent-type-definitions`, `.tsx` only): `type Props` for a file's single component, `<Name>Props` when exported or when the file holds several. An inline props literal is fine only while the signature fits on one line — once the formatter wraps it, name the type.
 
 **Samples**: `lib/samples.ts` exports `samples` (basic code snippets), `sampleCatalog`, `v8Samples` (V8-internals examples with inline comments), and `v8SampleCatalog`.
 

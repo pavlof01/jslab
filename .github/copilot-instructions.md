@@ -200,7 +200,7 @@ CI ([.github/workflows/ci.yml](workflows/ci.yml)) runs one matrix leg per worksp
 1. **New engine?** Create `apps/engine-<name>/`, follow [engine-v8](../apps/engine-v8/) template, add an entry to `flagCatalog`, and add the service to `skaffold.yaml`, `docker-compose.yml`, `infra/k8s/base/` (including `networkpolicy.yaml`) and the CI matrix.
 2. **New API endpoint?** Update [apps/api/src/schemas.ts](../apps/api/src/schemas.ts), add a route module under [apps/api/src/routes/](../apps/api/src/routes/) and register it in `app.ts`, update [openapi.ts](../apps/api/src/openapi.ts) (a hand-maintained mirror of the schemas), and check whether it needs its own rate-limit bucket and an ingress rule.
 3. **New flag?** Add a `FlagSpec` to `flagCatalog` in [packages/engine-runtime/src/flags.ts](../packages/engine-runtime/src/flags.ts). The api, every engine service and the frontend's flag selector all pick it up automatically — the selector is fed from `GET /api/flags` through `lib/server/flags.ts`.
-4. **Frontend feature?** Ensure useEngineOutputs store is updated if new state shape is needed; update PlaygroundClient or component tree. Style through the theme in `src/style/` and run `npm run typegen` after touching a recipe.
+4. **Frontend feature?** Ensure useEngineOutputs store is updated if new state shape is needed; update PlaygroundClient or component tree. Style through the theme in `src/style/` and run `npm run typegen` after touching a recipe. Components are `const Name: React.FC<Props> = () => {}` with `export default Name;`, and props are a `type` (never `interface`) — see "Frontend components" in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Key File References
 
