@@ -1,7 +1,6 @@
 import type { TraceNode, TraceStep } from "./spec-runner";
 import { formatSpecValue } from "./traceModel";
 
-
 export type DecisionTest = {
   taken: boolean;
   clause: string;
@@ -77,7 +76,15 @@ export function buildDecisionTree(root: TraceNode): DecisionNode[] {
       }
 
       if (step.kind === "call" && step.algoId) {
-        walkCall(step.algoId, step.inputs ?? [], step.output, step.steps ?? [], depth + 1, stepPath, stepIndex);
+        walkCall(
+          step.algoId,
+          step.inputs ?? [],
+          step.output,
+          step.steps ?? [],
+          depth + 1,
+          stepPath,
+          stepIndex,
+        );
         return;
       }
 

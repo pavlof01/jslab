@@ -4,11 +4,12 @@
  * thread, without pulling engine262 into the test process.
  */
 import { afterEach, describe, expect, it } from "vitest";
+
 import {
   BudgetExceededError,
   SandboxBusyError,
-  TraceSandbox,
   type SandboxTask,
+  TraceSandbox,
 } from "../src/server/execute/sandbox.ts";
 
 const FIXTURE_WORKER = new URL("./fixtures/fixture-worker.mts", import.meta.url);
@@ -81,7 +82,9 @@ describe("TraceSandbox", () => {
   });
 
   it("propagates an error the worker reports", async () => {
-    await expect(createSandbox({ budgetMs: 10_000 }).run(task("fail"))).rejects.toThrow("fixture failure");
+    await expect(createSandbox({ budgetMs: 10_000 }).run(task("fail"))).rejects.toThrow(
+      "fixture failure",
+    );
   });
 
   it("surfaces a worker crash and recovers on the next task", async () => {

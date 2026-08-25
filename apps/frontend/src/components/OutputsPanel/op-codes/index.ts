@@ -2,11 +2,11 @@ import { EngineKey } from "@/lib/types";
 
 import { describeToken as describeHermesToken } from "./hermes-opcodes";
 import { describeToken as describeJscToken } from "./jsc-opcodes";
+import type { TokenDescriber } from "./resolver";
 import { describeToken as describeSmToken } from "./spidermonkey-opcodes";
 import { describeToken as describeV8Token } from "./v8-opcodes";
-import type { TokenDescriber } from "./resolver";
 
-export type { TokenDescriber, TokenContext } from "./resolver";
+export type { TokenContext, TokenDescriber } from "./resolver";
 
 export const TOKEN_DESCRIBERS: Record<EngineKey, TokenDescriber> = {
   [EngineKey.v8]: describeV8Token,

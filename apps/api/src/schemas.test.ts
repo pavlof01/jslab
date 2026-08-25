@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  normalizeFlags,
   allowedFlags,
-  runRequestSchema,
-  traceExecuteRequestSchema,
-  traceExecuteEqualitySchema,
-  validationMessage,
   clampTimeout,
+  normalizeFlags,
+  runRequestSchema,
+  traceExecuteEqualitySchema,
+  traceExecuteRequestSchema,
+  validationMessage,
 } from "./schemas.js";
 
 describe("normalizeFlags", () => {
@@ -52,7 +53,11 @@ describe("normalizeFlags", () => {
   it("does not report a rejected entry whose flag name was accepted elsewhere", () => {
     // The bad value never reached the engine, but --print-bytecode-filter did,
     // so naming it as dropped would send the caller hunting a working flag.
-    const out = normalizeFlags("v8", ["--print-bytecode-filter=a b", "--print-bytecode-filter=fib"], 10);
+    const out = normalizeFlags(
+      "v8",
+      ["--print-bytecode-filter=a b", "--print-bytecode-filter=fib"],
+      10,
+    );
     expect(out.flags).toEqual(["--print-bytecode-filter=fib"]);
     expect(out.dropped).toEqual([]);
   });
@@ -82,7 +87,11 @@ describe("normalizeFlags", () => {
     });
 
     it("rejects a value that could smuggle anything past the allowlist", () => {
-      const out = normalizeFlags("v8", ["--print-bytecode-filter=a b", "--print-bytecode-filter=;rm -rf /"], 10);
+      const out = normalizeFlags(
+        "v8",
+        ["--print-bytecode-filter=a b", "--print-bytecode-filter=;rm -rf /"],
+        10,
+      );
       expect(out.flags).toEqual([]);
       expect(out.dropped).toHaveLength(2);
     });
@@ -100,7 +109,11 @@ describe("normalizeFlags", () => {
     });
 
     it("dedupes by flag name so a second value cannot override the first", () => {
-      const out = normalizeFlags("v8", ["--print-bytecode-filter=a", "--print-bytecode-filter=b"], 10);
+      const out = normalizeFlags(
+        "v8",
+        ["--print-bytecode-filter=a", "--print-bytecode-filter=b"],
+        10,
+      );
       expect(out.flags).toEqual(["--print-bytecode-filter=a"]);
       // The flag itself reached the engine, so it is not reported as dropped.
       expect(out.dropped).toEqual([]);
@@ -124,7 +137,9 @@ describe("runRequestSchema", () => {
 
   it("accepts a flags array up to the wire cap", () => {
     const flags = Array.from({ length: 256 }, (_, i) => `-a${i}`);
-    expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "1", options: { flags } })).not.toThrow();
+    expect(() =>
+      runRequestSchema.parse({ engine: "v8", sourceText: "1", options: { flags } }),
+    ).not.toThrow();
   });
 
   it("rejects a flags array past the wire cap regardless of MAX_FLAGS", () => {
@@ -132,7 +147,9 @@ describe("runRequestSchema", () => {
     // MAX_FLAGS the sanitizer applies later — it exists so an oversized array
     // is rejected before the sanitizer ever walks it.
     const flags = Array.from({ length: 257 }, (_, i) => `-a${i}`);
-    expect(() => runRequestSchema.parse({ engine: "v8", sourceText: "1", options: { flags } })).toThrow();
+    expect(() =>
+      runRequestSchema.parse({ engine: "v8", sourceText: "1", options: { flags } }),
+    ).toThrow();
   });
 });
 
@@ -151,8 +168,8 @@ describe("traceExecuteRequestSchema / traceExecuteEqualitySchema", () => {
 
   it("rejects every non-string input the way trace-service will", () => {
     for (const input of [0, 1, true, false, null, [], ["1"], { x: 1 }]) {
-      expect(() =>
-        traceExecuteRequestSchema.parse({ functionName: "ToNumber", input }),
+      expect(
+        () => traceExecuteRequestSchema.parse({ functionName: "ToNumber", input }),
         `input ${JSON.stringify(input)} must be rejected`,
       ).toThrow();
     }
@@ -160,7 +177,9 @@ describe("traceExecuteRequestSchema / traceExecuteEqualitySchema", () => {
 
   it("accepts source text that spells a non-string value", () => {
     for (const input of ["0", "true", "null", "[1, 2]", "{ valueOf: () => 1 }"]) {
-      expect(() => traceExecuteRequestSchema.parse({ functionName: "ToNumber", input })).not.toThrow();
+      expect(() =>
+        traceExecuteRequestSchema.parse({ functionName: "ToNumber", input }),
+      ).not.toThrow();
     }
   });
 

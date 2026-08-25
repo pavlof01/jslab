@@ -1,13 +1,14 @@
-import { describe, expect, it } from "vitest";
 import type { Redis } from "ioredis";
+import { describe, expect, it } from "vitest";
+
 import {
   extractApiKey,
   generateApiKey,
-  isValidKeyFormat,
   issueApiKey,
+  isValidKeyFormat,
+  KEY_PREFIX,
   lookupApiKey,
   revokeApiKey,
-  KEY_PREFIX,
 } from "./apiKeys.js";
 
 /**

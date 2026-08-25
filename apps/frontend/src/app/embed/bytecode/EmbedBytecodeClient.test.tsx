@@ -1,11 +1,13 @@
-import { describe, expect, it } from "@jest/globals";
 import "@testing-library/jest-dom/jest-globals";
+
+import { describe, expect, it } from "@jest/globals";
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { Providers } from "@/app/providers";
-import EmbedBytecodeClient from "./EmbedBytecodeClient";
-import { EngineKey } from "@/lib/types";
 import type { EmbedSnapshot } from "@/lib/embedState";
+import { EngineKey } from "@/lib/types";
+
+import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
 const snapshot: EmbedSnapshot = {
   code: "1 + 1",
@@ -42,6 +44,9 @@ describe("EmbedBytecodeClient", () => {
   it("shows a diagnosable error state when the snapshot could not be decoded", () => {
     renderEmbed(null);
     expect(screen.getByText(/no readable snapshot/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open jslab/i })).toHaveAttribute("href", "/playground");
+    expect(screen.getByRole("link", { name: /open jslab/i })).toHaveAttribute(
+      "href",
+      "/playground",
+    );
   });
 });

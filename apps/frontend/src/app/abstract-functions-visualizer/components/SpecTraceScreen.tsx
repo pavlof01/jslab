@@ -3,12 +3,13 @@
 import { Box } from "@chakra-ui/react";
 
 import { SplitRow } from "@/components/ui";
+
 import type { TraceNode } from "../spec-runner";
 import { formatSpecValue } from "../traceModel";
-import { SpecPaneHeader, TreePaneHeader } from "./spec-trace/PaneHeaders";
 import { DecisionTree } from "./spec-trace/DecisionTree";
 import { ExpressionRow } from "./spec-trace/ExpressionRow";
-import { TransportRow, type SpecTracePreset } from "./spec-trace/TransportRow";
+import { SpecPaneHeader, TreePaneHeader } from "./spec-trace/PaneHeaders";
+import { type SpecTracePreset, TransportRow } from "./spec-trace/TransportRow";
 import { usePlaybackKeys } from "./spec-trace/usePlaybackKeys";
 
 export type { SpecTracePreset };

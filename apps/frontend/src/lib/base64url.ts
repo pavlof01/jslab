@@ -16,6 +16,8 @@ export function base64UrlToBytes(param: string): Uint8Array {
   return bytes;
 }
 
-export const encodeText = (text: string): string => bytesToBase64Url(new TextEncoder().encode(text));
+export const encodeText = (text: string): string =>
+  bytesToBase64Url(new TextEncoder().encode(text));
 
-export const decodeText = (param: string): string => new TextDecoder().decode(base64UrlToBytes(param));
+export const decodeText = (param: string): string =>
+  new TextDecoder().decode(base64UrlToBytes(param));

@@ -1,9 +1,15 @@
+import type { FastifyInstance } from "fastify";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { FastifyInstance } from "fastify";
-import { buildEngineApp, type EngineRuntimeConfig, type EngineSpec, type Invocation } from "./index.js";
+
+import {
+  buildEngineApp,
+  type EngineRuntimeConfig,
+  type EngineSpec,
+  type Invocation,
+} from "./index.js";
 
 /**
  * Integration tests for the shared engine service. Every `engine-*` app is this
@@ -73,7 +79,8 @@ afterEach(async () => {
   flagsSeen.clear();
 });
 
-const run = (app: FastifyInstance, payload: unknown) => app.inject({ method: "POST", url: "/run", payload: payload as any });
+const run = (app: FastifyInstance, payload: unknown) =>
+  app.inject({ method: "POST", url: "/run", payload: payload as any });
 
 /**
  * The temp dir is removed in the handler's `finally`, which can land just after
@@ -124,7 +131,10 @@ describe("GET /openapi.json", () => {
   });
 
   it("documents the service when a title is supplied", async () => {
-    const res = await makeApp({ openapiTitle: "engine-v8" }).inject({ method: "GET", url: "/openapi.json" });
+    const res = await makeApp({ openapiTitle: "engine-v8" }).inject({
+      method: "GET",
+      url: "/openapi.json",
+    });
     expect(res.statusCode).toBe(200);
     expect(res.json().info.title).toBe("engine-v8");
     expect(Object.keys(res.json().paths)).toContain("/run");
@@ -149,7 +159,9 @@ describe("POST /run — validation", () => {
   });
 
   it("rejects sourceText over the configured length", async () => {
-    const res = await run(makeApp({ config: { MAX_SOURCE_LENGTH: 16 } }), { sourceText: "x".repeat(17) });
+    const res = await run(makeApp({ config: { MAX_SOURCE_LENGTH: 16 } }), {
+      sourceText: "x".repeat(17),
+    });
     expect(res.statusCode).toBe(400);
     expect(res.json().error).toBe("sourceText exceeds limit (16)");
   });
@@ -206,7 +218,10 @@ describe("POST /run — execution", () => {
     expect(flagsFor(sorted)[0]).toEqual(["--baseline-eager", "--ion-eager"]);
 
     const unsorted = makeApp({ engine: "sm", sortFlags: false });
-    await run(unsorted, { sourceText: "1", options: { flags: ["--ion-eager", "--baseline-eager"] } });
+    await run(unsorted, {
+      sourceText: "1",
+      options: { flags: ["--ion-eager", "--baseline-eager"] },
+    });
     expect(flagsFor(unsorted)[0]).toEqual(["--ion-eager", "--baseline-eager"]);
   });
 
@@ -217,7 +232,10 @@ describe("POST /run — execution", () => {
 
   it("caps the flag list at MAX_FLAGS", async () => {
     const app = makeApp({ config: { MAX_FLAGS: 2 } });
-    const res = await run(app, { sourceText: "1", options: { flags: ["--print-bytecode", "--trace-opt", "--trace-ic"] } });
+    const res = await run(app, {
+      sourceText: "1",
+      options: { flags: ["--print-bytecode", "--trace-opt", "--trace-ic"] },
+    });
     expect(flagsFor(app)[0]).toEqual(["--print-bytecode", "--trace-opt"]);
     expect(res.json().meta.droppedFlags).toEqual(["--trace-ic"]);
   });
@@ -251,7 +269,9 @@ describe("POST /run — timeouts and output limits", () => {
     expect(body.meta.outputTruncated).toBe(true);
     expect(body.meta.outputLimitBytes).toBe(16 * 1024);
     expect(body.stdout.length).toBeGreaterThan(0);
-    expect(Buffer.byteLength(body.stdout) + Buffer.byteLength(body.stderr)).toBeLessThanOrEqual(16 * 1024);
+    expect(Buffer.byteLength(body.stdout) + Buffer.byteLength(body.stderr)).toBeLessThanOrEqual(
+      16 * 1024,
+    );
   });
 });
 
@@ -318,7 +338,10 @@ describe("POST /run — invocation contract", () => {
     const app = makeApp({
       invoke: ({ scriptPath }) => ({
         cmd: node,
-        args: ["-e", `process.stdout.write(require("fs").readFileSync(${JSON.stringify(scriptPath)}, "utf8"))`],
+        args: [
+          "-e",
+          `process.stdout.write(require("fs").readFileSync(${JSON.stringify(scriptPath)}, "utf8"))`,
+        ],
       }),
     });
     const source = 'const x = "héllo ☃";\n';
@@ -330,7 +353,10 @@ describe("POST /run — invocation contract", () => {
       prelude: [{ file: "prelude.js", contents: "// prelude contents" }],
       invoke: ({ preludePaths }) => ({
         cmd: node,
-        args: ["-e", `process.stdout.write(require("fs").readFileSync(${JSON.stringify(preludePaths[0])}, "utf8"))`],
+        args: [
+          "-e",
+          `process.stdout.write(require("fs").readFileSync(${JSON.stringify(preludePaths[0])}, "utf8"))`,
+        ],
       }),
     });
     expect((await run(app, { sourceText: "1" })).json().stdout).toBe("// prelude contents");

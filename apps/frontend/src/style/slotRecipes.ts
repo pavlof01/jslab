@@ -110,8 +110,14 @@ const framedSurface = {
   footer: { borderTop: "1px solid", borderColor: "rule.structural", bg: "surface.band" },
 } as const;
 
-export const dialogSlotRecipe = defineSlotRecipe({ slots: dialogAnatomy.keys(), base: framedSurface });
-export const drawerSlotRecipe = defineSlotRecipe({ slots: drawerAnatomy.keys(), base: framedSurface });
+export const dialogSlotRecipe = defineSlotRecipe({
+  slots: dialogAnatomy.keys(),
+  base: framedSurface,
+});
+export const drawerSlotRecipe = defineSlotRecipe({
+  slots: drawerAnatomy.keys(),
+  base: framedSurface,
+});
 
 export const popoverSlotRecipe = defineSlotRecipe({
   slots: popoverAnatomy.keys(),

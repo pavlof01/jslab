@@ -1,18 +1,20 @@
 "use client";
 
+import { Box } from "@chakra-ui/react";
+
 import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import { engineLabel } from "@/lib/engines";
-import { Box } from "@chakra-ui/react";
 import { EngineKey, RunStatus } from "@/lib/types";
+import { enabledEngines } from "@/lib/types";
 import {
   useActiveTab,
   useDiffToggle,
+  useEngineFlags,
   useEngineSelection,
   useOutputPane as useOutputPaneState,
-  useEngineFlags,
 } from "@/store/engineOutputsSelectors";
-import { enabledEngines } from "@/lib/types";
+
 import { EngineTabs } from "./EngineTabs";
 import * as styles from "./playground.styles";
 
@@ -30,7 +32,13 @@ export function OutputPane() {
 
   return (
     <>
-      <EngineTabs engines={active} activeTab={activeTab} onSelect={setActiveTab} out={out} status={status} />
+      <EngineTabs
+        engines={active}
+        activeTab={activeTab}
+        onSelect={setActiveTab}
+        out={out}
+        status={status}
+      />
 
       <Box css={styles.outputScroller}>
         <HighlightedCode
@@ -40,10 +48,19 @@ export function OutputPane() {
           showDiff={showDiff}
           isLoading={status === RunStatus.running}
         />
-        <StderrDump engine={activeTab} stderr={result?.stderr} previousStderr={previous?.stderr} showDiff={showDiff} />
+        <StderrDump
+          engine={activeTab}
+          stderr={result?.stderr}
+          previousStderr={previous?.stderr}
+          showDiff={showDiff}
+        />
       </Box>
 
-      <PaneFooter engine={activeTab} durationMs={result?.ms} flagCount={flagsFor(activeTab).length} />
+      <PaneFooter
+        engine={activeTab}
+        durationMs={result?.ms}
+        flagCount={flagsFor(activeTab).length}
+      />
     </>
   );
 }

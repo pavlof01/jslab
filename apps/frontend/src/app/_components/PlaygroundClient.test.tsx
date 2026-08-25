@@ -1,11 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import "@testing-library/jest-dom/jest-globals";
+
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { Providers } from "@/app/providers";
-import { EngineKey, RunStatus, createEngineSelection } from "@/lib/types";
+import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
 import { useEngineOutputsStore } from "@/store/useEngineOutputs";
+
 import PlaygroundClient from "./PlaygroundClient";
 
 jest.mock("@monaco-editor/react", () => ({
@@ -50,7 +52,9 @@ describe("PlaygroundClient", () => {
     act(() => useEngineOutputsStore.getState().setCode("   "));
     await user.click(screen.getByRole("button", { name: /^run$/i }));
 
-    await waitFor(() => expect(screen.getAllByText("Nothing to run — the editor is empty.")).toHaveLength(2));
+    await waitFor(() =>
+      expect(screen.getAllByText("Nothing to run — the editor is empty.")).toHaveLength(2),
+    );
     expect(within(screen.getByRole("status")).getByText(/editor is empty/)).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -65,7 +69,9 @@ describe("PlaygroundClient", () => {
 
     await user.click(screen.getByRole("button", { name: /^run$/i }));
 
-    await waitFor(() => expect(screen.getAllByText(/Try again in 5 seconds/).length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText(/Try again in 5 seconds/).length).toBeGreaterThan(0),
+    );
     expect(screen.getByText("⌘↵ to run")).toBeInTheDocument();
   });
 
@@ -89,7 +95,9 @@ describe("PlaygroundClient", () => {
   it("records a successful run in history and a refused one not at all", async () => {
     const fetchMock = jest
       .fn()
-      .mockImplementationOnce(async () => jsonResponse(429, { ok: false, error: "rate limit exceeded" }))
+      .mockImplementationOnce(async () =>
+        jsonResponse(429, { ok: false, error: "rate limit exceeded" }),
+      )
       .mockImplementationOnce(async () =>
         jsonResponse(200, { ok: true, stdout: "Ldar a1", stderr: "", meta: { durationMs: 12 } }),
       );

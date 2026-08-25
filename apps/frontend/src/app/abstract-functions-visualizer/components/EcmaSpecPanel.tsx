@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import type { FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
+
 import s from "./EcmaSpecPanel.module.css";
 
 function extractStepId(hint: string | undefined): string | null {
@@ -33,7 +34,10 @@ type Props = {
 export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, specHtml }) => {
   const panelRef = React.useRef<HTMLDivElement | null>(null);
 
-  const active = React.useMemo(() => getActiveSteps(flatEntries, selectedIndex), [flatEntries, selectedIndex]);
+  const active = React.useMemo(
+    () => getActiveSteps(flatEntries, selectedIndex),
+    [flatEntries, selectedIndex],
+  );
   const currentAlgoId = flatEntries[selectedIndex]?.algoId;
   const currentStepId = currentAlgoId ? active.get(currentAlgoId) : undefined;
 
@@ -55,7 +59,9 @@ export const EcmaSpecPanel: React.FC<Props> = ({ flatEntries, selectedIndex, spe
     const panel = panelRef.current;
     if (!panel || !currentAlgoId || !currentStepId) return;
 
-    const step = panel.querySelector<HTMLElement>(`[id="${cssAttrValue(`${currentAlgoId}-step-${currentStepId}`)}"]`);
+    const step = panel.querySelector<HTMLElement>(
+      `[id="${cssAttrValue(`${currentAlgoId}-step-${currentStepId}`)}"]`,
+    );
     if (!step) return;
 
     panel.scrollTo({

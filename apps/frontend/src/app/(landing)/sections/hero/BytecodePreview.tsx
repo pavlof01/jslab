@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { Box, Button, Flex, Grid, Text } from "@chakra-ui/react";
+import { useState } from "react";
 
 import { QuietLink } from "@/components/ui";
-
-import { DUMPS, SNIPPET } from "../../landing-data";
 import { Band } from "@/components/ui/band";
 import { Label } from "@/components/ui/label";
 
+import { DUMPS, SNIPPET } from "../../landing-data";
 import { RuleTab } from "./RuleTab";
 
 export function BytecodePreview() {

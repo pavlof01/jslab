@@ -1,8 +1,9 @@
+import { Flex } from "@chakra-ui/react";
 import { ThemedToken, TokensResult } from "shiki";
 
-import PlainCodeRow from "./CodeRow";
-import { Flex } from "@chakra-ui/react";
 import type { EngineKey } from "@/lib/types";
+
+import PlainCodeRow from "./CodeRow";
 
 type Props = TokensResult & { engineKey: EngineKey };
 
@@ -32,7 +33,12 @@ const CodeDisplay: React.FC<Props> = ({ tokens, fg, bg, engineKey }) => {
   return (
     <Flex as="code" py={6} flexDirection="column" borderRadius="md" bg={bg} color={fg}>
       {tokens.map((row, index) => (
-        <PlainCodeRow key={lineKey(row, starts[index])} tokens={row} lineNumber={index} engineKey={engineKey} />
+        <PlainCodeRow
+          key={lineKey(row, starts[index])}
+          tokens={row}
+          lineNumber={index}
+          engineKey={engineKey}
+        />
       ))}
     </Flex>
   );

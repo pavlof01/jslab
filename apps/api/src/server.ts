@@ -1,4 +1,5 @@
 import { Redis } from "ioredis";
+
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage } from "../helpers/playground";
 
 test.describe("accessibility", () => {
@@ -49,7 +50,10 @@ test.describe("accessibility", () => {
     for (const path of ["/", "/playground", "/v8-pipeline", "/equality"]) {
       await page.goto(path);
       const mains = page.locator("main");
-      expect(await mains.count(), `${path} has the wrong number of main landmarks`).toBeGreaterThanOrEqual(1);
+      expect(
+        await mains.count(),
+        `${path} has the wrong number of main landmarks`,
+      ).toBeGreaterThanOrEqual(1);
     }
   });
 });

@@ -32,9 +32,19 @@ The `/api/trace/execute/{type-conversion,equality}` endpoints talk to `trace-ser
 ### Key types (`apps/api/src/types.ts`)
 
 ```typescript
-type RunRequest    = { engine: EngineKind; sourceText: string; options?: { flags?: string[]; timeoutMs?: number } }
-type ApiResponse   = { ok: boolean; stdout: string; stderr: string; artifacts: Artifact[]; meta: { durationMs, engine, cacheHit } }
-type Artifact      = { kind: "bytecode"; mime: string; dataBase64: string }
+type RunRequest = {
+  engine: EngineKind;
+  sourceText: string;
+  options?: { flags?: string[]; timeoutMs?: number };
+};
+type ApiResponse = {
+  ok: boolean;
+  stdout: string;
+  stderr: string;
+  artifacts: Artifact[];
+  meta: { durationMs; engine; cacheHit };
+};
+type Artifact = { kind: "bytecode"; mime: string; dataBase64: string };
 ```
 
 `Artifact` is part of the contract, but every engine currently returns
@@ -45,6 +55,7 @@ type Artifact      = { kind: "bytecode"; mime: string; dataBase64: string }
 ## Development commands
 
 ### Frontend (`apps/frontend/src/`)
+
 ```bash
 npm run dev          # Next.js dev server with Turbopack → localhost:3000
 npm run build        # Production build
@@ -53,9 +64,11 @@ npm run test         # Jest (jsdom)
 npm run test:watch   # Jest watch mode
 npm run typegen      # Chakra recipe/style types (prelint + prebuild run it for you)
 ```
+
 TypeScript check: `node_modules/.bin/tsc --noEmit -p tsconfig.json` (no `tsc` on PATH).
 
 ### API gateway (`apps/api/`)
+
 ```bash
 npm run dev          # tsx watch → localhost:8080
 npm run build        # tsc → dist/
@@ -64,23 +77,28 @@ npm run test         # vitest
 ```
 
 ### Trace service (`apps/trace-service/`)
+
 ```bash
 npm run dev        # tsx watch → localhost:8080 (compose/skaffold publish it on localhost:8085)
 npm run test       # vitest
 npm run typecheck  # tsc --noEmit — what CI runs (`npm run build` is the same check, emits nothing)
 ```
+
 Needs the `engine262` submodule (`git submodule update --init --recursive`).
 
 ### Engine services (`apps/engine-v8/`, `apps/engine-hermes/`, etc.)
+
 ```bash
 npm run dev    # tsx watch → localhost:8080
 npm run lint   # tsc --noEmit
 ```
+
 They consume `@jslab/engine-runtime` as a `file:` dependency, so build it first:
 `cd packages/engine-runtime && npm ci && npm run build`. The api gateway needs
 the same.
 
 ### Shared engine runtime (`packages/engine-runtime/`)
+
 ```bash
 npm run build  # tsc -p tsconfig.build.json → dist/
 npm run lint   # tsc --noEmit
@@ -88,6 +106,7 @@ npm run test   # vitest
 ```
 
 ### Full stack
+
 ```bash
 docker compose up --build              # all services + redis, hot-reload, no k8s needed
 skaffold dev --port-forward -n jslab   # rebuilds + port-forwards all services
@@ -100,15 +119,15 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 **Pages** (all under `apps/frontend/src/app/`):
 
-| Route | Client component | Description |
-|---|---|---|
-| `/` | `(landing)/page.tsx` | Marketing landing page |
-| `/playground` | `_components/PlaygroundClient.tsx` | Multi-engine code runner |
-| `/v8-pipeline` | `v8-pipeline/components/PipelineClient.tsx` | Stage-by-stage V8 visualization |
-| `/type-conversion` | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
-| `/equality` | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer` | Equality-operator spec step-through (`initialCategory="equality"`) |
-| `/embed/playground` | `embed/playground/EmbedPlaygroundClient.tsx` | Embeddable playground widget (`noindex`) |
-| `/embed/bytecode` | `embed/bytecode/EmbedBytecodeClient.tsx` | Embeddable bytecode snapshot widget (`noindex`) |
+| Route               | Client component                                                                                        | Description                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `/`                 | `(landing)/page.tsx`                                                                                    | Marketing landing page                                                            |
+| `/playground`       | `_components/PlaygroundClient.tsx`                                                                      | Multi-engine code runner                                                          |
+| `/v8-pipeline`      | `v8-pipeline/components/PipelineClient.tsx`                                                             | Stage-by-stage V8 visualization                                                   |
+| `/type-conversion`  | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
+| `/equality`         | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer`                                         | Equality-operator spec step-through (`initialCategory="equality"`)                |
+| `/embed/playground` | `embed/playground/EmbedPlaygroundClient.tsx`                                                            | Embeddable playground widget (`noindex`)                                          |
+| `/embed/bytecode`   | `embed/bytecode/EmbedBytecodeClient.tsx`                                                                | Embeddable bytecode snapshot widget (`noindex`)                                   |
 
 `app/abstract-functions-visualizer/` is a shared implementation directory, **not** a route — only `/type-conversion` and `/equality` mount it. `app/embed/oembed/route.ts` is the oEmbed provider for the two widgets.
 
@@ -118,7 +137,7 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 **Flags**: `lib/server/flags.ts` fetches the whole `/api/flags` catalog server-side; `components/FlagSelector` renders one engine's flags, grouped by category. Share links and run history carry the per-engine map and still decode the older flat V8 list.
 
-**UI**: Chakra UI v3, and the design system *is* the theme (`src/style/`). `theme.ts` holds the tokens and registers everything; `textStyles.ts` names the kinds of text (`label`, `code`, `body`, …), `layerStyles.ts` the kinds of surface (`panel`, `section`, `overlay`), `recipes.ts` the controls (`button` with variant × typeface × size, `band`, `chip`, `link`, `input`) and `slotRecipes.ts` the components that portal (menu, select, dialog, drawer, popover — kept apart because their Ark anatomies cannot enter a server module). Call sites wear it through props: `textStyle`, `layerStyle`, `variant`. There is no second styling layer and no `chakra.*` factory use — portal components stay Chakra, presentational ones are compositions in `src/components/ui/`. Colour comes from one vocabulary (`surface.*`, `rule.*`, `ink.*`, `accent`, `status.*`); the header's height is the `sizes.header` token (`h="header"`, `top="header"`), not a CSS variable. Run `npm run typegen` after changing a recipe or a style so the variant props stay typed.
+**UI**: Chakra UI v3, and the design system _is_ the theme (`src/style/`). `theme.ts` holds the tokens and registers everything; `textStyles.ts` names the kinds of text (`label`, `code`, `body`, …), `layerStyles.ts` the kinds of surface (`panel`, `section`, `overlay`), `recipes.ts` the controls (`button` with variant × typeface × size, `band`, `chip`, `link`, `input`) and `slotRecipes.ts` the components that portal (menu, select, dialog, drawer, popover — kept apart because their Ark anatomies cannot enter a server module). Call sites wear it through props: `textStyle`, `layerStyle`, `variant`. There is no second styling layer and no `chakra.*` factory use — portal components stay Chakra, presentational ones are compositions in `src/components/ui/`. Colour comes from one vocabulary (`surface.*`, `rule.*`, `ink.*`, `accent`, `status.*`); the header's height is the `sizes.header` token (`h="header"`, `top="header"`), not a CSS variable. Run `npm run typegen` after changing a recipe or a style so the variant props stay typed.
 
 **Samples**: `lib/samples.ts` exports `samples` (basic code snippets), `sampleCatalog`, `v8Samples` (V8-internals examples with inline comments), and `v8SampleCatalog`.
 
@@ -129,6 +148,7 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 ## Engine service pattern
 
 Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer()` call into the shared `packages/engine-runtime` package. The service supplies an `EngineSpec` — engine name (also the flag-catalog key), temp-dir prefix, config, the globals to lock down, any prelude scripts, an optional `version` probe (the flags to ask the binary for its version, and the parser for what that binary prints), and an `invoke()` callback that builds the binary command line — and the runtime handles the rest (`packages/engine-runtime/src/app.ts`, wrapped by `index.ts` for the listening socket):
+
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
 - `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
 - Per-pod concurrency gate returns 429 + `Retry-After` when saturated

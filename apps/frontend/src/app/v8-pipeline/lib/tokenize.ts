@@ -18,20 +18,82 @@ export type Token = {
 };
 
 const KEYWORDS = new Set([
-  "break", "case", "catch", "class", "const", "continue", "debugger",
-  "default", "delete", "do", "else", "export", "extends", "false",
-  "finally", "for", "function", "if", "import", "in", "instanceof",
-  "let", "new", "null", "of", "return", "static", "super", "switch",
-  "this", "throw", "true", "try", "typeof", "undefined", "var", "void",
-  "while", "with", "yield", "async", "await", "from", "as", "get", "set",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "false",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "let",
+  "new",
+  "null",
+  "of",
+  "return",
+  "static",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "typeof",
+  "undefined",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+  "async",
+  "await",
+  "from",
+  "as",
+  "get",
+  "set",
 ]);
 
 // Multi-char operators, longest match first
 const OPS3 = ["===", "!==", "**=", ">>>", "..."];
 const OPS2 = [
-  "==", "!=", "<=", ">=", "&&", "||", "??", "**", "++", "--",
-  "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "=>", "<<",
-  ">>", "?.", "??=", "||=", "&&=",
+  "==",
+  "!=",
+  "<=",
+  ">=",
+  "&&",
+  "||",
+  "??",
+  "**",
+  "++",
+  "--",
+  "+=",
+  "-=",
+  "*=",
+  "/=",
+  "%=",
+  "&=",
+  "|=",
+  "^=",
+  "=>",
+  "<<",
+  ">>",
+  "?.",
+  "??=",
+  "||=",
+  "&&=",
 ];
 
 function tok(kind: TokenKind, value: string, start: number): Token {
@@ -139,14 +201,13 @@ export function tokenize(source: string): Token[] {
     if (ch === "/") {
       const prev = state.last;
       const afterExpr =
-        prev !== null && (
-          prev.kind === "Identifier" ||
+        prev !== null &&
+        (prev.kind === "Identifier" ||
           prev.kind === "NumericLiteral" ||
           prev.value === ")" ||
           prev.value === "]" ||
           prev.value === "++" ||
-          prev.value === "--"
-        );
+          prev.value === "--");
       if (!afterExpr) {
         i++;
         while (i < source.length && source[i] !== "/" && source[i] !== "\n") {

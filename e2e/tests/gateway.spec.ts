@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
+
 import { GATEWAY_URL } from "../helpers/api";
 
 test.describe("api gateway", () => {
   test.beforeEach(async ({ request }) => {
-    const probe = await request.get(`${GATEWAY_URL}/healthz`, { failOnStatusCode: false }).catch(() => null);
+    const probe = await request
+      .get(`${GATEWAY_URL}/healthz`, { failOnStatusCode: false })
+      .catch(() => null);
     test.skip(!probe || !probe.ok(), `gateway not reachable at ${GATEWAY_URL}`);
   });
 
@@ -21,7 +24,10 @@ test.describe("api gateway", () => {
 
     expect(Object.keys(body.engines)).toEqual(["v8", "hermes", "sm", "jsc"]);
     expect(body.engines.v8.length).toBeGreaterThan(10);
-    expect(body.engines.v8[0]).toMatchObject({ flag: expect.any(String), description: expect.any(String) });
+    expect(body.engines.v8[0]).toMatchObject({
+      flag: expect.any(String),
+      description: expect.any(String),
+    });
   });
 
   test("reports the version behind every engine key", async ({ request }) => {
@@ -86,7 +92,9 @@ test.describe("api gateway", () => {
     });
     expect(run.status()).toBe(200);
 
-    const revoked = await request.delete(`${GATEWAY_URL}/api/keys`, { headers: { "x-api-key": key } });
+    const revoked = await request.delete(`${GATEWAY_URL}/api/keys`, {
+      headers: { "x-api-key": key },
+    });
     expect(revoked.ok()).toBe(true);
   });
 

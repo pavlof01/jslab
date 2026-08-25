@@ -22,12 +22,12 @@ Kustomize manifests for the `jslab` namespace on k3s (Traefik ingress).
 Four Ingress objects share the same hosts and are disambiguated by explicit
 Traefik router priorities (higher wins):
 
-| Priority | Ingress | Paths | Backend | Middleware |
-|---|---|---|---|---|
-| 2000 | `jslab-frontend-api` | `/api/trace/functions`, `/api/spec` | frontend | `jslab-security-headers` |
-| 1000 | `jslab-api` | `/api` | api | `jslab-security-headers` |
-| 500 | `jslab-embed` | `/embed` | frontend | `jslab-embed-headers` |
-| 10 | `jslab-frontend` | `/` | frontend | `jslab-security-headers` |
+| Priority | Ingress              | Paths                               | Backend  | Middleware               |
+| -------- | -------------------- | ----------------------------------- | -------- | ------------------------ |
+| 2000     | `jslab-frontend-api` | `/api/trace/functions`, `/api/spec` | frontend | `jslab-security-headers` |
+| 1000     | `jslab-api`          | `/api`                              | api      | `jslab-security-headers` |
+| 500      | `jslab-embed`        | `/embed`                            | frontend | `jslab-embed-headers`    |
+| 10       | `jslab-frontend`     | `/`                                 | frontend | `jslab-security-headers` |
 
 `/api/trace/execute/*` intentionally matches no rule at priority 2000, so it
 falls through to `/api` and is served by the **api gateway**. That is the only
@@ -74,12 +74,12 @@ The gateway rate-limits and issues API keys per client IP, so getting the
 right IP matters. Two settings in `apps/api/src/config.ts` control this:
 
 - `TRUST_PROXY_HOPS` (default `1`) — passed to Fastify's `trustProxy`. It is a
-  hop *count*, not a "trust everything" switch: with a fixed count, Fastify
+  hop _count_, not a "trust everything" switch: with a fixed count, Fastify
   reads the address that many entries in from the client end of
   `X-Forwarded-For`, so a client prepending fake entries cannot influence the
   result as long as exactly that many real proxies sit between the client and
   this pod. `jslab.su`'s only hop is Traefik, hence `1`.
-- `CLIENT_IP_HEADER` (default `cf-connecting-ip`) — checked *before*
+- `CLIENT_IP_HEADER` (default `cf-connecting-ip`) — checked _before_
   `req.ip`. Cloudflare overwrites this header on every request that reaches
   its edge (unlike `X-Forwarded-For`, which it appends to rather than
   replaces), so it cannot be forged by the client. This is what actually

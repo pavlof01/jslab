@@ -15,5 +15,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { browserName: "chromium", viewport: { width: 1280, height: 720 } } }],
+  projects: [
+    { name: "chromium", use: { browserName: "chromium", viewport: { width: 1280, height: 720 } } },
+  ],
 });

@@ -44,7 +44,15 @@ function keyframes(name: string, totalMs: number, stops: Stop[]): string {
   return `@keyframes ${name}{${body}}`;
 }
 
-function litForTurn(startMs: number, litAtMs: number, endMs: number, totalMs: number, off: string, on: string, fadeMs: number): Stop[] {
+function litForTurn(
+  startMs: number,
+  litAtMs: number,
+  endMs: number,
+  totalMs: number,
+  off: string,
+  on: string,
+  fadeMs: number,
+): Stop[] {
   const at = (ms: number) => (ms / totalMs) * 100;
 
   return [
@@ -82,7 +90,11 @@ export function cycleStylesheet(traces: Trace[]): string {
     trace.steps.forEach((_, step) => {
       const stepAt = start + step * STEP_MS;
       rules.push(
-        keyframes(stepName(index, step), totalMs, litForTurn(start, stepAt, end, totalMs, "opacity:0.14", "opacity:1", FADE_MS)),
+        keyframes(
+          stepName(index, step),
+          totalMs,
+          litForTurn(start, stepAt, end, totalMs, "opacity:0.14", "opacity:1", FADE_MS),
+        ),
       );
       rules.push(
         keyframes(cursorName(index, step), totalMs, [
@@ -97,11 +109,16 @@ export function cycleStylesheet(traces: Trace[]): string {
     });
 
     rules.push(
-      keyframes(verdictName(index), totalMs, litForTurn(start, verdictAt, end, totalMs, "opacity:0", "opacity:1", VERDICT_MS)),
+      keyframes(
+        verdictName(index),
+        totalMs,
+        litForTurn(start, verdictAt, end, totalMs, "opacity:0", "opacity:1", VERDICT_MS),
+      ),
     );
 
     const quiet = "color:var(--chakra-colors-ink-label);border-bottom-color:transparent";
-    const loud = "color:var(--chakra-colors-accent);border-bottom-color:var(--chakra-colors-accent)";
+    const loud =
+      "color:var(--chakra-colors-accent);border-bottom-color:var(--chakra-colors-accent)";
     rules.push(
       keyframes(tabName(index), totalMs, [
         [0, quiet],

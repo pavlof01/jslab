@@ -1,7 +1,8 @@
+import type { FastifyInstance } from "fastify";
 import net from "net";
 import { afterEach, describe, expect, it } from "vitest";
-import type { FastifyInstance } from "fastify";
-import { startEngineServer, type EngineRuntimeConfig } from "./index.js";
+
+import { type EngineRuntimeConfig, startEngineServer } from "./index.js";
 
 /**
  * `startEngineServer` is what every engine service's `src/server.ts` actually
@@ -93,7 +94,9 @@ describe("startEngineServer", () => {
     expect(body.meta.engine).toBe("v8");
 
     // Shutting down is the handler the deploy's SIGTERM would reach.
-    const shutdown = process.listeners("SIGTERM").filter((l) => !before.get("SIGTERM")!.includes(l));
+    const shutdown = process
+      .listeners("SIGTERM")
+      .filter((l) => !before.get("SIGTERM")!.includes(l));
     expect(shutdown).toHaveLength(1);
   });
 

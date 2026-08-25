@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 
 import { EngineKey } from "@/lib/types";
+
 import { describeEngineToken, TOKEN_DESCRIBERS } from "./index";
 import { createDescriber, fromTable, stripEdges } from "./resolver";
 

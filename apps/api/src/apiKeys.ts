@@ -60,11 +60,14 @@ export function extractApiKey(headers: Record<string, unknown>): string | null {
   return null;
 }
 
-export function generateApiKey(randomHex: () => string = () => crypto.randomBytes(16).toString("hex")): string {
+export function generateApiKey(
+  randomHex: () => string = () => crypto.randomBytes(16).toString("hex"),
+): string {
   return `${KEY_PREFIX}${randomHex()}`;
 }
 
-export type IssueApiKeyResult = { ok: true; key: string } | { ok: false; reason: "owner_limit" | "storage_error" };
+export type IssueApiKeyResult =
+  { ok: true; key: string } | { ok: false; reason: "owner_limit" | "storage_error" };
 
 /**
  * Issues a key scoped to `ownerHash` (the caller's already-hashed identity —
@@ -118,7 +121,11 @@ export async function issueApiKey(
   }
 }
 
-export async function lookupApiKey(redis: Redis, key: string, log?: FastifyBaseLogger): Promise<ApiKeyRecord | null> {
+export async function lookupApiKey(
+  redis: Redis,
+  key: string,
+  log?: FastifyBaseLogger,
+): Promise<ApiKeyRecord | null> {
   if (!isValidKeyFormat(key)) return null;
   try {
     const raw = await redis.get(`${REDIS_PREFIX}${hashKey(key)}`);
@@ -134,7 +141,11 @@ export async function lookupApiKey(redis: Redis, key: string, log?: FastifyBaseL
 
 /** Revokes a key immediately. Presenting the key itself is the only proof of
  * ownership this self-service, accountless system has. */
-export async function revokeApiKey(redis: Redis, key: string, log?: FastifyBaseLogger): Promise<boolean> {
+export async function revokeApiKey(
+  redis: Redis,
+  key: string,
+  log?: FastifyBaseLogger,
+): Promise<boolean> {
   if (!isValidKeyFormat(key)) return false;
   try {
     const deleted = await redis.del(`${REDIS_PREFIX}${hashKey(key)}`);

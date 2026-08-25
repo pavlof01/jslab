@@ -2,12 +2,12 @@ import type { FastifyInstance } from "fastify";
 
 import { buildEngineApp, type EngineSpec } from "./app.js";
 
-export * from "./flags.js";
+export type { EngineSpec, Invocation, InvocationContext, PreludeScript } from "./app.js";
+export { buildEngineApp } from "./app.js";
 export * from "./config.js";
+export * from "./flags.js";
 export * from "./lockdown.js";
 export * from "./version.js";
-export { buildEngineApp } from "./app.js";
-export type { EngineSpec, Invocation, InvocationContext, PreludeScript } from "./app.js";
 
 /**
  * Boot an engine service: build the shared app (see app.ts) and own the

@@ -1,15 +1,17 @@
 import { createStore } from "zustand/vanilla";
+
+import { type FlatEntry, flattenTrace } from "@/app/abstract-functions-visualizer/flatten";
 import type { SpecValue, TraceNode } from "@/app/abstract-functions-visualizer/spec-runner";
-import { flattenTrace, type FlatEntry } from "@/app/abstract-functions-visualizer/flatten";
-import { executeTrace } from "./traceApi";
+
 import {
+  type AlgoCategory,
   DEFAULTS_BY_CATEGORY,
   EMPTY_FUNCTION_CATALOG,
-  type AlgoCategory,
   type FunctionCatalog,
   type FunctionMetaShape,
   type VisualizerInitialData,
 } from "./model";
+import { executeTrace } from "./traceApi";
 
 export { DEFAULTS_BY_CATEGORY };
 export type { AlgoCategory, FunctionCatalog, FunctionMetaShape, VisualizerInitialData };
@@ -168,7 +170,15 @@ export function createVisualizerStore(initial?: VisualizerInitialData) {
     },
 
     runNow: async () => {
-      const { category, selectedAlgo, traceInputExpression, setIsPlaying, setError, setRoot, setResultValue } = get();
+      const {
+        category,
+        selectedAlgo,
+        traceInputExpression,
+        setIsPlaying,
+        setError,
+        setRoot,
+        setResultValue,
+      } = get();
       setIsPlaying(false);
       setError(null);
       const token = ++latestTraceToken;

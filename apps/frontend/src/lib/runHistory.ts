@@ -1,5 +1,5 @@
 import { readJson, removeKey, writeJson } from "@/lib/storage";
-import { ENGINE_KEYS, EngineKey, isEngineKey, type EngineFlags } from "@/lib/types";
+import { ENGINE_KEYS, type EngineFlags, EngineKey, isEngineKey } from "@/lib/types";
 
 export interface RunHistoryEntry {
   id: string;
@@ -74,7 +74,10 @@ export function pushHistory(
   const sameFlags = (a: EngineFlags, b: EngineFlags) =>
     ENGINE_KEYS.every((k) => JSON.stringify(a[k] ?? []) === JSON.stringify(b[k] ?? []));
   const isDuplicate =
-    prev && prev.code === entry.code && sameEngines(prev.engines, entry.engines) && sameFlags(prev.flags, entry.flags);
+    prev &&
+    prev.code === entry.code &&
+    sameEngines(prev.engines, entry.engines) &&
+    sameFlags(prev.flags, entry.flags);
 
   if (isDuplicate) return history;
 

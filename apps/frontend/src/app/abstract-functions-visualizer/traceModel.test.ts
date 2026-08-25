@@ -47,19 +47,28 @@ describe("formatSpecValue", () => {
   });
 
   it("renders a symbol with its description and identity", () => {
-    expect(formatSpecValue({ type: "Symbol", value: { id: "s1", description: "tag" } })).toBe('Symbol("tag")@s1');
+    expect(formatSpecValue({ type: "Symbol", value: { id: "s1", description: "tag" } })).toBe(
+      'Symbol("tag")@s1',
+    );
     expect(formatSpecValue({ type: "Symbol", value: { id: "s2" } })).toBe("Symbol()@s2");
   });
 
   it("prefers an object's preview over its identity", () => {
-    expect(formatSpecValue({ type: "Object", value: { id: "o1", class: "Object", preview: "{ a: 1 }" } })).toBe(
-      "Object({ a: 1 })",
+    expect(
+      formatSpecValue({
+        type: "Object",
+        value: { id: "o1", class: "Object", preview: "{ a: 1 }" },
+      }),
+    ).toBe("Object({ a: 1 })");
+    expect(formatSpecValue({ type: "Object", value: { id: "o2", class: "Object" } })).toBe(
+      "Object#o2",
     );
-    expect(formatSpecValue({ type: "Object", value: { id: "o2", class: "Object" } })).toBe("Object#o2");
   });
 
   it("falls back to the class name when a preview has no class", () => {
-    expect(formatSpecValue({ type: "Object", value: { id: "o3", class: "", preview: "[1, 2]" } })).toBe("[1, 2]");
+    expect(
+      formatSpecValue({ type: "Object", value: { id: "o3", class: "", preview: "[1, 2]" } }),
+    ).toBe("[1, 2]");
   });
 
   it("truncates past the length cap with an ellipsis", () => {

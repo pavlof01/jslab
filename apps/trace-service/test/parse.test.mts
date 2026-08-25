@@ -4,15 +4,23 @@
  * end-to-end behaviour lives in execute.test.mts.
  */
 import { describe, expect, it } from "vitest";
+
 import { detectOperator } from "../src/server/execute/parse.ts";
-import { AVAILABLE_FUNCTIONS, FUNCTION_META, SUPPORTED_OPERATORS } from "../src/server/operations.ts";
+import {
+  AVAILABLE_FUNCTIONS,
+  FUNCTION_META,
+  SUPPORTED_OPERATORS,
+} from "../src/server/operations.ts";
 
 describe("SUPPORTED_OPERATORS", () => {
   it("lists every operator before any operator that is a prefix of it", () => {
     // "===" must be tried before "==", and "<=" before "<".
     for (const [i, op] of SUPPORTED_OPERATORS.entries()) {
       for (const later of SUPPORTED_OPERATORS.slice(i + 1)) {
-        expect(op.startsWith(later) || !later.startsWith(op), `${later} must come before ${op}`).toBe(true);
+        expect(
+          op.startsWith(later) || !later.startsWith(op),
+          `${later} must come before ${op}`,
+        ).toBe(true);
       }
     }
   });
@@ -60,13 +68,13 @@ describe("detectOperator", () => {
   it("treats a + after a word-shaped unary operator as unary", () => {
     expect(detectOperator("typeof +1")).toBeNull();
     expect(detectOperator("void +1")).toBeNull();
-    const input = "typeof {} + \"!\"";
+    const input = 'typeof {} + "!"';
     expect(input.slice(0, detectOperator(input)!.index).trim()).toBe("typeof {}");
   });
 
   it("ignores an operator inside a regex literal", () => {
     expect(detectOperator("/a+b/")).toBeNull();
-    const input = "/a+b/.source + \"!\"";
+    const input = '/a+b/.source + "!"';
     expect(input.slice(0, detectOperator(input)!.index).trim()).toBe("/a+b/.source");
   });
 

@@ -33,9 +33,12 @@ afterEach(() => {
 });
 
 describe("name validation", () => {
-  it.each(["ToNumber", "Number::toString", "Object.prototype", "ToInt32"])("accepts %s", async (name) => {
-    expect((await GET(request(), params(name))).status).toBe(200);
-  });
+  it.each(["ToNumber", "Number::toString", "Object.prototype", "ToInt32"])(
+    "accepts %s",
+    async (name) => {
+      expect((await GET(request(), params(name))).status).toBe(200);
+    },
+  );
 
   it.each([
     ["a traversal attempt", "../../etc/passwd"],
@@ -82,7 +85,8 @@ describe("responses", () => {
 
   it("relays an upstream 404 with its body", async () => {
     global.fetch = jest.fn(
-      async () => new Response(JSON.stringify({ error: 'No spec available for "Nope"' }), { status: 404 }),
+      async () =>
+        new Response(JSON.stringify({ error: 'No spec available for "Nope"' }), { status: 404 }),
     ) as unknown as typeof fetch;
 
     const res = await GET(request(), params("Nope"));

@@ -1,4 +1,3 @@
-
 export type V8TraceEventKind = "optimize" | "deopt" | "ic";
 
 export interface V8TraceEvent {
@@ -37,7 +36,11 @@ export function parseV8Trace(output: string): V8TraceEvent[] {
     if (!line) continue;
     const lower = line.toLowerCase();
 
-    if (lower.includes("deoptimizing") || lower.includes("bailout") || lower.includes(";;; deoptimize")) {
+    if (
+      lower.includes("deoptimizing") ||
+      lower.includes("bailout") ||
+      lower.includes(";;; deoptimize")
+    ) {
       const reason = REASON_RE.exec(line)?.[1];
       const fn = fnOf(line);
       if (!fn && (lower.startsWith(";;;") || lower.includes("deoptimize at")) && events.length) {

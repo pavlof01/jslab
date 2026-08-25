@@ -5,10 +5,12 @@
  * and that a clause carries the id and outbound link the UI depends on.
  */
 import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
+
 import { executeBinaryExpression, executeUnaryConversion } from "../src/server/execute/index.ts";
-import { ALGO_SPEC_URL, buildSpecHtmlForFunction } from "../src/server/spec-generator.ts";
 import { AVAILABLE_FUNCTIONS, SUPPORTED_SPEC_FUNCTIONS } from "../src/server/operations.ts";
+import { ALGO_SPEC_URL, buildSpecHtmlForFunction } from "../src/server/spec-generator.ts";
 
 describe("SUPPORTED_SPEC_FUNCTIONS", () => {
   it("covers every executable type-conversion operation", () => {
@@ -40,41 +42,29 @@ describe("ALGO_SPEC_URL", () => {
 });
 
 describe("buildSpecHtmlForFunction", () => {
-  it(
-    "renders the requested algorithm and the sub-algorithms it reaches",
-    async () => {
-      const html = await buildSpecHtmlForFunction("ToNumber");
+  it("renders the requested algorithm and the sub-algorithms it reaches", async () => {
+    const html = await buildSpecHtmlForFunction("ToNumber");
 
-      expect(html).toBeTruthy();
-      expect(html).toContain('<emu-clause id="ToNumber"');
-      // ToNumber of an object goes through ToPrimitive; the panel shows both.
-      expect(html).toContain('id="ToPrimitive"');
-      expect(html).toContain("<emu-alg");
-    },
-    60_000,
-  );
+    expect(html).toBeTruthy();
+    expect(html).toContain('<emu-clause id="ToNumber"');
+    // ToNumber of an object goes through ToPrimitive; the panel shows both.
+    expect(html).toContain('id="ToPrimitive"');
+    expect(html).toContain("<emu-alg");
+  }, 60_000);
 
-  it(
-    "links each clause out to the specification it came from",
-    async () => {
-      const html = (await buildSpecHtmlForFunction("ToBoolean"))!;
-      expect(html).toContain(ALGO_SPEC_URL.ToBoolean);
-      expect(html).toContain('rel="noopener noreferrer"');
-      expect(html).toContain('aria-label="Open ToBoolean in ECMAScript specification"');
-    },
-    60_000,
-  );
+  it("links each clause out to the specification it came from", async () => {
+    const html = (await buildSpecHtmlForFunction("ToBoolean"))!;
+    expect(html).toContain(ALGO_SPEC_URL.ToBoolean);
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain('aria-label="Open ToBoolean in ECMAScript specification"');
+  }, 60_000);
 
-  it(
-    "renders every supported function to non-empty HTML",
-    async () => {
-      for (const name of SUPPORTED_SPEC_FUNCTIONS) {
-        const html = await buildSpecHtmlForFunction(name);
-        expect(html, `${name} rendered nothing`).toBeTruthy();
-      }
-    },
-    120_000,
-  );
+  it("renders every supported function to non-empty HTML", async () => {
+    for (const name of SUPPORTED_SPEC_FUNCTIONS) {
+      const html = await buildSpecHtmlForFunction(name);
+      expect(html, `${name} rendered nothing`).toBeTruthy();
+    }
+  }, 120_000);
 
   it("returns null for a function it has no algorithm list for", async () => {
     expect(await buildSpecHtmlForFunction("NotAnOperation")).toBeNull();
@@ -89,7 +79,10 @@ describe("step anchors", () => {
 
   const specHtml = readFileSync(new URL("../src/server/ecma-spec.html", import.meta.url), "utf8");
 
-  type Node = { algoId?: string; steps?: Array<{ hint?: string; algoId?: string; steps?: unknown }> };
+  type Node = {
+    algoId?: string;
+    steps?: Array<{ hint?: string; algoId?: string; steps?: unknown }>;
+  };
 
   const collect = (node: Node | undefined, into: Array<[string, string]>): void => {
     const algoId = node?.algoId;
@@ -125,7 +118,9 @@ describe("step anchors", () => {
 
     for (const [algoId, stepId] of pairs) {
       if (!hasAnchors(algoId)) continue;
-      expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(`"${algoId}-step-${stepId}"`);
+      expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(
+        `"${algoId}-step-${stepId}"`,
+      );
     }
   });
 
@@ -138,7 +133,9 @@ describe("step anchors", () => {
 
     for (const [algoId, stepId] of pairs) {
       if (!hasAnchors(algoId)) continue;
-      expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(`"${algoId}-step-${stepId}"`);
+      expect(specHtml, `${algoId} has no anchor for step ${stepId}`).toContain(
+        `"${algoId}-step-${stepId}"`,
+      );
     }
   });
 
@@ -147,7 +144,9 @@ describe("step anchors", () => {
     const record = (pairs: Array<[string, string]>) => {
       for (const [algoId, stepId] of pairs) {
         if (!hasAnchors(algoId)) continue;
-        expect(specHtml, `${algoId} step ${stepId} unanchored`).toContain(`"${algoId}-step-${stepId}"`);
+        expect(specHtml, `${algoId} step ${stepId} unanchored`).toContain(
+          `"${algoId}-step-${stepId}"`,
+        );
         checked.add(algoId);
       }
     };
@@ -166,7 +165,10 @@ describe("step anchors", () => {
     }
 
     for (const core of ["ToNumber", "ToString", "ApplyStringOrNumericBinaryOperator"]) {
-      expect(checked, `${core} never had an anchor checked — its clause lost its step ids`).toContain(core);
+      expect(
+        checked,
+        `${core} never had an anchor checked — its clause lost its step ids`,
+      ).toContain(core);
     }
   });
 });

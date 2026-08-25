@@ -19,7 +19,8 @@ export const HINTS: Record<AlgoCategory, React.ReactNode> = {
   ),
   typeConversion: (
     <>
-      one literal to convert — a number, string, boolean, null, undefined, array, or an object literal (methods like{" "}
+      one literal to convert — a number, string, boolean, null, undefined, array, or an object
+      literal (methods like{" "}
       <Text as="span" color="ink.4">
         valueOf
       </Text>{" "}

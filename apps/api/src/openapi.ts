@@ -4,7 +4,7 @@ export const openapiDoc = {
   openapi: "3.0.3",
   info: {
     title: "JSLab API",
-    version: "1.0.0"
+    version: "1.0.0",
   },
   // Every path below is the FULL route (e.g. "/api/run", but "/healthz" and
   // "/metrics" with no /api prefix — they're mounted at the app root, not
@@ -16,7 +16,7 @@ export const openapiDoc = {
   components: {
     securitySchemes: {
       ApiKeyHeader: { type: "apiKey", in: "header", name: "x-api-key" },
-      BearerAuth: { type: "http", scheme: "bearer" }
+      BearerAuth: { type: "http", scheme: "bearer" },
     },
     schemas: {
       KeyResponse: {
@@ -27,8 +27,8 @@ export const openapiDoc = {
           ok: { type: "boolean" },
           apiKey: { type: "string" },
           rateLimitPerMin: { type: "integer" },
-          usage: { type: "string" }
-        }
+          usage: { type: "string" },
+        },
       },
       RunRequest: {
         type: "object",
@@ -48,19 +48,19 @@ export const openapiDoc = {
                 type: "array",
                 items: { type: "string" },
                 description:
-                  "Per-engine allowlisted flags (see GET /flags). Value-bearing flags are passed as '--flag=value'. Anything rejected is echoed back in meta.droppedFlags."
+                  "Per-engine allowlisted flags (see GET /flags). Value-bearing flags are passed as '--flag=value'. Anything rejected is echoed back in meta.droppedFlags.",
               },
               timeoutMs: {
                 type: "integer",
                 minimum: 1,
                 description:
                   "Wall-clock budget for the run. Clamped to 250–5000 ms: a smaller value cannot outlast the engine's own startup and would always time out.",
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
-TraceExecuteRequest: {
+      TraceExecuteRequest: {
         type: "object",
         additionalProperties: true, // z.object without .strict() strips, doesn't reject
         required: ["functionName", "input"],
@@ -68,10 +68,11 @@ TraceExecuteRequest: {
           functionName: { type: "string", minLength: 1 },
           input: {
             type: "string",
-            description: "JavaScript source text for the value to trace, e.g. \"0\" or \"{ valueOf: () => 1 }\"."
+            description:
+              'JavaScript source text for the value to trace, e.g. "0" or "{ valueOf: () => 1 }".',
           },
-          preferredType: { type: "string", enum: ["string", "number"] }
-        }
+          preferredType: { type: "string", enum: ["string", "number"] },
+        },
       },
       TraceExecuteEqualityRequest: {
         type: "object",
@@ -81,19 +82,19 @@ TraceExecuteRequest: {
           input: {
             type: "string",
             minLength: 1,
-            description: "A binary expression, e.g. \"1 == '1'\"."
-          }
-        }
+            description: "A binary expression, e.g. \"1 == '1'\".",
+          },
+        },
       },
       SerializedValue: {
         description:
-          "A spec-typed value: { type: \"String\"|\"Number\"|\"Boolean\"|\"Null\"|\"Undefined\"|\"BigInt\"|\"Symbol\"|\"Object\", value: ... }. Long String/BigInt values are truncated server-side.",
+          'A spec-typed value: { type: "String"|"Number"|"Boolean"|"Null"|"Undefined"|"BigInt"|"Symbol"|"Object", value: ... }. Long String/BigInt values are truncated server-side.',
         type: "object",
         additionalProperties: true,
         required: ["type"],
         properties: {
-          type: { type: "string" }
-        }
+          type: { type: "string" },
+        },
       },
       TraceExecuteResponse: {
         type: "object",
@@ -102,23 +103,32 @@ TraceExecuteRequest: {
         properties: {
           success: { type: "boolean" },
           functionName: { type: "string" },
-          result: { allOf: [{ $ref: "#/components/schemas/SerializedValue" }], description: "Present on success." },
+          result: {
+            allOf: [{ $ref: "#/components/schemas/SerializedValue" }],
+            description: "Present on success.",
+          },
           root: {
             type: "object",
             additionalProperties: true,
-            description: "Root algorithm invocation tree (present on success). Sub-algorithm calls nest inside call-kind steps."
+            description:
+              "Root algorithm invocation tree (present on success). Sub-algorithm calls nest inside call-kind steps.",
           },
           effectiveAlgoId: {
             type: "string",
-            description: "Equality only: which spec algorithm actually ran (e.g. \"IsLooselyEqual\")."
+            description:
+              'Equality only: which spec algorithm actually ran (e.g. "IsLooselyEqual").',
           },
           detectedOperator: {
             type: "string",
-            description: "Equality only: the operator parsed out of the input (\"==\", \"!==\", \"<=\", ...)."
+            description:
+              'Equality only: the operator parsed out of the input ("==", "!==", "<=", ...).',
           },
           error: { type: "string" },
-          code: { type: "string", description: "Machine-readable failure reason, e.g. \"execution_budget_exceeded\"." }
-        }
+          code: {
+            type: "string",
+            description: 'Machine-readable failure reason, e.g. "execution_budget_exceeded".',
+          },
+        },
       },
       Artifact: {
         type: "object",
@@ -127,8 +137,8 @@ TraceExecuteRequest: {
         properties: {
           kind: { type: "string", enum: ["bytecode"] },
           mime: { type: "string" },
-          dataBase64: { type: "string" }
-        }
+          dataBase64: { type: "string" },
+        },
       },
       ApiResponse: {
         type: "object",
@@ -150,16 +160,17 @@ TraceExecuteRequest: {
                 type: "array",
                 items: { type: "string" },
                 description:
-                  "Requested flags that were rejected by the allowlist and never reached the engine. A flag accepted anywhere in the request is never listed here, so a repeat or a duplicate with a bad value is not reported as a typo."
+                  "Requested flags that were rejected by the allowlist and never reached the engine. A flag accepted anywhere in the request is never listed here, so a repeat or a duplicate with a bad value is not reported as a typo.",
               },
               outputTruncated: {
                 type: "boolean",
-                description: "Output hit the engine's byte cap; stdout and stderr together hold at most outputLimitBytes bytes."
+                description:
+                  "Output hit the engine's byte cap; stdout and stderr together hold at most outputLimitBytes bytes.",
               },
-              outputLimitBytes: { type: "integer" }
-            }
-          }
-        }
+              outputLimitBytes: { type: "integer" },
+            },
+          },
+        },
       },
       ErrorResponse: {
         type: "object",
@@ -167,8 +178,8 @@ TraceExecuteRequest: {
         required: ["ok", "error"],
         properties: {
           ok: { type: "boolean", enum: [false] },
-          error: { type: "string" }
-        }
+          error: { type: "string" },
+        },
       },
       EnginesResponse: {
         type: "object",
@@ -183,15 +194,15 @@ TraceExecuteRequest: {
               properties: {
                 engine: { type: "string", example: "v8" },
                 ok: { type: "boolean" },
-                version: { type: "string", nullable: true, example: "14.9.0 (candidate)" }
-              }
-            }
+                version: { type: "string", nullable: true, example: "14.9.0 (candidate)" },
+              },
+            },
           },
           meta: {
             type: "object",
-            properties: { cacheHit: { type: "boolean" } }
-          }
-        }
+            properties: { cacheHit: { type: "boolean" } },
+          },
+        },
       },
       FlagCatalogResponse: {
         type: "object",
@@ -212,12 +223,12 @@ TraceExecuteRequest: {
                   description: { type: "string" },
                   category: { type: "string" },
                   takesValue: { type: "boolean" },
-                  valuePattern: { type: "string" }
-                }
-              }
-            }
-          }
-        }
+                  valuePattern: { type: "string" },
+                },
+              },
+            },
+          },
+        },
       },
       HealthzResponse: {
         type: "object",
@@ -225,10 +236,10 @@ TraceExecuteRequest: {
         required: ["ok"],
         properties: {
           ok: { type: "boolean" },
-          redis: { type: "string" }
-        }
-      }
-    }
+          redis: { type: "string" },
+        },
+      },
+    },
   },
   paths: {
     "/api/keys": {
@@ -239,46 +250,65 @@ TraceExecuteRequest: {
         security: [],
         requestBody: {
           required: false,
-          content: { "application/json": { schema: { type: "object" } } }
+          content: { "application/json": { schema: { type: "object" } } },
         },
         responses: {
           "201": {
             description: "key issued",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/KeyResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/KeyResponse" } },
+            },
           },
           "415": {
             description: "missing or wrong Content-Type",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "429": {
             description: "issuance rate limited, or too many live keys for this address",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "503": {
             description: "could not issue key",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
-          }
-        }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
+          },
+        },
       },
       delete: {
         summary: "Revoke a public API key",
-        description: "Presenting the key is the only proof of ownership this accountless system has.",
+        description:
+          "Presenting the key is the only proof of ownership this accountless system has.",
         security: [{ ApiKeyHeader: [] }, { BearerAuth: [] }],
         responses: {
           "200": {
             description: "revoked",
-            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } }
+            content: {
+              "application/json": {
+                schema: { type: "object", properties: { ok: { type: "boolean" } } },
+              },
+            },
           },
           "400": {
             description: "no API key presented",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "404": {
             description: "key not found (already revoked or expired)",
-            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } }
-          }
-        }
-      }
+            content: {
+              "application/json": {
+                schema: { type: "object", properties: { ok: { type: "boolean" } } },
+              },
+            },
+          },
+        },
+      },
     },
     "/healthz": {
       get: {
@@ -288,24 +318,25 @@ TraceExecuteRequest: {
           "200": {
             description: "ok",
             content: {
-              "application/json": { schema: { $ref: "#/components/schemas/HealthzResponse" } }
-            }
-          }
-        }
-      }
+              "application/json": { schema: { $ref: "#/components/schemas/HealthzResponse" } },
+            },
+          },
+        },
+      },
     },
     "/metrics": {
       get: {
         summary: "Prometheus metrics",
-        description: "Not exposed publicly by the shipped ingress (see infra/k8s/base/ingress.yaml) — reachable only inside the cluster. Documented here because the route exists on every deployment of this app, including ones that route differently.",
+        description:
+          "Not exposed publicly by the shipped ingress (see infra/k8s/base/ingress.yaml) — reachable only inside the cluster. Documented here because the route exists on every deployment of this app, including ones that route differently.",
         security: [],
         responses: {
           "200": {
             description: "ok",
-            content: { "text/plain": { schema: { type: "string" } } }
-          }
-        }
-      }
+            content: { "text/plain": { schema: { type: "string" } } },
+          },
+        },
+      },
     },
     "/api/flags": {
       get: {
@@ -316,10 +347,12 @@ TraceExecuteRequest: {
         responses: {
           "200": {
             description: "flag catalog",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/FlagCatalogResponse" } } }
-          }
-        }
-      }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/FlagCatalogResponse" } },
+            },
+          },
+        },
+      },
     },
     "/api/engines": {
       get: {
@@ -330,10 +363,12 @@ TraceExecuteRequest: {
         responses: {
           "200": {
             description: "engine versions",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/EnginesResponse" } } }
-          }
-        }
-      }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/EnginesResponse" } },
+            },
+          },
+        },
+      },
     },
     "/api/run": {
       post: {
@@ -341,32 +376,42 @@ TraceExecuteRequest: {
         requestBody: {
           required: true,
           content: {
-            "application/json": { schema: { $ref: "#/components/schemas/RunRequest" } }
-          }
+            "application/json": { schema: { $ref: "#/components/schemas/RunRequest" } },
+          },
         },
         responses: {
           "200": {
             description: "ok",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ApiResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ApiResponse" } },
+            },
           },
           "400": {
             description: "invalid request",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "429": {
             description: "rate limited",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "502": {
             description: "engine error",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "504": {
             description: "engine timeout",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
-          }
-        }
-      }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
+          },
+        },
+      },
     },
     "/api/trace/execute/type-conversion": {
       post: {
@@ -374,28 +419,36 @@ TraceExecuteRequest: {
         requestBody: {
           required: true,
           content: {
-            "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteRequest" } }
-          }
+            "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteRequest" } },
+          },
         },
         responses: {
           "200": {
             description: "trace executed",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } },
+            },
           },
           "400": {
             description: "invalid request",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "429": {
             description: "rate limited",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "502": {
             description: "trace service unavailable",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
-          }
-        }
-      }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
+          },
+        },
+      },
     },
     "/api/trace/execute/equality": {
       post: {
@@ -403,28 +456,38 @@ TraceExecuteRequest: {
         requestBody: {
           required: true,
           content: {
-            "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteEqualityRequest" } }
-          }
+            "application/json": {
+              schema: { $ref: "#/components/schemas/TraceExecuteEqualityRequest" },
+            },
+          },
         },
         responses: {
           "200": {
             description: "trace executed",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/TraceExecuteResponse" } },
+            },
           },
           "400": {
             description: "invalid request",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "429": {
             description: "rate limited",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
           },
           "502": {
             description: "trace service unavailable",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
-          }
-        }
-      }
-    }
-  }
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+            },
+          },
+        },
+      },
+    },
+  },
 } as const;

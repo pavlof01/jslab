@@ -1,4 +1,16 @@
-import { Box, Button, CloseButton, Code, Dialog, For, Link, Portal, Table, Tabs, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  CloseButton,
+  Code,
+  Dialog,
+  For,
+  Link,
+  Portal,
+  Table,
+  Tabs,
+  Text,
+} from "@chakra-ui/react";
 
 import { INTRINSIC_CATEGORIES, intrinsicsByCategory, V8_NATIVES_FLAG } from "@/lib/v8Intrinsics";
 

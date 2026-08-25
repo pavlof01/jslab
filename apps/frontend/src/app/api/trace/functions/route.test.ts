@@ -20,8 +20,14 @@ afterEach(() => {
 
 describe("GET /api/trace/functions", () => {
   it("relays the function catalog from the trace service", async () => {
-    const catalog = { available_functions: ["ToNumber"], function_meta: {}, supported_operators: ["=="] };
-    const fetchMock = jest.fn(async (_url: string) => new Response(JSON.stringify(catalog), { status: 200 }));
+    const catalog = {
+      available_functions: ["ToNumber"],
+      function_meta: {},
+      supported_operators: ["=="],
+    };
+    const fetchMock = jest.fn(
+      async (_url: string) => new Response(JSON.stringify(catalog), { status: 200 }),
+    );
     global.fetch = fetchMock as unknown as typeof fetch;
 
     const res = await GET();
@@ -59,7 +65,9 @@ describe("GET /api/trace/functions", () => {
   });
 
   it("reports an unreadable response as 502", async () => {
-    global.fetch = jest.fn(async () => new Response("<html>", { status: 200 })) as unknown as typeof fetch;
+    global.fetch = jest.fn(
+      async () => new Response("<html>", { status: 200 }),
+    ) as unknown as typeof fetch;
 
     const res = await GET();
     expect(res.status).toBe(502);

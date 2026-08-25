@@ -1,7 +1,8 @@
 import { describe, expect, it } from "@jest/globals";
 
 import { EngineKey } from "@/lib/types";
-import { ENGINES, engineLabel, engineLang } from "./engines";
+
+import { engineLabel, engineLang, ENGINES } from "./engines";
 
 const allEngines = Object.values(EngineKey) as EngineKey[];
 
@@ -14,9 +15,6 @@ describe("engine descriptors", () => {
     const langs = allEngines.map((engine) => ENGINES[engine].lang);
     expect(new Set(langs).size).toBe(langs.length);
   });
-
-
-
 });
 
 describe("engineLabel / engineLang", () => {

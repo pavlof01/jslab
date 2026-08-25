@@ -7,7 +7,11 @@ export function ToolsSection() {
   return (
     <Box layerStyle="section" as="section" id="tools" scrollMarginTop="64px">
       <Container maxW="1280px" px={{ base: 4, md: "clamp(16px, 4vw, 56px)" }}>
-        <SectionHead number="04" label="tools" heading="Six tools. Three read the engines, three run the spec." />
+        <SectionHead
+          number="04"
+          label="tools"
+          heading="Six tools. Three read the engines, three run the spec."
+        />
 
         <Grid
           templateColumns="repeat(auto-fit, minmax(min(100%, 360px), 1fr))"

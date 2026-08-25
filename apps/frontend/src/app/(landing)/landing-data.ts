@@ -1,9 +1,8 @@
-import { EngineKey } from "@/lib/types";
-import { v8Samples, type V8SampleKey } from "@/lib/samples";
+import { type V8SampleKey, v8Samples } from "@/lib/samples";
 import { buildShareUrl } from "@/lib/shareState";
 import { tools } from "@/lib/tools";
+import { EngineKey } from "@/lib/types";
 import { featuredIntrinsics } from "@/lib/v8Intrinsics";
-
 
 export type Trace = {
   label: string;
@@ -85,7 +84,10 @@ export const DUMPS: Dump[] = [
         "Add a0, [0]",
         "Adds the accumulator to register a0 and records the operand types in feedback vector slot 0. Those recorded types are what Maglev and TurboFan later speculate on.",
       ],
-      Return: ["Return", "Ends the function and hands whatever is in the accumulator back to the caller."],
+      Return: [
+        "Return",
+        "Ends the function and hands whatever is in the accumulator back to the caller.",
+      ],
     },
     first: "Add",
   },
@@ -175,27 +177,85 @@ export const SNIPPET = `function add(a, b) {
   return a + b;
 }`;
 
-
-export const INTRINSICS: Array<[signature: string, explanation: string]> = featuredIntrinsics().map((intrinsic) => [
-  intrinsic.snippet.replace(/;$/, ""),
-  intrinsic.description,
-]);
+export const INTRINSICS: Array<[signature: string, explanation: string]> = featuredIntrinsics().map(
+  (intrinsic) => [intrinsic.snippet.replace(/;$/, ""), intrinsic.description],
+);
 
 export type Study = { key: V8SampleKey; group: string; title: string; desc: string };
 
 export const STUDIES: Study[] = [
-  { key: "smiVsHeap", group: "numbers", title: "Smi vs HeapNumber", desc: "42 lives inside the pointer; 42.5 is a heap object. Print both and watch the move." },
-  { key: "arrayLengthHoley", group: "arrays", title: "length → HOLEY", desc: "Raising arr.length punches holes into the backing store, and HOLEY is permanent." },
-  { key: "arrayTypeTransitions", group: "arrays", title: "Element kind cascade", desc: "Smi → Double → Object, one way only. Push a float, then an object, and read the kind." },
-  { key: "arrayDeleteVsUndefined", group: "arrays", title: "delete vs undefined", desc: "delete a[1] leaves a hole, a[1] = undefined leaves a value. Only one keeps PACKED." },
-  { key: "arrayDictionaryMode", group: "arrays", title: "Sparse → dictionary", desc: "One assignment at index 100000 turns the flat store into a hash table." },
-  { key: "hiddenClassOrder", group: "objects", title: "Insertion order", desc: "Same properties, different order, different hidden class — %HaveSameMap answers false." },
-  { key: "hiddenClassDelete", group: "objects", title: "delete → slow properties", desc: "One delete drops the object into dictionary mode, and re-adding never brings it back." },
-  { key: "bytecodeDestructuring", group: "bytecode", title: "Destructuring", desc: "const [a, b] = arr is the iterator protocol, not sugar. The bytecode shows the cost." },
-  { key: "argumentsVsRest", group: "bytecode", title: "arguments vs rest", desc: "CreateMappedArguments and its parameter aliasing, next to a plain array from ...args." },
-  { key: "consString", group: "strings", title: "ConsString", desc: "s1 + s2 copies nothing: two pointers, flattened later only if an operation demands it." },
-  { key: "deoptTypeChange", group: "jit", title: "Deopt on type change", desc: "Ten thousand integer calls, then one string — --trace-deopt prints the bail-out." },
-  { key: "icMonomorphic", group: "jit", title: "Monomorphic → megamorphic", desc: "One shape, then two, then five: the same call site degrading through every IC state." },
+  {
+    key: "smiVsHeap",
+    group: "numbers",
+    title: "Smi vs HeapNumber",
+    desc: "42 lives inside the pointer; 42.5 is a heap object. Print both and watch the move.",
+  },
+  {
+    key: "arrayLengthHoley",
+    group: "arrays",
+    title: "length → HOLEY",
+    desc: "Raising arr.length punches holes into the backing store, and HOLEY is permanent.",
+  },
+  {
+    key: "arrayTypeTransitions",
+    group: "arrays",
+    title: "Element kind cascade",
+    desc: "Smi → Double → Object, one way only. Push a float, then an object, and read the kind.",
+  },
+  {
+    key: "arrayDeleteVsUndefined",
+    group: "arrays",
+    title: "delete vs undefined",
+    desc: "delete a[1] leaves a hole, a[1] = undefined leaves a value. Only one keeps PACKED.",
+  },
+  {
+    key: "arrayDictionaryMode",
+    group: "arrays",
+    title: "Sparse → dictionary",
+    desc: "One assignment at index 100000 turns the flat store into a hash table.",
+  },
+  {
+    key: "hiddenClassOrder",
+    group: "objects",
+    title: "Insertion order",
+    desc: "Same properties, different order, different hidden class — %HaveSameMap answers false.",
+  },
+  {
+    key: "hiddenClassDelete",
+    group: "objects",
+    title: "delete → slow properties",
+    desc: "One delete drops the object into dictionary mode, and re-adding never brings it back.",
+  },
+  {
+    key: "bytecodeDestructuring",
+    group: "bytecode",
+    title: "Destructuring",
+    desc: "const [a, b] = arr is the iterator protocol, not sugar. The bytecode shows the cost.",
+  },
+  {
+    key: "argumentsVsRest",
+    group: "bytecode",
+    title: "arguments vs rest",
+    desc: "CreateMappedArguments and its parameter aliasing, next to a plain array from ...args.",
+  },
+  {
+    key: "consString",
+    group: "strings",
+    title: "ConsString",
+    desc: "s1 + s2 copies nothing: two pointers, flattened later only if an operation demands it.",
+  },
+  {
+    key: "deoptTypeChange",
+    group: "jit",
+    title: "Deopt on type change",
+    desc: "Ten thousand integer calls, then one string — --trace-deopt prints the bail-out.",
+  },
+  {
+    key: "icMonomorphic",
+    group: "jit",
+    title: "Monomorphic → megamorphic",
+    desc: "One shape, then two, then five: the same call site degrading through every IC state.",
+  },
 ];
 
 export function studyHref(key: V8SampleKey): string {
@@ -208,7 +268,6 @@ export function studyHref(key: V8SampleKey): string {
 
 export type ToolRow = { n: string; href: string; name: string; kind: string; desc: string };
 
-
 export const TOOL_ROWS: ToolRow[] = tools.map((tool, i) => ({
   n: String(i + 1).padStart(2, "0"),
   href: tool.href,
@@ -218,7 +277,10 @@ export const TOOL_ROWS: ToolRow[] = tools.map((tool, i) => ({
 }));
 
 export const ALSO: Array<[label: string, text: string]> = [
-  ["opcode reference", "Every opcode of all four engines, documented. Click one anywhere and the explanation opens."],
+  [
+    "opcode reference",
+    "Every opcode of all four engines, documented. Click one anywhere and the explanation opens.",
+  ],
   ["shareable", "Any state — snippet, engine, trace step — is a URL. Send it; they see your view."],
   ["embeddable", "It also embeds, so a trace can be the figure instead of a screenshot of one."],
   ["deopt traces", "Drop in a --prof log: hottest functions, and why each one deoptimised."],

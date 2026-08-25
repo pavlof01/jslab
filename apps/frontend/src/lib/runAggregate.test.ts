@@ -85,7 +85,9 @@ describe("describeRunNotice", () => {
 
   it("pluralises the ignored flags", () => {
     expect(describeRunNotice(false, ["--x"])).toBe("Flag ignored by this engine: --x.");
-    expect(describeRunNotice(false, ["--x", "--y"])).toBe("Flags ignored by this engine: --x, --y.");
+    expect(describeRunNotice(false, ["--x", "--y"])).toBe(
+      "Flags ignored by this engine: --x, --y.",
+    );
   });
 
   it("reports truncation and ignored flags together", () => {

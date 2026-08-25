@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
 import { createListCollection, Portal, Select, Span, Stack } from "@chakra-ui/react";
+import { useMemo } from "react";
 
 import { engineLabel } from "@/lib/engines";
 import type { EngineKey } from "@/lib/types";
 import { useEngineFlags } from "@/store/engineOutputsSelectors";
+
 import { useFlagGroups } from "./context";
 
 type FlagItem = { value: string; label: string; description: string; group: string };

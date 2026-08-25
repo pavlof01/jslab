@@ -3,22 +3,28 @@ import { createDescriber, fromLiterals, stripEdges, type TokenDescriber } from "
 /** Plain Hermes bytecode opcodes and their descriptions (hbcdump disassembly). */
 export const OPCODE_INFO = {
   // Environment / closures
-  CreateFunctionEnvironment: "Create a new function environment (lexical scope) with a fixed number of slots.",
-  CreateTopLevelEnvironment: "Create a top-level environment object (used for closures and generators).",
+  CreateFunctionEnvironment:
+    "Create a new function environment (lexical scope) with a fixed number of slots.",
+  CreateTopLevelEnvironment:
+    "Create a top-level environment object (used for closures and generators).",
   GetParentEnvironment: "Load the parent (outer) environment for the current function/closure.",
   LoadFromEnvironment: "Load a value from an environment slot into a register.",
   StoreToEnvironment: "Store a value into an environment slot (pointer slot).",
-  StoreNPToEnvironment: "Store a value into an environment slot without a write barrier (non-pointer / known-safe).",
+  StoreNPToEnvironment:
+    "Store a value into an environment slot without a write barrier (non-pointer / known-safe).",
   LoadParentNoTraps: "Load a parent environment without triggering traps (fast-path).",
 
   // Globals / identifiers / property access
   GetGlobalObject: "Load the global object into a register.",
   DeclareGlobalVar: "Declare a global variable binding (var/function at top-level).",
-  TryGetById: "Try to get a property by identifier from an object; usually does not throw if missing.",
+  TryGetById:
+    "Try to get a property by identifier from an object; usually does not throw if missing.",
   GetByIdShort: "Fast-path property load by identifier (short form).",
-  GetByIdWithReceiverLong: "Load a property with an explicit receiver (used for super/with-receiver patterns).",
+  GetByIdWithReceiverLong:
+    "Load a property with an explicit receiver (used for super/with-receiver patterns).",
   PutByIdStrict: "Store a property by identifier with strict-mode semantics.",
-  PutOwnBySlotIdx: "Store into an object's own property slot by slot index (layout-based fast-path).",
+  PutOwnBySlotIdx:
+    "Store into an object's own property slot by slot index (layout-based fast-path).",
   GetByVal: "Load a property by a dynamic key (value) from an object/array.",
 
   // Constants
@@ -118,12 +124,14 @@ export const OPCODE_INFO = {
   GetNewTarget: "Load the current new.target value.",
   CreateBaseClass: "Create a base class constructor/prototype pair.",
   CreateDerivedClass: "Create a derived class constructor/prototype pair (with superclass).",
-  SelectObject: "Select between two objects (used after constructor calls to choose returned object vs this).",
+  SelectObject:
+    "Select between two objects (used after constructor calls to choose returned object vs this).",
 
   // Exceptions
   Throw: "Throw an exception.",
   Catch: "Catch the current exception into a register.",
-  ThrowIfThisInitialized: "Throw if 'this' has already been initialized (super() called more than once).",
+  ThrowIfThisInitialized:
+    "Throw if 'this' has already been initialized (super() called more than once).",
 } as const;
 
 export type HermesOpcode = keyof typeof OPCODE_INFO;

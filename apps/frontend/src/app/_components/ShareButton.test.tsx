@@ -1,13 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import "@testing-library/jest-dom/jest-globals";
+
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { Providers } from "@/app/providers";
-import ShareButton from "./ShareButton";
-import { useEngineOutputsStore } from "@/store/useEngineOutputs";
-import { EngineKey, createEngineSelection } from "@/lib/types";
 import { decodeShareState, SHARE_PARAM } from "@/lib/shareState";
+import { createEngineSelection, EngineKey } from "@/lib/types";
+import { useEngineOutputsStore } from "@/store/useEngineOutputs";
+
+import ShareButton from "./ShareButton";
 
 beforeEach(() => {
   useEngineOutputsStore.getState().reset();

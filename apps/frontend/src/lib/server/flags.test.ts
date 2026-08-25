@@ -29,7 +29,9 @@ afterEach(() => {
 
 describe("fetchFlagCatalog", () => {
   it("returns every engine the gateway advertises, not just V8", async () => {
-    global.fetch = jest.fn(async () => reply(200, { engines: { v8, hermes } })) as unknown as typeof fetch;
+    global.fetch = jest.fn(async () =>
+      reply(200, { engines: { v8, hermes } }),
+    ) as unknown as typeof fetch;
 
     expect(await fetchFlagCatalog()).toEqual({ v8, hermes });
   });
@@ -47,13 +49,17 @@ describe("fetchFlagCatalog", () => {
   });
 
   it("drops an engine the app does not know", async () => {
-    global.fetch = jest.fn(async () => reply(200, { engines: { v8, quickjs: v8 } })) as unknown as typeof fetch;
+    global.fetch = jest.fn(async () =>
+      reply(200, { engines: { v8, quickjs: v8 } }),
+    ) as unknown as typeof fetch;
 
     expect(await fetchFlagCatalog()).toEqual({ v8 });
   });
 
   it("drops an engine whose entry is empty or not a list", async () => {
-    global.fetch = jest.fn(async () => reply(200, { engines: { v8, hermes: [], jsc: "nope" } })) as unknown as typeof fetch;
+    global.fetch = jest.fn(async () =>
+      reply(200, { engines: { v8, hermes: [], jsc: "nope" } }),
+    ) as unknown as typeof fetch;
 
     expect(await fetchFlagCatalog()).toEqual({ v8 });
   });

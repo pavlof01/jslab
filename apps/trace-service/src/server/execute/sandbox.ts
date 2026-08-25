@@ -12,6 +12,7 @@
  * fork bomb on a 4-CPU node.
  */
 import { Worker } from "node:worker_threads";
+
 import type { ExecuteResponse } from "../types.ts";
 
 export type SandboxTask =
@@ -168,7 +169,8 @@ export class TraceSandbox {
     worker.on("message", (reply: SandboxReply) => this.#onReply(worker, reply));
     worker.on("error", (error: Error) => this.#onWorkerFailure(worker, error));
     worker.on("exit", (code: number) => {
-      if (code !== 0) this.#onWorkerFailure(worker, new Error(`Trace worker exited with code ${code}`));
+      if (code !== 0)
+        this.#onWorkerFailure(worker, new Error(`Trace worker exited with code ${code}`));
     });
     this.#worker = worker;
     return worker;

@@ -95,13 +95,13 @@ Cached for an hour in production, `no-store` otherwise.
 
 Environment variables (see `config.ts` in this directory):
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `PORT` | 8080 | HTTP server port |
-| `HOST` | 0.0.0.0 | HTTP server binding address |
-| `MAX_TIMEOUT_MS` | 5000 | Hard execution budget (every request uses this — there is no per-request override) |
-| `MAX_SOURCE_LENGTH` | 20000 | Maximum input length |
-| `LOG_LEVEL` | info | Pino log level |
+| Variable            | Default | Description                                                                        |
+| ------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `PORT`              | 8080    | HTTP server port                                                                   |
+| `HOST`              | 0.0.0.0 | HTTP server binding address                                                        |
+| `MAX_TIMEOUT_MS`    | 5000    | Hard execution budget (every request uses this — there is no per-request override) |
+| `MAX_SOURCE_LENGTH` | 20000   | Maximum input length                                                               |
+| `LOG_LEVEL`         | info    | Pino log level                                                                     |
 
 ## Execution limits
 
@@ -202,6 +202,7 @@ apps/trace-service/
 ├── Dockerfile              # dev + prod targets; build context is this directory
 └── vitest.config.mts
 ```
+
 ```
 
 ## See Also
@@ -209,3 +210,4 @@ apps/trace-service/
 - [Infra map](../../docs/infra.md)
 - [API gateway](../api/README.md)
 - [Frontend integration](../frontend/src/app/api/trace/)
+```

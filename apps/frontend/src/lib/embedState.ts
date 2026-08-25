@@ -120,7 +120,10 @@ export async function buildSnapshotUrl(origin: string, snapshot: EmbedSnapshot):
   return `${origin}${BYTECODE_EMBED_PATH}?${SNAPSHOT_PARAM}=${await encodeSnapshot(snapshot)}`;
 }
 
-export function estimateEmbedHeight(output: string, opts: { min?: number; max?: number } = {}): number {
+export function estimateEmbedHeight(
+  output: string,
+  opts: { min?: number; max?: number } = {},
+): number {
   const min = opts.min ?? 220;
   const max = opts.max ?? 520;
   const lines = output ? output.split("\n").length : 0;

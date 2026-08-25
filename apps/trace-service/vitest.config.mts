@@ -1,5 +1,5 @@
-import { transform } from 'esbuild';
-import { defineConfig, type Plugin } from 'vitest/config';
+import { transform } from "esbuild";
+import { defineConfig, type Plugin } from "vitest/config";
 
 /**
  * engine262 is vendored as TypeScript sources, and it decorates its classes.
@@ -13,17 +13,19 @@ import { defineConfig, type Plugin } from 'vitest/config';
  */
 function engine262Sources(): Plugin {
   return {
-    name: 'engine262-sources',
-    enforce: 'pre',
+    name: "engine262-sources",
+    enforce: "pre",
     async transform(code, id) {
-      if (!id.includes('/engine262/src/') || !/\.m?ts$/.test(id)) return null;
+      if (!id.includes("/engine262/src/") || !/\.m?ts$/.test(id)) return null;
 
       const out = await transform(code, {
-        loader: 'ts',
-        format: 'esm',
+        loader: "ts",
+        format: "esm",
         sourcefile: id,
         sourcemap: true,
-        tsconfigRaw: { compilerOptions: { experimentalDecorators: true, useDefineForClassFields: false } },
+        tsconfigRaw: {
+          compilerOptions: { experimentalDecorators: true, useDefineForClassFields: false },
+        },
       });
       return { code: out.code, map: out.map };
     },
@@ -34,8 +36,8 @@ export default defineConfig({
   plugins: [engine262Sources()],
   test: {
     // json-summary is what a CI upload or a badge reads; lcov is the HTML report.
-    coverage: { reporter: ['text', 'json-summary', 'lcov'] },
-    include: ['src/**/*.test.mts', 'src/**/*.spec.mts', 'test/**/*.test.mts', 'test/**/*.spec.mts'],
+    coverage: { reporter: ["text", "json-summary", "lcov"] },
+    include: ["src/**/*.test.mts", "src/**/*.spec.mts", "test/**/*.test.mts", "test/**/*.spec.mts"],
     watch: false,
     testTimeout: 30000,
     hookTimeout: 30000,

@@ -2,7 +2,7 @@
 
 import { TabBar } from "@/components/ui";
 import { engineLabel } from "@/lib/engines";
-import { isEngineKey, RunStatus, type EngineKey, type EngineResult } from "@/lib/types";
+import { type EngineKey, type EngineResult, isEngineKey, RunStatus } from "@/lib/types";
 
 type PaneResult = EngineResult | undefined;
 

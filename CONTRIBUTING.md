@@ -60,12 +60,12 @@ dependencies, so run `npm install` (or `npm ci`) inside the service directory
 first. Note that the frontend's `package.json` lives in `apps/frontend/src/`,
 not `apps/frontend/`.
 
-| Service | Directory | Dev command | Port |
-| --- | --- | --- | --- |
-| API gateway | `apps/api/` | `npm run dev` | 8080 |
-| Frontend (Next.js) | `apps/frontend/src/` | `npm run dev` | 3000 |
-| Trace service | `apps/trace-service/` | `npm run dev` | 8080 (Compose publishes it on 8085) |
-| Engines | `apps/engine-v8/`, `apps/engine-hermes/`, `apps/engine-jsc/`, `apps/engine-spidermonkey/` | `npm run dev` | 8080 |
+| Service            | Directory                                                                                 | Dev command   | Port                                |
+| ------------------ | ----------------------------------------------------------------------------------------- | ------------- | ----------------------------------- |
+| API gateway        | `apps/api/`                                                                               | `npm run dev` | 8080                                |
+| Frontend (Next.js) | `apps/frontend/src/`                                                                      | `npm run dev` | 3000                                |
+| Trace service      | `apps/trace-service/`                                                                     | `npm run dev` | 8080 (Compose publishes it on 8085) |
+| Engines            | `apps/engine-v8/`, `apps/engine-hermes/`, `apps/engine-jsc/`, `apps/engine-spidermonkey/` | `npm run dev` | 8080                                |
 
 The API, trace service, and engines all default to port 8080 — set `PORT` when
 running more than one outside Docker. Three gotchas:
@@ -88,13 +88,13 @@ the frontend and trace service build from their own directory.
 CI (`.github/workflows/ci.yml`) runs the following per workspace on every PR,
 plus kustomize/kubeconform validation of the Kubernetes manifests:
 
-| Workspace | Typecheck / lint | Tests |
-| --- | --- | --- |
-| `apps/frontend/src` | `npx tsc --noEmit -p tsconfig.json` and `npm run lint` (ESLint) | `npm run test` (Jest, jsdom; `npm run test:watch` for watch mode) |
-| `apps/api` | `npm run lint` (`tsc --noEmit`) | `npm test` (Vitest) |
-| `apps/trace-service` | `npm run typecheck` | `npm test` (Vitest — watch mode locally; requires the engine262 submodule) |
-| `apps/engine-*` | `npm run lint` (`tsc --noEmit`) | — |
-| `packages/engine-runtime` | `npm run lint` | `npm test` (Vitest) |
+| Workspace                 | Typecheck / lint                                                | Tests                                                                      |
+| ------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `apps/frontend/src`       | `npx tsc --noEmit -p tsconfig.json` and `npm run lint` (ESLint) | `npm run test` (Jest, jsdom; `npm run test:watch` for watch mode)          |
+| `apps/api`                | `npm run lint` (`tsc --noEmit`)                                 | `npm test` (Vitest)                                                        |
+| `apps/trace-service`      | `npm run typecheck`                                             | `npm test` (Vitest — watch mode locally; requires the engine262 submodule) |
+| `apps/engine-*`           | `npm run lint` (`tsc --noEmit`)                                 | —                                                                          |
+| `packages/engine-runtime` | `npm run lint`                                                  | `npm test` (Vitest)                                                        |
 
 Every leg checks out submodules recursively (trace-service's tests need
 engine262), and the api and engine legs build `packages/engine-runtime` before

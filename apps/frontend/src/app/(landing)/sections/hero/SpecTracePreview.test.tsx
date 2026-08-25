@@ -1,5 +1,6 @@
-import { describe, expect, it } from "@jest/globals";
 import "@testing-library/jest-dom/jest-globals";
+
+import { describe, expect, it } from "@jest/globals";
 
 import { TRACES } from "../../landing-data";
 import { cycleStylesheet, planCycle, stepName, verdictName } from "./traceCycle";
@@ -40,7 +41,9 @@ describe("the trace cycle", () => {
   it("holds the verdict until its trace's turn is over", () => {
     const lit = stopAt(verdictName(0), "opacity:1");
 
-    expect(Math.abs((lit! / 100) * cycle.totalMs - (TRACES[0].steps.length * 440 + 320))).toBeLessThan(1);
+    expect(
+      Math.abs((lit! / 100) * cycle.totalMs - (TRACES[0].steps.length * 440 + 320)),
+    ).toBeLessThan(1);
   });
 
   it("stops the round and shows one whole trace under reduced motion", () => {

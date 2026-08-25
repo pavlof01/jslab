@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
 import { Button } from "@chakra-ui/react";
+import { useCallback, useState } from "react";
 
 import type { CustomSample } from "@/lib/customSamples";
+
 import { DeleteSampleDialog } from "./DeleteSampleDialog";
 import { SampleBrowseDialog } from "./SampleBrowseDialog";
 import { SampleLibrary } from "./SampleLibrary";
 import { SampleNameDialog } from "./SampleNameDialog";
-import { V8SampleLibrary } from "./V8SampleLibrary";
 import { useCustomSamples } from "./useCustomSamples";
+import { V8SampleLibrary } from "./V8SampleLibrary";
 
 type Props = {
   currentCode: string;

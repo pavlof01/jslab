@@ -45,14 +45,16 @@ export const OPCODE_INFO = {
   CreateIterResultObject: "Create { value, done } iterator result.",
   CreateObjectLiteral: "Create an object literal using boilerplate.",
   CreateRestParameter: "Create an array containing the rest parameters of the current call.", // NEW
-  CreateUnmappedArguments: "Create an unmapped 'arguments' object (no aliasing between indices and parameters).", // NEW
+  CreateUnmappedArguments:
+    "Create an unmapped 'arguments' object (no aliasing between indices and parameters).", // NEW
 
   DefineNamedOwnProperty: "Define a named own property on an object.",
 
   Div: "Divide the accumulator by the operand (floating-point division).", // NEW
   DivSmi: "Divide the accumulator by a small integer constant.",
 
-  FindNonDefaultConstructorOrConstruct: "Resolve correct constructor or construct target for 'super' calls.",
+  FindNonDefaultConstructorOrConstruct:
+    "Resolve correct constructor or construct target for 'super' calls.",
 
   ForInEnumerate: "Prepare an object for for-in enumeration.",
   ForInNext: "Get the next property key for for-in.",
@@ -61,14 +63,16 @@ export const OPCODE_INFO = {
 
   GetEnumeratedKeyedProperty: "Load a property value using a key produced by for-in enumeration.",
   GetIterator: "Get an iterator object from an iterable.",
-  GetKeyedProperty: "Load a property using a dynamic key (index or string) from an object or array.", // NEW
+  GetKeyedProperty:
+    "Load a property using a dynamic key (index or string) from an object or array.", // NEW
   GetNamedProperty: "Load an object's named property.",
   GetNamedPropertyFromSuper:
     "Load a named property from super.prototype, bypassing the current receiver's own properties.",
 
   Inc: "Increment value by 1.",
 
-  InvokeIntrinsic: "Invoke an internal V8 intrinsic (e.g. _AsyncFunctionEnter, _AsyncFunctionAwait).", // NEW
+  InvokeIntrinsic:
+    "Invoke an internal V8 intrinsic (e.g. _AsyncFunctionEnter, _AsyncFunctionAwait).", // NEW
 
   Jump: "Unconditional jump.",
   JumpIfFalse: "Jump if accumulator converts to false.",
@@ -111,15 +115,19 @@ export const OPCODE_INFO = {
   Return: "Return accumulator from the current function.",
 
   SetNamedProperty: "Write accumulator to an object's named property.",
-  SetPendingMessage: "Store accumulator as the pending exception message for the current exception.",
+  SetPendingMessage:
+    "Store accumulator as the pending exception message for the current exception.",
 
   ShiftLeftSmi: "Left shift (<<) between accumulator and small integer operand (SMI-optimized).", // NEW
-  ShiftRightLogicalSmi: "Logical right shift (>>>) between accumulator and small integer operand (SMI-optimized).", // NEW
-  ShiftRightSmi: "Arithmetic right shift (>>) between accumulator and small integer operand (SMI-optimized).", // NEW
+  ShiftRightLogicalSmi:
+    "Logical right shift (>>>) between accumulator and small integer operand (SMI-optimized).", // NEW
+  ShiftRightSmi:
+    "Arithmetic right shift (>>) between accumulator and small integer operand (SMI-optimized).", // NEW
 
   StaCurrentContextSlot: "Store accumulator into a context slot.",
   StaCurrentContextSlotNoCell: "Store accumulator into a context slot without cell indirection.",
-  StaInArrayLiteral: "Store accumulator into an array literal element and update feedback for the literal.", // NEW
+  StaInArrayLiteral:
+    "Store accumulator into an array literal element and update feedback for the literal.", // NEW
 
   Sub: "Subtract operand from accumulator (accumulator - operand).", // NEW
 
@@ -140,10 +148,13 @@ export const OPCODE_INFO = {
   Throw: "Throw the accumulator as an exception.",
   ThrowIfNotSuperConstructor: "Throw if super constructor is invalid for a 'super()' call.",
   ThrowReferenceErrorIfHole: "Throw ReferenceError for TDZ uninitialized binding (hole).",
-  ThrowSuperAlreadyCalledIfNotHole: "Throw if super() was called more than once in a derived constructor.",
-  ThrowSuperNotCalledIfHole: "Throw if super() has not been called before using 'this' in a derived constructor.",
+  ThrowSuperAlreadyCalledIfNotHole:
+    "Throw if super() was called more than once in a derived constructor.",
+  ThrowSuperNotCalledIfHole:
+    "Throw if super() has not been called before using 'this' in a derived constructor.",
 
-  ToBooleanLogicalNot: "Apply ToBoolean(accumulator) and then logical NOT, i.e. accumulator = !ToBoolean(acc).", // NEW
+  ToBooleanLogicalNot:
+    "Apply ToBoolean(accumulator) and then logical NOT, i.e. accumulator = !ToBoolean(acc).", // NEW
   ToNumber: "Convert accumulator to a JavaScript Number using ToNumber().", // NEW
   ToNumeric: "Convert accumulator to numeric using ToNumeric().",
   ToObject: "Convert accumulator to object using ToObject().",

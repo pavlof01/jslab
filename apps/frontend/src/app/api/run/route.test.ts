@@ -55,10 +55,17 @@ describe("POST /api/run", () => {
   });
 
   it("passes the caller's API key and address through to the gateway", async () => {
-    const fetchMock = jest.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }));
+    const fetchMock = jest.fn(
+      async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }),
+    );
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    await POST(post({ engine: "v8", sourceText: "1" }, { "x-api-key": "jslab_abc", "x-forwarded-for": "9.9.9.9" }));
+    await POST(
+      post(
+        { engine: "v8", sourceText: "1" },
+        { "x-api-key": "jslab_abc", "x-forwarded-for": "9.9.9.9" },
+      ),
+    );
 
     const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
     expect(headers["x-api-key"]).toBe("jslab_abc");
@@ -66,7 +73,9 @@ describe("POST /api/run", () => {
   });
 
   it("rejects a malformed body before calling the gateway", async () => {
-    const fetchMock = jest.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }));
+    const fetchMock = jest.fn(
+      async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }),
+    );
     global.fetch = fetchMock as unknown as typeof fetch;
 
     const res = await POST(post("{not json"));
@@ -78,7 +87,8 @@ describe("POST /api/run", () => {
 
   it("relays a gateway rejection with its status", async () => {
     global.fetch = jest.fn(
-      async () => new Response(JSON.stringify({ ok: false, error: "engine: invalid" }), { status: 400 }),
+      async () =>
+        new Response(JSON.stringify({ ok: false, error: "engine: invalid" }), { status: 400 }),
     ) as unknown as typeof fetch;
 
     const res = await POST(post({ engine: "quickjs", sourceText: "1" }));

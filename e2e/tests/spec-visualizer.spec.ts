@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const expression = (page: Page) => page.getByRole("textbox", { name: /expression to trace/i });
 const traceButton = (page: Page) => page.getByRole("button", { name: /^trac/i });
@@ -106,7 +106,9 @@ test.describe("equality visualizer", () => {
     await page.getByRole("button", { name: "[] == ![]" }).click();
     await ready(page);
 
-    const total = Number(/of (\d+)$/.exec((await stepCounter(page).getAttribute("aria-label")) ?? "")?.[1] ?? 0);
+    const total = Number(
+      /of (\d+)$/.exec((await stepCounter(page).getAttribute("aria-label")) ?? "")?.[1] ?? 0,
+    );
     expect(total).toBeGreaterThan(0);
     for (let i = await currentStep(page); i < total; i++) await nextButton(page).click();
 
@@ -186,10 +188,12 @@ test.describe("type-conversion visualizer", () => {
       await page.getByRole("option", { name: op, exact: true }).click();
       await expression(page).fill("2");
       await expression(page).press("Enter");
-    await traced(page);
+      await traced(page);
 
       await expect(stepCounter(page), `${op} produced no steps`).toBeVisible();
-      await expect(page.getByText(/Failed to parse|Expected a binary expression|Unknown executor error/)).toHaveCount(0);
+      await expect(
+        page.getByText(/Failed to parse|Expected a binary expression|Unknown executor error/),
+      ).toHaveCount(0);
     }
   });
 

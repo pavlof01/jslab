@@ -1,4 +1,4 @@
-import { Flex, Box, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 
 import { type Token } from "../lib/tokenize";
 
@@ -47,7 +47,11 @@ const TokensPane: React.FC<{ tokens: Token[] }> = ({ tokens }) => {
         </Box>
         <Box as="tbody">
           {tokens.map((tok, i) => (
-            <Box key={`${tok.start}-${tok.kind}`} as="tr" _hover={{ bg: "rgba(255,255,255,0.025)" }}>
+            <Box
+              key={`${tok.start}-${tok.kind}`}
+              as="tr"
+              _hover={{ bg: "rgba(255,255,255,0.025)" }}
+            >
               <Box as="td" p="3px 10px" color="ink.6" w="48px" flexShrink={0}>
                 {i + 1}
               </Box>

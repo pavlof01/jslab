@@ -3,6 +3,7 @@ import type { ThemedToken, TokensResult } from "shiki";
 
 import { DiffKind } from "@/lib/types";
 import { compareOutputs } from "@/utils/diff-bytecode";
+
 import { lineKey, lineStarts } from "./Code";
 
 const token = (content: string, offset: number) => ({ content, offset, color: "" }) as ThemedToken;

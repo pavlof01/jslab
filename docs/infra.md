@@ -4,16 +4,16 @@ This document is a quick “map” of the infrastructure: what services (contain
 
 ## 1) What runs
 
-| Component | Dockerfile | Kubernetes resources | Port | Dependencies |
-| --- | --- | --- | --- | --- |
-| `frontend` (Next.js) | `apps/frontend/Dockerfile` | `Deployment/frontend` + `Service/frontend` + `PodDisruptionBudget` | `3000` | `api`, `trace-service` |
-| `api` (Fastify gateway) | `apps/api/Dockerfile` | `Deployment/api` + `Service/api` + `ConfigMap/api-config` + `PodDisruptionBudget` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey`, `trace-service` |
-| `engine-v8` (d8 wrapper) | `apps/engine-v8/Dockerfile` | `Deployment/engine-v8` + `Service/engine-v8` | `8080` | — |
-| `engine-hermes` (`hermes -dump-bytecode` wrapper) | `apps/engine-hermes/Dockerfile` | `Deployment/engine-hermes` + `Service/engine-hermes` | `8080` | — |
-| `engine-jsc` (JavaScriptCore wrapper) | `apps/engine-jsc/Dockerfile` | `Deployment/engine-jsc` + `Service/engine-jsc` | `8080` | — |
-| `engine-spidermonkey` (SpiderMonkey shell wrapper) | `apps/engine-spidermonkey/Dockerfile` | `Deployment/engine-spidermonkey` + `Service/engine-spidermonkey` | `8080` | — |
-| `trace-service` (engine262 abstract-operations tracer) | `apps/trace-service/Dockerfile` | `Deployment/trace-service` + `Service/trace-service` | `8080` | — |
-| `redis` (cache / rate limit) | (image) `redis:7-alpine` | `Deployment/redis` + `Service/redis` | `6379` | — |
+| Component                                              | Dockerfile                            | Kubernetes resources                                                              | Port   | Dependencies                                                                                |
+| ------------------------------------------------------ | ------------------------------------- | --------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `frontend` (Next.js)                                   | `apps/frontend/Dockerfile`            | `Deployment/frontend` + `Service/frontend` + `PodDisruptionBudget`                | `3000` | `api`, `trace-service`                                                                      |
+| `api` (Fastify gateway)                                | `apps/api/Dockerfile`                 | `Deployment/api` + `Service/api` + `ConfigMap/api-config` + `PodDisruptionBudget` | `8080` | `redis`, `engine-v8`, `engine-hermes`, `engine-jsc`, `engine-spidermonkey`, `trace-service` |
+| `engine-v8` (d8 wrapper)                               | `apps/engine-v8/Dockerfile`           | `Deployment/engine-v8` + `Service/engine-v8`                                      | `8080` | —                                                                                           |
+| `engine-hermes` (`hermes -dump-bytecode` wrapper)      | `apps/engine-hermes/Dockerfile`       | `Deployment/engine-hermes` + `Service/engine-hermes`                              | `8080` | —                                                                                           |
+| `engine-jsc` (JavaScriptCore wrapper)                  | `apps/engine-jsc/Dockerfile`          | `Deployment/engine-jsc` + `Service/engine-jsc`                                    | `8080` | —                                                                                           |
+| `engine-spidermonkey` (SpiderMonkey shell wrapper)     | `apps/engine-spidermonkey/Dockerfile` | `Deployment/engine-spidermonkey` + `Service/engine-spidermonkey`                  | `8080` | —                                                                                           |
+| `trace-service` (engine262 abstract-operations tracer) | `apps/trace-service/Dockerfile`       | `Deployment/trace-service` + `Service/trace-service`                              | `8080` | —                                                                                           |
+| `redis` (cache / rate limit)                           | (image) `redis:7-alpine`              | `Deployment/redis` + `Service/redis`                                              | `6379` | —                                                                                           |
 
 > **Build context.** `api` and the four `engine-*` images bake in
 > `packages/engine-runtime`, so they build from the **repo root**

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Box, Button, Container, Flex, Grid, Text } from "@chakra-ui/react";
+import { useState } from "react";
 
 import { QuietLink } from "@/components/ui";
 
@@ -45,7 +45,11 @@ export function IntrinsicsSection() {
             <Text>V8 only</Text>
           </Flex>
 
-          <Grid templateColumns="repeat(auto-fit, minmax(min(100%, 300px), 1fr))" gap="1px" bg="rule.structural">
+          <Grid
+            templateColumns="repeat(auto-fit, minmax(min(100%, 300px), 1fr))"
+            gap="1px"
+            bg="rule.structural"
+          >
             <Flex direction="column" gap="16px" bg="surface.panel" p={{ base: 5, md: "26px" }}>
               <Flex wrap="wrap" gap="8px 10px">
                 {INTRINSICS.map(([name], i) => (

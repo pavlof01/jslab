@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { CATEGORY_LABELS, groupFlags, type FlagOption } from "./flagCatalog";
+import { CATEGORY_LABELS, type FlagOption, groupFlags } from "./flagCatalog";
 
 const flag = (over: Partial<FlagOption>): FlagOption => ({
   flag: "--print-bytecode",
@@ -33,7 +33,10 @@ describe("groupFlags", () => {
   });
 
   it("hides value-bearing flags, which need an input the checkbox list has no room for", () => {
-    const groups = groupFlags([flag({ flag: "--print-bytecode-filter", takesValue: true }), flag({})]);
+    const groups = groupFlags([
+      flag({ flag: "--print-bytecode-filter", takesValue: true }),
+      flag({}),
+    ]);
     expect(groups).toHaveLength(1);
     expect(groups[0].flags.map((f) => f.flag)).toEqual(["--print-bytecode"]);
   });

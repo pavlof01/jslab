@@ -1,4 +1,10 @@
-import { createDescriber, fromLiterals, fromTable, stripEdges, type TokenDescriber } from "./resolver";
+import {
+  createDescriber,
+  fromLiterals,
+  fromTable,
+  stripEdges,
+  type TokenDescriber,
+} from "./resolver";
 
 export const OPCODE_INFO = {
   // Function prologue / epilogue
@@ -8,7 +14,8 @@ export const OPCODE_INFO = {
 
   // Function creation
   new_func: "Create a new function object from a function declaration (captures the given scope).",
-  new_func_exp: "Create a new function object from a function expression (captures the given scope).",
+  new_func_exp:
+    "Create a new function object from a function expression (captures the given scope).",
   new_async_func: "Create a new async function object (captures the given scope).",
   new_generator_func: "Create a new generator function object (captures the given scope).",
 
@@ -80,7 +87,8 @@ export const OPCODE_INFO = {
   put_getter_setter_by_id: "Define a getter/setter pair on an object property.",
   get_length: "Load the length of an array-like value into dst.",
   get_prototype_of: "Get the prototype of a value.",
-  get_by_id_with_this: "Load a method by id using an explicit thisValue (used for super/with-this access).",
+  get_by_id_with_this:
+    "Load a method by id using an explicit thisValue (used for super/with-this access).",
 
   // Calls / construction
   call: "Call a function (callee) with argc/argv; store result in dst.",
@@ -90,10 +98,12 @@ export const OPCODE_INFO = {
   super_construct: "Call the super constructor and initialize 'this'.",
 
   // Scopes / environments
-  resolve_scope: "Resolve a variable binding in the given scope (produces a scope object/reference).",
+  resolve_scope:
+    "Resolve a variable binding in the given scope (produces a scope object/reference).",
   get_from_scope: "Load a variable from a resolved scope into dst.",
   put_to_scope: "Store a value into a resolved scope variable.",
-  create_lexical_environment: "Create a new lexical environment (closure scope) with an initial value.",
+  create_lexical_environment:
+    "Create a new lexical environment (closure scope) with an initial value.",
   check_tdz: "Temporal Dead Zone check for an uninitialized lexical binding.",
 
   // Arguments / rest
@@ -184,11 +194,14 @@ const OPERAND_KEY_INFO: Record<string, string> = {
 
   // Scopes / environments / TDZ
   localScopeDepth: "Relative scope depth for a variable access (0 = current scope).",
-  symbolTableOrScopeDepth: "Overloaded operand used for symbol tables or scope depth (depends on opcode).",
+  symbolTableOrScopeDepth:
+    "Overloaded operand used for symbol tables or scope depth (depends on opcode).",
   offset: "Slot offset used by the operation (meaning depends on opcode).",
-  functionDecl: "Function declaration index in the function table for the current compilation unit.",
+  functionDecl:
+    "Function declaration index in the function table for the current compilation unit.",
   resolveType: "Binding resolution mode (e.g. GlobalProperty, ResolvedClosureVar).",
-  getPutInfo: "Encoded flags describing binding resolution and get/put semantics; decoded flags follow in <...>.",
+  getPutInfo:
+    "Encoded flags describing binding resolution and get/put semantics; decoded flags follow in <...>.",
   targetVirtualRegister: "Virtual register used by the operation (e.g. for TDZ checks).",
 
   // Iteration / enumerators
@@ -272,7 +285,8 @@ function describeIndexRef(token: string): string | undefined {
 
   const kind = m[1];
   const idx = m[2];
-  if (kind === "const") return `Reference to constant table entry const${idx} (see Constants section: k${idx} = ...).`;
+  if (kind === "const")
+    return `Reference to constant table entry const${idx} (see Constants section: k${idx} = ...).`;
   if (kind === "k") return `Constant table entry k${idx} (see Constants section).`;
   if (kind === "id") return `Identifier table entry id${idx} (see Identifiers section).`;
   return undefined;
@@ -286,7 +300,9 @@ function describeAngleBracket(token: string): string | undefined {
   if (token.includes("|")) {
     const parts = token.slice(1, -1).split("|").filter(Boolean);
     if (parts.length) {
-      const known = parts.map((p) => (FLAG_INFO[p] ? `${p} — ${FLAG_INFO[p]}` : undefined)).filter(Boolean) as string[];
+      const known = parts
+        .map((p) => (FLAG_INFO[p] ? `${p} — ${FLAG_INFO[p]}` : undefined))
+        .filter(Boolean) as string[];
       if (known.length) return known.join("\n");
       return `Decoded flags: ${parts.join(" | ")}.`;
     }
@@ -314,19 +330,24 @@ function describeKeyValueToken(token: string): string | undefined {
 
   if (!value) return keyInfo;
 
-  if (key === "resolveType" && RESOLVE_TYPE_INFO[value]) return `${keyInfo}\n${value} — ${RESOLVE_TYPE_INFO[value]}`;
-  if (key === "errorType" && ERROR_TYPE_INFO[value]) return `${keyInfo}\n${value} — ${ERROR_TYPE_INFO[value]}`;
-  if (key === "ecmaMode" && ECMA_MODE_INFO[value]) return `${keyInfo}\n${value} — ${ECMA_MODE_INFO[value]}`;
+  if (key === "resolveType" && RESOLVE_TYPE_INFO[value])
+    return `${keyInfo}\n${value} — ${RESOLVE_TYPE_INFO[value]}`;
+  if (key === "errorType" && ERROR_TYPE_INFO[value])
+    return `${keyInfo}\n${value} — ${ERROR_TYPE_INFO[value]}`;
+  if (key === "ecmaMode" && ECMA_MODE_INFO[value])
+    return `${keyInfo}\n${value} — ${ECMA_MODE_INFO[value]}`;
   if (key === "property" && /^\d+$/.test(value)) return `${keyInfo}\nIndex: ${value}`;
   if (
     (key.endsWith("ValueProfile") || key.endsWith("Profile") || key.endsWith("ProfileIndex")) &&
     /^-?\d+$/.test(value)
   )
     return `${keyInfo}\nIndex: ${value}`;
-  if ((key === "argc" || key === "argv") && /^\d+$/.test(value)) return `${keyInfo}\nValue: ${value}`;
+  if ((key === "argc" || key === "argv") && /^\d+$/.test(value))
+    return `${keyInfo}\nValue: ${value}`;
   if (key === "targetLabel" && /^-?\d+$/.test(value)) return `${keyInfo}\nLabel: ${value}`;
 
-  if (key === "src" && value === "Undefined") return `${keyInfo}\nUndefined — the JavaScript 'undefined' value.`;
+  if (key === "src" && value === "Undefined")
+    return `${keyInfo}\nUndefined — the JavaScript 'undefined' value.`;
   if (key === "src" && value === "Null") return `${keyInfo}\nNull — the JavaScript 'null' value.`;
   if (key === "src" && value === "True") return `${keyInfo}\nTrue — boolean true.`;
   if (key === "src" && value === "False") return `${keyInfo}\nFalse — boolean false.`;

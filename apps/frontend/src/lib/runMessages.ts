@@ -13,11 +13,16 @@ export function describeRunFailure(failure: RunFailure): string {
   return `Run failed (HTTP ${failure.status}): ${failure.message}`;
 }
 
-export function describeRunNotice(truncated: boolean, droppedFlags: readonly string[]): string | undefined {
+export function describeRunNotice(
+  truncated: boolean,
+  droppedFlags: readonly string[],
+): string | undefined {
   const parts: string[] = [];
   if (truncated) parts.push("Output hit the size cap and is truncated.");
   if (droppedFlags.length) {
-    parts.push(`${droppedFlags.length === 1 ? "Flag" : "Flags"} ignored by this engine: ${droppedFlags.join(", ")}.`);
+    parts.push(
+      `${droppedFlags.length === 1 ? "Flag" : "Flags"} ignored by this engine: ${droppedFlags.join(", ")}.`,
+    );
   }
   return parts.length ? parts.join(" ") : undefined;
 }

@@ -3,6 +3,7 @@
  * lives here, on a thread the host can terminate (see sandbox.ts).
  */
 import { parentPort } from "node:worker_threads";
+
 import { executeBinaryExpression, executeUnaryConversion } from "./index.ts";
 import type { SandboxReply, SandboxTask } from "./sandbox.ts";
 

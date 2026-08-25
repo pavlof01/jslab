@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import PipelineClient from "./components/PipelineClient";
 
 export const metadata: Metadata = {

@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Box, Button, Flex, Input, Span } from "@chakra-ui/react";
+import type { ReactNode } from "react";
 
 import { Band, ShortcutHint } from "@/components/ui";
 import { Label } from "@/components/ui/label";
@@ -90,7 +90,14 @@ export function ExpressionRow({
       </Button>
 
       {error ? (
-        <Flex textStyle="code" role="alert" flex="1 1 100%" align="baseline" gap="9px" color="status.warn">
+        <Flex
+          textStyle="code"
+          role="alert"
+          flex="1 1 100%"
+          align="baseline"
+          gap="9px"
+          color="status.warn"
+        >
           <Span aria-hidden="true">×</Span>
           <Span textWrap="pretty" overflowWrap="anywhere">
             {error}

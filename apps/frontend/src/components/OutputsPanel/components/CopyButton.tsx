@@ -1,5 +1,5 @@
+import { Box, Button, Clipboard } from "@chakra-ui/react";
 import React from "react";
-import { Box, Clipboard, Button } from "@chakra-ui/react";
 
 type Props = {
   out: string;

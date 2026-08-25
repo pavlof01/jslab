@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createFakeRedis, type FakeRedis } from "./test-support/fakeRedis.js";
-import { mockUpstream, type MockUpstream } from "./test-support/mockUpstream.js";
+import { type MockUpstream, mockUpstream } from "./test-support/mockUpstream.js";
 
 /**
  * What the gateway does with an engine's answer: which status it maps to, what
@@ -18,7 +18,12 @@ const ORIGIN = "http://engine-v8:8080";
 /** `loadConfig` reads the environment, so the environment is what a test sets. */
 function makeApp(env: Record<string, string> = {}) {
   const saved = { ...process.env };
-  Object.assign(process.env, { ENGINE_V8_URL: ORIGIN, REDIS_URL: "redis://localhost:6379", LOG_LEVEL: "silent", ...env });
+  Object.assign(process.env, {
+    ENGINE_V8_URL: ORIGIN,
+    REDIS_URL: "redis://localhost:6379",
+    LOG_LEVEL: "silent",
+    ...env,
+  });
   const redis = createFakeRedis();
   const config = loadConfig();
   process.env = saved;
@@ -118,7 +123,6 @@ describe("proxying a run to its engine", () => {
 
     expect((await run(app)).statusCode).toBe(502);
   });
-
 });
 
 /*

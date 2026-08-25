@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { PlaygroundPage, V8_BYTECODE } from "../helpers/playground";
 
 test.describe("embed widgets", () => {
@@ -24,7 +25,10 @@ test.describe("embed widgets", () => {
   test("the bytecode embed explains an undecodable snapshot", async ({ page }) => {
     await page.goto("/embed/bytecode");
     await expect(page.getByText(/no readable snapshot/i)).toBeVisible();
-    await expect(page.getByRole("link", { name: /open jslab/i })).toHaveAttribute("href", "/playground");
+    await expect(page.getByRole("link", { name: /open jslab/i })).toHaveAttribute(
+      "href",
+      "/playground",
+    );
   });
 
   test("the bytecode embed advertises oEmbed discovery in its head", async ({ page }) => {
@@ -54,14 +58,23 @@ test.describe("oEmbed provider", () => {
     expect(res.headers()["cache-control"]).toContain("max-age=3600");
   });
 
-  test("refuses a foreign host, a non-embeddable path and a missing snapshot", async ({ request, baseURL }) => {
-    const foreign = await request.get(`/embed/oembed?url=${encodeURIComponent("https://evil.example/embed/playground")}`);
+  test("refuses a foreign host, a non-embeddable path and a missing snapshot", async ({
+    request,
+    baseURL,
+  }) => {
+    const foreign = await request.get(
+      `/embed/oembed?url=${encodeURIComponent("https://evil.example/embed/playground")}`,
+    );
     expect(foreign.status()).toBe(404);
 
-    const notEmbeddable = await request.get(`/embed/oembed?url=${encodeURIComponent(`${baseURL}/playground`)}`);
+    const notEmbeddable = await request.get(
+      `/embed/oembed?url=${encodeURIComponent(`${baseURL}/playground`)}`,
+    );
     expect(notEmbeddable.status()).toBe(404);
 
-    const noSnapshot = await request.get(`/embed/oembed?url=${encodeURIComponent(`${baseURL}/embed/bytecode`)}`);
+    const noSnapshot = await request.get(
+      `/embed/oembed?url=${encodeURIComponent(`${baseURL}/embed/bytecode`)}`,
+    );
     expect(noSnapshot.status()).toBe(404);
   });
 

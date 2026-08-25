@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useState } from "react";
 import {
   Button,
   DrawerBackdrop,
@@ -15,11 +14,13 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { useCallback, useState } from "react";
 import { LuX } from "react-icons/lu";
 
+import { clearHistory, loadHistory, type RunHistoryEntry } from "@/lib/runHistory";
 import { selectionFrom } from "@/lib/types";
 import { useStateRestore } from "@/store/engineOutputsSelectors";
-import { clearHistory, loadHistory, type RunHistoryEntry } from "@/lib/runHistory";
+
 import { RunHistoryRow } from "./RunHistoryRow";
 
 export default function RunHistory() {
@@ -94,7 +95,12 @@ export default function RunHistory() {
             ) : (
               <VStack align="stretch" gap={2}>
                 {entries.map((entry) => (
-                  <RunHistoryRow key={entry.id} entry={entry} now={now} onRestore={() => restore(entry)} />
+                  <RunHistoryRow
+                    key={entry.id}
+                    entry={entry}
+                    now={now}
+                    onRestore={() => restore(entry)}
+                  />
                 ))}
               </VStack>
             )}

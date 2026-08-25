@@ -164,7 +164,7 @@ export function loadConfig(): ApiConfig {
 
 4. **Timeout propagation**: Client supplies `timeoutMs` (e.g., 2000). API clamps it to `[MIN_TIMEOUT_MS, MAX_TIMEOUT_MS]` = `[250, 5000]` (default 2000) and passes it to the engine, which uses it for the `spawn()` abort. The floor exists because a shorter budget cannot outlast the spawn itself, so the run could only ever time out.
 
-5. **Cross-partition communication**: the Kubernetes NetworkPolicy is default-deny ingress *and* egress for the namespace, with additive allowlists:
+5. **Cross-partition communication**: the Kubernetes NetworkPolicy is default-deny ingress _and_ egress for the namespace, with additive allowlists:
    - Traefik → frontend and api
    - frontend → api, and (still) → trace-service for the catalog/spec routes
    - api → engines, trace-service, Redis
@@ -183,13 +183,13 @@ export function loadConfig(): ApiConfig {
 
 CI ([.github/workflows/ci.yml](workflows/ci.yml)) runs one matrix leg per workspace, plus a kustomize/kubeconform job over the manifests:
 
-| Workspace | Typecheck / lint | Tests |
-| --- | --- | --- |
-| `packages/engine-runtime` | `npm run lint` | `npm test` (Vitest) |
-| `apps/api` | `npm run lint` | `npm test` (Vitest) |
-| `apps/engine-*` | `npm run lint` | — |
-| `apps/trace-service` | `npm run typecheck` | `npm test` (Vitest) |
-| `apps/frontend/src` | `npx tsc --noEmit -p tsconfig.json` + `npm run lint` | `npm test` (Jest, jsdom) |
+| Workspace                 | Typecheck / lint                                     | Tests                    |
+| ------------------------- | ---------------------------------------------------- | ------------------------ |
+| `packages/engine-runtime` | `npm run lint`                                       | `npm test` (Vitest)      |
+| `apps/api`                | `npm run lint`                                       | `npm test` (Vitest)      |
+| `apps/engine-*`           | `npm run lint`                                       | —                        |
+| `apps/trace-service`      | `npm run typecheck`                                  | `npm test` (Vitest)      |
+| `apps/frontend/src`       | `npx tsc --noEmit -p tsconfig.json` + `npm run lint` | `npm test` (Jest, jsdom) |
 
 - Smoke test script: [scripts/smoke-test.sh](../scripts/smoke-test.sh) — hits a **deployed** stack (`JSLAB_BASE_URL`, default `https://jslab.su`) and checks that `/`, `/api/run` and `/api/trace/execute/type-conversion` answer, and that the two API paths are served by the gateway rather than falling through to Next.js.
 - Kubernetes validation: [scripts/validate-k8s.sh](../scripts/validate-k8s.sh) — renders `KUSTOMIZE_PATH` (default `infra/k8s/base`) and runs kubeconform + conftest against `infra/policy/`. Needs `kubectl`, `kubeconform` and `conftest` on PATH.
