@@ -1,0 +1,47 @@
+name: codeql
+
+# Static analysis for a public repo that executes untrusted user JavaScript:
+# free on public repos, and the security tab is where its findings land.
+on:
+  push:
+    branches: ["main"]
+  # A docs-, CI- or manifest-only PR has no code for CodeQL to analyse, and the
+  # analysis costs a 5-20 minute runner. Safe to skip because codeql is not part
+  # of the required `quality-gate` check, so a skipped run cannot leave branch
+  # protection waiting on a check that never reports; a change to this workflow
+  # itself is still analysed by the push-to-main and weekly runs.
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "infra/**"
+      - ".github/**"
+      - "renovate.json"
+      - ".editorconfig"
+      - ".vscode/**"
+  schedule:
+    - cron: "0 5 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # The vendored spec fork is upstream's code, not ours to triage.
+          config: |
+            paths-ignore:
+              - apps/trace-service/engine262
+      - uses: github/codeql-action/analyze@v3
