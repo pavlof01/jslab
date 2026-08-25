@@ -91,6 +91,26 @@ the same way), set `CLIENT_IP_HEADER=""` and make sure `TRUST_PROXY_HOPS`
 matches your real proxy chain — otherwise `req.ip` (and therefore every rate
 limit and the API-key-issuance cap) is attacker-controlled.
 
+## Smoke checks through Cloudflare (`scripts/smoke-test.sh`)
+
+The public smoke check runs from a GitHub runner, i.e. from a datacenter IP
+that Cloudflare treats with suspicion. Two things keep it working, and both
+live outside this repo:
+
+- The script presents a browser `User-Agent` (`JSLAB_SMOKE_UA` overrides it).
+  A default `curl` UA is answered with 403 before the request ever reaches
+  Traefik, which reads exactly like a broken deploy.
+- If the edge challenges the runner on IP reputation alone, the escape hatch
+  is a **WAF skip rule** on `jslab.su`: _Skip → all remaining custom rules and
+  managed rules_ when `http.request.headers["x-smoke-token"][0] eq "<token>"`.
+  Provision it by hand in the Cloudflare dashboard and put the same value in
+  the `JSLAB_SMOKE_TOKEN` repo secret; the script sends the header whenever
+  that variable is set.
+
+No such rule is provisioned today — the UA alone has been enough. The script
+says so when it detects a block, so if the smoke job starts failing with a
+Cloudflare block page, this section is the fix, not a rollback.
+
 ## Secrets / certs (provisioned out-of-band, not in git)
 
 These exist on the cluster and are **not** committed:
