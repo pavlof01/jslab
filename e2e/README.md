@@ -26,7 +26,7 @@ or `app.inject` test can reach.
 | `navigation.spec.ts`         | The landing page; every tool route rendering; the header nav navigating; robots.txt and the sitemap; per-page titles and canonicals; a real 404                                                                                                                                                                       |
 | `resilience.spec.ts`         | How the UI behaves when the layer below misbehaves: 429 with a readable wait, an unreachable gateway, an unreadable answer, a truncation warning, a downed trace service, a slow engine                                                                                                                               |
 | `accessibility.spec.ts`      | Chips as real checkboxes; the polite live region; keyboard-operable dialogs; visible focus; the step counter's label; the main landmark                                                                                                                                                                               |
-| `ratelimit.spec.ts`          | The heavy bucket refusing surplus runs with a Retry-After, over real Redis                                                                                                                                                                                                                                            |
+| `ratelimit.spec.ts`          | An API key's heavy bucket refusing surplus runs with a Retry-After, over real Redis                                                                                                                                                                                                                                   |
 
 ## Run locally
 
@@ -57,7 +57,11 @@ workflow (`.github/workflows/e2e.yml`) waits on `/healthz` first. It runs on the
 release PR, on any PR labelled `e2e`, nightly, and on demand — not on every PR.
 The dev stack (`docker
 compose up` without the override) is not a substitute: the gateway only caches
-under `NODE_ENV=production`, so the cache tests fail against it.
+under `NODE_ENV=production`, so the cache tests fail against it. The override
+also lifts the anonymous rate limits — every browser request reaches the
+gateway from the frontend container's address, so the whole suite would
+otherwise share one 60-per-minute budget. `ratelimit.spec.ts` probes the
+limiter through an API key's own budget instead.
 
 ## Calibrating selectors
 
