@@ -137,10 +137,15 @@ Two conventions worth knowing:
 a framework boundary is sometimes the honest type. Warnings do not fail CI. They
 are meant to be visible, so please don't add new ones without cause.
 
-Formatting the whole tree at once made one commit that touches almost every
-file. It is listed in `.git-blame-ignore-revs`; run
-`git config blame.ignoreRevsFile .git-blame-ignore-revs` once and `git blame`
-will skip past it. (GitHub's blame view does this automatically.)
+A whole-tree reformat makes one commit that touches almost every file, and
+`git blame` should skip past it: list it in `.git-blame-ignore-revs` and run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once. (GitHub's blame
+view reads the file automatically.)
+
+The file is currently empty of entries. The reformat that adopted Prettier was
+squash-merged, so its SHA no longer exists and the only commit that carries
+those changes also carries behavioural ones — ignoring it would misattribute
+real edits, so that reformat stays un-ignored.
 
 That file only works if the SHAs in it survive the merge, and a squash merge
 mints new ones. A pure-formatting commit therefore has to reach `main` either

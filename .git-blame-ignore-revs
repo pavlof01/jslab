@@ -14,5 +14,8 @@
 #      (the `history` job) fails if a listed SHA is not an ancestor of the
 #      branch, so a squash that orphans one is loud rather than silent.
 
-# style(repo): format the tree with Prettier and group imports
-82f8986bea2c3e3baf0ee8f9b44d6abdb57facb8
+# Nothing is listed yet. The whole-tree reformat that adopted Prettier was
+# squash-merged in #46, which replaced its SHA with one that also carries every
+# behavioural change in that PR — blame-ignoring that commit would hide real
+# authorship, so the reformat stays un-ignored. Rule 2 above exists because of
+# exactly this.
