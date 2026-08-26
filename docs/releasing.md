@@ -55,7 +55,11 @@ Because the PR is opened by the App and not by `GITHUB_TOKEN`, workflows run on
 it like on any other PR: `ci.yml` (the quality gate) and `e2e.yml`, which
 builds the whole compose stack to its production targets and runs the browser
 suite. The release PR is the one place the full stack is exercised before a
-version name is attached to it.
+version name is attached to it. One catch: a `pull_request` run reads the
+workflow files from the PR's **head**, and release-please only rebuilds its
+branch when a releasable commit lands — so a change to a workflow's triggers
+reaches an already-open release PR only after "Update branch" (or the next
+`feat`/`fix` on `main`).
 
 ### 3. Cutting the release — you
 
