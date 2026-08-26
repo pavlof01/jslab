@@ -21,12 +21,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
       - uses: googleapis/release-please-action@v4
         with:
-          # The default GITHUB_TOKEN cannot trigger workflows on the PRs it
-          # opens, so the required quality-gate check would never run on the
-          # release PR and it could not be merged. RELEASE_PLEASE_TOKEN is a
-          # fine-grained PAT with contents:write + pull-requests:write.
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
