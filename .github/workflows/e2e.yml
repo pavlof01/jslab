@@ -1,9 +1,14 @@
 name: e2e
 
-# Browser end-to-end tests against the full docker compose stack. Not on every
-# PR: it builds every engine image and boots the whole system, which is minutes,
-# not seconds. Runs on demand and nightly, and can be pointed at a deployed site.
+# Browser end-to-end tests against the full docker compose stack, built to its
+# production targets. Not on every PR: it builds every engine image and boots
+# the whole system, which is minutes, not seconds. Runs on the release PR, on
+# any PR labelled `e2e`, nightly and on demand, and can be pointed at a
+# deployed site.
 on:
+  pull_request:
+    branches: ["main"]
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
       base_url:
@@ -23,8 +28,14 @@ concurrency:
 
 jobs:
   e2e:
+    if: >-
+      github.event_name != 'pull_request'
+      || startsWith(github.head_ref, 'release-please--')
+      || contains(github.event.pull_request.labels.*.name, 'e2e')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker-compose.e2e.yml
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,9 +47,9 @@ jobs:
           docker compose up --build -d
           # Wait for the gateway and the frontend to answer before testing.
           for url in http://localhost:8080/healthz http://localhost:3000/; do
-            for i in $(seq 1 60); do
-              if curl -fsS "$url" >/dev/null 2>&1; then echo "up: $url"; break; fi
-              if [ "$i" = "60" ]; then echo "timed out: $url" >&2; docker compose logs >&2; exit 1; fi
+            for i in $(seq 1 24); do
+              if curl -fsS --max-time 5 "$url" >/dev/null 2>&1; then echo "up: $url"; break; fi
+              if [ "$i" = "24" ]; then echo "timed out: $url" >&2; docker compose logs >&2; exit 1; fi
               sleep 5
             done
           done

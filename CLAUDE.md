@@ -150,6 +150,7 @@ npm run test   # vitest
 
 ```bash
 docker compose up --build              # all services + redis, hot-reload, no k8s needed
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build  # production targets, what e2e runs against
 skaffold dev --port-forward -n jslab   # rebuilds + port-forwards all services
 kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 ```
