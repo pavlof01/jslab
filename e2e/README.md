@@ -31,8 +31,9 @@ or `app.inject` test can reach.
 ## Run locally
 
 ```bash
-# 1. Bring the whole stack up (needs the engine base images; see repo README).
-docker compose up --build -d
+# 1. Bring the whole stack up as CI sees it: production targets, no bind mounts
+#    (needs the engine base images; see repo README).
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build -d
 
 # 2. Install Playwright and its browser, then run.
 cd e2e
@@ -52,7 +53,11 @@ looks for the API gateway; those tests skip themselves when it is not reachable,
 so the suite still runs against a site that hides the gateway behind an ingress.
 
 The suite assumes the stack is already healthy — it does not start it. The CI
-workflow (`.github/workflows/e2e.yml`) waits on `/healthz` first.
+workflow (`.github/workflows/e2e.yml`) waits on `/healthz` first. It runs on the
+release PR, on any PR labelled `e2e`, nightly, and on demand — not on every PR.
+The dev stack (`docker
+compose up` without the override) is not a substitute: the gateway only caches
+under `NODE_ENV=production`, so the cache tests fail against it.
 
 ## Calibrating selectors
 

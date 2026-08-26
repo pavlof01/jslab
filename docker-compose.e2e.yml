@@ -1,0 +1,49 @@
+services:
+  engine-v8:
+    build:
+      target: runner
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+  engine-hermes:
+    build:
+      target: runner
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+  engine-spidermonkey:
+    build:
+      target: runner
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+  engine-jsc:
+    build:
+      target: runner
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+  trace-service:
+    build:
+      target: prod
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+  api:
+    build:
+      target: runner
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+  frontend:
+    build:
+      target: runner
+    environment:
+      NODE_ENV: production
+    volumes: !reset []

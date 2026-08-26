@@ -150,6 +150,7 @@ npm run test   # vitest
 
 ```bash
 docker compose up --build              # all services + redis, hot-reload, no k8s needed
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build  # production targets, what e2e runs against
 skaffold dev --port-forward -n jslab   # rebuilds + port-forwards all services
 kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 ```
@@ -245,4 +246,4 @@ To add a flag to V8: add a `FlagSpec` to `flagCatalog.v8` in `packages/engine-ru
 - Overlays: `infra/k8s/base` (full stack), `prod` (base + CI-injected image tags, plus per-service slices), `dev` (Skaffold; excludes Traefik CRDs and NetworkPolicies), `monitoring` (Grafana Alloy, off by default)
 - The api and engine images build from the **repo root** (`-f apps/<svc>/Dockerfile .`) because they bake in `packages/engine-runtime`; frontend and trace-service build from their own directory
 - Apple Silicon: if engine binaries are `amd64`, run skaffold with `--check-cluster-node-platforms=false`
-- Deeper detail: [`infra/README.md`](infra/README.md) (ingress priorities, network policy, client-IP trust, node disk management) and [`docs/infra.md`](docs/infra.md) (diagrams)
+- Deeper detail: [`infra/README.md`](infra/README.md) (ingress priorities, network policy, client-IP trust, node disk management) and [`docs/infra.md`](docs/infra.md) (diagrams); releases (release-please, the App token, what merging the release PR does) are in [`docs/releasing.md`](docs/releasing.md)
