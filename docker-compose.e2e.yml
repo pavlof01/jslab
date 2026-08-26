@@ -39,6 +39,9 @@ services:
       target: runner
     environment:
       NODE_ENV: production
+      RATE_LIMIT_PER_MIN: 100000
+      RATE_LIMIT_HEAVY_PER_MIN: 100000
+      TRACE_RATE_LIMIT_PER_MIN: 100000
     volumes: !reset []
 
   frontend:

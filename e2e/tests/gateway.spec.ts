@@ -78,22 +78,25 @@ test.describe("api gateway", () => {
   });
 
   test("mints and revokes a self-service API key", async ({ request }) => {
-    const created = await request.post(`${GATEWAY_URL}/api/keys`, { failOnStatusCode: false });
+    const created = await request.post(`${GATEWAY_URL}/api/keys`, {
+      data: {},
+      failOnStatusCode: false,
+    });
     test.skip(created.status() === 429, "key issuance rate limit reached");
     expect(created.status()).toBe(201);
 
-    const { key } = await created.json();
-    expect(key).toBeTruthy();
+    const { apiKey } = await created.json();
+    expect(apiKey).toBeTruthy();
 
     const run = await request.post(`${GATEWAY_URL}/api/run`, {
-      headers: { "x-api-key": key },
+      headers: { "x-api-key": apiKey },
       data: { engine: "v8", sourceText: `/* keyed ${Date.now()} */ 1+1` },
       failOnStatusCode: false,
     });
     expect(run.status()).toBe(200);
 
     const revoked = await request.delete(`${GATEWAY_URL}/api/keys`, {
-      headers: { "x-api-key": key },
+      headers: { "x-api-key": apiKey },
     });
     expect(revoked.ok()).toBe(true);
   });
