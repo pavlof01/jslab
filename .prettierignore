@@ -4,6 +4,7 @@ dist
 .next
 coverage
 package-lock.json
+CHANGELOG.md
 *.min.js
 
 # Vendored engine262 fork — upstream code.
