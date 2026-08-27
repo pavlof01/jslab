@@ -1,15 +1,38 @@
 name: Feature request
-description: An engine view, spec operation, flag, or tool jslab should have
+description: An engine view, spec operation, or tool jslab should have
 labels: ["enhancement"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        For a single engine flag, use the **Flag request** form. Planned work is in the open issues and on the [roadmap](https://github.com/pavlof01/jslab/wiki/Roadmap) — a 👍 on an existing issue counts.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Playground
+        - V8 Pipeline
+        - Spec visualizers (type conversion, equality)
+        - Embeds and sharing
+        - Public API
+        - Infrastructure and developer experience
+        - Something new
+    validations:
+      required: true
   - type: textarea
     id: idea
     attributes:
       label: The idea
-      description: What it does and who it helps. Existing plans live in the open issues.
+      description: What it does and who it helps.
     validations:
       required: true
   - type: textarea
     id: alternative
     attributes:
       label: What you do today instead
+  - type: textarea
+    id: sketch
+    attributes:
+      label: How it could look
+      description: A sketch of the UI or the API shape, if you have one in mind.

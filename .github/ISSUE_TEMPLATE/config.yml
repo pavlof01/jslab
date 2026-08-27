@@ -2,4 +2,10 @@ blank_issues_enabled: true
 contact_links:
   - name: Security report
     url: https://github.com/pavlof01/jslab/security/policy
-    about: Please report vulnerabilities privately — see SECURITY.md, not a public issue.
+    about: Report vulnerabilities privately, not in a public issue. The policy says what is in scope for a site that runs untrusted JavaScript on purpose.
+  - name: Documentation (wiki)
+    url: https://github.com/pavlof01/jslab/wiki
+    about: Architecture, the API reference, the flag catalog, deployment and troubleshooting — worth a look before filing.
+  - name: Public API reference
+    url: https://jslab.su/api/docs
+    about: The OpenAPI document for POST /api/run, the trace endpoints and self-service API keys.

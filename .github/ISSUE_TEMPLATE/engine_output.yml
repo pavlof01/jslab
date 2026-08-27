@@ -1,0 +1,59 @@
+name: Engine output question
+description: A bytecode dump, trace or optimization log looks wrong, and it is unclear whether that is JSLab or the engine
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        JSLab prints what the engine binary prints; it does not rewrite output. Most "wrong bytecode" reports turn out to be engine behaviour — a newer V8, a flag that only applies after warm-up, a function that was never compiled. This form helps tell the two apart.
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      options:
+        - V8 (d8)
+        - Hermes
+        - SpiderMonkey (js)
+        - JavaScriptCore (jsc)
+        - trace-service (engine262)
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Share link
+      placeholder: https://jslab.su/playground?s=…
+  - type: textarea
+    id: snippet
+    attributes:
+      label: Snippet and flags
+      render: javascript
+    validations:
+      required: true
+  - type: textarea
+    id: got
+    attributes:
+      label: What the output shows
+      description: The relevant part, or the whole dump if it is short.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and why
+      description: Where the expectation comes from — a blog post, the engine's source, another build.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Engine version
+      description: "`GET https://jslab.su/api/engines` reports the version each binary runs; paste the one for your engine."
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: The flags I used are in the picker (or in `GET /api/flags`) and the response did not list them in `meta.droppedFlags`
+        - label: I tried the same snippet in a local build of the engine
