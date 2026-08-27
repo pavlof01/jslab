@@ -2,6 +2,34 @@ name: Bug report
 description: Something on jslab.su or in the codebase does not behave as documented
 labels: ["bug"]
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Playground (/playground)
+        - V8 Pipeline (/v8-pipeline)
+        - Type Conversion visualizer (/type-conversion)
+        - Equality visualizer (/equality)
+        - Embeds or oEmbed (/embed/*)
+        - Public API (/api/*)
+        - Local development (docker compose, skaffold, tests)
+        - Infrastructure (k8s, CI, deploys)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      description: Which engine shows the problem, if it is engine-specific.
+      options:
+        - Not engine-specific
+        - V8 (d8)
+        - Hermes
+        - SpiderMonkey (js)
+        - JavaScriptCore (jsc)
+        - trace-service (engine262)
   - type: textarea
     id: what
     attributes:
@@ -11,21 +39,25 @@ body:
     validations:
       required: true
   - type: input
-    id: where
+    id: link
     attributes:
-      label: Where
-      description: URL on jslab.su, or the service/package for a code issue.
-      placeholder: https://jslab.su/playground
-    validations:
-      required: true
+      label: Share link
+      description: For playground issues, "Copy link" in the toolbar gives a URL that restores the code, the engines and the flags — it is the whole reproduction.
+      placeholder: https://jslab.su/playground?s=…
   - type: textarea
     id: repro
     attributes:
-      label: Minimal reproduction
-      description: The smallest snippet or request that shows the problem.
+      label: Snippet and flags
+      description: The smallest snippet that shows the problem and the flags it ran with, when there is no share link. For API issues, the request body.
+      render: javascript
+  - type: textarea
+    id: output
+    attributes:
+      label: Output or error
+      description: What came back — the output pane, the browser console, or the API response. For `POST /api/run` include `meta`; it carries `droppedFlags`, `outputTruncated` and `retryAfter`.
       render: text
   - type: textarea
     id: env
     attributes:
       label: Environment
-      description: Browser + OS for site issues; node --version for local ones.
+      description: Browser and OS for site issues; `node --version`, the Docker/Compose versions and the commit for local ones.

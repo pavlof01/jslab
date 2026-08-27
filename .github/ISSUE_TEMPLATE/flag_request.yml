@@ -1,0 +1,64 @@
+name: Flag request
+description: Add an engine flag to the catalog so it can be used from the playground and the API
+labels: ["enhancement", "backend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The catalog is `packages/engine-runtime/src/flags.ts`; anything outside it is dropped. A flag is a candidate when it changes what the engine **prints** or how it **compiles**. Flags that read or write files, spawn processes or reconfigure the shell will not be added — the engine shells run untrusted code.
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      options:
+        - V8 (d8)
+        - Hermes
+        - SpiderMonkey (js)
+        - JavaScriptCore (jsc)
+    validations:
+      required: true
+  - type: input
+    id: flag
+    attributes:
+      label: Flag
+      description: Exactly as the engine spells it. If it takes a value, say so and describe the values it accepts.
+      placeholder: --trace-gc
+    validations:
+      required: true
+  - type: textarea
+    id: does
+    attributes:
+      label: What it prints or changes
+      description: One or two sentences — this becomes the description in the picker. A link to the engine's documentation or source helps.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What it lets someone learn
+      description: The snippet you would run with it and what the output would show. A flag that prints megabytes on a trivial snippet needs a filter counterpart, as `--print-bytecode-filter` is to `--print-bytecode`.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sample output
+      description: From a local build, if you have one.
+      render: text
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: How the picker groups it.
+      options:
+        - bytecode
+        - codegen
+        - optimization
+        - inline-caches
+        - object-shapes
+        - parser
+        - regexp
+        - wasm
+        - gc
+        - diagnostics
+        - runtime

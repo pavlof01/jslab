@@ -1,0 +1,34 @@
+name: Documentation
+description: Something in the README, the wiki, the API reference or the in-app text is wrong, missing or unclear
+labels: ["documentation"]
+body:
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - README
+        - Wiki
+        - API reference (/api/docs, OpenAPI)
+        - CONTRIBUTING / CLAUDE.md
+        - docs/ (infra, releasing, test coverage)
+        - In-app text (hints, opcode descriptions, spec panel)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link
+      description: The page or file, with the section or line when you can.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording
+      description: Optional — or open a PR against the file.
