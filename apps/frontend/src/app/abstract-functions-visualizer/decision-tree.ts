@@ -59,10 +59,12 @@ export function buildDecisionTree(root: TraceNode): DecisionNode[] {
 
       if (step.kind === "if") {
         const hint = step.hint ?? "";
+        const cited = /^Step (\d+(?:[a-z](?:-[a-zA-Z0-9]+)?)?):?\s*/i.exec(hint);
+        const clause = cited ? cited[1] : hint.length <= 8 && !hint.includes(" ") ? hint : "";
         node.tests.push({
           taken: step.taken === true,
-          clause: hint.length <= 8 && !hint.includes(" ") ? hint : "",
-          label: step.description ?? step.hint ?? "",
+          clause,
+          label: step.description ?? (cited ? hint.slice(cited[0].length) : hint),
           index: stepIndex,
         });
         return;

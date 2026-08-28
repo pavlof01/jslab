@@ -3,13 +3,14 @@
 import { Box, Button, Flex, Input, Span } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-import { Band, ShortcutHint } from "@/components/ui";
+import { Band } from "@/components/ui";
 import Label from "@/components/ui/label";
 
 type Props = {
   expression: string;
   onExpressionChange: (value: string) => void;
   onTrace: (value: string) => void;
+  placeholder?: string;
   result?: string;
   tracing: boolean;
   error: string | null;
@@ -21,6 +22,7 @@ const ExpressionRow: React.FC<Props> = ({
   expression,
   onExpressionChange,
   onTrace,
+  placeholder,
   result,
   tracing,
   error,
@@ -55,6 +57,7 @@ const ExpressionRow: React.FC<Props> = ({
           }}
           spellCheck={false}
           autoComplete="off"
+          placeholder={placeholder}
           aria-label="Expression to trace"
           flex="1 1 auto"
           minW={0}
@@ -63,20 +66,27 @@ const ExpressionRow: React.FC<Props> = ({
           letterSpacing="-0.01em"
         />
       </Flex>
+
       {result ? (
         <Flex
-          textStyle="codeXl"
           align="baseline"
-          gap="9px"
+          gap="10px"
+          minW={0}
           opacity={tracing ? "pending" : 1}
           transitionProperty="opacity"
           transitionDuration="reveal"
           transitionTimingFunction="DEFAULT"
+          aria-live="polite"
         >
-          <Span aria-hidden="true" color="ink.6">
+          <Span aria-hidden="true" color="ink.5" fontFamily="mono" fontSize="16px">
             ⟶
           </Span>
-          <Span color="accent" overflowWrap="anywhere">
+          <Span
+            fontFamily="mono"
+            fontSize="clamp(16px, 1.6vw, 20px)"
+            color="accent"
+            overflowWrap="anywhere"
+          >
             {result}
           </Span>
         </Flex>
@@ -84,9 +94,18 @@ const ExpressionRow: React.FC<Props> = ({
 
       {extraControl}
 
-      <Button variant="primary" size="md" disabled={tracing} onClick={() => onTrace(expression)}>
+      <Button
+        variant="primary"
+        size="sm"
+        px="16px"
+        py="9px"
+        fontWeight="700"
+        letterSpacing="label"
+        disabled={tracing}
+        onClick={() => onTrace(expression)}
+      >
         {tracing ? "tracing…" : "trace"}
-        <ShortcutHint>↵</ShortcutHint>
+        <Span aria-hidden="true">↵</Span>
       </Button>
 
       {error ? (
@@ -96,7 +115,7 @@ const ExpressionRow: React.FC<Props> = ({
           flex="1 1 100%"
           align="baseline"
           gap="9px"
-          color="status.warn"
+          color="status.error"
         >
           <Span aria-hidden="true">×</Span>
           <Span textWrap="pretty" overflowWrap="anywhere">

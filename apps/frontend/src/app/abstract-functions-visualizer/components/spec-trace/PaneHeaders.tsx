@@ -17,18 +17,9 @@ export const SpecPaneHeader: React.FC<Props> = ({ specId }) => {
   return (
     <Band tone="pane" edge="top">
       <Label>ECMA-262{specId ? ` · ${specId}` : ""}</Label>
-      <QuietLink href={specHref(specId)} mono external>
+      <QuietLink href={specHref(specId)} mono external color="ink.3" borderColor="rule.panel">
         tc39.es ↗
       </QuietLink>
-    </Band>
-  );
-};
-
-export const TreePaneHeader: React.FC = () => {
-  return (
-    <Band tone="pane" edge="top" textStyle="label" color="ink.label">
-      <span>decision tree</span>
-      <span>indentation = one nested call</span>
     </Band>
   );
 };

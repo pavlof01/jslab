@@ -28,6 +28,7 @@ export function useVisualizerRuntime(resolvedInitialData: VisualizerInitialData)
   const trace = useVisualizerStore(
     useShallow((s) => ({
       root: s.root,
+      resultValue: s.resultValue,
       error: s.error,
       isTracing: s.isTracing,
       flatEntries: s.flatEntries,

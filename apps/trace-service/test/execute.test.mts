@@ -69,6 +69,28 @@ describe("type conversion", () => {
     expect(serialized).toContain("ToNumber");
   });
 
+  it.each([
+    ["ToBoolean", "0", "2", false],
+    ["ToBoolean", "{}", "4", true],
+    ["ToString", "7", "7", "7"],
+    ["ToString", "{}", "12", "[object Object]"],
+  ])("%s(%s) cites the spec clause it returns from", async (fn, input, clause, value) => {
+    // The panels key on "Step N" hints and if/taken verdicts; a narrative
+    // trace without them shows nothing highlighted and no verdict marks.
+    const response = await convert(fn, input);
+    expect(response.success).toBe(true);
+    const steps = response.root?.steps ?? [];
+    expect(steps.length).toBeGreaterThan(1);
+    for (const step of steps) {
+      expect(step.hint).toMatch(/^Step \d+/);
+      if (step.kind === "if") expect(typeof step.taken).toBe("boolean");
+    }
+    const last = steps[steps.length - 1];
+    expect(last.kind).toBe("return");
+    expect(last.hint).toMatch(new RegExp(`^Step ${clause}\\b`));
+    expect(response.root?.output).toMatchObject({ value });
+  });
+
   it("honours the preferredType hint on ToPrimitive", async () => {
     const asString = await convert(
       "ToPrimitive",

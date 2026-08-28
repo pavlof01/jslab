@@ -31,13 +31,14 @@ const AlgoPicker: React.FC<AlgoPickerProps> = ({ value, options, onChange }) => 
       collection={collection}
       size="sm"
       width="auto"
+      minW="max-content"
       value={[value]}
       onValueChange={(event) => onChange(event.value[0])}
       positioning={{ sameWidth: false }}
     >
       <Select.Control>
-        <Select.Trigger aria-label="Abstract operation to trace">
-          <Select.ValueText />
+        <Select.Trigger aria-label="Abstract operation to trace" w="max-content">
+          <Select.ValueText whiteSpace="nowrap" overflow="visible" textOverflow="clip" />
         </Select.Trigger>
         <Select.IndicatorGroup>
           <Select.Indicator />
@@ -82,6 +83,7 @@ type VisualizerScreenProps = { initialData: VisualizerInitialData };
 const VisualizerScreen: React.FC<VisualizerScreenProps> = ({ initialData }) => {
   const {
     root,
+    resultValue,
     error,
     isTracing,
     flatEntries,
@@ -121,31 +123,46 @@ const VisualizerScreen: React.FC<VisualizerScreenProps> = ({ initialData }) => {
   );
 
   return (
-    <Box as="main" bg="surface.base" minH="calc(100dvh - {sizes.header})">
-      <SpecTraceScreen
-        root={root}
-        error={error}
-        tracing={isTracing}
-        selectedIndex={selectedIndex}
-        stepCount={flatEntries.length}
-        isPlaying={isPlaying}
-        onSelectIndex={onSelectIndex}
-        onTogglePlay={togglePlay}
-        specId={effectiveAlgoId ?? selectedAlgo}
-        expression={traceInputRaw}
-        onExpressionChange={setTraceInputRaw}
-        onTrace={commitTraceInput}
-        hint={HINTS[category]}
-        presets={presets}
-        extraControl={algoPicker}
-        specPane={
-          <EcmaSpecPanel
-            flatEntries={flatEntries}
-            selectedIndex={selectedIndex}
-            specHtml={specHtml}
-          />
-        }
-      />
+    <Box
+      display="flex"
+      flexDirection="column"
+      bg="surface.base"
+      minH="calc(100dvh - {sizes.header})"
+    >
+      <Box
+        as="main"
+        display="flex"
+        flexDirection="column"
+        flex="none"
+        h={{ base: "auto", md: "calc(100dvh - {sizes.header})" }}
+        minH={{ base: 0, md: "480px" }}
+      >
+        <SpecTraceScreen
+          root={root}
+          resultValue={resultValue}
+          error={error}
+          tracing={isTracing}
+          selectedIndex={selectedIndex}
+          stepCount={flatEntries.length}
+          isPlaying={isPlaying}
+          onSelectIndex={onSelectIndex}
+          onTogglePlay={togglePlay}
+          specId={effectiveAlgoId ?? selectedAlgo}
+          expression={traceInputRaw}
+          onExpressionChange={setTraceInputRaw}
+          onTrace={commitTraceInput}
+          hint={HINTS[category]}
+          presets={presets}
+          extraControl={algoPicker}
+          specPane={
+            <EcmaSpecPanel
+              flatEntries={flatEntries}
+              selectedIndex={selectedIndex}
+              specHtml={specHtml}
+            />
+          }
+        />
+      </Box>
     </Box>
   );
 };

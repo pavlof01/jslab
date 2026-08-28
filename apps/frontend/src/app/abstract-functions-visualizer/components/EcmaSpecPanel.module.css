@@ -1,64 +1,74 @@
-/* ── Dark theme tokens (from ecmarkup dark palette) ──────────────────────── */
+/* ── Design-system values (hex mirrors src/style/theme.ts — CSS modules cannot
+     read Chakra tokens, so the ramp is restated here by name) ─────────────── */
 .panel {
-  --fg: #fcfcfc;
-  --bg: #171717;
-  --border: #2a2a2a;
-  --fg-muted: #b0b0b0;
-  --fg-dim: #888;
-  --link: #439de2;
-  --link-hover: #80cafb;
-  --var-color: #4fb6ab;
-  --secnum-color: #666;
-  --highlight-bg: rgba(114, 105, 24, 1);
-  --highlight-dim: rgba(114, 105, 24, 0.4);
-  --clause-active: #439de2;
-  --separator: #252525;
+  --accent: #f9e31a; /* accent */
+  --highlight-bg: #1a1c13; /* surface.accentRow */
+  --highlight-fg: #e8e9e7; /* ink.1 */
+  --clause-active: #f9e31a; /* accent */
+  --fg: #8e938f; /* ink.3 — resting spec text */
+  --fg-strong: #e8e9e7; /* ink.1 */
+  --fg-code: #c9cec9; /* ink.code */
+  --fg-muted: #9ba09d; /* ink.2 */
+  --fg-label: #6b6f6d; /* ink.label */
+  --fg-marker: #7e8380; /* ink.4 — step numbers, kept readable */
+  --fg-dim: #5b5f62; /* ink.5 */
+  --fg-gutter: #4f5457; /* ink.6 */
+  --separator: #1e2124; /* rule.row */
 
-  font-family: "IBM Plex Serif", Palatino, "Palatino Linotype", Georgia, serif;
-  font-size: 14px;
-  line-height: 1.75;
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
   color: var(--fg);
-  background: var(--bg);
   overflow-y: auto;
+  overscroll-behavior: contain;
   /* The panel is its own scroller — the step-follow logic drives its
-     scrollTop, so the cap must live here, not on a wrapper. A wrapper that
-     scrolls instead leaves this element un-overflowed and scrollTo() inert. */
-  max-height: min(64vh, 720px);
-  padding: 24px 28px 48px;
-  border-right: 1px solid var(--border);
+     scrollTop, so it must be the element that overflows. It fills whatever
+     height the pane's flex column leaves it; a wrapper that scrolled instead
+     would leave this element un-overflowed and scrollTo() inert. */
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px clamp(14px, 1.6vw, 18px) clamp(16px, 2vw, 22px);
+}
+/* Stacked under the tree on a phone (below Chakra's md), the page scrolls
+   instead, so the panel needs its own cap again. */
+@media (max-width: 47.99em) {
+  .panel {
+    max-height: min(64vh, 720px);
+  }
 }
 
 /* ── ecmarkup clause structure ── */
 :global(emu-clause) {
   display: block;
-  margin-top: 2em;
+  margin-top: 1.8em;
 }
 :global(emu-clause:first-child) {
   margin-top: 0;
 }
 :global(emu-clause + emu-clause) {
-  padding-top: 1.6em;
+  padding-top: 1.5em;
   border-top: 1px solid var(--separator);
 }
 :global(emu-clause h1) {
-  font-size: 1em;
-  font-weight: 700;
-  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
   line-height: 1.4;
-  color: var(--fg);
+  color: var(--fg-strong);
 }
 :global(emu-clause h1 .secnum) {
-  font-size: 0.7em;
-  font-weight: 600;
-  color: var(--secnum-color);
-  margin-right: 6px;
-  font-family: "IBM Plex Sans", sans-serif;
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--fg-dim);
+  margin: 0 0 3px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.13em;
 }
 :global(emu-clause > p) {
   margin: 4px 0 12px;
-  color: var(--fg-muted);
+  color: var(--fg);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -82,23 +92,26 @@
   list-style-type: decimal;
 }
 :global(emu-alg li) {
-  padding: 2px 3px;
-  border-radius: 3px;
+  /* Room between the 2px cursor bar (inset on the left edge) and the text. */
+  padding: 3px 6px 3px 10px;
   transition: background-color 0.12s ease;
+}
+:global(emu-alg li::marker) {
+  color: var(--fg-marker);
+  font-size: 11px;
 }
 
 /* ── Inline spec elements ── */
 :global(emu-clause var) {
-  color: var(--var-color);
+  color: var(--fg-code);
   font-style: italic;
   font-weight: inherit;
 }
 :global(emu-val) {
-  font-weight: bold;
-  color: var(--fg);
+  font-weight: 600;
+  color: var(--fg-strong);
 }
 :global(emu-const) {
-  font-family: "IBM Plex Sans", sans-serif;
   font-variant: small-caps;
   text-transform: uppercase;
   font-size: 0.88em;
@@ -106,14 +119,16 @@
   color: var(--fg-muted);
 }
 :global(emu-xref a) {
-  color: var(--link);
-  text-decoration: none;
-  font-family: "IBM Plex Mono", "Fira Code", monospace;
-  font-size: 0.9em;
-}
-:global(emu-xref a:hover) {
+  color: var(--fg-code);
   text-decoration: underline;
-  color: var(--link-hover);
+  text-decoration-color: var(--fg-dim);
+  text-underline-offset: 2px;
+  font-size: 0.95em;
+}
+:global(emu-xref a:hover),
+:global(emu-xref a:focus-visible) {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
 }
 
 /* ── Spec external link icon in clause h1 (injected server-side) ── */
@@ -121,7 +136,7 @@
   display: inline-flex;
   align-items: center;
   margin-left: 5px;
-  color: var(--fg-dim);
+  color: var(--fg-gutter);
   opacity: 0;
   transition:
     opacity 0.15s ease,
@@ -130,9 +145,10 @@
   text-decoration: none;
 }
 :global(emu-clause h1:hover .spec-ext-link),
-:global(.spec-ext-link:hover) {
+:global(.spec-ext-link:hover),
+:global(.spec-ext-link:focus-visible) {
   opacity: 1;
-  color: var(--link-hover);
+  color: var(--accent);
 }
 :global(.spec-ext-link-icon) {
   display: block;
