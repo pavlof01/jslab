@@ -7,6 +7,8 @@ export type StepTest = {
   clause: string;
   label: string;
   state: StepRowState;
+  /** Position in the playback order, exposed as `data-step-index` for scroll-follow. */
+  index?: number;
 };
 
 export type StepNodeProps = {
@@ -14,12 +16,16 @@ export type StepNodeProps = {
   args: React.ReactNode;
   specId?: string;
   result?: string;
+  /** False keeps the result in place but unseen until playback has unwound this frame. */
+  resultRevealed?: boolean;
   depth?: number;
   active?: boolean;
   pending?: boolean;
   tests?: StepTest[];
   action?: React.ReactNode;
   actionState?: StepRowState;
+  /** The action row's playback position, exposed like a test's `index`. */
+  actionIndex?: number;
   onClick?: () => void;
   onSelectTest?: (testIndex: number) => void;
 } & Omit<BoxProps, "children">;
@@ -48,12 +54,14 @@ const StepNode: React.FC<StepNodeProps> = ({
   args,
   specId,
   result,
+  resultRevealed = true,
   depth = 0,
   active = false,
   pending = false,
   tests = [],
   action,
   actionState = "done",
+  actionIndex,
   onClick,
   onSelectTest,
   ...rest
@@ -83,7 +91,14 @@ const StepNode: React.FC<StepNodeProps> = ({
         mb="12px"
         cursor={onClick ? "pointer" : "default"}
       >
-        <FrameHeader op={op} args={args} specId={specId} result={result} active={active} />
+        <FrameHeader
+          op={op}
+          args={args}
+          specId={specId}
+          result={result}
+          resultRevealed={resultRevealed}
+          active={active}
+        />
 
         <Grid px="14px" pt="9px" pb="11px" gap="5px">
           {tests.map((test, index) => (
@@ -94,7 +109,11 @@ const StepNode: React.FC<StepNodeProps> = ({
             />
           ))}
 
-          {action ? <ActionRow state={actionState}>{action}</ActionRow> : null}
+          {action ? (
+            <ActionRow state={actionState} index={actionIndex}>
+              {action}
+            </ActionRow>
+          ) : null}
         </Grid>
       </Box>
     </Box>
@@ -120,10 +139,18 @@ type FrameHeaderProps = {
   args: React.ReactNode;
   specId?: string;
   result?: string;
+  resultRevealed: boolean;
   active: boolean;
 };
 
-const FrameHeader: React.FC<FrameHeaderProps> = ({ op, args, specId, result, active }) => {
+const FrameHeader: React.FC<FrameHeaderProps> = ({
+  op,
+  args,
+  specId,
+  result,
+  resultRevealed,
+  active,
+}) => {
   return (
     <Flex
       wrap="wrap"
@@ -151,7 +178,15 @@ const FrameHeader: React.FC<FrameHeaderProps> = ({ op, args, specId, result, act
           </Span>
         ) : null}
         {result ? (
-          <Span textStyle="code" color="accent">
+          <Span
+            textStyle="code"
+            color="accent"
+            aria-hidden={!resultRevealed}
+            opacity={resultRevealed ? 1 : 0}
+            transitionProperty="opacity"
+            transitionDuration="reveal"
+            transitionTimingFunction="DEFAULT"
+          >
             ⟶ {result}
           </Span>
         ) : null}
@@ -173,6 +208,7 @@ const TestRow: React.FC<TestRowProps> = ({ test, onSelect }) => {
             }
           : undefined
       }
+      data-step-index={test.index}
       gridTemplateColumns={test.clause ? "12px auto minmax(0,1fr)" : "12px minmax(0,1fr)"}
       columnGap="10px"
       alignItems="baseline"
@@ -199,11 +235,12 @@ const TestRow: React.FC<TestRowProps> = ({ test, onSelect }) => {
   );
 };
 
-type ActionRowProps = { state: StepRowState; children: React.ReactNode };
+type ActionRowProps = { state: StepRowState; index?: number; children: React.ReactNode };
 
-const ActionRow: React.FC<ActionRowProps> = ({ state, children }) => {
+const ActionRow: React.FC<ActionRowProps> = ({ state, index, children }) => {
   return (
     <Grid
+      data-step-index={index}
       gridTemplateColumns="12px minmax(0,1fr)"
       columnGap="10px"
       alignItems="baseline"

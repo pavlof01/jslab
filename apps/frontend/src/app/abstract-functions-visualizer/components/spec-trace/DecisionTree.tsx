@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Flex, Span } from "@chakra-ui/react";
-import { useMemo } from "react";
+import { Box } from "@chakra-ui/react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { StepNode } from "@/components/ui";
 
@@ -14,26 +14,57 @@ function rowStateAt(index: number, selectedIndex: number): "pending" | "current"
   return "done";
 }
 
+const FOLLOW_MARGIN_PX = 24;
+
+function followStep(scroller: HTMLElement, selectedIndex: number): void {
+  const row =
+    scroller.querySelector<HTMLElement>(`[data-step-index="${selectedIndex}"]`) ??
+    scroller.querySelector<HTMLElement>("[data-active]");
+  if (!row) return;
+
+  const pane = scroller.getBoundingClientRect();
+  const rect = row.getBoundingClientRect();
+  const top = rect.top - pane.top + scroller.scrollTop;
+  const bottom = top + rect.height;
+  const viewTop = scroller.scrollTop;
+  const viewBottom = viewTop + scroller.clientHeight;
+
+  let target: number | null = null;
+  if (top < viewTop + FOLLOW_MARGIN_PX) target = top - FOLLOW_MARGIN_PX;
+  else if (bottom > viewBottom - FOLLOW_MARGIN_PX) {
+    target = bottom - scroller.clientHeight + FOLLOW_MARGIN_PX;
+  }
+  if (target === null) return;
+
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  scroller.scrollTo({ top: Math.max(0, target), behavior: reduced ? "auto" : "smooth" });
+}
+
 type Props = {
   root: TraceNode | null;
   selectedIndex: number;
   onSelectIndex: (index: number) => void;
-  result?: string;
-  complete: boolean;
 };
 
-const DecisionTree: React.FC<Props> = ({
-  root,
-  selectedIndex,
-  onSelectIndex,
-  result,
-  complete,
-}) => {
+const DecisionTree: React.FC<Props> = ({ root, selectedIndex, onSelectIndex }) => {
   const nodes = useMemo(() => (root ? buildDecisionTree(root) : []), [root]);
-  const frameCount = nodes.length;
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (scrollerRef.current) followStep(scrollerRef.current, selectedIndex);
+  }, [selectedIndex, root]);
 
   return (
-    <Box pt="clamp(16px, 2.4vw, 26px)" px="clamp(14px, 2.4vw, 26px)" pb="clamp(10px, 1.6vw, 18px)">
+    <Box
+      ref={scrollerRef}
+      flex={{ base: "none", md: "1" }}
+      minH={0}
+      overflowY="auto"
+      overscrollBehavior="contain"
+      pt="clamp(16px, 2.4vw, 26px)"
+      px="clamp(14px, 2.4vw, 26px)"
+      pb="clamp(10px, 1.6vw, 18px)"
+    >
       {nodes.length === 0 ? (
         <Box textStyle="code" color="ink.label">
           No trace yet — enter an expression to run one.
@@ -52,9 +83,11 @@ const DecisionTree: React.FC<Props> = ({
               key={node.path || "root"}
               op={node.op}
               args={node.args}
-              result={selectedIndex >= lastOwn ? node.result : undefined}
+              result={node.result}
+              resultRevealed={selectedIndex >= lastOwn}
               depth={node.depth}
               active={onFrame}
+              data-active={onFrame ? "" : undefined}
               pending={node.index > selectedIndex}
               tests={node.tests.map((test) => ({
                 ...test,
@@ -64,42 +97,13 @@ const DecisionTree: React.FC<Props> = ({
               actionState={
                 node.actionIndex == null ? "done" : rowStateAt(node.actionIndex, selectedIndex)
               }
+              actionIndex={node.actionIndex}
               onClick={() => onSelectIndex(node.index)}
               onSelectTest={(i) => onSelectIndex(node.tests[i].index)}
             />
           );
         })
       )}
-
-      {result && complete ? (
-        <Flex
-          wrap="wrap"
-          align="baseline"
-          gap="8px 16px"
-          mt="4px"
-          pt="14px"
-          borderTopWidth="1px"
-          borderColor="rule.accentDim"
-          transitionProperty="opacity"
-          transitionDuration="result"
-          transitionTimingFunction="DEFAULT"
-        >
-          <Span textStyle="label" color="ink.label">
-            returns
-          </Span>
-          <Span
-            fontFamily="mono"
-            fontSize="clamp(16px, 1.6vw, 20px)"
-            color="accent"
-            overflowWrap="anywhere"
-          >
-            {result}
-          </Span>
-          <Span textStyle="code" color="ink.label">
-            unwinding back through {frameCount} {frameCount === 1 ? "frame" : "frames"}
-          </Span>
-        </Flex>
-      ) : null}
     </Box>
   );
 };

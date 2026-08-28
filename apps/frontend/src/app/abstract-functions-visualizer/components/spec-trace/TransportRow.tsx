@@ -49,6 +49,7 @@ const TransportRow: React.FC<Props> = ({
       gap="12px 20px"
       py="11px"
       px="clamp(14px, 2vw, 20px)"
+      borderBottomWidth="1px"
       borderColor="rule.structural"
       bg="surface.band"
     >
@@ -68,10 +69,13 @@ const TransportRow: React.FC<Props> = ({
             type="button"
             onClick={preset.onPick}
             aria-pressed={preset.active}
-            borderColor={preset.active ? "rule.accent" : "rule.link"}
+            borderColor={preset.active ? "accent" : "transparent"}
             pt="2px"
             pb="3px"
             color={preset.active ? "accent" : "ink.4"}
+            _hover={{ color: "ink.1" }}
+            transitionProperty="color"
+            transitionDuration="hover"
             overflowWrap="anywhere"
           >
             {preset.label}
@@ -91,16 +95,18 @@ const TransportRow: React.FC<Props> = ({
         </Span>
         <Button
           size="sm"
+          color="ink.2"
           onClick={() => onSelectIndex(selectedIndex - 1)}
           disabled={selectedIndex <= 0}
         >
           prev
         </Button>
-        <Button size="sm" active onClick={onTogglePlay}>
+        <Button size="sm" color="accent" borderColor="rule.accent" px="12px" onClick={onTogglePlay}>
           {transportLabel({ isPlaying, complete })}
         </Button>
         <Button
           size="sm"
+          color="ink.2"
           onClick={() => onSelectIndex(selectedIndex + 1)}
           disabled={stepCount === 0 || selectedIndex >= stepCount - 1}
         >

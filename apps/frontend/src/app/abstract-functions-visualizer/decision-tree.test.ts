@@ -25,8 +25,17 @@ describe("buildDecisionTree", () => {
     ]);
   });
 
-  it("drops sentence-length hints from the citation column but keeps them as the label fallback", () => {
+  it("cites the step number from a sentence hint and strips the prefix from the label fallback", () => {
     const hint = "Step 1: Type(x) is Object, Type(y) is Boolean — different types, continue.";
+    const nodes = buildDecisionTree(root([{ kind: "if", taken: false, hint } as never]));
+    expect(nodes[0].tests[0].clause).toBe("1");
+    expect(nodes[0].tests[0].label).toBe(
+      "Type(x) is Object, Type(y) is Boolean — different types, continue.",
+    );
+  });
+
+  it("drops prose hints without a step citation from the citation column", () => {
+    const hint = "no clause here, just words";
     const nodes = buildDecisionTree(root([{ kind: "if", taken: false, hint } as never]));
     expect(nodes[0].tests[0].clause).toBe("");
     expect(nodes[0].tests[0].label).toBe(hint);
