@@ -1,15 +1,10 @@
 "use client";
 
-import { Box, Card, CodeBlock, createShikiAdapter, HStack, Stack } from "@chakra-ui/react";
+import { Box, Card, CodeBlock, HStack, Stack } from "@chakra-ui/react";
 import type { ReactNode } from "react";
-import type { HighlighterGeneric } from "shiki";
 
-import { getSourceHighlighter, SOURCE_LANG, THEME } from "@/lib/shiki";
-
-const CODE_ADAPTER = createShikiAdapter<HighlighterGeneric<never, never>>({
-  load: getSourceHighlighter,
-  theme: THEME,
-});
+import { SOURCE_LANG } from "@/lib/shiki";
+import { sourceShikiAdapter } from "@/lib/shiki-adapter";
 
 type Props = {
   id: string;
@@ -59,7 +54,7 @@ const SampleCard: React.FC<Props> = ({
             {actions && <HStack gap={1}>{actions}</HStack>}
           </HStack>
 
-          <CodeBlock.AdapterProvider value={CODE_ADAPTER}>
+          <CodeBlock.AdapterProvider value={sourceShikiAdapter}>
             <CodeBlock.Root
               code={snippet}
               language={SOURCE_LANG}
