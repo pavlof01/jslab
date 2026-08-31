@@ -4,6 +4,11 @@
 # then dies in actions/checkout with "upload-pack: not our ref <sha>".
 set -euo pipefail
 
+# git exports GIT_DIR to hooks — in a linked worktree the superproject's
+# absolute gitdir — which would make every `git -C` below query the
+# superproject instead of the submodule. Rediscover from cwd instead.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+
 fail=0
 
 while read -r _local_ref local_sha _remote_ref _remote_sha; do
