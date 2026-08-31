@@ -183,6 +183,8 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 **Components**: `const Name: React.FC<Props> = () => {}` with `export default Name;` at the end of the file — never a function declaration (ESLint `react/function-component-definition` is set to `arrow-function` and enforces it). A second component in the same file keeps a named `export const`; an async server component (`app/**/page.tsx`) cannot be typed `React.FC`, so it stays `const Page = async ({ ... }: Props) => {}`. Props are a `type`, not an `interface` (`@typescript-eslint/consistent-type-definitions`, `.tsx` only): `type Props` for a file's single component, `<Name>Props` when exported or when the file holds several. An inline props literal is fine only while the signature fits on one line — once the formatter wraps it, name the type.
 
+**Icons**: `public/jslab-logo.svg` is the animated (SMIL) mark the header and footer render. The favicon/touch/manifest files in `public/` (and the static `icon.svg`) are per-size exports of the same flask mark from the JSLab icon set in Claude Design, pixel-hinted per size — replace them with fresh exports rather than editing or regenerating by hand (`favicon.ico` just packs the 16/32/48 PNGs).
+
 **Samples**: `lib/samples.ts` exports `samples` (basic code snippets), `sampleCatalog`, `v8Samples` (V8-internals examples with inline comments), and `v8SampleCatalog`.
 
 **API client**: `lib/api.ts` — `runEngine()` calls `POST /api/run` via Next.js route proxy.
