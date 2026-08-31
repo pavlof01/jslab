@@ -8,7 +8,7 @@ import { SITE_ORIGIN } from "@/lib/site";
 import Providers from "./providers";
 
 export const viewport: Viewport = {
-  themeColor: "#111827",
+  themeColor: "#0C0D0E",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -64,13 +64,23 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
-      { url: "/icon.png", type: "image/png", sizes: "256x256" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icon.svg", sizes: "any", type: "image/svg+xml" },
     ],
     shortcut: "/favicon.ico",
-    apple: [{ url: "/icon.png", sizes: "256x256", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon-167x167.png", sizes: "167x167", type: "image/png" },
+      { url: "/apple-touch-icon-152x152.png", sizes: "152x152", type: "image/png" },
+    ],
+    other: [{ rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#e9c822" }],
   },
   manifest: "/site.webmanifest",
+  other: { "msapplication-TileImage": "/mstile-150x150.png" },
   category: "developer tools",
 };
 
