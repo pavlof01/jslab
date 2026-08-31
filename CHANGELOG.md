@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/pavlof01/jslab/compare/v0.2.0...v0.3.0) (2026-08-31)
+
+
+### Features
+
+* **frontend:** replace the header github link text with the logo icon ([#64](https://github.com/pavlof01/jslab/issues/64)) ([3405e6a](https://github.com/pavlof01/jslab/commit/3405e6aeabedb287fcdbfd9fb5b4baa4d314969e))
+* **frontend:** switch site icons to the design-set exports of the he… ([#62](https://github.com/pavlof01/jslab/issues/62)) ([7566493](https://github.com/pavlof01/jslab/commit/7566493f5db112df927abf77aefd07eafbb053b3))
+* **spec-trace:** improve design trace and change ToBoolean/ToString … ([#61](https://github.com/pavlof01/jslab/issues/61)) ([04db68e](https://github.com/pavlof01/jslab/commit/04db68e07c954088896a897e099450151412f5ff))
+
+
+### Bug Fixes
+
+* **compose:** stop bind-mounting the generated next-env.d.ts ([#58](https://github.com/pavlof01/jslab/issues/58)) ([9c32d01](https://github.com/pavlof01/jslab/commit/9c32d01801806cc5b00cb5ee060064c4931fe56f))
+* **shiki:** disposed highlighter ([#63](https://github.com/pavlof01/jslab/issues/63)) ([1e81eb8](https://github.com/pavlof01/jslab/commit/1e81eb8920df2fb46cb8dde30711680e9d4273a2))
+
 ## [0.2.0](https://github.com/pavlof01/jslab/compare/v0.1.0...v0.2.0) (2026-08-26)
 
 
