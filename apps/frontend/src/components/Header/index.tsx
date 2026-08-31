@@ -1,4 +1,5 @@
 import { Box, Container, HStack, Link } from "@chakra-ui/react";
+import { IoLogoGithub } from "react-icons/io";
 
 import { REPO_URL } from "@/lib/site";
 
@@ -40,10 +41,10 @@ const Header: React.FC = () => {
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
+              aria-label="GitHub"
               textStyle="label"
               display={{ base: "none", sm: "inline-flex" }}
-              alignItems="baseline"
-              gap="7px"
+              alignItems="center"
               flexShrink={0}
               color="ink.label"
               borderBottomWidth={0}
@@ -51,10 +52,7 @@ const Header: React.FC = () => {
               transitionProperty="color"
               transitionDuration="hover"
             >
-              github
-              <Box as="span" aria-hidden="true" fontSize="11px" color="ink.5">
-                ↗
-              </Box>
+              <IoLogoGithub size={18} aria-hidden="true" />
             </Link>
             <MobileNav />
           </HStack>
