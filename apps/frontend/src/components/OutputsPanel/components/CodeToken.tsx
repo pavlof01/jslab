@@ -1,45 +1,37 @@
-import { Text } from "@chakra-ui/react";
-import type { CSSProperties } from "react";
+import { Button } from "@chakra-ui/react";
 import type { ThemedToken } from "shiki";
 
+import ClickPopover from "@/components/ui/click-popover";
 import type { EngineKey } from "@/lib/types";
 
 import { describeEngineToken } from "../op-codes";
-import ClickPopoverToken from "./ClickPopoverToken";
+import TokenText from "./TokenText";
 
 type Props = {
   token: ThemedToken;
   nextToken?: ThemedToken;
   engineKey: EngineKey;
+  slice?: ThemedToken;
 };
 
-const ITALIC = 1;
-const BOLD = 2;
-const UNDERLINE = 4;
-
-const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey }) => {
-  const fontStyle = token.fontStyle ?? 0;
-  const style: CSSProperties = {
-    color: token.color ?? "inherit",
-    whiteSpace: "pre",
-    ...(fontStyle & ITALIC ? { fontStyle: "italic" } : null),
-    ...(fontStyle & BOLD ? { fontWeight: "bold" } : null),
-    ...(fontStyle & UNDERLINE ? { textDecoration: "underline" } : null),
-  };
-
+const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey, slice }) => {
   const description = describeEngineToken(engineKey, token.content, nextToken?.content ?? null);
+  const content = <TokenText token={slice ?? token} />;
+  if (!description) return content;
 
-  const content = (
-    <Text as="span" fontSize={14} style={style}>
-      {token.content}
-    </Text>
+  return (
+    <ClickPopover title={<TokenText token={token} />} content={description}>
+      <Button
+        variant="rule"
+        typeface="prose"
+        type="button"
+        borderBottomStyle="dashed"
+        borderBottomColor="rule.link"
+      >
+        {content}
+      </Button>
+    </ClickPopover>
   );
-
-  if (!description) {
-    return content;
-  }
-
-  return <ClickPopoverToken content={content} description={description} />;
 };
 
 export default TokenSpan;

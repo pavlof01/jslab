@@ -79,6 +79,8 @@ const tokens = defineTokens({
 
       errorSoft: { value: "#17100D" },
       errorRule: { value: "#3C241A" },
+      warnSoft: { value: "#15140B" },
+      warnRule: { value: "#3A3618" },
     },
 
     syn: {

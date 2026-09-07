@@ -19,7 +19,7 @@ const COPIED_LABEL: Record<CopyTarget, string> = {
 const IDLE_LABEL = "share";
 
 const ShareButton: React.FC = () => {
-  const { code, engines, flags, out, activeTab } = useShareableState();
+  const { code, engines, flags, out, currentRun, activeTab } = useShareableState();
   const [copied, setCopied] = useState<CopyTarget | null>(null);
 
   const state = useMemo(
@@ -48,14 +48,16 @@ const ShareButton: React.FC = () => {
   }, [state]);
 
   const activeOut = out?.[activeTab];
-  const canCopyArticleLink = Boolean(activeOut?.stdout || activeOut?.stderr);
+  const canCopyArticleLink = Boolean(
+    currentRun?.engines.includes(activeTab) && (activeOut?.stdout || activeOut?.stderr),
+  );
 
   const copyArticleLink = useCallback(async () => {
-    if (!activeOut) return;
+    if (!activeOut || !currentRun || !canCopyArticleLink) return;
     const url = await buildSnapshotUrl(window.location.origin, {
-      code,
+      code: currentRun.code,
       engine: activeTab,
-      flags: flagsFor(flags, activeTab),
+      flags: flagsFor(currentRun.flags, activeTab),
       output: activeOut.stdout ?? "",
       stderr: activeOut.stderr || undefined,
     });
@@ -67,7 +69,7 @@ const ShareButton: React.FC = () => {
       // Clipboard blocked (insecure context / permissions): leave the label
       // unchanged rather than claim a copy that did not happen.
     }
-  }, [activeOut, activeTab, code, flags]);
+  }, [activeOut, activeTab, currentRun, canCopyArticleLink]);
 
   const label = copied ? COPIED_LABEL[copied] : IDLE_LABEL;
 
