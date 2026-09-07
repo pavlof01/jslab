@@ -79,10 +79,11 @@ const renderAnnotatedTokens = (
       <ClickPopover key={annotation.id} title={annotation.title} content={annotation.text}>
         <Button
           variant="rule"
-          typeface="prose"
+          typeface="code"
           type="button"
-          borderBottomStyle="dashed"
-          borderBottomColor="accent"
+          borderStyle="double"
+          borderColor="accent"
+          borderWidth="1px"
           bg="surface.accentSoft"
           aria-label={`Explanation: ${annotation.title}`}
           data-output-annotation={annotation.id}
