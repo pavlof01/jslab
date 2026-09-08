@@ -119,16 +119,29 @@ interface Workspace {
   dispose(): Promise<void>;
 }
 
+export const PRELUDE_END_MARKER = "@@jslab:prelude-end@@";
+
+const PRELUDE_END_SCRIPT: PreludeScript = {
+  file: "prelude-end.js",
+  contents: `try { print(${JSON.stringify(PRELUDE_END_MARKER)}); } catch (e) {}\n`,
+};
+
 /** The prelude a spec asks for, with the generated lockdown shim ahead of it. */
 function preludeScripts(spec: EngineSpec): readonly PreludeScript[] {
   const declared = spec.prelude ?? [];
-  if (!spec.blockedGlobals?.length) return declared;
   // Lockdown loads first so the snippet never observes a dangerous global, not
   // even transiently through another prelude script.
-  return [
-    { file: LOCKDOWN_SHIM_FILE, contents: buildLockdownShim(spec.blockedGlobals) },
-    ...declared,
-  ];
+  const scripts = spec.blockedGlobals?.length
+    ? [{ file: LOCKDOWN_SHIM_FILE, contents: buildLockdownShim(spec.blockedGlobals) }, ...declared]
+    : [...declared];
+  return scripts.length ? [...scripts, PRELUDE_END_SCRIPT] : scripts;
+}
+
+export function stripPreludeOutput(stdout: string): string {
+  const line = `${PRELUDE_END_MARKER}\n`;
+  const at = stdout.indexOf(line);
+  if (at === -1 || (at > 0 && stdout[at - 1] !== "\n")) return stdout;
+  return stdout.slice(at + line.length);
 }
 
 /** Temp dir holding the snippet plus its prelude, cleaned up by `dispose`. */
@@ -263,7 +276,7 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
       // so the gateway can size its cache guard against it.
       reply.send({
         ok: true,
-        stdout: result.stdout,
+        stdout: stripPreludeOutput(result.stdout),
         stderr: result.stderr,
         artifacts: [],
         meta: {

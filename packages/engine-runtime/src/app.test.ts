@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { buildEngineApp, type EngineSpec } from "./app.js";
+import { buildEngineApp, type EngineSpec, PRELUDE_END_MARKER, stripPreludeOutput } from "./app.js";
 import { engineEnvBase } from "./config.js";
 
 /**
@@ -76,6 +76,39 @@ describe("buildEngineApp", () => {
   it("writes no lockdown shim for a compile-only engine", async () => {
     const body = (await run(makeApp(), { sourceText: "/* snippet */" })).json();
     expect(body.stdout).toBe("/* snippet */");
+  });
+
+  it("drops what the prelude printed and keeps the snippet's own output", async () => {
+    // The realm executes each file like d8 does; --print-bytecode-style noise
+    // from the lockdown shim lands before the marker, the snippet after it.
+    const EXEC_FILES =
+      'const fs = require("fs"), vm = require("vm");' +
+      'globalThis.print = (s) => process.stdout.write(String(s) + "\\n");' +
+      'for (const p of process.argv.slice(1)) vm.runInThisContext(fs.readFileSync(p, "utf8"), { filename: p });';
+    const app = makeApp({
+      blockedGlobals: ["read"],
+      prelude: [{ file: "noisy.js", contents: 'print("prelude noise");' }],
+      invoke: ({ scriptPath, preludePaths }) => ({
+        cmd: process.execPath,
+        args: ["-e", EXEC_FILES, ...preludePaths, scriptPath],
+      }),
+    });
+
+    const body = (await run(app, { sourceText: 'print("snippet output");' })).json();
+    expect(body.stdout).toBe("snippet output\n");
+    expect(body.stdout).not.toContain(PRELUDE_END_MARKER);
+  });
+
+  it("does not add the end marker when nothing loads ahead of the snippet", async () => {
+    let paths: string[] = [];
+    const app = makeApp({
+      invoke: ({ scriptPath, preludePaths }) => {
+        paths = preludePaths;
+        return { cmd: process.execPath, args: ["-e", CAT_FILES, ...preludePaths, scriptPath] };
+      },
+    });
+    await run(app, { sourceText: "1;" });
+    expect(paths).toEqual([]);
   });
 
   it("removes the temp dir once the run is over", async () => {
@@ -155,5 +188,20 @@ describe("buildEngineApp", () => {
     const documented = makeApp({ openapiTitle: "engine-test" });
     const res = await documented.inject({ method: "GET", url: "/openapi.json" });
     expect(res.json().info.title).toBe("engine-test");
+  });
+});
+
+describe("stripPreludeOutput", () => {
+  it("removes everything through the marker line", () => {
+    expect(stripPreludeOutput(`noise\n${PRELUDE_END_MARKER}\nkept\n`)).toBe("kept\n");
+  });
+
+  it("leaves output without a marker untouched", () => {
+    expect(stripPreludeOutput("plain\n")).toBe("plain\n");
+  });
+
+  it("ignores a marker that does not start a line", () => {
+    const out = `print("${PRELUDE_END_MARKER}\n");\n`;
+    expect(stripPreludeOutput(out)).toBe(out);
   });
 });

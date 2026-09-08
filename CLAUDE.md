@@ -198,7 +198,7 @@ Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
 - `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
 - Per-pod concurrency gate returns 429 + `Retry-After` when saturated
-- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order
+- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order. Whenever any prelude loads, the runtime appends a final `prelude-end.js` that prints a marker line, and `stdout` is returned from the line after it, so what the prelude itself emits (the lockdown shim's own bytecode under `--print-bytecode`, for one) never reaches the client
 - `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
 - Returns `{ ok, stdout, stderr, artifacts: [], meta }`
 - `GET /healthz` reports `{ ok, engine, version }`; the version probe runs once at startup (never per request) and stays `null` for a binary with no way to say, such as jsc
