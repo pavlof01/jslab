@@ -1,6 +1,7 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
+import { useState } from "react";
 
 import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
@@ -39,6 +40,15 @@ const OutputPane: React.FC = () => {
       />
 
       <Box css={styles.outputScroller}>
+        {status === RunStatus.running ? null : (
+          <PreludeSection
+            key={activeTab}
+            engine={activeTab}
+            prelude={result?.preludeStdout}
+            previousPrelude={previous?.preludeStdout}
+            showDiff={showDiff}
+          />
+        )}
         <HighlightedCode
           engineKey={activeTab}
           out={result?.stdout}
@@ -59,6 +69,51 @@ const OutputPane: React.FC = () => {
         durationMs={result?.ms}
         flagCount={flagsFor(activeTab).length}
       />
+    </>
+  );
+};
+
+type PreludeSectionProps = {
+  engine: EngineKey;
+  prelude?: string;
+  previousPrelude?: string;
+  showDiff: boolean;
+};
+
+export const PreludeSection: React.FC<PreludeSectionProps> = ({
+  engine,
+  prelude,
+  previousPrelude,
+  showDiff,
+}) => {
+  const [open, setOpen] = useState(false);
+  if (!prelude) return null;
+
+  const lines = prelude.split("\n").length;
+
+  return (
+    <>
+      <Box
+        as="button"
+        css={styles.preludeToggle}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span aria-hidden="true">{open ? "▾" : "▸"}</span>
+        <span>sandbox prelude</span>
+        <Box as="span" css={styles.preludeMeta}>
+          {lines} line{lines === 1 ? "" : "s"} · {open ? "shown" : "hidden"}
+        </Box>
+      </Box>
+      {open ? (
+        <HighlightedCode
+          engineKey={engine}
+          out={prelude}
+          prev={previousPrelude}
+          showDiff={showDiff}
+          EmptyCodeBlockState={() => <></>}
+        />
+      ) : null}
     </>
   );
 };

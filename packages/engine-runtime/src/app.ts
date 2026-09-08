@@ -137,11 +137,11 @@ function preludeScripts(spec: EngineSpec): readonly PreludeScript[] {
   return scripts.length ? [...scripts, PRELUDE_END_SCRIPT] : scripts;
 }
 
-export function stripPreludeOutput(stdout: string): string {
+export function splitPreludeOutput(stdout: string): { stdout: string; preludeStdout?: string } {
   const line = `${PRELUDE_END_MARKER}\n`;
   const at = stdout.indexOf(line);
-  if (at === -1 || (at > 0 && stdout[at - 1] !== "\n")) return stdout;
-  return stdout.slice(at + line.length);
+  if (at === -1 || (at > 0 && stdout[at - 1] !== "\n")) return { stdout };
+  return { stdout: stdout.slice(at + line.length), preludeStdout: stdout.slice(0, at) };
 }
 
 /** Temp dir holding the snippet plus its prelude, cleaned up by `dispose`. */
@@ -274,14 +274,16 @@ export function buildEngineApp(spec: EngineSpec): FastifyInstance {
       // fits and say so in meta. outputLimitBytes is the true ceiling for the
       // whole body: runCommand caps stdout + stderr *combined* at this value,
       // so the gateway can size its cache guard against it.
+      const output = splitPreludeOutput(result.stdout);
       reply.send({
         ok: true,
-        stdout: stripPreludeOutput(result.stdout),
+        stdout: output.stdout,
         stderr: result.stderr,
         artifacts: [],
         meta: {
           durationMs: Date.now() - start,
           engine,
+          ...(output.preludeStdout !== undefined ? { preludeStdout: output.preludeStdout } : {}),
           ...(result.outputTruncated
             ? { outputTruncated: true, outputLimitBytes: config.MAX_OUTPUT_BYTES }
             : {}),
