@@ -1,6 +1,6 @@
 {
   "name": "jslab",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "description": "Repo-root tooling only. Each service under apps/ and packages/ keeps its own package.json and lockfile — this one exists so formatting and linting have a single version and a single config for the whole tree.",
