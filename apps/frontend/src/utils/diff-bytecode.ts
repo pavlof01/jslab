@@ -9,6 +9,17 @@ type DiffTokensResult = Omit<TokensResult, "tokens"> & {
 
 const lineToString = (tokens: ThemedToken[]): string => tokens.map((t) => t.content).join("");
 
+export const fillBlankRows = (result: TokensResult): TokensResult => {
+  if (!result.tokens.some((row) => row.length === 0)) return result;
+  let offset = 0;
+  const tokens = result.tokens.map((row) => {
+    const start = row[0]?.offset ?? offset;
+    offset = start + row.reduce((width, token) => width + token.content.length, 0) + 1;
+    return row.length ? row : [{ content: "", offset: start, color: result.fg } as ThemedToken];
+  });
+  return { ...result, tokens };
+};
+
 export const compareOutputs = (
   prev: TokensResult,
   current: TokensResult,

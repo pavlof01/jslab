@@ -8,7 +8,7 @@ import { useActiveTab, useOutputPane } from "@/store/engineOutputsSelectors";
 import { HighlightedCode } from "./CodeBlock";
 
 const OutputsPanel: React.FC = () => {
-  const { out, previousSnapshot, showDiff, status, engines } = useOutputPane();
+  const { out, previousSnapshot, currentRun, showDiff, status, engines } = useOutputPane();
   const { activeTab, setActiveTab } = useActiveTab();
 
   const enabledTabs = useMemo(() => ENGINE_KEYS.filter((engine) => engines[engine]), [engines]);
@@ -54,13 +54,15 @@ const OutputsPanel: React.FC = () => {
               prev={previous?.stdout}
               showDiff={showDiff}
               isLoading={status === RunStatus.running}
+              source={currentRun?.code}
             />
             <HighlightedCode
               engineKey={activeKey}
               out={result?.stderr}
               prev={previous?.stderr}
               showDiff={showDiff}
-              EmptyCodeBlockState={() => <></>}
+              emptyState={null}
+              source={currentRun?.code}
             />
           </Stack>
         </Tabs.Content>

@@ -1,11 +1,11 @@
 "use client";
 
-import { Box, Button, Flex, Splitter, Tabs, Text, useBreakpointValue } from "@chakra-ui/react";
+import { Button, Flex, Splitter, Tabs, Text, useBreakpointValue } from "@chakra-ui/react";
 import { useState } from "react";
 import { CiPlay1 } from "react-icons/ci";
 
 import EditorPanel from "@/components/EditorPanel";
-import { LogoLoader } from "@/components/ui";
+import { Callout, LogoLoader } from "@/components/ui";
 
 import { type ApiStageId, type StageId, STAGES } from "../lib/stages";
 import { usePipelineRun } from "../lib/usePipelineRun";
@@ -134,21 +134,7 @@ const PipelineClient: React.FC = () => {
 };
 
 const RunError: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <Box
-      role="alert"
-      px={4}
-      py={2}
-      bg="status.errorSoft"
-      borderBottom="1px solid"
-      borderColor="status.errorRule"
-      color="status.error"
-      fontSize="xs"
-      flexShrink={0}
-    >
-      {children}
-    </Box>
-  );
+  return <Callout>{children}</Callout>;
 };
 
 export default PipelineClient;
