@@ -2,10 +2,8 @@
 
 import { Box } from "@chakra-ui/react";
 
-import { useEngineVersion } from "@/components/EngineVersion/context";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
-import { engineLabel } from "@/lib/engines";
-import { enabledEngines, type EngineKey, RunStatus } from "@/lib/types";
+import { enabledEngines, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
   useDiffToggle,
@@ -15,13 +13,14 @@ import {
 } from "@/store/engineOutputsSelectors";
 
 import EngineTabs from "./EngineTabs";
+import OutputPaneFooter from "./OutputPaneFooter";
 import * as styles from "./playground.styles";
 
 const OutputPane: React.FC = () => {
   const { engines } = useEngineSelection();
   const { activeTab, setActiveTab } = useActiveTab();
   const { showDiff } = useDiffToggle();
-  const { out, previousSnapshot, status } = useOutputPaneState();
+  const { out, previousSnapshot, status, currentRun } = useOutputPaneState();
   const { flagsFor } = useEngineFlags();
 
   const active = enabledEngines(engines);
@@ -45,68 +44,26 @@ const OutputPane: React.FC = () => {
           prev={previous?.stdout}
           showDiff={showDiff}
           isLoading={status === RunStatus.running}
+          source={currentRun?.code}
         />
-        <StderrDump
-          engine={activeTab}
-          stderr={result?.stderr}
-          previousStderr={previous?.stderr}
-          showDiff={showDiff}
-        />
+        {result?.stderr ? (
+          <HighlightedCode
+            engineKey={activeTab}
+            out={result.stderr}
+            prev={previous?.stderr}
+            showDiff={showDiff}
+            source={currentRun?.code}
+            emptyState={null}
+          />
+        ) : null}
       </Box>
 
-      <PaneFooter
+      <OutputPaneFooter
         engine={activeTab}
         durationMs={result?.ms}
         flagCount={flagsFor(activeTab).length}
       />
     </>
-  );
-};
-
-type StderrDumpProps = {
-  engine: EngineKey;
-  stderr?: string;
-  previousStderr?: string;
-  showDiff: boolean;
-};
-
-const StderrDump: React.FC<StderrDumpProps> = ({ engine, stderr, previousStderr, showDiff }) => {
-  if (!stderr) return null;
-
-  return (
-    <HighlightedCode
-      engineKey={engine}
-      out={stderr}
-      prev={previousStderr}
-      showDiff={showDiff}
-      EmptyCodeBlockState={() => <></>}
-    />
-  );
-};
-
-type PaneFooterProps = {
-  engine: EngineKey;
-  durationMs?: number;
-  flagCount: number;
-};
-
-const PaneFooter: React.FC<PaneFooterProps> = ({ engine, durationMs, flagCount }) => {
-  const version = useEngineVersion(engine);
-
-  return (
-    <Box css={styles.outputFooter}>
-      {version ? (
-        <span>
-          {engineLabel(engine)} {version}
-        </span>
-      ) : null}
-      <span>{durationMs ? `${durationMs} ms` : "—"}</span>
-      {flagCount > 0 ? (
-        <span>
-          {flagCount} flag{flagCount === 1 ? "" : "s"}
-        </span>
-      ) : null}
-    </Box>
   );
 };
 

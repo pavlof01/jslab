@@ -1,21 +1,22 @@
 "use client";
 
 import { Box, type BoxProps, Stack } from "@chakra-ui/react";
-import { memo, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { TokensResult } from "shiki";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 
 import { LogoLoader } from "@/components/ui";
+import { matchAnnotations, parseAnnotationSource, uniqueDiagnostics } from "@/lib/annotations";
 import { type BytecodeLang, engineLang } from "@/lib/engines";
 import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
-import { compareOutputs } from "@/utils/diff-bytecode";
+import { compareOutputs, fillBlankRows } from "@/utils/diff-bytecode";
 
+import AnnotationAlerts from "./components/AnnotationAlerts";
 import CodeDisplay from "./components/Code";
 import CopyButton from "./components/CopyButton";
-import DefaultEmptyCodeBlockState, {
-  type DefaultEmptyCodeBlockStateProps,
-} from "./components/DefaultEmptyCodeBlockState";
+import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
 
 const normalizeForDiff = (line: string) =>
   line
@@ -34,13 +35,17 @@ export async function highlight(
   const highlighter = await getBytecodeHighlighter();
   const shikiLang = lang as BundledLanguage;
 
-  const currentRaw = await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME });
+  const currentRaw = fillBlankRows(
+    await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME }),
+  );
 
   if (!prevCode) {
     return { tokens: currentRaw, highlighter };
   }
 
-  const prevRaw = await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME });
+  const prevRaw = fillBlankRows(
+    await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME }),
+  );
 
   const diffTokens = compareOutputs(prevRaw, currentRaw, { normalizeLine: normalizeForDiff });
 
@@ -53,8 +58,10 @@ type Props = {
   prev?: string;
   showDiff?: boolean;
   isLoading?: boolean;
-  EmptyCodeBlockState?: React.ComponentType<DefaultEmptyCodeBlockStateProps>;
+  emptyState?: ReactNode;
+  fallback?: ReactNode;
   boxProps?: BoxProps;
+  source?: string;
 };
 
 export const HighlightedCode = memo(function HighlightedCode({
@@ -63,11 +70,22 @@ export const HighlightedCode = memo(function HighlightedCode({
   prev = "",
   isLoading = false,
   showDiff = true,
-  EmptyCodeBlockState = DefaultEmptyCodeBlockState,
+  emptyState = <DefaultEmptyCodeBlockState />,
+  fallback,
   boxProps,
+  source = "",
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
   const [highlighter, setHighlighter] = useState<Highlighter>();
+  const parsed = useMemo(() => parseAnnotationSource(source), [source]);
+  const { annotations, diagnostics: matchDiagnostics } = useMemo(
+    () => matchAnnotations(parsed, out),
+    [parsed, out],
+  );
+  const diagnostics = useMemo(
+    () => uniqueDiagnostics([...parsed.diagnostics, ...matchDiagnostics]),
+    [parsed, matchDiagnostics],
+  );
 
   useEffect(() => {
     if (isLoading || !out) {
@@ -104,12 +122,14 @@ export const HighlightedCode = memo(function HighlightedCode({
     );
   }
 
-  if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
+  if (!out) return emptyState;
+  if (!tokens || tokens.tokens.length === 0) return fallback ?? emptyState;
 
   return (
     <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
-      <CodeDisplay {...tokens} engineKey={engineKey} />
+      <AnnotationAlerts diagnostics={diagnostics} />
+      <CodeDisplay {...tokens} engineKey={engineKey} annotations={annotations} />
     </Box>
   );
 });

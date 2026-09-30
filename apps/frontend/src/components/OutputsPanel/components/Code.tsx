@@ -1,11 +1,12 @@
 import { Flex } from "@chakra-ui/react";
 import type { ThemedToken, TokensResult } from "shiki";
 
-import type { EngineKey } from "@/lib/types";
+import type { OutputAnnotation } from "@/lib/annotations";
+import { DiffKind, type EngineKey } from "@/lib/types";
 
 import PlainCodeRow from "./CodeRow";
 
-type Props = TokensResult & { engineKey: EngineKey };
+type Props = TokensResult & { engineKey: EngineKey; annotations?: OutputAnnotation[] };
 
 export function lineKey(row: ThemedToken[], startOffset: number): string {
   const [first] = row;
@@ -14,30 +15,54 @@ export function lineKey(row: ThemedToken[], startOffset: number): string {
   return `at-${startOffset}`;
 }
 
-export function lineStarts(lines: ThemedToken[][]): number[] {
-  const starts: number[] = [];
+export type LineSpan = { start: number; end: number };
+
+export function lineSpans(lines: ThemedToken[][]): LineSpan[] {
+  const spans: LineSpan[] = [];
   let offset = 0;
 
   for (const row of lines) {
     const start = row[0]?.offset ?? offset;
-    starts.push(start);
-    offset = start + row.reduce((width, token) => width + token.content.length, 0) + 1;
+    const end = start + row.reduce((width, token) => width + token.content.length, 0);
+    spans.push({ start, end });
+    offset = end + 1;
   }
 
-  return starts;
+  return spans;
 }
 
-const CodeDisplay: React.FC<Props> = ({ tokens, fg, bg, engineKey }) => {
-  const starts = lineStarts(tokens);
+const annotationsPerRow = (
+  rows: ThemedToken[][],
+  spans: LineSpan[],
+  annotations?: OutputAnnotation[],
+): (OutputAnnotation[] | undefined)[] => {
+  let next = 0;
+  return spans.map(({ start, end }, index) => {
+    if (!annotations?.length || rows[index][0]?.diffType === DiffKind.Del) return undefined;
+    while (next < annotations.length && annotations[next].end <= start) next++;
+    let after = next;
+    while (after < annotations.length && annotations[after].start < end) after++;
+    const slice = after > next ? annotations.slice(next, after) : undefined;
+    next = after;
+    return slice;
+  });
+};
+
+const CodeDisplay: React.FC<Props> = ({ tokens, fg, bg, engineKey, annotations }) => {
+  const spans = lineSpans(tokens);
+  const rowAnnotations = annotationsPerRow(tokens, spans, annotations);
 
   return (
     <Flex as="code" py={6} flexDirection="column" borderRadius="md" bg={bg} color={fg}>
       {tokens.map((row, index) => (
         <PlainCodeRow
-          key={lineKey(row, starts[index])}
+          key={lineKey(row, spans[index].start)}
           tokens={row}
           lineNumber={index}
+          lineStart={spans[index].start}
+          lineEnd={spans[index].end}
           engineKey={engineKey}
+          annotations={rowAnnotations[index]}
         />
       ))}
     </Flex>

@@ -5,6 +5,7 @@ import { Box, Text } from "@chakra-ui/react";
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
 import CodeBlockShiki from "@/components/OutputsPanel/CodeBlockShiki";
 import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
+import { Callout } from "@/components/ui";
 import { EngineKey } from "@/lib/types";
 
 import type { Stage } from "../lib/stages";
@@ -75,22 +76,17 @@ const StageError: React.FC<StageErrorProps> = ({ output }) => {
   if (!output.stderr || output.stdout) return null;
 
   return (
-    <Box
-      textStyle="code"
-      role="alert"
+    <Callout
+      typeface="code"
       mx={4}
       my={2}
       px={3}
-      py={2}
-      bg="status.errorSoft"
       border="1px solid"
-      borderColor="status.errorRule"
       rounded="md"
-      color="status.error"
       whiteSpace="pre-wrap"
     >
       {output.stderr}
-    </Box>
+    </Callout>
   );
 };
 

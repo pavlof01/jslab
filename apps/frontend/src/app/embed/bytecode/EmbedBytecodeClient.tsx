@@ -8,23 +8,7 @@ import type { EmbedSnapshot } from "@/lib/embedState";
 import { engineLabel } from "@/lib/engines";
 import { buildShareUrl } from "@/lib/shareState";
 
-type PlainDumpProps = { text: string };
-
-const PlainDump: React.FC<PlainDumpProps> = ({ text }) => {
-  return (
-    <Box
-      textStyle="code"
-      as="pre"
-      lineHeight="1.55"
-      color="ink.1"
-      whiteSpace="pre"
-      overflowX="auto"
-      m={0}
-    >
-      {text}
-    </Box>
-  );
-};
+import PlainDump from "./PlainDump";
 
 type EmbedBytecodeClientProps = { snapshot: EmbedSnapshot | null };
 
@@ -94,16 +78,20 @@ const EmbedBytecodeClient: React.FC<EmbedBytecodeClientProps> = ({ snapshot }) =
         <HighlightedCode
           engineKey={snapshot.engine}
           out={snapshot.output}
+          source={snapshot.code}
           showDiff={false}
-          EmptyCodeBlockState={() => <PlainDump text={snapshot.output} />}
+          fallback={<PlainDump text={snapshot.output} />}
+          emptyState={<PlainDump text="(no output)" />}
         />
         {snapshot.stderr && (
           <Box mt={3}>
             <HighlightedCode
               engineKey={snapshot.engine}
               out={snapshot.stderr}
+              source={snapshot.code}
               showDiff={false}
-              EmptyCodeBlockState={() => <PlainDump text={snapshot.stderr ?? ""} />}
+              fallback={<PlainDump text={snapshot.stderr ?? ""} />}
+              emptyState={null}
             />
           </Box>
         )}

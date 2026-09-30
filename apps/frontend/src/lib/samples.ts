@@ -1,4 +1,11 @@
 export const samples = {
+  annotations: `/* @annotation
+match: status: ready
+highlight: ready
+title: Ready
+text: The operation is ready to continue. Click the highlighted word in the output.
+*/
+print("status: ready");`,
   add: `function f(x){ return x + 1 }\nf(41);`,
   closure: `function f(a){ function g(b){ return a + b } return g(1) }\nf(41);`,
   loop: `function f(n){ let s=0; for(let i=0;i<n;i++) s+=i; return s }\nf(10);`,
@@ -13,6 +20,11 @@ export type SampleKey = keyof typeof samples;
 export type SampleDescriptor = { key: SampleKey; label: string; description: string };
 
 export const sampleCatalog: SampleDescriptor[] = [
+  {
+    key: "annotations",
+    label: "Output annotations",
+    description: "Attach a click-to-open explanation to matching output text.",
+  },
   { key: "add", label: "Add", description: "Minimal function call returning 42." },
   {
     key: "closure",
@@ -85,6 +97,19 @@ const arr = [1, 2, 3];
 // PACKED_SMI_ELEMENTS: contiguous memory, all slots filled
 %DebugPrint(arr);
 
+/* @annotation
+match: elements kind: PACKED_SMI_ELEMENTS
+highlight: PACKED_SMI_ELEMENTS
+title: PACKED_SMI_ELEMENTS
+text: Every array index is filled with a small integer.
+*/
+
+/* @annotation
+match: elements kind: HOLEY_SMI_ELEMENTS
+highlight: HOLEY_SMI_ELEMENTS
+title: PACKED_SMI_ELEMENTS → HOLEY_SMI_ELEMENTS
+text: Growing length creates the missing indexes 3–9, so V8 switches the array representation from packed to holey.
+*/
 arr.length = 10;
 // HOLEY_SMI_ELEMENTS: 7 empty slots created. V8 must check each slot
 // against the prototype chain during iteration — slower than PACKED.

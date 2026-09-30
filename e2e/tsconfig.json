@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["tests", "playwright.config.ts"]
+  "include": ["tests", "helpers", "playwright.config.ts"]
 }

@@ -3,6 +3,9 @@ node_modules
 dist
 .next
 coverage
+playwright-report
+test-results
+blob-report
 package-lock.json
 CHANGELOG.md
 *.min.js

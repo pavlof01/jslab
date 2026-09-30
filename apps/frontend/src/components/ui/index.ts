@@ -1,5 +1,7 @@
 export { Band } from "./band";
+export { default as Callout, type CalloutProps, type CalloutTone } from "./callout";
 export { default as Chip, type ChipProps } from "./chip";
+export { default as ClickPopover, type ClickPopoverProps } from "./click-popover";
 export { default as LogoLoader, type LogoLoaderProps } from "./logo-loader";
 export { default as QuietLink, type QuietLinkProps } from "./quiet-link";
 export { default as ShortcutHint } from "./shortcut-hint";
