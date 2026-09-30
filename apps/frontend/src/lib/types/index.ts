@@ -43,7 +43,12 @@ export const flagsFor = (flags: EngineFlags, engine: EngineKey): string[] => fla
 export const flagCount = (flags: EngineFlags): number =>
   ENGINE_KEYS.reduce((total, engine) => total + (flags[engine]?.length ?? 0), 0);
 
-export type EngineResult = { stdout: string; stderr: string; ms?: number };
+export type EngineResult = {
+  stdout: string;
+  stderr: string;
+  ms?: number;
+  preludeStdout?: string;
+};
 
 export enum RunStatus {
   idle = "idle",

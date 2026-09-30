@@ -15,6 +15,8 @@ export interface RunResult {
   failure?: RunFailure;
   outputTruncated?: boolean;
   droppedFlags?: string[];
+  /** What the sandbox prelude printed before the snippet ran; shown collapsed. */
+  preludeStdout?: string;
 }
 
 export interface RunOptions {
@@ -55,6 +57,8 @@ export async function runEngine(
           (flag: unknown): flag is string => typeof flag === "string",
         )
       : undefined;
+    const preludeStdout =
+      typeof payload.meta?.preludeStdout === "string" ? payload.meta.preludeStdout.trim() : "";
 
     return {
       stdout: (payload.stdout ?? "").trim(),
@@ -63,6 +67,7 @@ export async function runEngine(
       cacheHit: payload.meta?.cacheHit === true,
       outputTruncated: payload.meta?.outputTruncated === true,
       droppedFlags: droppedFlags?.length ? droppedFlags : undefined,
+      preludeStdout: preludeStdout || undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
