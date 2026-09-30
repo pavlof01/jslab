@@ -2,27 +2,17 @@ import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
 import { engineLabel } from "@/lib/engines";
-import { OG_CARD, SITE_HOST } from "@/lib/site";
+import { OG_CARD, ogCardText, SITE_HOST } from "@/lib/site";
 import { isEngineKey } from "@/lib/types";
 
-const MAX_TITLE = 72;
-const MAX_SUBTITLE = 168;
-
 function oneLine(raw: string | null, max: number): string {
-  if (!raw) return "";
-  const collapsed = raw.replace(/\s+/g, " ").trim();
-  if (collapsed.length <= max) return collapsed;
-
-  const clipped = collapsed.slice(0, max - 1);
-  const lastSpace = clipped.lastIndexOf(" ");
-  const cut = lastSpace > max / 2 ? clipped.slice(0, lastSpace) : clipped;
-  return `${cut.trimEnd()}…`;
+  return raw === null ? "" : ogCardText(raw, max);
 }
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
-  const title = oneLine(params.get("title"), MAX_TITLE) || "Explore JS Engines";
-  const subtitle = oneLine(params.get("subtitle"), MAX_SUBTITLE);
+  const title = oneLine(params.get("title"), OG_CARD.maxTitle) || "Explore JS Engines";
+  const subtitle = oneLine(params.get("subtitle"), OG_CARD.maxSubtitle);
 
   const engineParam = params.get("engine");
   const engine = engineParam !== null && isEngineKey(engineParam) ? engineLabel(engineParam) : null;

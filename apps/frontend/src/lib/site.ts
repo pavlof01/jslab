@@ -23,16 +23,37 @@ export const OG_CARD = {
   path: "/og",
   width: 1200,
   height: 630,
+  maxTitle: 72,
+  maxSubtitle: 168,
 } as const;
 
-export function ogCardUrl(
-  origin: string,
-  params: Record<string, string | number | undefined> = {},
-): string {
+export function ogCardText(raw: string, max: number): string {
+  const collapsed = raw.replace(/\s+/g, " ").trim();
+  if (collapsed.length <= max) return collapsed;
+
+  const clipped = collapsed.slice(0, max - 1);
+  const lastSpace = clipped.lastIndexOf(" ");
+  const cut = lastSpace > max / 2 ? clipped.slice(0, lastSpace) : clipped;
+  return `${cut.trimEnd()}…`;
+}
+
+type OgCardParams = {
+  title?: string;
+  subtitle?: string;
+  engine?: string;
+  lines?: number;
+};
+
+export function ogCardUrl(origin: string, params: OgCardParams = {}): string {
   const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") search.set(key, String(value));
-  }
+  const title = params.title ? ogCardText(params.title, OG_CARD.maxTitle) : "";
+  const subtitle = params.subtitle ? ogCardText(params.subtitle, OG_CARD.maxSubtitle) : "";
+
+  if (title !== "") search.set("title", title);
+  if (subtitle !== "") search.set("subtitle", subtitle);
+  if (params.engine) search.set("engine", params.engine);
+  if (params.lines !== undefined && params.lines > 0) search.set("lines", String(params.lines));
+
   const query = search.toString();
   return `${origin}${OG_CARD.path}${query ? `?${query}` : ""}`;
 }
