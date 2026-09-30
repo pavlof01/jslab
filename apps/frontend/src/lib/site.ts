@@ -14,6 +14,11 @@ export const SITE_ORIGIN = resolveOrigin();
 
 export const SITE_HOST = new URL(SITE_ORIGIN).host;
 
+export const SITE_NAME = "JSLab";
+
+export const SITE_DESCRIPTION =
+  "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.";
+
 export function siteUrl(path: string): string {
   return `${SITE_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 }

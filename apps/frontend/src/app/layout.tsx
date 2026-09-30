@@ -3,7 +3,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 import ConditionalHeader from "@/components/ConditionalHeader";
-import { SITE_ORIGIN } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/site";
 
 import Providers from "./providers";
 
@@ -47,10 +47,9 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "JSLab — Explore JS Engines",
-    description:
-      "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
+    description: SITE_DESCRIPTION,
     url: "/",
-    siteName: "JSLab",
+    siteName: SITE_NAME,
     type: "website",
     locale: "en_US",
     images: [

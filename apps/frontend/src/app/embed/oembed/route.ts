@@ -5,6 +5,7 @@ import {
   decodeSnapshot,
   EMBED_DEFAULT_HEIGHT,
   EMBED_DEFAULT_WIDTH,
+  EMBED_THUMBNAIL,
   estimateEmbedHeight,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
@@ -40,8 +41,8 @@ export async function GET(req: NextRequest) {
   }
 
   const self = req.nextUrl;
-  const sameHost = target.host === (req.headers.get("x-forwarded-host") ?? self.host);
-  if (!sameHost) return badRequest("url does not belong to this site", 404);
+  const host = req.headers.get("x-forwarded-host") ?? self.host;
+  if (target.host !== host) return badRequest("url does not belong to this site", 404);
 
   if (!EMBEDDABLE_PATHS.includes(target.pathname)) {
     return badRequest("url is not an embeddable JSLab view", 404);
@@ -73,7 +74,11 @@ export async function GET(req: NextRequest) {
   );
   const height = clampDimension(req.nextUrl.searchParams.get("maxheight"), naturalHeight, 160, 900);
 
-  const src = target.toString();
+  const origin = `${self.protocol}//${host}`;
+
+  const frame = new URL(target.toString());
+  frame.searchParams.set("referrer", "");
+  const src = frame.toString();
   const title = isBytecode ? "JSLab bytecode" : "JSLab playground";
   const html =
     `<iframe src="${src}" width="${width}" height="${height}" ` +
@@ -85,8 +90,11 @@ export async function GET(req: NextRequest) {
       version: "1.0",
       type: "rich",
       provider_name: "JSLab",
-      provider_url: `${self.protocol}//${req.headers.get("x-forwarded-host") ?? self.host}`,
+      provider_url: origin,
       title,
+      thumbnail_url: `${origin}${EMBED_THUMBNAIL.path}`,
+      thumbnail_width: EMBED_THUMBNAIL.width,
+      thumbnail_height: EMBED_THUMBNAIL.height,
       width,
       height,
       html,
