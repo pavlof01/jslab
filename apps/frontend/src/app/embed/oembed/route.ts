@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import {
   BYTECODE_EMBED_PATH,
+  BYTECODE_EMBED_TITLE,
   decodeSnapshot,
   EMBED_DEFAULT_HEIGHT,
   EMBED_DEFAULT_WIDTH,
@@ -10,7 +11,7 @@ import {
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
 import { clamp, finiteOr } from "@/lib/numbers";
-import { EMBED_PATH } from "@/lib/shareState";
+import { EMBED_PATH, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
 
 /** Only our own embed paths may be turned into an iframe. */
 const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH];
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
   const frame = new URL(target.toString());
   frame.searchParams.set("referrer", "");
   const src = frame.toString();
-  const title = isBytecode ? "JSLab bytecode" : "JSLab playground";
+  const title = isBytecode ? BYTECODE_EMBED_TITLE : PLAYGROUND_EMBED_TITLE;
   const html =
     `<iframe src="${src}" width="${width}" height="${height}" ` +
     `style="border:0;border-radius:8px;max-width:100%" title="${title}" ` +

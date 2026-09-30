@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import FlagCatalogProvider from "@/components/FlagSelector/context";
 import { EMBED_THUMBNAIL } from "@/lib/embedState";
 import { fetchFlagCatalog } from "@/lib/server/flags";
-import { EMBED_PATH } from "@/lib/shareState";
+import { EMBED_PATH, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 
 import EmbedPlaygroundClient from "./EmbedPlaygroundClient";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   // Embeds are transient, per-snippet views; keep them out of the index.
   robots: { index: false, follow: false },
   openGraph: {
-    title: "JSLab playground",
+    title: PLAYGROUND_EMBED_TITLE,
     description: SITE_DESCRIPTION,
     url: siteUrl(EMBED_PATH),
     siteName: SITE_NAME,
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         url: siteUrl(EMBED_THUMBNAIL.path),
         width: EMBED_THUMBNAIL.width,
         height: EMBED_THUMBNAIL.height,
-        alt: "JSLab playground",
+        alt: PLAYGROUND_EMBED_TITLE,
       },
     ],
   },

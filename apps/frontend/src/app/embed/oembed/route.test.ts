@@ -4,7 +4,7 @@
 import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
 
-import { buildSnapshotUrl } from "@/lib/embedState";
+import { buildSnapshotUrl, BYTECODE_EMBED_TITLE } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
 
 import { GET } from "./route";
@@ -41,7 +41,7 @@ describe("GET /embed/oembed", () => {
     const res = await oembed({ url: await snapshotUrl() });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.title).toBe("JSLab bytecode");
+    expect(body.title).toBe(BYTECODE_EMBED_TITLE);
     expect(body.height).toBeGreaterThan(160);
   });
 

@@ -18,6 +18,8 @@ export const SNAPSHOT_PARAM = "b";
 
 export const BYTECODE_EMBED_PATH = "/embed/bytecode";
 
+export const BYTECODE_EMBED_TITLE = "JSLab bytecode";
+
 /**
  * oEmbed endpoint. Under `/embed`, NOT `/api`: the ingress routes `/api` to the
  * gateway service (priority 1000), so a frontend route handler there would

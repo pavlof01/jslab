@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 
 import {
   BYTECODE_EMBED_PATH,
+  BYTECODE_EMBED_TITLE,
   decodeSnapshot,
   EMBED_THUMBNAIL,
   type EmbedSnapshot,
@@ -39,7 +40,7 @@ function embedUrl(origin: string, snapshotParam: string | undefined): string {
 export const generateMetadata = async ({ searchParams }: Props): Promise<Metadata> => {
   const snapshotParam = readSnapshotParam(await searchParams);
   const snapshot = snapshotParam ? await decodeSnapshot(snapshotParam) : null;
-  const title = snapshot?.title?.trim() || "JSLab bytecode";
+  const title = snapshot?.title?.trim() || BYTECODE_EMBED_TITLE;
   const origin = await requestOrigin();
 
   return {
@@ -80,7 +81,7 @@ const EmbedBytecodePage = async ({ searchParams }: Props) => {
         rel="alternate"
         type="application/json+oembed"
         href={discoveryHref}
-        title="JSLab bytecode"
+        title={BYTECODE_EMBED_TITLE}
       />
       <EmbedBytecodeClient snapshot={snapshot} />
     </>

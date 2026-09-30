@@ -63,7 +63,9 @@ export function buildShareUrl(origin: string, path: string, state: ShareState): 
 
 export const EMBED_PATH = "/embed/playground";
 
+export const PLAYGROUND_EMBED_TITLE = "JSLab playground";
+
 export function buildEmbedSnippet(origin: string, state: ShareState, height = 520): string {
   const src = buildShareUrl(origin, EMBED_PATH, state);
-  return `<iframe src="${src}" width="100%" height="${height}" style="border:0;border-radius:8px" title="JSLab playground" loading="lazy"></iframe>`;
+  return `<iframe src="${src}" width="100%" height="${height}" style="border:0;border-radius:8px" title="${PLAYGROUND_EMBED_TITLE}" loading="lazy"></iframe>`;
 }
