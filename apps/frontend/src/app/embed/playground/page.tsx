@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 
 import FlagCatalogProvider from "@/components/FlagSelector/context";
-import { EMBED_THUMBNAIL } from "@/lib/embedState";
 import { fetchFlagCatalog } from "@/lib/server/flags";
 import { EMBED_PATH, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
+import { OG_CARD, ogCardUrl, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN, siteUrl } from "@/lib/site";
 
 import EmbedPlaygroundClient from "./EmbedPlaygroundClient";
 
@@ -21,9 +20,12 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: siteUrl(EMBED_THUMBNAIL.path),
-        width: EMBED_THUMBNAIL.width,
-        height: EMBED_THUMBNAIL.height,
+        url: ogCardUrl(SITE_ORIGIN, {
+          title: PLAYGROUND_EMBED_TITLE,
+          subtitle: "Run a snippet across V8, SpiderMonkey, Hermes and JSC.",
+        }),
+        width: OG_CARD.width,
+        height: OG_CARD.height,
         alt: PLAYGROUND_EMBED_TITLE,
       },
     ],
