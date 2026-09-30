@@ -19,6 +19,24 @@ export const SITE_NAME = "JSLab";
 export const SITE_DESCRIPTION =
   "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.";
 
+export const OG_CARD = {
+  path: "/og",
+  width: 1200,
+  height: 630,
+} as const;
+
+export function ogCardUrl(
+  origin: string,
+  params: Record<string, string | number | undefined> = {},
+): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") search.set(key, String(value));
+  }
+  const query = search.toString();
+  return `${origin}${OG_CARD.path}${query ? `?${query}` : ""}`;
+}
+
 export function siteUrl(path: string): string {
   return `${SITE_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 }

@@ -5,6 +5,8 @@ import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
 
 import { buildSnapshotUrl, BYTECODE_EMBED_TITLE } from "@/lib/embedState";
+import { PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
+import { OG_CARD } from "@/lib/site";
 import { EngineKey } from "@/lib/types";
 
 import { GET } from "./route";
@@ -55,12 +57,24 @@ describe("GET /embed/oembed", () => {
     expect(params.get("b")).toBeTruthy();
   });
 
-  it("advertises a thumbnail alongside the frame", async () => {
+  it("advertises a generated card as the thumbnail", async () => {
     const res = await oembed({ url: `${SITE}/embed/playground` });
     const body = await res.json();
-    expect(body.thumbnail_url).toBe(`${SITE}/android-chrome-512x512.png`);
-    expect(body.thumbnail_width).toBe(512);
-    expect(body.thumbnail_height).toBe(512);
+    const card = new URL(body.thumbnail_url);
+    expect(`${card.origin}${card.pathname}`).toBe(`${SITE}/og`);
+    expect(card.searchParams.get("title")).toBe(PLAYGROUND_EMBED_TITLE);
+    expect(body.thumbnail_width).toBe(OG_CARD.width);
+    expect(body.thumbnail_height).toBe(OG_CARD.height);
+  });
+
+  it("describes the snapshot in the thumbnail it hands a bytecode consumer", async () => {
+    const res = await oembed({ url: await snapshotUrl() });
+    const body = await res.json();
+    const card = new URL(body.thumbnail_url);
+    expect(card.pathname).toBe("/og");
+    expect(card.searchParams.get("engine")).toBe(EngineKey.v8);
+    expect(card.searchParams.get("lines")).toBe("4");
+    expect(card.searchParams.get("subtitle")).toBe("1 + 1");
   });
 
   it("rejects an unsupported format with 501, before any other check", async () => {

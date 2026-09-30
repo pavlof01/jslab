@@ -33,12 +33,6 @@ export const OEMBED_PATH = "/embed/oembed";
 export const EMBED_DEFAULT_WIDTH = 680;
 export const EMBED_DEFAULT_HEIGHT = 420;
 
-export const EMBED_THUMBNAIL = {
-  path: "/android-chrome-512x512.png",
-  width: 512,
-  height: 512,
-} as const;
-
 const VERSION_GZIP = "1";
 const VERSION_PLAIN = "0";
 

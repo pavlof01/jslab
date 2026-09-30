@@ -5,12 +5,11 @@ import {
   BYTECODE_EMBED_PATH,
   BYTECODE_EMBED_TITLE,
   decodeSnapshot,
-  EMBED_THUMBNAIL,
   type EmbedSnapshot,
   OEMBED_PATH,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
-import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { OG_CARD, ogCardUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
 
@@ -55,9 +54,14 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
       locale: "en_US",
       images: [
         {
-          url: `${origin}${EMBED_THUMBNAIL.path}`,
-          width: EMBED_THUMBNAIL.width,
-          height: EMBED_THUMBNAIL.height,
+          url: ogCardUrl(origin, {
+            title,
+            subtitle: snapshot?.code,
+            engine: snapshot?.engine,
+            lines: snapshot ? snapshot.output.split("\n").length : undefined,
+          }),
+          width: OG_CARD.width,
+          height: OG_CARD.height,
           alt: title,
         },
       ],
