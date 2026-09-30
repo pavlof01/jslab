@@ -2,14 +2,16 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import {
   BYTECODE_EMBED_PATH,
+  BYTECODE_EMBED_TITLE,
   decodeSnapshot,
   EMBED_DEFAULT_HEIGHT,
   EMBED_DEFAULT_WIDTH,
+  EMBED_THUMBNAIL,
   estimateEmbedHeight,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
 import { clamp, finiteOr } from "@/lib/numbers";
-import { EMBED_PATH } from "@/lib/shareState";
+import { EMBED_PATH, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
 
 /** Only our own embed paths may be turned into an iframe. */
 const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH];
@@ -40,8 +42,8 @@ export async function GET(req: NextRequest) {
   }
 
   const self = req.nextUrl;
-  const sameHost = target.host === (req.headers.get("x-forwarded-host") ?? self.host);
-  if (!sameHost) return badRequest("url does not belong to this site", 404);
+  const host = req.headers.get("x-forwarded-host") ?? self.host;
+  if (target.host !== host) return badRequest("url does not belong to this site", 404);
 
   if (!EMBEDDABLE_PATHS.includes(target.pathname)) {
     return badRequest("url is not an embeddable JSLab view", 404);
@@ -73,8 +75,12 @@ export async function GET(req: NextRequest) {
   );
   const height = clampDimension(req.nextUrl.searchParams.get("maxheight"), naturalHeight, 160, 900);
 
-  const src = target.toString();
-  const title = isBytecode ? "JSLab bytecode" : "JSLab playground";
+  const origin = `${self.protocol}//${host}`;
+
+  const frame = new URL(target.toString());
+  frame.searchParams.set("referrer", "");
+  const src = frame.toString();
+  const title = isBytecode ? BYTECODE_EMBED_TITLE : PLAYGROUND_EMBED_TITLE;
   const html =
     `<iframe src="${src}" width="${width}" height="${height}" ` +
     `style="border:0;border-radius:8px;max-width:100%" title="${title}" ` +
@@ -85,8 +91,11 @@ export async function GET(req: NextRequest) {
       version: "1.0",
       type: "rich",
       provider_name: "JSLab",
-      provider_url: `${self.protocol}//${req.headers.get("x-forwarded-host") ?? self.host}`,
+      provider_url: origin,
       title,
+      thumbnail_url: `${origin}${EMBED_THUMBNAIL.path}`,
+      thumbnail_width: EMBED_THUMBNAIL.width,
+      thumbnail_height: EMBED_THUMBNAIL.height,
       width,
       height,
       html,

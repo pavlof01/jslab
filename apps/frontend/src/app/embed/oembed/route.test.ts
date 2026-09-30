@@ -4,7 +4,7 @@
 import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
 
-import { buildSnapshotUrl } from "@/lib/embedState";
+import { buildSnapshotUrl, BYTECODE_EMBED_TITLE } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
 
 import { GET } from "./route";
@@ -32,7 +32,7 @@ describe("GET /embed/oembed", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({ version: "1.0", type: "rich", provider_name: "JSLab" });
-    expect(body.html).toContain(`<iframe src="${SITE}/embed/playground?s=abc"`);
+    expect(body.html).toContain(`<iframe src="${SITE}/embed/playground?s=abc&referrer="`);
     expect(res.headers.get("access-control-allow-origin")).toBe("*");
     expect(res.headers.get("cache-control")).toContain("max-age=3600");
   });
@@ -41,8 +41,26 @@ describe("GET /embed/oembed", () => {
     const res = await oembed({ url: await snapshotUrl() });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.title).toBe("JSLab bytecode");
+    expect(body.title).toBe(BYTECODE_EMBED_TITLE);
     expect(body.height).toBeGreaterThan(160);
+  });
+
+  it("leaves an empty referrer slot for the consumer to fill", async () => {
+    const res = await oembed({ url: await snapshotUrl() });
+    const body = await res.json();
+    const src = /<iframe src="([^"]+)"/.exec(body.html)?.[1] ?? "";
+    expect(src).not.toBe("");
+    const params = new URL(src, SITE).searchParams;
+    expect(params.get("referrer")).toBe("");
+    expect(params.get("b")).toBeTruthy();
+  });
+
+  it("advertises a thumbnail alongside the frame", async () => {
+    const res = await oembed({ url: `${SITE}/embed/playground` });
+    const body = await res.json();
+    expect(body.thumbnail_url).toBe(`${SITE}/android-chrome-512x512.png`);
+    expect(body.thumbnail_width).toBe(512);
+    expect(body.thumbnail_height).toBe(512);
   });
 
   it("rejects an unsupported format with 501, before any other check", async () => {
