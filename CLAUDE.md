@@ -157,6 +157,39 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 ---
 
+## Specs (OpenSpec)
+
+Behaviour contracts live in `openspec/specs/<capability>/spec.md` — requirements with
+WHEN/THEN scenarios, describing what a client or a neighbouring service can observe.
+They are a baseline of what the code did when they were written, warts included, not a
+statement of intent — a behaviour that looks wrong in a spec is a candidate for a change,
+not something to preserve.
+
+| Area          | Capabilities                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Engines       | `engine-runtime` (shared `/run` contract), `engine-services` (per-engine invocation)           |
+| API gateway   | `run-api`, `rate-limiting`, `api-keys`, `engine-catalog`, `trace-api`, `api-operations`        |
+| Trace service | `trace-service`                                                                                |
+| Frontend      | `playground`, `v8-pipeline`, `spec-visualizer`, `embed`, `site-metadata`, `frontend-api-proxy` |
+
+Infrastructure (ingress, NetworkPolicy, deploys) has no spec; it stays in `infra/README.md`.
+
+A change that alters specified behaviour starts as a proposal in
+`openspec/changes/<name>/` (proposal, spec deltas, tasks) and is archived into the specs
+once it ships. A change that leaves every specified behaviour as it is — dependency
+bumps, refactors, a fix that restores what a spec already says — skips OpenSpec.
+`openspec/config.yaml` holds the context and rules every artifact is written under.
+
+```bash
+npm run specs:check                  # openspec validate --all --strict (not part of `npm run ci` yet)
+npx openspec list --specs            # capabilities and their requirement counts
+npx openspec init --tools claude     # regenerate the /opsx:* commands — .claude/ is gitignored
+```
+
+In Claude Code the cycle is `/opsx:propose` → `/opsx:apply` → `/opsx:archive`.
+
+---
+
 ## Frontend architecture
 
 **Pages** (all under `apps/frontend/src/app/`):
