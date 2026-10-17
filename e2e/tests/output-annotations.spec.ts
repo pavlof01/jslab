@@ -93,7 +93,7 @@ test("the help loads an annotated example that explains real V8 bytecode", async
   await expect(pg.editor).toContainText("@annotation");
 
   await pg.run();
-  const add = page.getByRole("button", { name: "Add" });
+  const add = page.getByRole("button", { name: "Add", exact: true });
   await expect(add).toBeVisible({ timeout: 20_000 });
   await add.click();
   await expect(page.getByRole("dialog", { name: /Add with feedback/ })).toContainText(
