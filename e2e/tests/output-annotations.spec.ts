@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 import { bytecodeEmbedUrl } from "../helpers/embed";
+import { PlaygroundPage } from "../helpers/playground";
+import { shareUrl } from "../helpers/share";
 
 const source = `/* @annotation
 match: status: ready
@@ -56,3 +58,30 @@ for (const engine of ["v8", "jsc", "sm", "hermes"]) {
       await page.screenshot({ path: testInfo.outputPath("annotations-mobile.png") });
   });
 }
+
+test("a shared playground link keeps its annotations through a real d8 run", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto(shareUrl(source, ["v8"], { v8: ["--print-bytecode"] }));
+  const pg = new PlaygroundPage(page);
+  await pg.editorReady();
+
+  await pg.shareButton.click();
+  await page.getByRole("menuitem", { name: /copy link/i }).click();
+  const url = await page.evaluate(() => navigator.clipboard.readText());
+
+  const fresh = await context.newPage();
+  await fresh.goto(url);
+  const restored = new PlaygroundPage(fresh);
+  await restored.editorReady();
+  await restored.run();
+
+  const trigger = fresh.getByRole("button", { name: "ready" }).first();
+  await expect(trigger).toBeVisible({ timeout: 20_000 });
+  await trigger.click();
+  await expect(fresh.getByRole("dialog", { name: /Ready/ })).toContainText(
+    "Execution can continue.",
+  );
+});
