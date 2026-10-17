@@ -24,11 +24,11 @@ afterEach(() => {
 });
 
 describe("ShareButton", () => {
-  it("copies a Medium-compatible interactive link before any code has run", async () => {
+  it("copies an interactive embed link before any code has run", async () => {
     const user = userEvent.setup();
     render(<ShareButton />, { wrapper: Providers });
     await user.click(screen.getByRole("button", { name: /share this snippet/i }));
-    await user.click(await screen.findByRole("menuitem", { name: /copy medium link/i }));
+    await user.click(await screen.findByRole("menuitem", { name: /copy interactive embed link/i }));
 
     const copied = new URL(await navigator.clipboard.readText());
     expect(copied.pathname).toBe("/embed/bytecode");

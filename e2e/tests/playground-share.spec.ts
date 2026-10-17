@@ -46,26 +46,28 @@ test.describe("playground: sharing", () => {
     expect(snippet).toContain("/embed/playground?s=");
   });
 
-  test("the article link is offered only once there is output to snapshot", async ({ page }) => {
+  test("the output snapshot link is offered only once there is output to snapshot", async ({
+    page,
+  }) => {
     const pg = await PlaygroundPage.open(page);
     await pg.setCode(`const SNAP_${Date.now()} = 1;`);
 
     await pg.shareButton.click();
-    await expect(page.getByRole("menuitem", { name: /article link/i })).toBeDisabled();
+    await expect(page.getByRole("menuitem", { name: /output snapshot link/i })).toBeDisabled();
     await page.keyboard.press("Escape");
 
     await pg.run();
 
     await pg.shareButton.click();
-    const article = page.getByRole("menuitem", { name: /article link/i });
-    await expect(article).toBeEnabled();
-    await article.click();
+    const snapshot = page.getByRole("menuitem", { name: /output snapshot link/i });
+    await expect(snapshot).toBeEnabled();
+    await snapshot.click();
 
     const url = await page.evaluate(() => navigator.clipboard.readText());
     expect(url).toContain("/embed/bytecode?b=");
   });
 
-  test("an article link renders the captured dump in the bytecode embed", async ({
+  test("an output snapshot link renders the captured dump in the bytecode embed", async ({
     page,
     context,
   }) => {
@@ -74,7 +76,7 @@ test.describe("playground: sharing", () => {
     await pg.run();
 
     await pg.shareButton.click();
-    await page.getByRole("menuitem", { name: /article link/i }).click();
+    await page.getByRole("menuitem", { name: /output snapshot link/i }).click();
     const url = await page.evaluate(() => navigator.clipboard.readText());
 
     const embed = await context.newPage();
