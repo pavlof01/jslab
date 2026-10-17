@@ -16,12 +16,14 @@
     "lint:fix": "eslint . --fix",
     "ci": "prettier --check . && eslint .",
     "prepare": "git config core.hooksPath .githooks || true",
-    "commitlint": "commitlint"
+    "commitlint": "commitlint",
+    "specs:check": "openspec validate --all --strict --no-interactive"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^10.0.1",
+    "@fission-ai/openspec": "^1.14.0",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^14.0.0",
