@@ -9,7 +9,7 @@ import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 import { LogoLoader } from "@/components/ui";
 import { compileAnnotations } from "@/lib/annotations";
 import { type BytecodeLang, engineLang } from "@/lib/engines";
-import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
+import { getBytecodeHighlighter, getSourceHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
 import { compareOutputs, fillBlankRows } from "@/utils/diff-bytecode";
 
@@ -27,12 +27,15 @@ const normalizeForDiff = (line: string) =>
     .replace(/^(\s*)\d+:(?=\s+[A-Za-z_])/, "$1<OFF>:")
     .replace(/\s+/g, " ");
 
+const loadSourceHighlighter = async () => (await getSourceHighlighter()) as unknown as Highlighter;
+
 export async function highlight(
   code: string,
   lang: BundledLanguage | BytecodeLang,
   prevCode?: string,
+  loadHighlighter: () => Promise<Highlighter> = getBytecodeHighlighter,
 ) {
-  const highlighter = await getBytecodeHighlighter();
+  const highlighter = await loadHighlighter();
   const shikiLang = lang as BundledLanguage;
 
   const currentRaw = fillBlankRows(
@@ -65,6 +68,7 @@ type Props = {
   boxProps?: BoxProps;
   source?: string;
   showSourceAlerts?: boolean;
+  language?: string;
 };
 
 export const HighlightedCode = memo(function HighlightedCode({
@@ -78,6 +82,7 @@ export const HighlightedCode = memo(function HighlightedCode({
   boxProps,
   source = "",
   showSourceAlerts = true,
+  language,
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
   const [highlighter, setHighlighter] = useState<Highlighter>();
@@ -92,9 +97,10 @@ export const HighlightedCode = memo(function HighlightedCode({
       return;
     }
 
-    const lang = engineLang(engineKey);
+    const lang = (language ?? engineLang(engineKey)) as BundledLanguage | BytecodeLang;
+    const loader = language ? loadSourceHighlighter : getBytecodeHighlighter;
     let cancelled = false;
-    void highlight(out, lang, showDiff ? prev : "").then((node) => {
+    void highlight(out, lang, showDiff ? prev : "", loader).then((node) => {
       if (!cancelled) {
         setTokens(node.tokens);
         setHighlighter(node.highlighter);
@@ -104,7 +110,7 @@ export const HighlightedCode = memo(function HighlightedCode({
     return () => {
       cancelled = true;
     };
-  }, [engineKey, out, prev, showDiff, isLoading]);
+  }, [engineKey, out, prev, showDiff, isLoading, language]);
 
   if (isLoading) {
     return (

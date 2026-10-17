@@ -3,9 +3,9 @@
 import { Box, Text } from "@chakra-ui/react";
 
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
-import CodeBlockShiki from "@/components/OutputsPanel/CodeBlockShiki";
 import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
 import { Callout } from "@/components/ui";
+import { MACHINE_CODE_LANG } from "@/lib/shiki";
 import { EngineKey } from "@/lib/types";
 
 import type { Stage } from "../lib/stages";
@@ -41,11 +41,21 @@ const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun, so
   }
 
   if (stage.view === "deoptEvents") {
-    return <DeoptView output={`${output?.stdout ?? ""}\n${output?.stderr ?? ""}`} />;
+    return (
+      <DeoptView output={`${output?.stdout ?? ""}\n${output?.stderr ?? ""}`} source={source} />
+    );
   }
 
   if (stage.view === "machineCode") {
-    return <CodeBlockShiki code={output?.stdout ?? ""} />;
+    return (
+      <HighlightedCode
+        engineKey={EngineKey.v8}
+        language={MACHINE_CODE_LANG}
+        out={output?.stdout}
+        source={source}
+        showDiff={false}
+      />
+    );
   }
 
   return (
