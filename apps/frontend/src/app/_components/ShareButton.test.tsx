@@ -24,6 +24,22 @@ afterEach(() => {
 });
 
 describe("ShareButton", () => {
+  it("copies a Medium-compatible interactive link before any code has run", async () => {
+    const user = userEvent.setup();
+    render(<ShareButton />, { wrapper: Providers });
+    await user.click(screen.getByRole("button", { name: /share this snippet/i }));
+    await user.click(await screen.findByRole("menuitem", { name: /copy medium link/i }));
+
+    const copied = new URL(await navigator.clipboard.readText());
+    expect(copied.pathname).toBe("/embed/bytecode");
+    expect(copied.searchParams.has("b")).toBe(false);
+    expect(decodeShareState(copied.searchParams.get(SHARE_PARAM)!)).toEqual({
+      code: "const answer = 42;",
+      engines: [EngineKey.v8, EngineKey.jsc],
+      flags: { [EngineKey.v8]: ["--print-bytecode"] },
+    });
+  });
+
   it("copies a link that round-trips back to the current state", async () => {
     const user = userEvent.setup();
     render(<ShareButton />, { wrapper: Providers });

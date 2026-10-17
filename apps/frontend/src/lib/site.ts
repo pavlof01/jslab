@@ -37,7 +37,7 @@ export function ogCardText(raw: string, max: number): string {
   return `${cut.trimEnd()}…`;
 }
 
-type OgCardParams = {
+export type OgCardParams = {
   title?: string;
   subtitle?: string;
   engine?: string;
