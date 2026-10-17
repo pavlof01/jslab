@@ -5,6 +5,7 @@ import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
 
 import { buildSnapshotUrl, BYTECODE_EMBED_TITLE } from "@/lib/embedState";
+import { encodeShareState, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
 import { EngineKey } from "@/lib/types";
 
 import { GET } from "./route";
@@ -27,6 +28,40 @@ async function snapshotUrl() {
 }
 
 describe("GET /embed/oembed", () => {
+  const shared = encodeShareState({
+    code: "function f(x) { return x + 1 }\nf(41);",
+    engines: [EngineKey.v8],
+    flags: { [EngineKey.v8]: ["--print-bytecode", "--allow-natives-syntax"] },
+  });
+
+  it("embeds an interactive playground under the registered bytecode URL scheme", async () => {
+    const url = `${SITE}/embed/bytecode?s=${shared}`;
+    const res = await oembed({ url });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ type: "rich", title: PLAYGROUND_EMBED_TITLE, height: 520 });
+    expect(body.html).toContain(`src="${url}&referrer="`);
+  });
+
+  it("frames the interactive embed for a plain playground link", async () => {
+    const res = await oembed({ url: `${SITE}/playground?s=${shared}` });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.title).toBe(PLAYGROUND_EMBED_TITLE);
+    expect(body.html).toContain(`src="${SITE}/embed/playground?s=${shared}&referrer="`);
+  });
+
+  it("keeps snapshot behaviour when both b and s are supplied", async () => {
+    const res = await oembed({ url: `${await snapshotUrl()}&s=${shared}` });
+    expect(res.status).toBe(200);
+    expect((await res.json()).title).toBe(BYTECODE_EMBED_TITLE);
+  });
+
+  it("refuses unreadable playground state on the registered route", async () => {
+    const res = await oembed({ url: `${SITE}/embed/bytecode?s=garbage` });
+    expect(res.status).toBe(404);
+  });
+
   it("returns a rich oEmbed document for a playground URL", async () => {
     const res = await oembed({ url: `${SITE}/embed/playground?s=abc` });
     expect(res.status).toBe(200);

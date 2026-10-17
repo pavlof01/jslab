@@ -4,16 +4,18 @@ import { Button, Menu, Portal } from "@chakra-ui/react";
 import { useCallback, useMemo, useState } from "react";
 
 import { buildSnapshotUrl } from "@/lib/embedState";
+import { BYTECODE_EMBED_PATH } from "@/lib/embedState";
 import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
 import { enabledEngines, flagsFor } from "@/lib/types";
 import { useShareableState } from "@/store/engineOutputsSelectors";
 
-type CopyTarget = "link" | "embed" | "article";
+type CopyTarget = "link" | "embed" | "article" | "medium";
 
 const COPIED_LABEL: Record<CopyTarget, string> = {
   link: "link copied",
   embed: "embed copied",
   article: "article link copied",
+  medium: "medium link copied",
 };
 
 const IDLE_LABEL = "share";
@@ -43,6 +45,15 @@ const ShareButton: React.FC = () => {
     try {
       await navigator.clipboard.writeText(snippet);
       setCopied("embed");
+      window.setTimeout(() => setCopied(null), 1500);
+    } catch {}
+  }, [state]);
+
+  const copyMediumLink = useCallback(async () => {
+    const url = buildShareUrl(window.location.origin, BYTECODE_EMBED_PATH, state);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied("medium");
       window.setTimeout(() => setCopied(null), 1500);
     } catch {}
   }, [state]);
@@ -86,6 +97,9 @@ const ShareButton: React.FC = () => {
             </Menu.Item>
             <Menu.Item value="copy-embed" onSelect={copyEmbed}>
               Copy embed code
+            </Menu.Item>
+            <Menu.Item value="copy-medium" onSelect={copyMediumLink}>
+              Copy Medium link
             </Menu.Item>
             <Menu.Item
               value="copy-article"

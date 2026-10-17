@@ -11,10 +11,16 @@ import {
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
 import { clamp, finiteOr } from "@/lib/numbers";
-import { EMBED_PATH, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
+import {
+  decodeShareState,
+  EMBED_PATH,
+  PLAYGROUND_EMBED_TITLE,
+  PLAYGROUND_PATH,
+  SHARE_PARAM,
+} from "@/lib/shareState";
 
 /** Only our own embed paths may be turned into an iframe. */
-const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH];
+const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH, PLAYGROUND_PATH];
 
 function badRequest(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -45,16 +51,25 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get("x-forwarded-host") ?? self.host;
   if (target.host !== host) return badRequest("url does not belong to this site", 404);
 
-  if (!EMBEDDABLE_PATHS.includes(target.pathname)) {
+  const bareEditor = target.pathname === PLAYGROUND_PATH && !target.searchParams.has(SHARE_PARAM);
+  if (bareEditor || !EMBEDDABLE_PATHS.includes(target.pathname)) {
     return badRequest("url is not an embeddable JSLab view", 404);
   }
 
-  const isBytecode = target.pathname === BYTECODE_EMBED_PATH;
-  const snapshotParam = target.searchParams.get(SNAPSHOT_PARAM);
-  // A bytecode embed without a payload renders an error state; refusing here
-  // gives the author a diagnosable failure at paste time instead.
-  if (isBytecode && !snapshotParam) {
-    return badRequest("bytecode embed is missing its snapshot", 404);
+  const snapshotParam =
+    (target.pathname === BYTECODE_EMBED_PATH && target.searchParams.get(SNAPSHOT_PARAM)) || null;
+  const shareParam = target.searchParams.get(SHARE_PARAM);
+  // A snapshot wins when both are present; otherwise `s` selects the interactive
+  // playground, which is also what the registered bytecode scheme opens for it.
+  const isBytecode = snapshotParam !== null;
+  const needsState = !isBytecode && target.pathname !== EMBED_PATH;
+  if (needsState && (!shareParam || !decodeShareState(shareParam))) {
+    return badRequest(
+      target.pathname === PLAYGROUND_PATH
+        ? "playground link is missing readable state"
+        : "bytecode embed is missing its snapshot or playground state",
+      404,
+    );
   }
 
   // Size the frame to the dump. Embedly fixes the height from this response and
@@ -78,6 +93,11 @@ export async function GET(req: NextRequest) {
   const origin = `${self.protocol}//${host}`;
 
   const frame = new URL(target.toString());
+  if (target.pathname === PLAYGROUND_PATH) {
+    frame.pathname = EMBED_PATH;
+    frame.protocol = self.protocol;
+    frame.host = host;
+  }
   frame.searchParams.set("referrer", "");
   const src = frame.toString();
   const title = isBytecode ? BYTECODE_EMBED_TITLE : PLAYGROUND_EMBED_TITLE;

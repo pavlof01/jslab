@@ -63,6 +63,8 @@ export function buildShareUrl(origin: string, path: string, state: ShareState): 
 
 export const EMBED_PATH = "/embed/playground";
 
+export const PLAYGROUND_PATH = "/playground";
+
 export const PLAYGROUND_EMBED_TITLE = "JSLab playground";
 
 export function buildEmbedSnippet(origin: string, state: ShareState, height = 520): string {
