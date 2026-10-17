@@ -57,6 +57,7 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
   return {
     title,
     robots: { index: false, follow: false },
+    alternates: { canonical: embedUrl(origin, params) },
     openGraph: buildEmbedOpenGraph(
       origin,
       title,
