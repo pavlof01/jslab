@@ -22,7 +22,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "fastify": "^5.12.1",
+    "fastify": "^5.12.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
