@@ -37,7 +37,9 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
       canonical: self,
       types: { "application/json+oembed": discovery },
     },
-    openGraph: buildEmbedOpenGraph(SITE_ORIGIN, PLAYGROUND_EMBED_TITLE, self),
+    openGraph: buildEmbedOpenGraph(SITE_ORIGIN, PLAYGROUND_EMBED_TITLE, self, {
+      subtitle: shared.code,
+    }),
   };
 };
 

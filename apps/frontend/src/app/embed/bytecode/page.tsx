@@ -47,7 +47,9 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
   const params = await searchParams;
   const snapshotParam = firstParam(params, SNAPSHOT_PARAM);
   const snapshot = snapshotParam ? await decodeSnapshot(snapshotParam) : null;
-  const title = isPlaygroundView(params)
+  const playground = isPlaygroundView(params);
+  const shared = playground ? decodeShareState(firstParam(params, SHARE_PARAM) ?? "") : null;
+  const title = playground
     ? PLAYGROUND_EMBED_TITLE
     : snapshot?.title?.trim() || BYTECODE_EMBED_TITLE;
   const origin = await requestOrigin();
@@ -55,7 +57,18 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
   return {
     title,
     robots: { index: false, follow: false },
-    openGraph: buildEmbedOpenGraph(origin, title, embedUrl(origin, params)),
+    openGraph: buildEmbedOpenGraph(
+      origin,
+      title,
+      embedUrl(origin, params),
+      shared
+        ? { subtitle: shared.code }
+        : {
+            subtitle: snapshot?.code,
+            engine: snapshot?.engine,
+            lines: snapshot ? snapshot.output.split("\n").length : undefined,
+          },
+    ),
   };
 };
 

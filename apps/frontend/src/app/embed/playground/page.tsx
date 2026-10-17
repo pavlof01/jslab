@@ -12,7 +12,9 @@ export const metadata: Metadata = {
   title: "JSLab Embed",
   // Embeds are transient, per-snippet views; keep them out of the index.
   robots: { index: false, follow: false },
-  openGraph: buildEmbedOpenGraph(SITE_ORIGIN, PLAYGROUND_EMBED_TITLE, siteUrl(EMBED_PATH)),
+  openGraph: buildEmbedOpenGraph(SITE_ORIGIN, PLAYGROUND_EMBED_TITLE, siteUrl(EMBED_PATH), {
+    subtitle: "Run a snippet across V8, SpiderMonkey, Hermes and JSC.",
+  }),
 };
 
 export const dynamic = "force-dynamic";

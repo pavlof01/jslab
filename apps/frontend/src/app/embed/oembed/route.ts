@@ -6,7 +6,6 @@ import {
   decodeSnapshot,
   EMBED_DEFAULT_HEIGHT,
   EMBED_DEFAULT_WIDTH,
-  EMBED_THUMBNAIL,
   estimateEmbedHeight,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
@@ -18,6 +17,7 @@ import {
   PLAYGROUND_PATH,
   SHARE_PARAM,
 } from "@/lib/shareState";
+import { OG_CARD, ogCardUrl } from "@/lib/site";
 
 /** Only our own embed paths may be turned into an iframe. */
 const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH, PLAYGROUND_PATH];
@@ -74,11 +74,10 @@ export async function GET(req: NextRequest) {
   // the frame cannot renegotiate it afterwards, so a default here means every
   // short embed carries a band of empty space and every long one is cropped
   // harder than it needs to be.
+  const decoded = snapshotParam ? await decodeSnapshot(snapshotParam) : null;
+  const shared = !hasSnapshot && shareParam ? decodeShareState(shareParam) : null;
   let naturalHeight = hasSnapshot ? EMBED_DEFAULT_HEIGHT : 520;
-  if (hasSnapshot && snapshotParam) {
-    const decoded = await decodeSnapshot(snapshotParam);
-    if (decoded) naturalHeight = estimateEmbedHeight(decoded.output);
-  }
+  if (decoded) naturalHeight = estimateEmbedHeight(decoded.output);
 
   const width = clampDimension(
     req.nextUrl.searchParams.get("maxwidth"),
@@ -110,9 +109,14 @@ export async function GET(req: NextRequest) {
       provider_name: "JSLab",
       provider_url: origin,
       title,
-      thumbnail_url: `${origin}${EMBED_THUMBNAIL.path}`,
-      thumbnail_width: EMBED_THUMBNAIL.width,
-      thumbnail_height: EMBED_THUMBNAIL.height,
+      thumbnail_url: ogCardUrl(origin, {
+        title,
+        subtitle: decoded?.code ?? shared?.code,
+        engine: decoded?.engine,
+        lines: decoded ? decoded.output.split("\n").length : undefined,
+      }),
+      thumbnail_width: OG_CARD.width,
+      thumbnail_height: OG_CARD.height,
       width,
       height,
       html,

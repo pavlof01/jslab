@@ -3,7 +3,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 import ConditionalHeader from "@/components/ConditionalHeader";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/site";
+import { OG_CARD, ogCardUrl, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/site";
 
 import Providers from "./providers";
 
@@ -54,9 +54,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        url: ogCardUrl(SITE_ORIGIN, { title: "Explore JS Engines", subtitle: SITE_DESCRIPTION }),
+        width: OG_CARD.width,
+        height: OG_CARD.height,
         alt: "JSLab — Explore JS Engines",
       },
     ],

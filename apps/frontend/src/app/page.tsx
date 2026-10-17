@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 
+import { OG_CARD, ogCardUrl, SITE_ORIGIN } from "@/lib/site";
+
 import LandingPage from "./(landing)/page";
+
+const LANDING_CARD = ogCardUrl(SITE_ORIGIN, {
+  title: "Interactive ECMAScript Explorer",
+  subtitle: "Interactive traces, spec visualizers, and per-engine bytecode.",
+});
 
 export const metadata: Metadata = {
   title: "Interactive ECMAScript Explorer",
@@ -30,9 +37,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        url: LANDING_CARD,
+        width: OG_CARD.width,
+        height: OG_CARD.height,
         alt: "JSLab | Interactive ECMAScript Explorer",
       },
     ],
@@ -42,7 +49,7 @@ export const metadata: Metadata = {
     title: "JSLab | Interactive ECMAScript Explorer",
     description:
       "Explore ECMAScript internals with interactive traces, spec visualizers, and JavaScript engine tooling.",
-    images: ["/og-image.png"],
+    images: [LANDING_CARD],
   },
 };
 
