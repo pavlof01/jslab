@@ -115,6 +115,35 @@ export const engineNote: SystemStyleObject = {
   textWrap: "pretty",
 };
 
+export const preludeToggle: SystemStyleObject = {
+  flex: "0 0 auto",
+  display: "flex",
+  alignItems: "baseline",
+  gap: "10px",
+  width: "100%",
+  textAlign: "left",
+  cursor: "pointer",
+  py: "7px",
+  px: "clamp(10px, 1vw, 14px)",
+  borderBottomWidth: "1px",
+  borderBottomColor: "rule.row",
+  bg: "surface.band",
+  fontFamily: "mono",
+  fontSize: "11px",
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  color: "ink.label",
+  _hover: { color: "accent" },
+  _focusVisible: { outline: "2px solid", outlineColor: "accent", outlineOffset: "-2px" },
+};
+
+export const preludeMeta: SystemStyleObject = {
+  marginLeft: "auto",
+  letterSpacing: "0.06em",
+  textTransform: "none",
+  color: "ink.6",
+};
+
 export const outputFooter: SystemStyleObject = {
   flex: "0 0 auto",
   display: "flex",

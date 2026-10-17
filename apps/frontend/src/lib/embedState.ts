@@ -18,6 +18,8 @@ export const SNAPSHOT_PARAM = "b";
 
 export const BYTECODE_EMBED_PATH = "/embed/bytecode";
 
+export const BYTECODE_EMBED_TITLE = "JSLab bytecode";
+
 /**
  * oEmbed endpoint. Under `/embed`, NOT `/api`: the ingress routes `/api` to the
  * gateway service (priority 1000), so a frontend route handler there would
@@ -30,6 +32,12 @@ export const OEMBED_PATH = "/embed/oembed";
 /** Defaults reported to oEmbed consumers when they ask for no particular size. */
 export const EMBED_DEFAULT_WIDTH = 680;
 export const EMBED_DEFAULT_HEIGHT = 420;
+
+export const EMBED_THUMBNAIL = {
+  path: "/android-chrome-512x512.png",
+  width: 512,
+  height: 512,
+} as const;
 
 const VERSION_GZIP = "1";
 const VERSION_PLAIN = "0";

@@ -4,7 +4,9 @@
 import { describe, expect, it } from "@jest/globals";
 import { NextRequest } from "next/server";
 
-import { buildSnapshotUrl } from "@/lib/embedState";
+import { buildSnapshotUrl, BYTECODE_EMBED_TITLE } from "@/lib/embedState";
+import { encodeShareState, PLAYGROUND_EMBED_TITLE } from "@/lib/shareState";
+import { OG_CARD } from "@/lib/site";
 import { EngineKey } from "@/lib/types";
 
 import { GET } from "./route";
@@ -27,12 +29,55 @@ async function snapshotUrl() {
 }
 
 describe("GET /embed/oembed", () => {
+  const shared = encodeShareState({
+    code: "function f(x) { return x + 1 }\nf(41);",
+    engines: [EngineKey.v8],
+    flags: { [EngineKey.v8]: ["--print-bytecode", "--allow-natives-syntax"] },
+  });
+
+  it("embeds an interactive playground under the registered bytecode URL scheme", async () => {
+    const url = `${SITE}/embed/bytecode?s=${shared}`;
+    const res = await oembed({ url });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ type: "rich", title: PLAYGROUND_EMBED_TITLE, height: 520 });
+    expect(body.html).toContain(`src="${url}&referrer="`);
+  });
+
+  it("frames the interactive embed for a plain playground link", async () => {
+    const res = await oembed({ url: `${SITE}/playground?s=${shared}` });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.title).toBe(PLAYGROUND_EMBED_TITLE);
+    expect(body.html).toContain(`src="${SITE}/embed/playground?s=${shared}&referrer="`);
+  });
+
+  it("forces https and varies the cache on host for a non-local site", async () => {
+    const res = await oembed({ url: `http://jslab.su/embed/bytecode?s=${shared}` });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.html).toContain('src="https://jslab.su/embed/bytecode?s=');
+    expect(body.thumbnail_url.startsWith("https://")).toBe(true);
+    expect(res.headers.get("Vary")).toContain("X-Forwarded-Host");
+  });
+
+  it("keeps snapshot behaviour when both b and s are supplied", async () => {
+    const res = await oembed({ url: `${await snapshotUrl()}&s=${shared}` });
+    expect(res.status).toBe(200);
+    expect((await res.json()).title).toBe(BYTECODE_EMBED_TITLE);
+  });
+
+  it("refuses unreadable playground state on the registered route", async () => {
+    const res = await oembed({ url: `${SITE}/embed/bytecode?s=garbage` });
+    expect(res.status).toBe(404);
+  });
+
   it("returns a rich oEmbed document for a playground URL", async () => {
     const res = await oembed({ url: `${SITE}/embed/playground?s=abc` });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({ version: "1.0", type: "rich", provider_name: "JSLab" });
-    expect(body.html).toContain(`<iframe src="${SITE}/embed/playground?s=abc"`);
+    expect(body.html).toContain(`<iframe src="${SITE}/embed/playground?s=abc&referrer="`);
     expect(res.headers.get("access-control-allow-origin")).toBe("*");
     expect(res.headers.get("cache-control")).toContain("max-age=3600");
   });
@@ -41,8 +86,44 @@ describe("GET /embed/oembed", () => {
     const res = await oembed({ url: await snapshotUrl() });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.title).toBe("JSLab bytecode");
+    expect(body.title).toBe(BYTECODE_EMBED_TITLE);
     expect(body.height).toBeGreaterThan(160);
+  });
+
+  it("leaves an empty referrer slot for the consumer to fill", async () => {
+    const res = await oembed({ url: await snapshotUrl() });
+    const body = await res.json();
+    const src = /<iframe src="([^"]+)"/.exec(body.html)?.[1] ?? "";
+    expect(src).not.toBe("");
+    const params = new URL(src, SITE).searchParams;
+    expect(params.get("referrer")).toBe("");
+    expect(params.get("b")).toBeTruthy();
+  });
+
+  it("advertises a generated card as the thumbnail", async () => {
+    const res = await oembed({ url: `${SITE}/embed/playground` });
+    const body = await res.json();
+    const card = new URL(body.thumbnail_url);
+    expect(`${card.origin}${card.pathname}`).toBe(`${SITE}/og`);
+    expect(card.searchParams.get("title")).toBe(PLAYGROUND_EMBED_TITLE);
+    expect(body.thumbnail_width).toBe(OG_CARD.width);
+    expect(body.thumbnail_height).toBe(OG_CARD.height);
+  });
+
+  it("describes the snapshot in the thumbnail it hands a bytecode consumer", async () => {
+    const res = await oembed({ url: await snapshotUrl() });
+    const body = await res.json();
+    const card = new URL(body.thumbnail_url);
+    expect(card.pathname).toBe("/og");
+    expect(card.searchParams.get("engine")).toBe(EngineKey.v8);
+    expect(card.searchParams.get("lines")).toBe("4");
+    expect(card.searchParams.get("subtitle")).toBe("1 + 1");
+  });
+
+  it("puts the shared code in the thumbnail of an interactive playground link", async () => {
+    const res = await oembed({ url: `${SITE}/embed/bytecode?s=${shared}` });
+    const card = new URL((await res.json()).thumbnail_url);
+    expect(card.searchParams.get("subtitle")).toBe("function f(x) { return x + 1 } f(41);");
   });
 
   it("rejects an unsupported format with 501, before any other check", async () => {

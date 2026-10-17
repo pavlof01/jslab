@@ -1,0 +1,13 @@
+schema: spec-driven
+
+context: |
+  CLAUDE.md is the authority for architecture, commands and code conventions; artifacts refer to it instead of restating it.
+  Capabilities are named after the contract they describe (engine-runtime), in a flat layout under openspec/specs/.
+  Specs record behaviour a client or a neighbouring service can observe. Limits are cited by their environment variable and default, never by function or class name.
+  The specs are a baseline of what the code did when they were written, warts included. A specified behaviour that looks wrong is fixed through a change that modifies the requirement, never preserved because the spec says so.
+  A change that leaves every specified behaviour as it is (dependency bumps, refactors, a fix that restores what a spec already says) skips OpenSpec.
+
+rules:
+  tasks:
+    - End with a verification section that runs `npm run ci` at the repo root plus the lint and test scripts of every workspace the change touches
+    - A change to packages/engine-runtime rebuilds it before its consumers are checked

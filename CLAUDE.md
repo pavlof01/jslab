@@ -157,6 +157,39 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 ---
 
+## Specs (OpenSpec)
+
+Behaviour contracts live in `openspec/specs/<capability>/spec.md` — requirements with
+WHEN/THEN scenarios, describing what a client or a neighbouring service can observe.
+They are a baseline of what the code did when they were written, warts included, not a
+statement of intent — a behaviour that looks wrong in a spec is a candidate for a change,
+not something to preserve.
+
+| Area          | Capabilities                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Engines       | `engine-runtime` (shared `/run` contract), `engine-services` (per-engine invocation)           |
+| API gateway   | `run-api`, `rate-limiting`, `api-keys`, `engine-catalog`, `trace-api`, `api-operations`        |
+| Trace service | `trace-service`                                                                                |
+| Frontend      | `playground`, `v8-pipeline`, `spec-visualizer`, `embed`, `site-metadata`, `frontend-api-proxy` |
+
+Infrastructure (ingress, NetworkPolicy, deploys) has no spec; it stays in `infra/README.md`.
+
+A change that alters specified behaviour starts as a proposal in
+`openspec/changes/<name>/` (proposal, spec deltas, tasks) and is archived into the specs
+once it ships. A change that leaves every specified behaviour as it is — dependency
+bumps, refactors, a fix that restores what a spec already says — skips OpenSpec.
+`openspec/config.yaml` holds the context and rules every artifact is written under.
+
+```bash
+npm run specs:check                  # openspec validate --all --strict (not part of `npm run ci` yet)
+npx openspec list --specs            # capabilities and their requirement counts
+npx openspec init --tools claude     # regenerate the /opsx:* commands — .claude/ is gitignored
+```
+
+In Claude Code the cycle is `/opsx:propose` → `/opsx:apply` → `/opsx:archive`.
+
+---
+
 ## Frontend architecture
 
 **Pages** (all under `apps/frontend/src/app/`):
@@ -198,7 +231,7 @@ Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
 - `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
 - Per-pod concurrency gate returns 429 + `Retry-After` when saturated
-- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order
+- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order. Whenever any prelude loads, the runtime appends a final `prelude-end.js` that prints a marker line; `stdout` is returned from the line after it and everything before it (the lockdown shim's own bytecode under `--print-bytecode`, for one) comes back as `meta.preludeStdout`, which the playground shows collapsed
 - `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
 - Returns `{ ok, stdout, stderr, artifacts: [], meta }`
 - `GET /healthz` reports `{ ok, engine, version }`; the version probe runs once at startup (never per request) and stays `null` for a binary with no way to say, such as jsc
