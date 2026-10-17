@@ -7,7 +7,7 @@ import type { TokensResult } from "shiki";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 
 import { LogoLoader } from "@/components/ui";
-import { matchAnnotations, parseAnnotationSource, uniqueDiagnostics } from "@/lib/annotations";
+import { compileAnnotations } from "@/lib/annotations";
 import { type BytecodeLang, engineLang } from "@/lib/engines";
 import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
@@ -37,6 +37,7 @@ export async function highlight(
 
   const currentRaw = fillBlankRows(
     await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME }),
+    code,
   );
 
   if (!prevCode) {
@@ -45,6 +46,7 @@ export async function highlight(
 
   const prevRaw = fillBlankRows(
     await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME }),
+    prevCode,
   );
 
   const diffTokens = compareOutputs(prevRaw, currentRaw, { normalizeLine: normalizeForDiff });
@@ -62,6 +64,7 @@ type Props = {
   fallback?: ReactNode;
   boxProps?: BoxProps;
   source?: string;
+  showSourceAlerts?: boolean;
 };
 
 export const HighlightedCode = memo(function HighlightedCode({
@@ -74,17 +77,13 @@ export const HighlightedCode = memo(function HighlightedCode({
   fallback,
   boxProps,
   source = "",
+  showSourceAlerts = true,
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
   const [highlighter, setHighlighter] = useState<Highlighter>();
-  const parsed = useMemo(() => parseAnnotationSource(source), [source]);
-  const { annotations, diagnostics: matchDiagnostics } = useMemo(
-    () => matchAnnotations(parsed, out),
-    [parsed, out],
-  );
-  const diagnostics = useMemo(
-    () => uniqueDiagnostics([...parsed.diagnostics, ...matchDiagnostics]),
-    [parsed, matchDiagnostics],
+  const { annotations, diagnostics, outputDiagnostics } = useMemo(
+    () => compileAnnotations({ source, output: out }),
+    [source, out],
   );
 
   useEffect(() => {
@@ -128,7 +127,7 @@ export const HighlightedCode = memo(function HighlightedCode({
   return (
     <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
-      <AnnotationAlerts diagnostics={diagnostics} />
+      <AnnotationAlerts diagnostics={showSourceAlerts ? diagnostics : outputDiagnostics} />
       <CodeDisplay {...tokens} engineKey={engineKey} annotations={annotations} />
     </Box>
   );

@@ -91,6 +91,7 @@ const EmbedBytecodeClient: React.FC<EmbedBytecodeClientProps> = ({ snapshot }) =
               source={snapshot.code}
               showDiff={false}
               fallback={<PlainDump text={snapshot.stderr ?? ""} />}
+              showSourceAlerts={!snapshot.output}
               emptyState={null}
             />
           </Box>

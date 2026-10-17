@@ -47,7 +47,7 @@ describe("output annotations", () => {
         wrapper: Providers,
       });
 
-      const trigger = await screen.findByRole("button", { name: "Explanation: Ready" });
+      const trigger = await screen.findByRole("button", { name: "ready" });
       expect(trigger).toHaveTextContent(/^ready$/);
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       await user.hover(trigger);
@@ -75,12 +75,12 @@ describe("output annotations", () => {
       { wrapper: Providers },
     );
     await user.tab();
-    expect(screen.getByRole("button", { name: "Explanation: Ready" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "ready" })).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(await screen.findByRole("dialog")).toHaveTextContent("The run can continue.");
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "Explanation: Ready" }));
+    await user.click(screen.getByRole("button", { name: "ready" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
     fireEvent.scroll(screen.getByTestId("scroll"));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -100,7 +100,7 @@ describe("output annotations", () => {
     render(<CodeDisplay {...tokens} engineKey={EngineKey.sm} annotations={annotations} />, {
       wrapper: Providers,
     });
-    const trigger = screen.getByRole("button", { name: "Explanation: Ready" });
+    const trigger = screen.getByRole("button", { name: "ready" });
     expect(trigger).toHaveTextContent(/^ready$/);
     expect(trigger.parentElement?.textContent).toContain("status: ready");
     expect(screen.getByText("re")).toHaveStyle({ color: "#ff0000" });
@@ -116,7 +116,7 @@ describe("output annotations", () => {
     render(<CodeDisplay {...diff} engineKey={EngineKey.jsc} annotations={annotations} />, {
       wrapper: Providers,
     });
-    expect(screen.getAllByRole("button", { name: "Explanation: Ready" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "ready" })).toHaveLength(1);
     expect(screen.getByText("status: error")).toBeVisible();
   });
 
@@ -130,7 +130,7 @@ describe("output annotations", () => {
       <CodeDisplay {...tokensFor("Return")} engineKey={EngineKey.v8} annotations={annotations} />,
       { wrapper: Providers },
     );
-    await user.click(screen.getByRole("button", { name: "Explanation: Ret" }));
+    await user.click(screen.getByRole("button", { name: "Ret" }));
     expect(await screen.findByRole("dialog")).toHaveTextContent("Head.");
     await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "urn" }));
@@ -182,9 +182,9 @@ describe("output annotations", () => {
       <HighlightedCode engineKey={EngineKey.jsc} source={source} out={output} />,
       { wrapper: Providers },
     );
-    expect(await screen.findByRole("button", { name: "Explanation: Ready" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "ready" })).toBeVisible();
     rerender(<HighlightedCode engineKey={EngineKey.jsc} source="" out={output} />);
-    expect(screen.queryByRole("button", { name: "Explanation: Ready" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ready" })).not.toBeInTheDocument();
     rerender(
       <HighlightedCode
         engineKey={EngineKey.jsc}
@@ -193,5 +193,25 @@ describe("output annotations", () => {
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("A non-empty `match` is required.");
+  });
+
+  it("leaves directive mistakes to the first output when a second one shares the source", async () => {
+    const broken = "/* @annotation\ntext: Missing match.\n*/";
+    render(
+      <>
+        <HighlightedCode engineKey={EngineKey.v8} source={broken} out={output} />
+        <HighlightedCode
+          engineKey={EngineKey.v8}
+          source={broken}
+          out={output}
+          showSourceAlerts={false}
+          emptyState={null}
+        />
+      </>,
+      { wrapper: Providers },
+    );
+    const alerts = await screen.findAllByRole("status");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent("A non-empty `match` is required.");
   });
 });

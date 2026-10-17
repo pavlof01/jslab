@@ -23,19 +23,52 @@ type Block = { body: string; line: number };
 
 const FIELDS = new Set(["match", "highlight", "title", "text", "occurrence"]);
 
+const DIRECTIVE = /^\s*@annotation\b([^\r\n]*)([\s\S]*)$/;
+
+export const MAX_ANNOTATIONS = 200;
+
+function stripJsDocStars(comment: string): string {
+  if (!comment.startsWith("*")) return comment;
+  return comment
+    .slice(1)
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*\*(?: |$)/, ""))
+    .join("\n");
+}
+
 function annotationBlocks(source: string): Block[] {
   const blocks: Block[] = [];
   if (!source.includes("@annotation")) return blocks;
+
+  let lineGroup: { lines: string[]; line: number; last: number } | undefined;
+  const closeLineGroup = () => {
+    if (!lineGroup) return;
+    const directive = lineGroup.lines.join("\n").match(DIRECTIVE);
+    if (directive) blocks.push({ body: `${directive[1]}${directive[2]}`, line: lineGroup.line });
+    lineGroup = undefined;
+  };
 
   const tokens = tokenizer(source, {
     ecmaVersion: "latest",
     locations: true,
     onComment(block, comment, _start, _end, location) {
-      if (!block) return;
-      const directive = comment.match(/^\s*@annotation\b([^\r\n]*)([\s\S]*)$/);
-      if (directive && location) {
-        blocks.push({ body: `${directive[1]}${directive[2]}`, line: location.line });
+      if (!location) return;
+      if (!block) {
+        const text = comment.replace(/^ /, "");
+        if (lineGroup && location.line === lineGroup.last + 1 && !DIRECTIVE.test(text)) {
+          lineGroup.lines.push(text);
+          lineGroup.last = location.line;
+          return;
+        }
+        closeLineGroup();
+        if (DIRECTIVE.test(text)) {
+          lineGroup = { lines: [text], line: location.line, last: location.line };
+        }
+        return;
       }
+      closeLineGroup();
+      const directive = stripJsDocStars(comment).match(DIRECTIVE);
+      if (directive) blocks.push({ body: `${directive[1]}${directive[2]}`, line: location.line });
     },
   });
   try {
@@ -47,8 +80,9 @@ function annotationBlocks(source: string): Block[] {
     // Keep the directives already read so an engine syntax error still renders.
     if (!(error instanceof SyntaxError)) throw error;
   }
+  closeLineGroup();
 
-  return blocks;
+  return blocks.sort((left, right) => left.line - right.line);
 }
 
 function unquote(value: string): string {
@@ -186,6 +220,13 @@ export function matchAnnotations(
   candidates.sort((left, right) => left.start - right.start || left.order - right.order);
   const annotations: OutputAnnotation[] = [];
   for (const candidate of candidates) {
+    if (annotations.length >= MAX_ANNOTATIONS) {
+      diagnostics.push({
+        line: candidate.line,
+        message: `Only the first ${MAX_ANNOTATIONS} annotations are shown; use a more specific match or \`occurrence\`.`,
+      });
+      break;
+    }
     const previous = annotations.at(-1);
     if (previous && candidate.start < previous.end) {
       diagnostics.push({
@@ -200,14 +241,24 @@ export function matchAnnotations(
   return { annotations, diagnostics: uniqueDiagnostics(diagnostics) };
 }
 
-export function compileAnnotations({ source, output }: { source: string; output: string }): {
+export type CompiledAnnotations = {
   annotations: OutputAnnotation[];
   diagnostics: AnnotationDiagnostic[];
-} {
+  outputDiagnostics: AnnotationDiagnostic[];
+};
+
+export function compileAnnotations({
+  source,
+  output,
+}: {
+  source: string;
+  output: string;
+}): CompiledAnnotations {
   const parsed = parseAnnotationSource(source);
   const matched = matchAnnotations(parsed, output);
   return {
     annotations: matched.annotations,
     diagnostics: uniqueDiagnostics([...parsed.diagnostics, ...matched.diagnostics]),
+    outputDiagnostics: matched.diagnostics,
   };
 }

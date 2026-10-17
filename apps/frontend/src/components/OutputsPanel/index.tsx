@@ -63,6 +63,7 @@ const OutputsPanel: React.FC = () => {
               showDiff={showDiff}
               emptyState={null}
               source={currentRun?.code}
+              showSourceAlerts={!result?.stdout}
             />
           </Stack>
         </Tabs.Content>

@@ -3,6 +3,7 @@ import type { ThemedToken, TokensResult } from "shiki";
 
 import type { OutputAnnotation } from "@/lib/annotations";
 import { DiffKind, type EngineKey } from "@/lib/types";
+import { rowWidth } from "@/utils/diff-bytecode";
 
 import PlainCodeRow from "./CodeRow";
 
@@ -18,17 +19,10 @@ export function lineKey(row: ThemedToken[], startOffset: number): string {
 export type LineSpan = { start: number; end: number };
 
 export function lineSpans(lines: ThemedToken[][]): LineSpan[] {
-  const spans: LineSpan[] = [];
-  let offset = 0;
-
-  for (const row of lines) {
-    const start = row[0]?.offset ?? offset;
-    const end = start + row.reduce((width, token) => width + token.content.length, 0);
-    spans.push({ start, end });
-    offset = end + 1;
-  }
-
-  return spans;
+  return lines.map((row) => {
+    const start = row[0]?.offset ?? 0;
+    return { start, end: start + rowWidth(row) };
+  });
 }
 
 const annotationsPerRow = (
@@ -59,8 +53,7 @@ const CodeDisplay: React.FC<Props> = ({ tokens, fg, bg, engineKey, annotations }
           key={lineKey(row, spans[index].start)}
           tokens={row}
           lineNumber={index}
-          lineStart={spans[index].start}
-          lineEnd={spans[index].end}
+          span={spans[index]}
           engineKey={engineKey}
           annotations={rowAnnotations[index]}
         />

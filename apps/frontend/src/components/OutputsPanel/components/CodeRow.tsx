@@ -1,11 +1,12 @@
-import { Button } from "@chakra-ui/react";
+import { Box, Button } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import type { ThemedToken } from "shiki";
 
-import ClickPopover from "@/components/ui/click-popover";
+import { ClickPopover } from "@/components/ui";
 import type { OutputAnnotation } from "@/lib/annotations";
 import { DiffKind, type EngineKey } from "@/lib/types";
 
+import type { LineSpan } from "./Code";
 import TokenSpan from "./CodeToken";
 import LineNumber from "./LineNumber";
 import TokenText from "./TokenText";
@@ -13,8 +14,7 @@ import TokenText from "./TokenText";
 type Props = {
   tokens: ThemedToken[];
   lineNumber: number;
-  lineStart: number;
-  lineEnd: number;
+  span: LineSpan;
   engineKey: EngineKey;
   annotations?: OutputAnnotation[];
 };
@@ -32,9 +32,10 @@ const diffKindToPrefix: Record<DiffKind, string> = {
 };
 
 const renderAnnotatedTokens = (
-  { tokens, lineStart, lineEnd, engineKey }: Omit<Props, "lineNumber" | "annotations">,
+  { tokens, span, engineKey }: Omit<Props, "lineNumber" | "annotations">,
   annotations: OutputAnnotation[],
 ): ReactNode[] => {
+  const { start: lineStart, end: lineEnd } = span;
   let offset = lineStart;
   const positions = tokens.map((token, index) => {
     const start = offset;
@@ -69,6 +70,17 @@ const renderAnnotatedTokens = (
         );
       });
 
+  const textOf = (from: number, to: number): string =>
+    positions
+      .filter((position) => position.start < to && position.end > from)
+      .map(({ token, start }) =>
+        token.content.slice(
+          Math.max(from, start) - start,
+          Math.min(to, start + token.content.length) - start,
+        ),
+      )
+      .join("");
+
   const content: ReactNode[] = [];
   let cursor = lineStart;
   for (const annotation of annotations) {
@@ -78,17 +90,11 @@ const renderAnnotatedTokens = (
     content.push(
       <ClickPopover key={annotation.id} title={annotation.title} content={annotation.text}>
         <Button
-          variant="rule"
+          variant="annotation"
           typeface="code"
           type="button"
-          borderStyle="double"
-          borderColor="accent"
-          borderWidth="1px"
-          bg="surface.accentSoft"
-          aria-label={`Explanation: ${annotation.title}`}
+          aria-label={textOf(start, end)}
           data-output-annotation={annotation.id}
-          _hover={{ bg: "surface.accentRow" }}
-          _focusVisible={{ outline: "2px solid", outlineColor: "accent", outlineOffset: "2px" }}
         >
           {sliceRange(start, end, true)}
         </Button>
@@ -100,18 +106,11 @@ const renderAnnotatedTokens = (
   return content;
 };
 
-const PlainCodeRow: React.FC<Props> = ({
-  tokens,
-  lineNumber,
-  lineStart,
-  lineEnd,
-  engineKey,
-  annotations,
-}) => {
+const PlainCodeRow: React.FC<Props> = ({ tokens, lineNumber, span, engineKey, annotations }) => {
   const first = tokens[0];
   const diffKind = first?.diffType;
   const content = annotations?.length
-    ? renderAnnotatedTokens({ tokens, lineStart, lineEnd, engineKey }, annotations)
+    ? renderAnnotatedTokens({ tokens, span, engineKey }, annotations)
     : tokens.map((token, index) => (
         <TokenSpan
           key={token.offset}
@@ -122,19 +121,20 @@ const PlainCodeRow: React.FC<Props> = ({
       ));
 
   return (
-    <span
+    <Box
+      as="span"
       className={diffKind ? diffKindToClass[diffKind] : ""}
-      style={{ whiteSpace: "pre", display: "inline-block", minHeight: "1.65em" }}
+      whiteSpace="pre"
+      display="inline-block"
+      minH="1.65em"
     >
-      <span
-        style={{ display: "inline-block", width: "1.5ch", textAlign: "center", userSelect: "none" }}
-      >
+      <Box as="span" display="inline-block" w="1.5ch" textAlign="center" userSelect="none">
         {diffKind ? diffKindToPrefix[diffKind] : " "}
-      </span>
+      </Box>
       <LineNumber value={first?.prevLine ?? lineNumber} />
       <LineNumber value={first?.nextLine ?? ""} />
       {content}
-    </span>
+    </Box>
   );
 };
 

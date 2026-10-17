@@ -1,7 +1,7 @@
 import { Button } from "@chakra-ui/react";
 import type { ThemedToken } from "shiki";
 
-import ClickPopover from "@/components/ui/click-popover";
+import { ClickPopover } from "@/components/ui";
 import type { EngineKey } from "@/lib/types";
 
 import { describeEngineToken } from "../op-codes";
@@ -21,13 +21,7 @@ const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey, slice }) => {
 
   return (
     <ClickPopover title={<TokenText token={token} />} content={description}>
-      <Button
-        variant="rule"
-        typeface="prose"
-        type="button"
-        borderBottomStyle="dashed"
-        borderBottomColor="rule.link"
-      >
+      <Button variant="term" typeface="prose" type="button">
         {content}
       </Button>
     </ClickPopover>

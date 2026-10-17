@@ -33,7 +33,7 @@ for (let i = 0; i < 400; i++) add(i, i + 1);
 const PipelineClient: React.FC = () => {
   const [code, setCode] = useState(SAMPLE);
   const [active, setActive] = useState<StageId>("tokens");
-  const { hasRun, running, error, outputs, visibleTokens, analyze, statusOf } =
+  const { hasRun, running, error, outputs, visibleTokens, runCode, analyze, statusOf } =
     usePipelineRun(code);
 
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
@@ -66,7 +66,7 @@ const PipelineClient: React.FC = () => {
         </Button>
       </Flex>
 
-      {error ? <RunError>{error}</RunError> : null}
+      {error ? <Callout>{error}</Callout> : null}
 
       <Splitter.Root
         orientation={isMobile ? "vertical" : "horizontal"}
@@ -123,6 +123,7 @@ const PipelineClient: React.FC = () => {
                   output={outputs[stage.id as ApiStageId]}
                   tokens={visibleTokens}
                   hasRun={hasRun}
+                  source={runCode}
                 />
               </Tabs.Content>
             ))}
@@ -131,10 +132,6 @@ const PipelineClient: React.FC = () => {
       </Splitter.Root>
     </Flex>
   );
-};
-
-const RunError: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <Callout>{children}</Callout>;
 };
 
 export default PipelineClient;

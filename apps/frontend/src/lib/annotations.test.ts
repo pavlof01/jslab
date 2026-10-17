@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { compileAnnotations } from "./annotations";
+import { compileAnnotations, MAX_ANNOTATIONS } from "./annotations";
 import { v8Samples } from "./samples";
 
 const source = (fields: string) => `/* @annotation\n${fields}\n*/`;
@@ -61,6 +61,7 @@ describe("compileAnnotations", () => {
       ).toEqual({
         annotations: [],
         diagnostics: [],
+        outputDiagnostics: [],
       });
     }
     expect(
@@ -199,5 +200,51 @@ describe("compileAnnotations", () => {
       "PACKED_SMI_ELEMENTS",
       "HOLEY_SMI_ELEMENTS",
     ]);
+  });
+
+  it("reads directives written as JSDoc comments", () => {
+    const result = compileAnnotations({
+      source:
+        "/**\n * @annotation\n * match: status: ready\n * highlight: ready\n * text: |\n *   Ready.\n *   Go on.\n */",
+      output: "status: ready",
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations).toEqual([
+      expect.objectContaining({ start: 8, end: 13, title: "ready", text: "Ready.\nGo on." }),
+    ]);
+  });
+
+  it("reads directives written as consecutive line comments", () => {
+    const result = compileAnnotations({
+      source:
+        "// @annotation\n// match: status: ready\n// text: Ready.\nprint('status: ready');\n// match: ignored",
+      output: "status: ready",
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations).toEqual([
+      expect.objectContaining({ start: 0, end: 13, text: "Ready." }),
+    ]);
+  });
+
+  it("caps the number of highlights and says so", () => {
+    const output = "x ".repeat(MAX_ANNOTATIONS + 50);
+    const result = compileAnnotations({ source: source("match: x\ntext: X."), output });
+    expect(result.annotations).toHaveLength(MAX_ANNOTATIONS);
+    expect(result.outputDiagnostics).toEqual([
+      expect.objectContaining({ message: expect.stringContaining(`first ${MAX_ANNOTATIONS}`) }),
+    ]);
+  });
+
+  it("keeps directive mistakes apart from problems found in one output", () => {
+    const result = compileAnnotations({
+      source: `${source("text: No match field.")}\n${source("match: ab\ntext: A.")}\n${source("match: bc\ntext: B.")}`,
+      output: "abc",
+    });
+    expect(result.outputDiagnostics.map((item) => item.message)).toEqual([
+      "Overlapping annotation skipped; use a more specific match.",
+    ]);
+    expect(result.diagnostics.map((item) => item.message)).toContain(
+      "A non-empty `match` is required.",
+    );
   });
 });

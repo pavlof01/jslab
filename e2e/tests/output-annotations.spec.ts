@@ -28,7 +28,7 @@ for (const engine of ["v8", "jsc", "sm", "hermes"]) {
       }),
     );
 
-    const trigger = page.getByRole("button", { name: "Explanation: Ready" });
+    const trigger = page.getByRole("button", { name: "ready" });
     await expect(trigger).toHaveText("ready");
     await trigger.hover();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -40,7 +40,7 @@ for (const engine of ["v8", "jsc", "sm", "hermes"]) {
     await page.keyboard.press("Escape");
     await expect(popover).toBeHidden();
 
-    const warning = page.getByRole("button", { name: "Explanation: retry" });
+    const warning = page.getByRole("button", { name: "retry" });
     await warning.click();
     await expect(page.getByRole("dialog", { name: /retry/ })).toContainText("Retry the operation.");
     await page.keyboard.press("Escape");

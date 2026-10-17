@@ -19,26 +19,22 @@ type StageContentProps = {
   output?: StageOutput;
   tokens: Token[];
   hasRun: boolean;
+  source?: string;
 };
 
-const StageContent: React.FC<StageContentProps> = ({ stage, output, tokens, hasRun }) => {
+const StageContent: React.FC<StageContentProps> = ({ stage, output, tokens, hasRun, source }) => {
   return (
     <>
       {stage.hint ? <StageHint>{stage.hint}</StageHint> : null}
       {output ? <StageError output={output} /> : null}
-      <StageBody stage={stage} output={output} tokens={tokens} hasRun={hasRun} />
+      <StageBody stage={stage} output={output} tokens={tokens} hasRun={hasRun} source={source} />
     </>
   );
 };
 
-type StageBodyProps = {
-  stage: Stage;
-  output?: StageOutput;
-  tokens: Token[];
-  hasRun: boolean;
-};
+type StageBodyProps = StageContentProps;
 
-const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun }) => {
+const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun, source }) => {
   if (stage.view === "tokens") {
     if (!hasRun) return <DefaultEmptyCodeBlockState />;
     return <TokensPane tokens={tokens} />;
@@ -52,7 +48,14 @@ const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun }) 
     return <CodeBlockShiki code={output?.stdout ?? ""} />;
   }
 
-  return <HighlightedCode engineKey={EngineKey.v8} out={output?.stdout} showDiff={false} />;
+  return (
+    <HighlightedCode
+      engineKey={EngineKey.v8}
+      out={output?.stdout}
+      source={source}
+      showDiff={false}
+    />
+  );
 };
 
 type StageHintProps = { children: React.ReactNode };

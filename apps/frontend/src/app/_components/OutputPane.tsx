@@ -53,6 +53,7 @@ const OutputPane: React.FC = () => {
             prev={previous?.stderr}
             showDiff={showDiff}
             source={currentRun?.code}
+            showSourceAlerts={!result.stdout}
             emptyState={null}
           />
         ) : null}
