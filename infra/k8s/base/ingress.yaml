@@ -295,3 +295,123 @@ spec:
                 name: frontend
                 port:
                   number: 3000
+---
+# ─── jslab-oembed-http ────────────────────────────────────
+# The only thing served over plain http. Embedly's fetcher calls the oEmbed
+# endpoint registered as https://jslab.su/embed/oembed but has been seen
+# requesting it over http://, and it does not follow Cloudflare's redirect, so
+# without this route it gets a 404 or a 301 instead of JSON and Medium falls
+# back to a bare link card. The route matches only /embed/oembed, which answers
+# with public JSON and rewrites every URL it returns to https.
+#
+# Entrypoint `web` (:80) and no tls block: a tls section would make Traefik
+# treat the router as https-only. Priority 500 beats the redirect catch-all below.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jslab-oembed-http
+  namespace: jslab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.priority: "500"
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-embed-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: jslab.su
+      http:
+        paths:
+          - path: /embed/oembed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.su
+      http:
+        paths:
+          - path: /embed/oembed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /embed/oembed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.cc
+      http:
+        paths:
+          - path: /embed/oembed
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+---
+# ─── jslab-http-redirect ──────────────────────────────────
+# Everything else on plain http goes to https. This replaces Cloudflare's
+# zone-wide "Always Use HTTPS", which cannot exempt a single path. The backend is
+# never reached; the redirect middleware answers first.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jslab-http-redirect
+  namespace: jslab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.priority: "10"
+    traefik.ingress.kubernetes.io/router.middlewares: jslab-jslab-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: jslab.su
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.su
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: jslab.cc
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.jslab.cc
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000

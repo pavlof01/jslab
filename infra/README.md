@@ -19,7 +19,7 @@ Kustomize manifests for the `jslab` namespace on k3s (Traefik ingress).
 
 ## Ingress routing model
 
-Four Ingress objects share the same hosts and are disambiguated by explicit
+Four Ingress objects share the same hosts on the https entrypoint (`websecure`) and are disambiguated by explicit
 Traefik router priorities (higher wins):
 
 | Priority | Ingress              | Paths                               | Backend  | Middleware               |
@@ -28,6 +28,15 @@ Traefik router priorities (higher wins):
 | 1000     | `jslab-api`          | `/api`                              | api      | `jslab-security-headers` |
 | 500      | `jslab-embed`        | `/embed`                            | frontend | `jslab-embed-headers`    |
 | 10       | `jslab-frontend`     | `/`                                 | frontend | `jslab-security-headers` |
+
+Plain http (entrypoint `web`) has two more Ingress objects, because Cloudflare's
+"Always Use HTTPS" is off for the zone. That setting cannot exempt one path, and
+Embedly fetches `/embed/oembed` over http without following redirects:
+
+| Priority | Ingress               | Paths           | Behaviour                                           |
+| -------- | --------------------- | --------------- | --------------------------------------------------- |
+| 500      | `jslab-oembed-http`   | `/embed/oembed` | served over http (public JSON, https URLs inside)   |
+| 10       | `jslab-http-redirect` | `/`             | 301 to https via `jslab-redirect-https`, no backend |
 
 `/api/trace/execute/*` intentionally matches no rule at priority 2000, so it
 falls through to `/api` and is served by the **api gateway**. That is the only
