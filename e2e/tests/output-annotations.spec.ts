@@ -85,3 +85,31 @@ test("a shared playground link keeps its annotations through a real d8 run", asy
     "Execution can continue.",
   );
 });
+
+test("the help loads an annotated example that explains real V8 bytecode", async ({ page }) => {
+  const pg = await PlaygroundPage.open(page);
+  await page.getByRole("button", { name: "How to annotate the output" }).click();
+  await page.getByRole("button", { name: "Load example" }).click();
+  await expect(pg.editor).toContainText("@annotation");
+
+  await pg.run();
+  const add = page.getByRole("button", { name: "Add" });
+  await expect(add).toBeVisible({ timeout: 20_000 });
+  await add.click();
+  await expect(page.getByRole("dialog", { name: /Add with feedback/ })).toContainText(
+    "feedback vector",
+  );
+});
+
+test("typing @ at the start of a line offers the annotation template", async ({ page }) => {
+  const pg = await PlaygroundPage.open(page);
+  await page.locator(".monaco-editor .view-lines").first().click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.press("Delete");
+  await page.keyboard.type("@annot");
+  const suggestion = page.locator(".monaco-editor .suggest-widget").getByText("@annotation");
+  await expect(suggestion).toBeVisible();
+  await page.keyboard.press("Enter");
+  await expect(pg.editor).toContainText("match:");
+  await expect(pg.editor).toContainText("text to find in the output");
+});

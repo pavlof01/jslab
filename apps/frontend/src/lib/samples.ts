@@ -1,11 +1,28 @@
 export const samples = {
   annotations: `/* @annotation
-match: status: ready
-highlight: ready
-title: Ready
-text: The operation is ready to continue. Click the highlighted word in the output.
+match: Ldar a1
+highlight: Ldar
+title: Ldar: load a register
+text: Copies parameter b (register a1) into the accumulator, where the next instruction works.
 */
-print("status: ready");`,
+/* @annotation
+match: Add a0, FBV[0]
+highlight: Add
+title: Add with feedback
+text: |
+  Adds parameter a (register a0) to the accumulator.
+  FBV[0] is slot 0 of the feedback vector, where V8 records the operand types
+  it has seen; the optimizing compilers read it later.
+*/
+/* @annotation
+match: Return
+title: Return
+text: Returns whatever is in the accumulator.
+*/
+function add(a, b) {
+  return a + b;
+}
+add(1, 2);`,
   add: `function f(x){ return x + 1 }\nf(41);`,
   closure: `function f(a){ function g(b){ return a + b } return g(1) }\nf(41);`,
   loop: `function f(n){ let s=0; for(let i=0;i<n;i++) s+=i; return s }\nf(10);`,
@@ -23,7 +40,7 @@ export const sampleCatalog: SampleDescriptor[] = [
   {
     key: "annotations",
     label: "Output annotations",
-    description: "Attach a click-to-open explanation to matching output text.",
+    description: "Explain V8 bytecode lines with click-to-open notes written in the code.",
   },
   { key: "add", label: "Add", description: "Minimal function call returning 42." },
   {

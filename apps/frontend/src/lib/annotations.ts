@@ -27,6 +27,20 @@ const DIRECTIVE = /^\s*@annotation\b([^\r\n]*)([\s\S]*)$/;
 
 export const MAX_ANNOTATIONS = 200;
 
+export const ANNOTATION_TEMPLATE = `/* @annotation
+match: text to find in the output
+highlight: part of it to mark
+title: Short title
+text: What the reader should know.
+*/`;
+
+export const ANNOTATION_SNIPPET = `/* @annotation
+match: \${1:text to find in the output}
+highlight: \${2:part of it to mark}
+title: \${3:Short title}
+text: \${4:What the reader should know.}
+*/`;
+
 function stripJsDocStars(comment: string): string {
   if (!comment.startsWith("*")) return comment;
   return comment

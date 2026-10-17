@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 
 import { compileAnnotations, MAX_ANNOTATIONS } from "./annotations";
-import { v8Samples } from "./samples";
+import { samples, v8Samples } from "./samples";
 
 const source = (fields: string) => `/* @annotation\n${fields}\n*/`;
 
@@ -246,5 +246,22 @@ describe("compileAnnotations", () => {
     expect(result.diagnostics.map((item) => item.message)).toContain(
       "A non-empty `match` is required.",
     );
+  });
+
+  it("matches the built-in example against real d8 bytecode output", () => {
+    const output = [
+      "         0x1d8f01000323 @   27 : b9                Return",
+      "         0x1d8f0100034c @    0 : 0b 04             Ldar a1",
+      "         0x1d8f0100034e @    2 : 42 03 00          Add a0, FBV[0]",
+      "         0x1d8f01000351 @    5 : b9                Return",
+    ].join("\n");
+    const result = compileAnnotations({ source: samples.annotations, output });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations.map((item) => output.slice(item.start, item.end))).toEqual([
+      "Return",
+      "Ldar",
+      "Add",
+      "Return",
+    ]);
   });
 });

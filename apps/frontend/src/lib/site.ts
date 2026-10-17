@@ -63,3 +63,5 @@ export function siteUrl(path: string): string {
 }
 
 export const REPO_URL = "https://github.com/pavlof01/jslab";
+
+export const ANNOTATIONS_GUIDE_URL = `${REPO_URL}/wiki/Output-Annotations`;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Menu, Portal } from "@chakra-ui/react";
+import { Box, Button, Menu, Portal, Text } from "@chakra-ui/react";
 import { useCallback, useMemo, useState } from "react";
 
 import { buildSnapshotUrl, BYTECODE_EMBED_PATH } from "@/lib/embedState";
@@ -100,19 +100,36 @@ const ShareButton: React.FC = () => {
               Copy embed code
             </Menu.Item>
             <Menu.Item value="copy-medium" onSelect={copyMediumLink}>
-              Copy Medium link
+              <LinkOption hint="Readers can edit and run it. Annotations included.">
+                Copy Medium link
+              </LinkOption>
             </Menu.Item>
             <Menu.Item
               value="copy-article"
               onSelect={copyArticleLink}
               disabled={!canCopyArticleLink}
             >
-              Copy article link (output only)
+              <LinkOption hint="Your output exactly as it ran. Annotations included.">
+                Copy article link (output only)
+              </LinkOption>
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>
       </Portal>
     </Menu.Root>
+  );
+};
+
+type LinkOptionProps = { hint: string; children: React.ReactNode };
+
+export const LinkOption: React.FC<LinkOptionProps> = ({ hint, children }) => {
+  return (
+    <Box display="flex" flexDirection="column" gap="2px" py="2px">
+      <span>{children}</span>
+      <Text as="span" textStyle="bodySm" color="ink.5" textTransform="none" letterSpacing="normal">
+        {hint}
+      </Text>
+    </Box>
   );
 };
 
