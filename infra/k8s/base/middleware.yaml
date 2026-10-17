@@ -69,17 +69,3 @@ spec:
       # belt-and-braces strip in case an upstream (Next.js, Cloudflare) starts
       # emitting one: Traefik deletes a response header set to "".
       X-Frame-Options: ""
----
-# 301 to https, applied by jslab-http-redirect (ingress.yaml) to every plain-http
-# request the oEmbed router does not claim. Cloudflare's "Always Use HTTPS" is
-# off for this zone so http://jslab.su/embed/oembed reaches the origin untouched;
-# this sends everything else back to https instead.
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: jslab-redirect-https
-  namespace: jslab
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true
