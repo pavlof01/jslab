@@ -2,18 +2,17 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 
 import FlagCatalogProvider from "@/components/FlagSelector/context";
+import { buildEmbedOpenGraph, firstParam, type SearchParams } from "@/lib/embedMeta";
 import {
   BYTECODE_EMBED_PATH,
   BYTECODE_EMBED_TITLE,
   decodeSnapshot,
-  EMBED_THUMBNAIL,
   type EmbedSnapshot,
   OEMBED_PATH,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
 import { fetchFlagCatalog } from "@/lib/server/flags";
-import { PLAYGROUND_EMBED_TITLE, SHARE_PARAM } from "@/lib/shareState";
-import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { decodeShareState, PLAYGROUND_EMBED_TITLE, SHARE_PARAM } from "@/lib/shareState";
 
 import EmbedPlaygroundClient from "../playground/EmbedPlaygroundClient";
 import EmbedBytecodeClient from "./EmbedBytecodeClient";
@@ -25,41 +24,28 @@ async function requestOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
 type Props = {
   searchParams: Promise<SearchParams>;
 };
 
-function readSnapshotParam(params: SearchParams): string | undefined {
-  const raw = params[SNAPSHOT_PARAM];
-  return Array.isArray(raw) ? raw[0] : raw;
-}
-
-function readShareParam(params: SearchParams): string | undefined {
-  const raw = params[SHARE_PARAM];
-  return Array.isArray(raw) ? raw[0] : raw;
-}
-
-/** The registered scheme also serves the interactive playground, selected by `s` alone. */
 function isPlaygroundView(params: SearchParams): boolean {
-  return !readSnapshotParam(params) && Boolean(readShareParam(params));
+  if (firstParam(params, SNAPSHOT_PARAM)) return false;
+  const shared = firstParam(params, SHARE_PARAM);
+  return Boolean(shared && decodeShareState(shared));
 }
 
 function embedUrl(origin: string, params: SearchParams): string {
-  const snapshotParam = readSnapshotParam(params);
-  const shareParam = isPlaygroundView(params) ? readShareParam(params) : undefined;
-  const query = snapshotParam
-    ? `?${SNAPSHOT_PARAM}=${encodeURIComponent(snapshotParam)}`
-    : shareParam
-      ? `?${SHARE_PARAM}=${encodeURIComponent(shareParam)}`
-      : "";
+  const snapshotParam = firstParam(params, SNAPSHOT_PARAM);
+  const shareParam = isPlaygroundView(params) ? firstParam(params, SHARE_PARAM) : undefined;
+  const key = snapshotParam ? SNAPSHOT_PARAM : SHARE_PARAM;
+  const value = snapshotParam ?? shareParam;
+  const query = value ? `?${key}=${encodeURIComponent(value)}` : "";
   return `${origin}${BYTECODE_EMBED_PATH}${query}`;
 }
 
 export const generateMetadata = async ({ searchParams }: Props): Promise<Metadata> => {
   const params = await searchParams;
-  const snapshotParam = readSnapshotParam(params);
+  const snapshotParam = firstParam(params, SNAPSHOT_PARAM);
   const snapshot = snapshotParam ? await decodeSnapshot(snapshotParam) : null;
   const title = isPlaygroundView(params)
     ? PLAYGROUND_EMBED_TITLE
@@ -69,28 +55,13 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
   return {
     title,
     robots: { index: false, follow: false },
-    openGraph: {
-      title,
-      description: SITE_DESCRIPTION,
-      url: embedUrl(origin, params),
-      siteName: SITE_NAME,
-      type: "article",
-      locale: "en_US",
-      images: [
-        {
-          url: `${origin}${EMBED_THUMBNAIL.path}`,
-          width: EMBED_THUMBNAIL.width,
-          height: EMBED_THUMBNAIL.height,
-          alt: title,
-        },
-      ],
-    },
+    openGraph: buildEmbedOpenGraph(origin, title, embedUrl(origin, params)),
   };
 };
 
 const EmbedBytecodePage = async ({ searchParams }: Props) => {
   const params = await searchParams;
-  const snapshotParam = readSnapshotParam(params);
+  const snapshotParam = firstParam(params, SNAPSHOT_PARAM);
   const playground = isPlaygroundView(params);
 
   let snapshot: EmbedSnapshot | null = null;

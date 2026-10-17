@@ -51,6 +51,15 @@ describe("GET /embed/oembed", () => {
     expect(body.html).toContain(`src="${SITE}/embed/playground?s=${shared}&referrer="`);
   });
 
+  it("forces https and varies the cache on host for a non-local site", async () => {
+    const res = await oembed({ url: `http://jslab.su/embed/bytecode?s=${shared}` });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.html).toContain('src="https://jslab.su/embed/bytecode?s=');
+    expect(body.thumbnail_url.startsWith("https://")).toBe(true);
+    expect(res.headers.get("Vary")).toContain("X-Forwarded-Host");
+  });
+
   it("keeps snapshot behaviour when both b and s are supplied", async () => {
     const res = await oembed({ url: `${await snapshotUrl()}&s=${shared}` });
     expect(res.status).toBe(200);

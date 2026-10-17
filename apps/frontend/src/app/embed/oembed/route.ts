@@ -59,10 +59,8 @@ export async function GET(req: NextRequest) {
   const snapshotParam =
     (target.pathname === BYTECODE_EMBED_PATH && target.searchParams.get(SNAPSHOT_PARAM)) || null;
   const shareParam = target.searchParams.get(SHARE_PARAM);
-  // A snapshot wins when both are present; otherwise `s` selects the interactive
-  // playground, which is also what the registered bytecode scheme opens for it.
-  const isBytecode = snapshotParam !== null;
-  const needsState = !isBytecode && target.pathname !== EMBED_PATH;
+  const hasSnapshot = snapshotParam !== null;
+  const needsState = !hasSnapshot && target.pathname !== EMBED_PATH;
   if (needsState && (!shareParam || !decodeShareState(shareParam))) {
     return badRequest(
       target.pathname === PLAYGROUND_PATH
@@ -76,8 +74,8 @@ export async function GET(req: NextRequest) {
   // the frame cannot renegotiate it afterwards, so a default here means every
   // short embed carries a band of empty space and every long one is cropped
   // harder than it needs to be.
-  let naturalHeight = isBytecode ? EMBED_DEFAULT_HEIGHT : 520;
-  if (isBytecode && snapshotParam) {
+  let naturalHeight = hasSnapshot ? EMBED_DEFAULT_HEIGHT : 520;
+  if (hasSnapshot && snapshotParam) {
     const decoded = await decodeSnapshot(snapshotParam);
     if (decoded) naturalHeight = estimateEmbedHeight(decoded.output);
   }
@@ -90,17 +88,16 @@ export async function GET(req: NextRequest) {
   );
   const height = clampDimension(req.nextUrl.searchParams.get("maxheight"), naturalHeight, 160, 900);
 
-  const origin = `${self.protocol}//${host}`;
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  const protocol = local ? self.protocol : "https:";
+  const origin = `${protocol}//${host}`;
 
   const frame = new URL(target.toString());
-  if (target.pathname === PLAYGROUND_PATH) {
-    frame.pathname = EMBED_PATH;
-    frame.protocol = self.protocol;
-    frame.host = host;
-  }
+  frame.protocol = protocol;
+  if (target.pathname === PLAYGROUND_PATH) frame.pathname = EMBED_PATH;
   frame.searchParams.set("referrer", "");
   const src = frame.toString();
-  const title = isBytecode ? BYTECODE_EMBED_TITLE : PLAYGROUND_EMBED_TITLE;
+  const title = hasSnapshot ? BYTECODE_EMBED_TITLE : PLAYGROUND_EMBED_TITLE;
   const html =
     `<iframe src="${src}" width="${width}" height="${height}" ` +
     `style="border:0;border-radius:8px;max-width:100%" title="${title}" ` +
@@ -125,6 +122,7 @@ export async function GET(req: NextRequest) {
         // Consumers (Embedly among them) re-fetch on every article render; the
         // answer only depends on the URL, so let it be cached.
         "Cache-Control": "public, max-age=3600",
+        Vary: "Host, X-Forwarded-Host",
         // oEmbed consumers are third-party by definition.
         "Access-Control-Allow-Origin": "*",
       },

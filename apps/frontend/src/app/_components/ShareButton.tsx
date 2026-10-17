@@ -3,8 +3,7 @@
 import { Button, Menu, Portal } from "@chakra-ui/react";
 import { useCallback, useMemo, useState } from "react";
 
-import { buildSnapshotUrl } from "@/lib/embedState";
-import { BYTECODE_EMBED_PATH } from "@/lib/embedState";
+import { buildSnapshotUrl, BYTECODE_EMBED_PATH } from "@/lib/embedState";
 import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
 import { enabledEngines, flagsFor } from "@/lib/types";
 import { useShareableState } from "@/store/engineOutputsSelectors";
@@ -40,23 +39,23 @@ const ShareButton: React.FC = () => {
     window.setTimeout(() => setCopied(null), 1500);
   }, [state]);
 
-  const copyEmbed = useCallback(async () => {
-    const snippet = buildEmbedSnippet(window.location.origin, state);
+  const copyText = useCallback(async (text: string, target: CopyTarget) => {
     try {
-      await navigator.clipboard.writeText(snippet);
-      setCopied("embed");
+      await navigator.clipboard.writeText(text);
+      setCopied(target);
       window.setTimeout(() => setCopied(null), 1500);
     } catch {}
-  }, [state]);
+  }, []);
 
-  const copyMediumLink = useCallback(async () => {
-    const url = buildShareUrl(window.location.origin, BYTECODE_EMBED_PATH, state);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied("medium");
-      window.setTimeout(() => setCopied(null), 1500);
-    } catch {}
-  }, [state]);
+  const copyEmbed = useCallback(
+    () => copyText(buildEmbedSnippet(window.location.origin, state), "embed"),
+    [copyText, state],
+  );
+
+  const copyMediumLink = useCallback(
+    () => copyText(buildShareUrl(window.location.origin, BYTECODE_EMBED_PATH, state), "medium"),
+    [copyText, state],
+  );
 
   const activeOut = out?.[activeTab];
   const canCopyArticleLink = Boolean(activeOut?.stdout || activeOut?.stderr);
