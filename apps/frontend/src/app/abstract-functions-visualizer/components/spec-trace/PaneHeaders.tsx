@@ -1,14 +1,11 @@
-"use client";
-
 import { QuietLink } from "@/components/ui";
 import { Band } from "@/components/ui/band";
 import Label from "@/components/ui/label";
+import { ECMA262_URL, ecma262SectionUrl } from "@/lib/links";
 
 function specHref(specId?: string): string {
   const linkable = specId && specId !== "BinaryExpression";
-  return linkable
-    ? `https://tc39.es/ecma262/#sec-${specId.toLowerCase()}`
-    : "https://tc39.es/ecma262/";
+  return linkable ? ecma262SectionUrl(specId) : ECMA262_URL;
 }
 
 type Props = { specId?: string };

@@ -4,7 +4,7 @@ import type { ThemedToken, TokensResult } from "shiki";
 import { DiffKind } from "@/lib/types";
 import { compareOutputs, fillBlankRows } from "@/utils/diff-bytecode";
 
-import { lineKey, lineSpans } from "./Code";
+import { lineKey, lineSpans } from "./codeRows";
 
 const token = (content: string, offset: number) => ({ content, offset, color: "" }) as ThemedToken;
 const listing = (lines: string[]): TokensResult =>

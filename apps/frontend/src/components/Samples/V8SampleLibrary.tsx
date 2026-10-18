@@ -5,7 +5,7 @@ import { Text } from "@chakra-ui/react";
 import { v8SampleCatalog, type V8SampleKey, v8Samples } from "@/lib/samples";
 
 import SampleCard from "./SampleCard";
-import { SampleGrid } from "./SampleLibrary";
+import SampleGrid from "./SampleGrid";
 
 type Props = {
   loadedId: string | null;

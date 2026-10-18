@@ -8,7 +8,7 @@ import Providers from "@/app/providers";
 import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
 import { useEngineOutputsStore } from "@/store/useEngineOutputs";
 
-import PlaygroundClient from "./PlaygroundClient";
+import PlaygroundShell from "./PlaygroundShell";
 
 jest.mock("@monaco-editor/react", () => ({
   __esModule: true,
@@ -20,7 +20,7 @@ jest.mock("@monaco-editor/react", () => ({
 const originalFetch = globalThis.fetch;
 const originalClipboard = navigator.clipboard;
 
-const renderPlayground = () => render(<PlaygroundClient />, { wrapper: Providers });
+const renderPlayground = () => render(<PlaygroundShell />, { wrapper: Providers });
 
 const jsonResponse = (status: number, body: unknown) => ({
   ok: status >= 200 && status < 300,
@@ -41,7 +41,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("PlaygroundClient", () => {
+describe("PlaygroundShell", () => {
   it("refuses an empty editor without spending a request", async () => {
     const fetchMock = jest.fn();
     (globalThis as unknown as { fetch: unknown }).fetch = fetchMock;

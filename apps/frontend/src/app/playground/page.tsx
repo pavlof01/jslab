@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import PlaygroundClient from "@/app/_components/PlaygroundClient";
+import PlaygroundShell from "@/app/_components/PlaygroundShell";
 import EngineVersionProvider from "@/components/EngineVersion/context";
 import FlagCatalogProvider from "@/components/FlagSelector/context";
 import LayoutHintProvider from "@/components/LayoutHint/context";
@@ -58,7 +58,7 @@ const PlaygroundPage = async () => {
     <LayoutHintProvider mobile={mobile}>
       <FlagCatalogProvider catalog={catalog}>
         <EngineVersionProvider versions={versions}>
-          <PlaygroundClient />
+          <PlaygroundShell />
         </EngineVersionProvider>
       </FlagCatalogProvider>
     </LayoutHintProvider>

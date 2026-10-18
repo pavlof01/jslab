@@ -61,5 +61,3 @@ export function ogCardUrl(origin: string, params: OgCardParams = {}): string {
 export function siteUrl(path: string): string {
   return `${SITE_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 }
-
-export const REPO_URL = "https://github.com/pavlof01/jslab";

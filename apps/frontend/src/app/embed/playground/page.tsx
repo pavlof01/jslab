@@ -11,7 +11,7 @@ import {
 } from "@/lib/shareState";
 import { SITE_ORIGIN, siteUrl } from "@/lib/site";
 
-import EmbedPlaygroundClient from "./EmbedPlaygroundClient";
+import EmbedPlaygroundShell from "./EmbedPlaygroundShell";
 
 type Props = { searchParams: Promise<SearchParams> };
 
@@ -40,7 +40,7 @@ const EmbedPlaygroundPage = async () => {
 
   return (
     <FlagCatalogProvider catalog={catalog}>
-      <EmbedPlaygroundClient />
+      <EmbedPlaygroundShell />
     </FlagCatalogProvider>
   );
 };

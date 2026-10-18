@@ -71,9 +71,3 @@ describe("siteUrl", () => {
     expect(siteUrl("/")).toBe("https://jslab.su/");
   });
 });
-
-describe("REPO_URL", () => {
-  it("points at the project's repository", async () => {
-    expect((await load()).REPO_URL).toBe("https://github.com/pavlof01/jslab");
-  });
-});

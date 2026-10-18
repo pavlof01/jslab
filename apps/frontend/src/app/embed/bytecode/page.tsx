@@ -14,8 +14,8 @@ import {
 import { fetchFlagCatalog } from "@/lib/server/flags";
 import { decodeShareState, PLAYGROUND_EMBED_TITLE, SHARE_PARAM } from "@/lib/shareState";
 
-import EmbedPlaygroundClient from "../playground/EmbedPlaygroundClient";
-import EmbedBytecodeClient from "./EmbedBytecodeClient";
+import EmbedPlaygroundShell from "../playground/EmbedPlaygroundShell";
+import EmbedBytecodeView from "./EmbedBytecodeView";
 
 async function requestOrigin(): Promise<string> {
   const h = await headers();
@@ -96,10 +96,10 @@ const EmbedBytecodePage = async ({ searchParams }: Props) => {
       />
       {catalog ? (
         <FlagCatalogProvider catalog={catalog}>
-          <EmbedPlaygroundClient />
+          <EmbedPlaygroundShell />
         </FlagCatalogProvider>
       ) : (
-        <EmbedBytecodeClient snapshot={snapshot} />
+        <EmbedBytecodeView snapshot={snapshot} />
       )}
     </>
   );

@@ -52,17 +52,21 @@ export const useDiffToggle = () =>
     useShallow((state) => ({ showDiff: state.showDiff, toggleDiff: state.toggleDiff })),
   );
 
-export const useShareableState = () =>
+export const useShareableRun = () =>
   useEngineOutputsStore(
     useShallow((state) => ({
-      code: state.code,
-      engines: state.engines,
-      flags: state.flags,
       out: state.out,
       currentRun: state.currentRun,
       activeTab: state.activeTab,
     })),
   );
+
+export const readEditorState = () => {
+  const { code, engines, flags } = useEngineOutputsStore.getState();
+  return { code, engines, flags };
+};
+
+export const readCurrentRun = () => useEngineOutputsStore.getState().currentRun;
 
 export const useStateRestore = () =>
   useEngineOutputsStore(

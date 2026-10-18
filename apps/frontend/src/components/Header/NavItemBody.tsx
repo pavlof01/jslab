@@ -1,5 +1,3 @@
-"use client";
-
 import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 
 import type { NavItem } from "./nav.types";

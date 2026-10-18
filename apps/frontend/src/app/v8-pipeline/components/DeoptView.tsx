@@ -1,18 +1,14 @@
 "use client";
 
-import { Badge, Box, Button, Flex, HStack, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
 import { useMemo } from "react";
 
 import AnnotationAlerts from "@/components/OutputsPanel/components/AnnotationAlerts";
-import { ClickPopover } from "@/components/ui";
 import { useAnnotationParser } from "@/hooks/useAnnotationParser";
-import {
-  type AnnotationRules,
-  matchAnnotations,
-  type OutputAnnotation,
-  parseAnnotationSource,
-} from "@/lib/annotations";
+import { type AnnotationRules, matchAnnotations, parseAnnotationSource } from "@/lib/annotations";
 import { parseV8Trace, summarizeV8Trace, type V8TraceEvent } from "@/lib/parseV8Trace";
+
+import EventAnnotations from "./EventAnnotations";
 
 const NO_RULES: AnnotationRules = { rules: [], diagnostics: [] };
 
@@ -20,29 +16,6 @@ const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }>
   optimize: { label: "OPT", color: "status.ok" },
   deopt: { label: "DEOPT", color: "status.error" },
   ic: { label: "IC", color: "status.info" },
-};
-
-type EventAnnotationsProps = { raw: string; annotations: OutputAnnotation[] };
-
-export const EventAnnotations: React.FC<EventAnnotationsProps> = ({ raw, annotations }) => {
-  if (!annotations.length) return null;
-
-  return (
-    <HStack gap={2} wrap="wrap" mt={1}>
-      {annotations.map((annotation) => (
-        <ClickPopover key={annotation.id} title={annotation.title} content={annotation.text}>
-          <Button
-            variant="annotation"
-            typeface="code"
-            type="button"
-            data-output-annotation={annotation.id}
-          >
-            {raw.slice(annotation.start, annotation.end)}
-          </Button>
-        </ClickPopover>
-      ))}
-    </HStack>
-  );
 };
 
 type Props = { output: string; source?: string };

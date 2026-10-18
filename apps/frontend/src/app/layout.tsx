@@ -3,6 +3,8 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 import ConditionalHeader from "@/components/ConditionalHeader";
+import Header from "@/components/Header";
+import { AUTHOR_URL } from "@/lib/links";
 import { OG_CARD, ogCardUrl, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/site";
 
 import Providers from "./providers";
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
     "interpreter",
     "AST",
   ],
-  authors: { name: "Pavlov Alexey", url: "https://github.com/pavlof01" },
+  authors: { name: "Pavlov Alexey", url: AUTHOR_URL },
   creator: "Pavlov Alexey",
   publisher: "Pavlov Alexey",
   metadataBase: new URL(SITE_ORIGIN),
@@ -121,7 +123,9 @@ const RootLayout: React.FC<
           the finish review, the verdict, and DESIGN.md
         */}
         <Providers>
-          <ConditionalHeader />
+          <ConditionalHeader>
+            <Header />
+          </ConditionalHeader>
           {children}
         </Providers>
       </body>

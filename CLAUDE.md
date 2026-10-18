@@ -197,12 +197,12 @@ In Claude Code the cycle is `/opsx:propose` → `/opsx:apply` → `/opsx:archive
 | Route               | Client component                                                                                        | Description                                                                       |
 | ------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `/`                 | `(landing)/page.tsx`                                                                                    | Marketing landing page                                                            |
-| `/playground`       | `_components/PlaygroundClient.tsx`                                                                      | Multi-engine code runner                                                          |
-| `/v8-pipeline`      | `v8-pipeline/components/PipelineClient.tsx`                                                             | Stage-by-stage V8 visualization                                                   |
+| `/playground`       | `_components/PlaygroundShell.tsx` (server shell; toolbar, editor and output are client islands)         | Multi-engine code runner                                                          |
+| `/v8-pipeline`      | `v8-pipeline/components/PipelineShell.tsx`                                                              | Stage-by-stage V8 visualization                                                   |
 | `/type-conversion`  | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
 | `/equality`         | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer`                                         | Equality-operator spec step-through (`initialCategory="equality"`)                |
-| `/embed/playground` | `embed/playground/EmbedPlaygroundClient.tsx`                                                            | Embeddable playground widget (`noindex`)                                          |
-| `/embed/bytecode`   | `embed/bytecode/EmbedBytecodeClient.tsx`                                                                | Embeddable bytecode snapshot widget (`noindex`)                                   |
+| `/embed/playground` | `embed/playground/EmbedPlaygroundShell.tsx`                                                             | Embeddable playground widget (`noindex`)                                          |
+| `/embed/bytecode`   | `embed/bytecode/EmbedBytecodeView.tsx`                                                                  | Embeddable bytecode snapshot widget (`noindex`)                                   |
 
 `app/abstract-functions-visualizer/` is a shared implementation directory, **not** a route — only `/type-conversion` and `/equality` mount it. `app/embed/oembed/route.ts` is the oEmbed provider for the two widgets.
 

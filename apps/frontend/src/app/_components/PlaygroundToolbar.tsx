@@ -1,91 +1,31 @@
-"use client";
+import { Box } from "@chakra-ui/react";
 
-import { Box, Button } from "@chakra-ui/react";
-
-import FlagSelector from "@/components/FlagSelector";
-import { useFlaggedEngines } from "@/components/FlagSelector/context";
-import Samples from "@/components/Samples";
-import { Chip, ShortcutHint } from "@/components/ui";
 import V8Intrinsics from "@/components/V8Intrinsics";
-import { engineLabel } from "@/lib/engines";
-import {
-  createEngineSelection,
-  enabledEngines,
-  ENGINE_KEYS,
-  EngineKey,
-  RunStatus,
-} from "@/lib/types";
-import {
-  useCode,
-  useDiffToggle,
-  useEngineFlags,
-  useEngineSelection,
-  useRunStatus,
-  useSetCode,
-} from "@/store/engineOutputsSelectors";
 
+import DiffToggleButton from "./DiffToggleButton";
+import EngineFlagPickers from "./EngineFlagPickers";
+import EngineToggles from "./EngineToggles";
 import * as styles from "./playground.styles";
+import PlaygroundSamples from "./PlaygroundSamples";
+import RunButton from "./RunButton";
 import RunHistory from "./RunHistory";
 import ShareButton from "./ShareButton";
 
-type Props = { onRun: () => void };
-
-const PlaygroundToolbar: React.FC<Props> = ({ onRun }) => {
-  const code = useCode();
-  const setCode = useSetCode();
-  const { engines, setEngines } = useEngineSelection();
-  const { showDiff, toggleDiff } = useDiffToggle();
-  const { status } = useRunStatus();
-  const { setEngineFlags } = useEngineFlags();
-  const flaggedEngines = useFlaggedEngines();
-
-  const running = status === RunStatus.running;
-  // A picker for an engine that is switched off would offer flags nothing will
-  // run, so the toolbar shows one per enabled engine that has flags to give.
-  const flagPickers = flaggedEngines.filter((engine) => engines[engine]);
-
-  const loadSample = (sampleCode: string, v8Flags?: readonly string[]) => {
-    setCode(sampleCode);
-    if (v8Flags) setEngineFlags(EngineKey.v8, [...v8Flags]);
-  };
-
-  const toggleEngine = (engine: EngineKey) => {
-    if (engine === EngineKey.v8) return;
-    const active = enabledEngines(engines);
-    const next = engines[engine] ? active.filter((other) => other !== engine) : [...active, engine];
-    setEngines(createEngineSelection(next));
-  };
-
+const PlaygroundToolbar: React.FC = () => {
   return (
     <Box css={styles.toolbar}>
       <Box css={styles.toolbarEngines}>
-        {ENGINE_KEYS.map((engine) => (
-          <Chip
-            key={engine}
-            label={engineLabel(engine)}
-            checked={engines[engine]}
-            disabled={engine === EngineKey.v8}
-            title={engine === EngineKey.v8 ? "V8 is always on" : undefined}
-            onToggle={() => toggleEngine(engine)}
-          />
-        ))}
-        {flagPickers.map((engine) => (
-          <FlagSelector key={engine} engine={engine} />
-        ))}
+        <EngineToggles />
+        <EngineFlagPickers />
         <V8Intrinsics />
       </Box>
 
       <Box css={styles.toolbarActions}>
-        <Samples currentCode={code} onSelectSample={loadSample} />
+        <PlaygroundSamples />
         <RunHistory />
         <ShareButton />
-        <Button size="sm" onClick={toggleDiff} active={showDiff}>
-          diff
-        </Button>
-        <Button variant="primary" size="md" onClick={onRun} disabled={running}>
-          {running ? "running" : "run"}
-          <ShortcutHint>⌘↵</ShortcutHint>
-        </Button>
+        <DiffToggleButton />
+        <RunButton />
       </Box>
     </Box>
   );

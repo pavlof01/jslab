@@ -2,12 +2,12 @@
 
 import { usePathname } from "next/navigation";
 
-import Header from "@/components/Header";
+type Props = { children: React.ReactNode };
 
-const ConditionalHeader: React.FC = () => {
+const ConditionalHeader: React.FC<Props> = ({ children }) => {
   const pathname = usePathname();
   if (pathname?.startsWith("/embed")) return null;
-  return <Header />;
+  return children;
 };
 
 export default ConditionalHeader;

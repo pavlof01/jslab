@@ -1,5 +1,3 @@
-"use client";
-
 import { Box, Flex, Link, Text } from "@chakra-ui/react";
 import { LuExternalLink } from "react-icons/lu";
 
@@ -10,9 +8,9 @@ import { buildShareUrl } from "@/lib/shareState";
 
 import PlainDump from "./PlainDump";
 
-type EmbedBytecodeClientProps = { snapshot: EmbedSnapshot | null };
+type EmbedBytecodeViewProps = { snapshot: EmbedSnapshot | null };
 
-const EmbedBytecodeClient: React.FC<EmbedBytecodeClientProps> = ({ snapshot }) => {
+const EmbedBytecodeView: React.FC<EmbedBytecodeViewProps> = ({ snapshot }) => {
   if (!snapshot) {
     return (
       <Flex height="100dvh" align="center" justify="center" bg="surface.band" px={4}>
@@ -101,4 +99,4 @@ const EmbedBytecodeClient: React.FC<EmbedBytecodeClientProps> = ({ snapshot }) =
   );
 };
 
-export default EmbedBytecodeClient;
+export default EmbedBytecodeView;
