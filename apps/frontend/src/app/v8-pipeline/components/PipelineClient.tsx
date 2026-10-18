@@ -1,11 +1,12 @@
 "use client";
 
-import { Box, Button, Flex, Splitter, Tabs, Text, useBreakpointValue } from "@chakra-ui/react";
+import { Button, Flex, Splitter, Tabs, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { CiPlay1 } from "react-icons/ci";
 
 import EditorPanel from "@/components/EditorPanel";
-import { LogoLoader } from "@/components/ui";
+import { useStackedLayout } from "@/components/LayoutHint/context";
+import { Callout, LogoLoader } from "@/components/ui";
 
 import { type ApiStageId, type StageId, STAGES } from "../lib/stages";
 import { usePipelineRun } from "../lib/usePipelineRun";
@@ -33,10 +34,10 @@ for (let i = 0; i < 400; i++) add(i, i + 1);
 const PipelineClient: React.FC = () => {
   const [code, setCode] = useState(SAMPLE);
   const [active, setActive] = useState<StageId>("tokens");
-  const { hasRun, running, error, outputs, visibleTokens, analyze, statusOf } =
+  const { hasRun, running, error, outputs, visibleTokens, runCode, analyze, statusOf } =
     usePipelineRun(code);
 
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
+  const isMobile = useStackedLayout();
 
   return (
     <Flex as="main" direction="column" height="calc(100dvh - {sizes.header})">
@@ -66,7 +67,7 @@ const PipelineClient: React.FC = () => {
         </Button>
       </Flex>
 
-      {error ? <RunError>{error}</RunError> : null}
+      {error ? <Callout>{error}</Callout> : null}
 
       <Splitter.Root
         orientation={isMobile ? "vertical" : "horizontal"}
@@ -123,6 +124,7 @@ const PipelineClient: React.FC = () => {
                   output={outputs[stage.id as ApiStageId]}
                   tokens={visibleTokens}
                   hasRun={hasRun}
+                  source={runCode}
                 />
               </Tabs.Content>
             ))}
@@ -130,24 +132,6 @@ const PipelineClient: React.FC = () => {
         </Splitter.Panel>
       </Splitter.Root>
     </Flex>
-  );
-};
-
-const RunError: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <Box
-      role="alert"
-      px={4}
-      py={2}
-      bg="status.errorSoft"
-      borderBottom="1px solid"
-      borderColor="status.errorRule"
-      color="status.error"
-      fontSize="xs"
-      flexShrink={0}
-    >
-      {children}
-    </Box>
   );
 };
 

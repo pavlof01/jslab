@@ -1,9 +1,20 @@
 "use client";
 
-import { Badge, Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, HStack, Text, VStack } from "@chakra-ui/react";
 import { useMemo } from "react";
 
+import AnnotationAlerts from "@/components/OutputsPanel/components/AnnotationAlerts";
+import { ClickPopover } from "@/components/ui";
+import { useAnnotationParser } from "@/hooks/useAnnotationParser";
+import {
+  type AnnotationRules,
+  matchAnnotations,
+  type OutputAnnotation,
+  parseAnnotationSource,
+} from "@/lib/annotations";
 import { parseV8Trace, summarizeV8Trace, type V8TraceEvent } from "@/lib/parseV8Trace";
+
+const NO_RULES: AnnotationRules = { rules: [], diagnostics: [] };
 
 const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }> = {
   optimize: { label: "OPT", color: "status.ok" },
@@ -11,11 +22,43 @@ const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }>
   ic: { label: "IC", color: "status.info" },
 };
 
-type Props = { output: string };
+type EventAnnotationsProps = { raw: string; annotations: OutputAnnotation[] };
 
-const DeoptView: React.FC<Props> = ({ output }) => {
+export const EventAnnotations: React.FC<EventAnnotationsProps> = ({ raw, annotations }) => {
+  if (!annotations.length) return null;
+
+  return (
+    <HStack gap={2} wrap="wrap" mt={1}>
+      {annotations.map((annotation) => (
+        <ClickPopover key={annotation.id} title={annotation.title} content={annotation.text}>
+          <Button
+            variant="annotation"
+            typeface="code"
+            type="button"
+            data-output-annotation={annotation.id}
+          >
+            {raw.slice(annotation.start, annotation.end)}
+          </Button>
+        </ClickPopover>
+      ))}
+    </HStack>
+  );
+};
+
+type Props = { output: string; source?: string };
+
+const DeoptView: React.FC<Props> = ({ output, source = "" }) => {
   const events = useMemo(() => parseV8Trace(output), [output]);
   const summary = useMemo(() => summarizeV8Trace(events), [events]);
+  const parserReady = useAnnotationParser(source);
+  const rules = useMemo(
+    () => (parserReady ? parseAnnotationSource(source) : NO_RULES),
+    [source, parserReady],
+  );
+  const eventAnnotations = useMemo(
+    () => events.map((event) => matchAnnotations(rules, event.raw).annotations),
+    [events, rules],
+  );
 
   if (!output.trim()) {
     return (
@@ -42,6 +85,7 @@ const DeoptView: React.FC<Props> = ({ output }) => {
 
   return (
     <VStack align="stretch" gap={3} p={4}>
+      <AnnotationAlerts diagnostics={rules.diagnostics} />
       <HStack gap={2} wrap="wrap">
         <Badge colorPalette="green">{summary.optimize} optimized</Badge>
         <Badge colorPalette="red">{summary.deopt} deoptimized</Badge>
@@ -97,6 +141,7 @@ const DeoptView: React.FC<Props> = ({ output }) => {
                     {e.reason}
                   </Text>
                 )}
+                <EventAnnotations raw={e.raw} annotations={eventAnnotations[i]} />
               </Box>
             </Flex>
           );

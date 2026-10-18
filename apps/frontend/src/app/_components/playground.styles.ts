@@ -55,16 +55,6 @@ export const messageLine = (kind: "error" | "notice"): SystemStyleObject => ({
   color: kind === "error" ? "status.error" : "status.warn",
 });
 
-export const footerLine: SystemStyleObject = {
-  ...band,
-  borderTopWidth: "1px",
-  borderTopColor: "rule.structural",
-  fontSize: "11px",
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: "ink.label",
-};
-
 export const splitRow: SystemStyleObject = { flex: "1 1 0", minHeight: 0 };
 
 export const editorPane: SystemStyleObject = {

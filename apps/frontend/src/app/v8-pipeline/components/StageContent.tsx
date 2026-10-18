@@ -3,8 +3,9 @@
 import { Box, Text } from "@chakra-ui/react";
 
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
-import CodeBlockShiki from "@/components/OutputsPanel/CodeBlockShiki";
 import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
+import { Callout } from "@/components/ui";
+import { MACHINE_CODE_LANG } from "@/lib/shiki";
 import { EngineKey } from "@/lib/types";
 
 import type { Stage } from "../lib/stages";
@@ -18,40 +19,53 @@ type StageContentProps = {
   output?: StageOutput;
   tokens: Token[];
   hasRun: boolean;
+  source?: string;
 };
 
-const StageContent: React.FC<StageContentProps> = ({ stage, output, tokens, hasRun }) => {
+const StageContent: React.FC<StageContentProps> = ({ stage, output, tokens, hasRun, source }) => {
   return (
     <>
       {stage.hint ? <StageHint>{stage.hint}</StageHint> : null}
       {output ? <StageError output={output} /> : null}
-      <StageBody stage={stage} output={output} tokens={tokens} hasRun={hasRun} />
+      <StageBody stage={stage} output={output} tokens={tokens} hasRun={hasRun} source={source} />
     </>
   );
 };
 
-type StageBodyProps = {
-  stage: Stage;
-  output?: StageOutput;
-  tokens: Token[];
-  hasRun: boolean;
-};
+type StageBodyProps = StageContentProps;
 
-const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun }) => {
+const StageBody: React.FC<StageBodyProps> = ({ stage, output, tokens, hasRun, source }) => {
   if (stage.view === "tokens") {
     if (!hasRun) return <DefaultEmptyCodeBlockState />;
     return <TokensPane tokens={tokens} />;
   }
 
   if (stage.view === "deoptEvents") {
-    return <DeoptView output={`${output?.stdout ?? ""}\n${output?.stderr ?? ""}`} />;
+    return (
+      <DeoptView output={`${output?.stdout ?? ""}\n${output?.stderr ?? ""}`} source={source} />
+    );
   }
 
   if (stage.view === "machineCode") {
-    return <CodeBlockShiki code={output?.stdout ?? ""} />;
+    return (
+      <HighlightedCode
+        engineKey={EngineKey.v8}
+        language={MACHINE_CODE_LANG}
+        out={output?.stdout}
+        source={source}
+        showDiff={false}
+      />
+    );
   }
 
-  return <HighlightedCode engineKey={EngineKey.v8} out={output?.stdout} showDiff={false} />;
+  return (
+    <HighlightedCode
+      engineKey={EngineKey.v8}
+      out={output?.stdout}
+      source={source}
+      showDiff={false}
+    />
+  );
 };
 
 type StageHintProps = { children: React.ReactNode };
@@ -75,22 +89,17 @@ const StageError: React.FC<StageErrorProps> = ({ output }) => {
   if (!output.stderr || output.stdout) return null;
 
   return (
-    <Box
-      textStyle="code"
-      role="alert"
+    <Callout
+      typeface="code"
       mx={4}
       my={2}
       px={3}
-      py={2}
-      bg="status.errorSoft"
       border="1px solid"
-      borderColor="status.errorRule"
       rounded="md"
-      color="status.error"
       whiteSpace="pre-wrap"
     >
       {output.stderr}
-    </Box>
+    </Callout>
   );
 };
 

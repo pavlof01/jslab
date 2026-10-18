@@ -1,21 +1,23 @@
 "use client";
 
 import { Box, type BoxProps, Stack } from "@chakra-ui/react";
-import { memo, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { TokensResult } from "shiki";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 
 import { LogoLoader } from "@/components/ui";
+import { useAnnotationParser } from "@/hooks/useAnnotationParser";
+import { compileAnnotations, type CompiledAnnotations } from "@/lib/annotations";
 import { type BytecodeLang, engineLang } from "@/lib/engines";
-import { getBytecodeHighlighter, THEME } from "@/lib/shiki";
+import { getBytecodeHighlighter, getSourceHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
-import { compareOutputs } from "@/utils/diff-bytecode";
+import { compareOutputs, fillBlankRows } from "@/utils/diff-bytecode";
 
+import AnnotationAlerts from "./components/AnnotationAlerts";
 import CodeDisplay from "./components/Code";
 import CopyButton from "./components/CopyButton";
-import DefaultEmptyCodeBlockState, {
-  type DefaultEmptyCodeBlockStateProps,
-} from "./components/DefaultEmptyCodeBlockState";
+import DefaultEmptyCodeBlockState from "./components/DefaultEmptyCodeBlockState";
 
 const normalizeForDiff = (line: string) =>
   line
@@ -26,26 +28,41 @@ const normalizeForDiff = (line: string) =>
     .replace(/^(\s*)\d+:(?=\s+[A-Za-z_])/, "$1<OFF>:")
     .replace(/\s+/g, " ");
 
+const loadSourceHighlighter = async () => (await getSourceHighlighter()) as unknown as Highlighter;
+
 export async function highlight(
   code: string,
   lang: BundledLanguage | BytecodeLang,
   prevCode?: string,
+  loadHighlighter: () => Promise<Highlighter> = getBytecodeHighlighter,
 ) {
-  const highlighter = await getBytecodeHighlighter();
+  const highlighter = await loadHighlighter();
   const shikiLang = lang as BundledLanguage;
 
-  const currentRaw = await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME });
+  const currentRaw = fillBlankRows(
+    await highlighter.codeToTokens(code, { lang: shikiLang, theme: THEME }),
+    code,
+  );
 
   if (!prevCode) {
     return { tokens: currentRaw, highlighter };
   }
 
-  const prevRaw = await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME });
+  const prevRaw = fillBlankRows(
+    await highlighter.codeToTokens(prevCode, { lang: shikiLang, theme: THEME }),
+    prevCode,
+  );
 
   const diffTokens = compareOutputs(prevRaw, currentRaw, { normalizeLine: normalizeForDiff });
 
   return { tokens: diffTokens, highlighter };
 }
+
+const NO_ANNOTATIONS: CompiledAnnotations = {
+  annotations: [],
+  diagnostics: [],
+  outputDiagnostics: [],
+};
 
 type Props = {
   engineKey: EngineKey;
@@ -53,8 +70,12 @@ type Props = {
   prev?: string;
   showDiff?: boolean;
   isLoading?: boolean;
-  EmptyCodeBlockState?: React.ComponentType<DefaultEmptyCodeBlockStateProps>;
+  emptyState?: ReactNode;
+  fallback?: ReactNode;
   boxProps?: BoxProps;
+  source?: string;
+  showSourceAlerts?: boolean;
+  language?: string;
 };
 
 export const HighlightedCode = memo(function HighlightedCode({
@@ -63,11 +84,20 @@ export const HighlightedCode = memo(function HighlightedCode({
   prev = "",
   isLoading = false,
   showDiff = true,
-  EmptyCodeBlockState = DefaultEmptyCodeBlockState,
+  emptyState = <DefaultEmptyCodeBlockState />,
+  fallback,
   boxProps,
+  source = "",
+  showSourceAlerts = true,
+  language,
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
   const [highlighter, setHighlighter] = useState<Highlighter>();
+  const parserReady = useAnnotationParser(source);
+  const { annotations, diagnostics, outputDiagnostics } = useMemo(
+    () => (parserReady ? compileAnnotations({ source, output: out }) : NO_ANNOTATIONS),
+    [source, out, parserReady],
+  );
 
   useEffect(() => {
     if (isLoading || !out) {
@@ -75,9 +105,10 @@ export const HighlightedCode = memo(function HighlightedCode({
       return;
     }
 
-    const lang = engineLang(engineKey);
+    const lang = (language ?? engineLang(engineKey)) as BundledLanguage | BytecodeLang;
+    const loader = language ? loadSourceHighlighter : getBytecodeHighlighter;
     let cancelled = false;
-    void highlight(out, lang, showDiff ? prev : "").then((node) => {
+    void highlight(out, lang, showDiff ? prev : "", loader).then((node) => {
       if (!cancelled) {
         setTokens(node.tokens);
         setHighlighter(node.highlighter);
@@ -87,7 +118,7 @@ export const HighlightedCode = memo(function HighlightedCode({
     return () => {
       cancelled = true;
     };
-  }, [engineKey, out, prev, showDiff, isLoading]);
+  }, [engineKey, out, prev, showDiff, isLoading, language]);
 
   if (isLoading) {
     return (
@@ -104,12 +135,14 @@ export const HighlightedCode = memo(function HighlightedCode({
     );
   }
 
-  if (!tokens || tokens.tokens.length === 0) return <EmptyCodeBlockState />;
+  if (!out) return emptyState;
+  if (!tokens || tokens.tokens.length === 0 || !parserReady) return fallback ?? emptyState;
 
   return (
     <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
-      <CodeDisplay {...tokens} engineKey={engineKey} />
+      <AnnotationAlerts diagnostics={showSourceAlerts ? diagnostics : outputDiagnostics} />
+      <CodeDisplay {...tokens} engineKey={engineKey} annotations={annotations} />
     </Box>
   );
 });

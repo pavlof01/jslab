@@ -40,6 +40,7 @@ export const useOutputPane = () =>
     useShallow((state) => ({
       out: state.out,
       previousSnapshot: state.previousSnapshot,
+      currentRun: state.currentRun,
       showDiff: state.showDiff,
       status: state.status,
       engines: state.engines,
@@ -58,6 +59,7 @@ export const useShareableState = () =>
       engines: state.engines,
       flags: state.flags,
       out: state.out,
+      currentRun: state.currentRun,
       activeTab: state.activeTab,
     })),
   );

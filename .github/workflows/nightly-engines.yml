@@ -83,6 +83,20 @@ jobs:
           echo "$out"
           echo "$out" | grep -Eiq '"ok":true' || { echo "spidermonkey did not return ok" >&2; exit 1; }
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/frontend/src/package-lock.json
+
+      - name: Sample annotations still match real d8 output
+        working-directory: apps/frontend/src
+        env:
+          SAMPLES_RUN_URL: http://localhost:8087/run
+        run: |
+          npm ci
+          npx jest lib/samples.engine.test.ts
+
       - name: Engine logs on failure
         if: ${{ failure() }}
         run: docker compose logs --no-color | tail -300

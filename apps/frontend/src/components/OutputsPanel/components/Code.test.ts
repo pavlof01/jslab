@@ -2,17 +2,17 @@ import { describe, expect, it } from "@jest/globals";
 import type { ThemedToken, TokensResult } from "shiki";
 
 import { DiffKind } from "@/lib/types";
-import { compareOutputs } from "@/utils/diff-bytecode";
+import { compareOutputs, fillBlankRows } from "@/utils/diff-bytecode";
 
-import { lineKey, lineStarts } from "./Code";
+import { lineKey, lineSpans } from "./Code";
 
 const token = (content: string, offset: number) => ({ content, offset, color: "" }) as ThemedToken;
 const listing = (lines: string[]): TokensResult =>
   ({ tokens: lines.map((line, index) => (line ? [token(line, index * 10)] : [])) }) as TokensResult;
 
 const keysOf = (rows: ThemedToken[][]) => {
-  const starts = lineStarts(rows);
-  return rows.map((row, index) => lineKey(row, starts[index]));
+  const spans = lineSpans(rows);
+  return rows.map((row, index) => lineKey(row, spans[index].start));
 };
 
 describe("lineKey", () => {
@@ -32,8 +32,44 @@ describe("lineKey", () => {
   });
 
   it("gives consecutive blank lines their own places", () => {
-    const rows = [[token("alpha", 0)], [], [], [token("beta", 8)]];
+    const rows = fillBlankRows(
+      { tokens: [[token("alpha", 0)], [], [], [token("beta", 8)]] } as unknown as TokensResult,
+      "alpha\n\n\nbeta",
+    ).tokens;
 
     expect(new Set(keysOf(rows)).size).toBe(4);
+  });
+});
+
+describe("fillBlankRows", () => {
+  it("gives blank rows a token so diff metadata and keys can attach", () => {
+    const filled = fillBlankRows(
+      { tokens: [[token("a", 0)], [], [token("b", 3)]], fg: "#fff" } as unknown as TokensResult,
+      "a\n\nb",
+    );
+
+    expect(filled.tokens[1]).toEqual([{ content: "", offset: 2, color: "#fff" }]);
+
+    const diff = compareOutputs(
+      fillBlankRows(listing(["a", "b"]), "a\nb"),
+      fillBlankRows(listing(["a", "", "b"]), "a\n\nb"),
+      { normalizeLine: (line) => line },
+    );
+    expect(diff.tokens[1][0]).toMatchObject({ diffType: DiffKind.Add, nextLine: 2 });
+    expect(new Set(keysOf(diff.tokens)).size).toBe(diff.tokens.length);
+  });
+
+  it("places blank rows after a CRLF line break where they really start", () => {
+    const filled = fillBlankRows(
+      { tokens: [[token("a", 0)], [], [token("b", 5)]], fg: "" } as unknown as TokensResult,
+      "a\r\n\r\nb",
+    );
+
+    expect(filled.tokens[1][0].offset).toBe(3);
+    expect(lineSpans(filled.tokens)).toEqual([
+      { start: 0, end: 1 },
+      { start: 3, end: 3 },
+      { start: 5, end: 6 },
+    ]);
   });
 });

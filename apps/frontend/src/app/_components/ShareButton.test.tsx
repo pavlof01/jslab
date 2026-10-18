@@ -1,15 +1,20 @@
 import "@testing-library/jest-dom/jest-globals";
 
-import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import Providers from "@/app/providers";
+import { compileAnnotations, loadAnnotationParser } from "@/lib/annotations";
+import { decodeSnapshot, SNAPSHOT_PARAM } from "@/lib/embedState";
+import { createEmptyOut } from "@/lib/runAggregate";
 import { decodeShareState, SHARE_PARAM } from "@/lib/shareState";
 import { createEngineSelection, EngineKey } from "@/lib/types";
 import { useEngineOutputsStore } from "@/store/useEngineOutputs";
 
 import ShareButton from "./ShareButton";
+
+beforeAll(() => loadAnnotationParser());
 
 beforeEach(() => {
   useEngineOutputsStore.getState().reset();
@@ -24,6 +29,60 @@ afterEach(() => {
 });
 
 describe("ShareButton", () => {
+  it.each(["stdout", "stderr"] as const)(
+    "copies the run source and flags for %s after the editor changes",
+    async (channel) => {
+      const user = userEvent.setup();
+      const runCode = "/* @annotation\nmatch: ready\ntext: Original explanation.\n*/";
+      const out = createEmptyOut();
+      out[EngineKey.v8][channel] = "ready";
+      useEngineOutputsStore.setState({
+        code: runCode.replace("Original explanation.", "Unrun draft."),
+        flags: { [EngineKey.v8]: ["--trace-opt"] },
+        out,
+        currentRun: {
+          code: runCode,
+          flags: { [EngineKey.v8]: ["--print-bytecode"] },
+          engines: [EngineKey.v8],
+          timestamp: 1,
+        },
+      });
+      render(<ShareButton />, { wrapper: Providers });
+
+      await user.click(screen.getByRole("button", { name: /share this snippet/i }));
+      await user.click(await screen.findByText(/copy output snapshot link/i));
+      expect(await screen.findByText(/snapshot link copied/i)).toBeInTheDocument();
+
+      const copied = new URL(await navigator.clipboard.readText());
+      const snapshot = await decodeSnapshot(copied.searchParams.get(SNAPSHOT_PARAM)!);
+      expect(snapshot).toEqual({
+        code: runCode,
+        engine: EngineKey.v8,
+        flags: ["--print-bytecode"],
+        output: out[EngineKey.v8].stdout,
+        stderr: out[EngineKey.v8].stderr || undefined,
+      });
+      expect(
+        compileAnnotations({
+          source: snapshot!.code,
+          output: channel === "stdout" ? snapshot!.output : snapshot!.stderr!,
+        }).annotations[0].text,
+      ).toBe("Original explanation.");
+    },
+  );
+
+  it("disables snapshot links when output has no run context", async () => {
+    const user = userEvent.setup();
+    const out = createEmptyOut();
+    out[EngineKey.v8].stdout = "ready";
+    useEngineOutputsStore.setState({ out });
+    render(<ShareButton />, { wrapper: Providers });
+    await user.click(screen.getByRole("button", { name: /share this snippet/i }));
+    expect(
+      await screen.findByRole("menuitem", { name: /copy output snapshot link/i }),
+    ).toHaveAttribute("data-disabled");
+  });
+
   it("copies an interactive embed link before any code has run", async () => {
     const user = userEvent.setup();
     render(<ShareButton />, { wrapper: Providers });
