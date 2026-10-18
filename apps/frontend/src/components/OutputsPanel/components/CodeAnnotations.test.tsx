@@ -41,6 +41,19 @@ const tokensFor = (text: string): TokensResult => {
 };
 
 describe("output annotations", () => {
+  it("copies the raw output byte for byte, with no trace of the annotations", async () => {
+    const user = userEvent.setup();
+    const raw = "header\nstatus: ready  \n\tfooter\n";
+    render(<HighlightedCode engineKey={EngineKey.v8} source={source} out={raw} />, {
+      wrapper: Providers,
+    });
+    await screen.findByRole("button", { name: "ready" });
+
+    await user.click(screen.getByRole("button", { name: /copy/i }));
+
+    await waitFor(async () => expect(await navigator.clipboard.readText()).toBe(raw));
+  });
+
   it.each(ENGINE_KEYS)(
     "matches output from %s and reveals its explanation on click",
     async (engineKey) => {
