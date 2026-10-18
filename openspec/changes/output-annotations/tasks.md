@@ -31,11 +31,11 @@
 ## 5. Documentation and monitoring
 
 - [x] 5.1 Run every sample on a real d8 in `nightly-engines` and fail on an unmatched annotation or a d8 crash; verify by breaking one annotation locally and seeing `lib/samples.engine.test.ts` fail
-- [ ] 5.2 Describe annotations in CLAUDE.md (module, directive format, where they apply, the nightly check); verify the section names files that exist
-- [ ] 5.3 Rewrite the wiki page `Output-Annotations` without the removed help popover and editor snippet; verify it mentions no control the playground lacks
+- [x] 5.2 Describe annotations in CLAUDE.md (module, directive format, where they apply, the nightly check); verify the section names files that exist
+- [x] 5.3 Rewrite the wiki page `Output-Annotations` without the removed help popover and editor snippet; verify it mentions no control the playground lacks
 
 ## 6. Verification
 
-- [ ] 6.1 Run `npm run ci` at the repo root and `npm run lint`, `npm test` and `npx tsc --noEmit -p tsconfig.json` in `apps/frontend/src`; all pass
-- [ ] 6.2 Run `npm run specs:check`; the change and every spec validate
+- [x] 6.1 Run `npm run ci` at the repo root and `npm run lint`, `npm test` and `npx tsc --noEmit -p tsconfig.json` in `apps/frontend/src`; all pass
+- [x] 6.2 Run `npm run specs:check`; the change and every spec validate
 - [ ] 6.3 Run the e2e suites `output-annotations`, `playground-*`, `embed` and `pipeline` against the compose stack; all pass
