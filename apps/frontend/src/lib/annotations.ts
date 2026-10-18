@@ -1,4 +1,4 @@
-import { tokenizer, tokTypes } from "acorn";
+import type * as Acorn from "acorn";
 
 export type OutputAnnotation = {
   id: string;
@@ -27,6 +27,28 @@ const DIRECTIVE = /^\s*@annotation\b([^\r\n]*)([\s\S]*)$/;
 
 export const MAX_ANNOTATIONS = 200;
 
+type AnnotationParser = Pick<typeof Acorn, "tokenizer" | "tokTypes">;
+
+let parser: AnnotationParser | null = null;
+let parserLoad: Promise<void> | null = null;
+
+export const hasAnnotationDirectives = (source: string): boolean => source.includes("@annotation");
+
+export const isAnnotationParserLoaded = (): boolean => parser !== null;
+
+export function loadAnnotationParser(): Promise<void> {
+  parserLoad ??= import("acorn").then(
+    (acorn) => {
+      parser = { tokenizer: acorn.tokenizer, tokTypes: acorn.tokTypes };
+    },
+    (error: unknown) => {
+      parserLoad = null;
+      throw error;
+    },
+  );
+  return parserLoad;
+}
+
 function stripJsDocStars(comment: string): string {
   if (!comment.startsWith("*")) return comment;
   return comment
@@ -38,7 +60,8 @@ function stripJsDocStars(comment: string): string {
 
 function annotationBlocks(source: string): Block[] {
   const blocks: Block[] = [];
-  if (!source.includes("@annotation")) return blocks;
+  if (!hasAnnotationDirectives(source) || !parser) return blocks;
+  const { tokenizer, tokTypes } = parser;
 
   let lineGroup: { lines: string[]; line: number; last: number } | undefined;
   const closeLineGroup = () => {

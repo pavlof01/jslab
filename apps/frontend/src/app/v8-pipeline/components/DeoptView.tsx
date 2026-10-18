@@ -5,8 +5,16 @@ import { useMemo } from "react";
 
 import AnnotationAlerts from "@/components/OutputsPanel/components/AnnotationAlerts";
 import { ClickPopover } from "@/components/ui";
-import { matchAnnotations, type OutputAnnotation, parseAnnotationSource } from "@/lib/annotations";
+import { useAnnotationParser } from "@/hooks/useAnnotationParser";
+import {
+  type AnnotationRules,
+  matchAnnotations,
+  type OutputAnnotation,
+  parseAnnotationSource,
+} from "@/lib/annotations";
 import { parseV8Trace, summarizeV8Trace, type V8TraceEvent } from "@/lib/parseV8Trace";
+
+const NO_RULES: AnnotationRules = { rules: [], diagnostics: [] };
 
 const KIND_STYLE: Record<V8TraceEvent["kind"], { label: string; color: string }> = {
   optimize: { label: "OPT", color: "status.ok" },
@@ -42,7 +50,11 @@ type Props = { output: string; source?: string };
 const DeoptView: React.FC<Props> = ({ output, source = "" }) => {
   const events = useMemo(() => parseV8Trace(output), [output]);
   const summary = useMemo(() => summarizeV8Trace(events), [events]);
-  const rules = useMemo(() => parseAnnotationSource(source), [source]);
+  const parserReady = useAnnotationParser(source);
+  const rules = useMemo(
+    () => (parserReady ? parseAnnotationSource(source) : NO_RULES),
+    [source, parserReady],
+  );
   const eventAnnotations = useMemo(
     () => events.map((event) => matchAnnotations(rules, event.raw).annotations),
     [events, rules],

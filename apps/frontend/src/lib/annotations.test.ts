@@ -1,7 +1,9 @@
-import { describe, expect, it } from "@jest/globals";
+import { beforeAll, describe, expect, it } from "@jest/globals";
 
-import { compileAnnotations, MAX_ANNOTATIONS } from "./annotations";
+import { compileAnnotations, loadAnnotationParser, MAX_ANNOTATIONS } from "./annotations";
 import { v8Samples } from "./samples";
+
+beforeAll(() => loadAnnotationParser());
 
 const source = (fields: string) => `/* @annotation\n${fields}\n*/`;
 

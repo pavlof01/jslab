@@ -1,9 +1,11 @@
-import { describe, expect, it } from "@jest/globals";
+import { beforeAll, describe, expect, it } from "@jest/globals";
 
-import { parseAnnotationSource } from "./annotations";
+import { loadAnnotationParser, parseAnnotationSource } from "./annotations";
 import { sampleCatalog, samples, v8SampleCatalog, v8Samples } from "./samples";
 import { PRINT_BYTECODE_FLAG } from "./v8Flags";
 import { V8_NATIVES_FLAG } from "./v8Intrinsics";
+
+beforeAll(() => loadAnnotationParser());
 
 const callsIntrinsic = (code: string) =>
   code.split("\n").some((line) => !line.trimStart().startsWith("//") && /%[A-Z]\w*\(/.test(line));

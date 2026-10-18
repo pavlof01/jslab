@@ -7,7 +7,8 @@ import type { TokensResult } from "shiki";
 import type { BundledLanguage, Highlighter } from "shiki/bundle/web";
 
 import { LogoLoader } from "@/components/ui";
-import { compileAnnotations } from "@/lib/annotations";
+import { useAnnotationParser } from "@/hooks/useAnnotationParser";
+import { compileAnnotations, type CompiledAnnotations } from "@/lib/annotations";
 import { type BytecodeLang, engineLang } from "@/lib/engines";
 import { getBytecodeHighlighter, getSourceHighlighter, THEME } from "@/lib/shiki";
 import type { EngineKey } from "@/lib/types";
@@ -57,6 +58,12 @@ export async function highlight(
   return { tokens: diffTokens, highlighter };
 }
 
+const NO_ANNOTATIONS: CompiledAnnotations = {
+  annotations: [],
+  diagnostics: [],
+  outputDiagnostics: [],
+};
+
 type Props = {
   engineKey: EngineKey;
   out?: string;
@@ -86,9 +93,10 @@ export const HighlightedCode = memo(function HighlightedCode({
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
   const [highlighter, setHighlighter] = useState<Highlighter>();
+  const parserReady = useAnnotationParser(source);
   const { annotations, diagnostics, outputDiagnostics } = useMemo(
-    () => compileAnnotations({ source, output: out }),
-    [source, out],
+    () => (parserReady ? compileAnnotations({ source, output: out }) : NO_ANNOTATIONS),
+    [source, out, parserReady],
   );
 
   useEffect(() => {
@@ -128,7 +136,7 @@ export const HighlightedCode = memo(function HighlightedCode({
   }
 
   if (!out) return emptyState;
-  if (!tokens || tokens.tokens.length === 0) return fallback ?? emptyState;
+  if (!tokens || tokens.tokens.length === 0 || !parserReady) return fallback ?? emptyState;
 
   return (
     <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>

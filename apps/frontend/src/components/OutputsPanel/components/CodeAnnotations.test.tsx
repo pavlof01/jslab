@@ -1,15 +1,17 @@
-import { describe, expect, it } from "@jest/globals";
+import { beforeAll, describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { TokensResult } from "shiki";
 
 import Providers from "@/app/providers";
-import { compileAnnotations } from "@/lib/annotations";
+import { compileAnnotations, loadAnnotationParser } from "@/lib/annotations";
 import { ENGINE_KEYS, EngineKey } from "@/lib/types";
 import { compareOutputs } from "@/utils/diff-bytecode";
 
 import { HighlightedCode } from "../CodeBlock";
 import CodeDisplay from "./Code";
+
+beforeAll(() => loadAnnotationParser());
 
 const source = `/* @annotation
 match: status: ready
