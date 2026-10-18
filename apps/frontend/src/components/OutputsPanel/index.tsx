@@ -1,3 +1,5 @@
+"use client";
+
 import { Stack, Tabs } from "@chakra-ui/react";
 import { useMemo } from "react";
 

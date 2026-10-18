@@ -3,7 +3,8 @@ import { Box, Container, Flex, Grid, Text } from "@chakra-ui/react";
 import { QuietLink } from "@/components/ui";
 
 import { STUDIES, studyHref } from "../landing-data";
-import SectionHead, { IndexRow } from "./SectionHead";
+import IndexRow from "./IndexRow";
+import SectionHead from "./SectionHead";
 
 const StudiesSection: React.FC = () => {
   return (

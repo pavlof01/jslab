@@ -1,6 +1,8 @@
 "use client";
 
-import { Span, Tabs } from "@chakra-ui/react";
+import { Tabs } from "@chakra-ui/react";
+
+import TabMeta from "./tab-meta";
 
 export type TabItem = {
   value: string;
@@ -33,16 +35,6 @@ const TabBar: React.FC<TabBarProps> = ({ items, value, onChange, underline = fal
         ))}
       </Tabs.List>
     </Tabs.Root>
-  );
-};
-
-type TabMetaProps = { text: string; color?: string };
-
-const TabMeta: React.FC<TabMetaProps> = ({ text, color }) => {
-  return (
-    <Span textStyle="labelSm" color={color ?? "ink.6"}>
-      {text}
-    </Span>
   );
 };
 

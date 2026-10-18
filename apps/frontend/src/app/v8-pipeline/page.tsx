@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import LayoutHintProvider from "@/components/LayoutHint/context";
 import { isMobileRequest } from "@/lib/server/device";
 
-import PipelineClient from "./components/PipelineClient";
+import PipelineShell from "./components/PipelineShell";
 
 export const metadata: Metadata = {
   title: "V8 Compilation Pipeline",
@@ -19,7 +19,7 @@ const V8PipelinePage = async () => {
 
   return (
     <LayoutHintProvider mobile={mobile}>
-      <PipelineClient />
+      <PipelineShell />
     </LayoutHintProvider>
   );
 };

@@ -7,7 +7,7 @@ import Providers from "@/app/providers";
 import type { EmbedSnapshot } from "@/lib/embedState";
 import { EngineKey } from "@/lib/types";
 
-import EmbedBytecodeClient from "./EmbedBytecodeClient";
+import EmbedBytecodeView from "./EmbedBytecodeView";
 
 const snapshot: EmbedSnapshot = {
   code: "1 + 1",
@@ -18,9 +18,9 @@ const snapshot: EmbedSnapshot = {
 };
 
 const renderEmbed = (s: EmbedSnapshot | null) =>
-  render(<EmbedBytecodeClient snapshot={s} />, { wrapper: Providers });
+  render(<EmbedBytecodeView snapshot={s} />, { wrapper: Providers });
 
-describe("EmbedBytecodeClient", () => {
+describe("EmbedBytecodeView", () => {
   it("shows the engine, the caption and the dumped bytecode", async () => {
     renderEmbed(snapshot);
     expect(screen.getByText("V8")).toBeInTheDocument();
