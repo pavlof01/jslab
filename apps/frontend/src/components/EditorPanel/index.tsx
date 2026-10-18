@@ -5,7 +5,6 @@ import type * as Monaco from "monaco-editor";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ANNOTATION_SNIPPET } from "@/lib/annotations";
 import { completableIntrinsics, V8_NATIVES_FLAG } from "@/lib/v8Intrinsics";
 
 import { EDITOR_OPTIONS, JSL_THEME } from "./monacoConfig";
@@ -35,7 +34,6 @@ const EditorPanel: React.FC<Props> = ({ code, onCodeChange, onRun }) => {
   const monacoRef = useRef<typeof Monaco | null>(null);
   const decorationsRef = useRef<string[]>([]);
   const completionRef = useRef<Monaco.IDisposable | null>(null);
-  const annotationCompletionRef = useRef<Monaco.IDisposable | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
 
   // Monaco commands are registered once on mount and capture their closure, so
@@ -45,13 +43,7 @@ const EditorPanel: React.FC<Props> = ({ code, onCodeChange, onRun }) => {
     onRunRef.current = onRun;
   }, [onRun]);
 
-  useEffect(
-    () => () => {
-      completionRef.current?.dispose();
-      annotationCompletionRef.current?.dispose();
-    },
-    [],
-  );
+  useEffect(() => () => completionRef.current?.dispose(), []);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -125,40 +117,6 @@ const EditorPanel: React.FC<Props> = ({ code, onCodeChange, onRun }) => {
           };
         },
       });
-      annotationCompletionRef.current?.dispose();
-      annotationCompletionRef.current = monaco.languages.registerCompletionItemProvider(
-        "javascript",
-        {
-          triggerCharacters: ["@"],
-          provideCompletionItems(model, position) {
-            const before = model.getValueInRange(
-              new monaco.Range(position.lineNumber, 1, position.lineNumber, position.column),
-            );
-            const typed = /^\s*(@\w*)$/.exec(before);
-            if (!typed) return { suggestions: [] };
-            const range = new monaco.Range(
-              position.lineNumber,
-              position.column - typed[1].length,
-              position.lineNumber,
-              position.column,
-            );
-            return {
-              suggestions: [
-                {
-                  label: "@annotation",
-                  kind: monaco.languages.CompletionItemKind.Snippet,
-                  detail: "Explain part of the output",
-                  documentation:
-                    "Highlights matching output after a run; clicking it opens the text.",
-                  insertText: ANNOTATION_SNIPPET,
-                  insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                  range,
-                },
-              ],
-            };
-          },
-        },
-      );
     },
     [],
   );

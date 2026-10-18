@@ -4,7 +4,6 @@ import { useEngineVersion } from "@/components/EngineVersion/context";
 import { engineLabel } from "@/lib/engines";
 import type { EngineKey } from "@/lib/types";
 
-import AnnotationHelp from "./AnnotationHelp";
 import * as styles from "./playground.styles";
 
 type Props = {
@@ -29,7 +28,6 @@ const OutputPaneFooter: React.FC<Props> = ({ engine, durationMs, flagCount }) =>
           {flagCount} flag{flagCount === 1 ? "" : "s"}
         </span>
       ) : null}
-      <AnnotationHelp />
     </Box>
   );
 };

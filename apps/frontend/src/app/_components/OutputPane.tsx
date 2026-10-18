@@ -4,7 +4,6 @@ import { Box } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
-import DefaultEmptyCodeBlockState from "@/components/OutputsPanel/components/DefaultEmptyCodeBlockState";
 import { enabledEngines, type EngineKey, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
@@ -56,9 +55,6 @@ const OutputPane: React.FC = () => {
           showDiff={showDiff}
           isLoading={status === RunStatus.running}
           source={currentRun?.code}
-          emptyState={
-            <DefaultEmptyCodeBlockState description="Tip: /* @annotation */ comments explain parts of the output. See “annotations ?” below." />
-          }
         />
         {result?.stderr ? (
           <HighlightedCode
