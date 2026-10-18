@@ -38,4 +38,4 @@
 
 - [x] 6.1 Run `npm run ci` at the repo root and `npm run lint`, `npm test` and `npx tsc --noEmit -p tsconfig.json` in `apps/frontend/src`; all pass
 - [x] 6.2 Run `npm run specs:check`; the change and every spec validate
-- [ ] 6.3 Run the e2e suites `output-annotations`, `playground-*`, `embed` and `pipeline` against the compose stack; all pass
+- [x] 6.3 Run the e2e suites `output-annotations`, `playground-*`, `embed` and `pipeline` against the compose stack; all pass

@@ -144,7 +144,7 @@ When `b` is absent or unreadable, `/embed/bytecode` SHALL still render, showing 
 
 ### Requirement: Bytecode embed content
 
-For a readable snapshot the bytecode embed SHALL show the engine's label (`V8`, `SpiderMonkey`, `Hermes` or `JSC`), the caption when the snapshot has one, the captured output and, below it, the captured stderr when that is non-empty. The view is read-only: it MUST NOT run code or accept edits. The snapshot's source text and flags are not displayed.
+For a readable snapshot the bytecode embed SHALL show the engine's label (`V8`, `SpiderMonkey`, `Hermes` or `JSC`), the caption when the snapshot has one, the captured output and, below it, the captured stderr when that is non-empty. Both apply the annotations of the snapshot's source text, as the `output-annotations` capability specifies. Until a capture is highlighted, and if it cannot be, it is shown as plain preformatted text; an empty output reads `(no output)`. The view is read-only: it MUST NOT run code or accept edits. The snapshot's source text and flags are not displayed.
 
 #### Scenario: Snapshot with a caption
 
@@ -155,6 +155,11 @@ For a readable snapshot the bytecode embed SHALL show the engine's label (`V8`, 
 
 - **WHEN** the snapshot carries the stderr `SyntaxError: unexpected token`
 - **THEN** that text is shown below the output
+
+#### Scenario: Snapshot with an annotation
+
+- **WHEN** the snapshot's source annotates `ready` and its output is `status: ready`
+- **THEN** `ready` is framed and opens the explanation, while the source itself is not shown
 
 ### Requirement: Bytecode embed link to the playground
 
@@ -424,3 +429,12 @@ On the production ingress, every response under the `/embed` path prefix SHALL c
 
 - **WHEN** `/playground` is requested through the ingress
 - **THEN** the response carries `X-Frame-Options: DENY`
+
+### Requirement: Playground embed annotations
+
+The playground embed's output SHALL apply the annotations of the code of its last run, as the `output-annotations` capability specifies.
+
+#### Scenario: Shared snippet with a directive
+
+- **WHEN** a playground embed opened from a share link whose code annotates `ready` is run and prints `status: ready`
+- **THEN** `ready` is framed and opens the directive's explanation
