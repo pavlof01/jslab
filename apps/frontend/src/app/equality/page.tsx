@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import AbstractFunctionsVisualizer from "@/app/abstract-functions-visualizer/components/AbstractFunctionsVisualizer";
 import { getVisualizerInitialData } from "@/app/abstract-functions-visualizer/server-data";
+import LayoutHintProvider from "@/components/LayoutHint/context";
+import { isMobileRequest } from "@/lib/server/device";
 
 export const metadata: Metadata = {
   title: "Equality Operators Visualizer",
@@ -15,9 +17,16 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const EqualityPage = async () => {
-  const initialData = await getVisualizerInitialData("equality");
+  const [initialData, mobile] = await Promise.all([
+    getVisualizerInitialData("equality"),
+    isMobileRequest(),
+  ]);
 
-  return <AbstractFunctionsVisualizer initialCategory="equality" initialData={initialData} />;
+  return (
+    <LayoutHintProvider mobile={mobile}>
+      <AbstractFunctionsVisualizer initialCategory="equality" initialData={initialData} />
+    </LayoutHintProvider>
+  );
 };
 
 export default EqualityPage;

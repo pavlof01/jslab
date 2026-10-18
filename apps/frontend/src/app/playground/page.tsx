@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import PlaygroundClient from "@/app/_components/PlaygroundClient";
 import EngineVersionProvider from "@/components/EngineVersion/context";
 import FlagCatalogProvider from "@/components/FlagSelector/context";
+import LayoutHintProvider from "@/components/LayoutHint/context";
 import { buildEmbedOpenGraph, firstParam, type SearchParams } from "@/lib/embedMeta";
 import { OEMBED_PATH } from "@/lib/embedState";
+import { isMobileRequest } from "@/lib/server/device";
 import { fetchEngineVersions } from "@/lib/server/engineVersions";
 import { fetchFlagCatalog } from "@/lib/server/flags";
 import {
@@ -46,14 +48,20 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
 export const dynamic = "force-dynamic";
 
 const PlaygroundPage = async () => {
-  const [catalog, versions] = await Promise.all([fetchFlagCatalog(), fetchEngineVersions()]);
+  const [catalog, versions, mobile] = await Promise.all([
+    fetchFlagCatalog(),
+    fetchEngineVersions(),
+    isMobileRequest(),
+  ]);
 
   return (
-    <FlagCatalogProvider catalog={catalog}>
-      <EngineVersionProvider versions={versions}>
-        <PlaygroundClient />
-      </EngineVersionProvider>
-    </FlagCatalogProvider>
+    <LayoutHintProvider mobile={mobile}>
+      <FlagCatalogProvider catalog={catalog}>
+        <EngineVersionProvider versions={versions}>
+          <PlaygroundClient />
+        </EngineVersionProvider>
+      </FlagCatalogProvider>
+    </LayoutHintProvider>
   );
 };
 

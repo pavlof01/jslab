@@ -1,10 +1,11 @@
 "use client";
 
-import { Button, Flex, Splitter, Tabs, Text, useBreakpointValue } from "@chakra-ui/react";
+import { Button, Flex, Splitter, Tabs, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { CiPlay1 } from "react-icons/ci";
 
 import EditorPanel from "@/components/EditorPanel";
+import { useStackedLayout } from "@/components/LayoutHint/context";
 import { Callout, LogoLoader } from "@/components/ui";
 
 import { type ApiStageId, type StageId, STAGES } from "../lib/stages";
@@ -36,7 +37,7 @@ const PipelineClient: React.FC = () => {
   const { hasRun, running, error, outputs, visibleTokens, runCode, analyze, statusOf } =
     usePipelineRun(code);
 
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
+  const isMobile = useStackedLayout();
 
   return (
     <Flex as="main" direction="column" height="calc(100dvh - {sizes.header})">
