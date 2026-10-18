@@ -14,7 +14,7 @@ import V8SampleLibrary from "./V8SampleLibrary";
 
 type Props = {
   currentCode: string;
-  onSelectSample: (code: string) => void;
+  onSelectSample: (code: string, v8Flags?: readonly string[]) => void;
 };
 
 const Samples: React.FC<Props> = ({ currentCode, onSelectSample }) => {
@@ -28,10 +28,10 @@ const Samples: React.FC<Props> = ({ currentCode, onSelectSample }) => {
   const [loadedCode, setLoadedCode] = useState(currentCode);
 
   const load = useCallback(
-    (code: string, id: string) => {
+    (code: string, id: string, v8Flags?: readonly string[]) => {
       setLoadedCode(code);
       setLoadedId(id);
-      onSelectSample(code);
+      onSelectSample(code, v8Flags);
     },
     [onSelectSample],
   );
@@ -49,8 +49,8 @@ const Samples: React.FC<Props> = ({ currentCode, onSelectSample }) => {
           <SampleLibrary
             custom={custom}
             loadedId={loadedId}
-            onLoad={(code, id) => {
-              load(code, id);
+            onLoad={(code, id, v8Flags) => {
+              load(code, id, v8Flags);
               close();
             }}
             onRename={setRenameTarget}
@@ -67,8 +67,8 @@ const Samples: React.FC<Props> = ({ currentCode, onSelectSample }) => {
         {(close) => (
           <V8SampleLibrary
             loadedId={loadedId}
-            onLoad={(code, id) => {
-              load(code, id);
+            onLoad={(code, id, v8Flags) => {
+              load(code, id, v8Flags);
               close();
             }}
           />

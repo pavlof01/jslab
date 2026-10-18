@@ -4,13 +4,14 @@ import { Box, Button, SimpleGrid, Text } from "@chakra-ui/react";
 
 import type { CustomSample } from "@/lib/customSamples";
 import { sampleCatalog, type SampleKey, samples } from "@/lib/samples";
+import { DEFAULT_V8_FLAGS } from "@/lib/v8Flags";
 
 import SampleCard from "./SampleCard";
 
 type Props = {
   custom: CustomSample[];
   loadedId: string | null;
-  onLoad: (code: string, id: string) => void;
+  onLoad: (code: string, id: string, v8Flags?: readonly string[]) => void;
   onRename: (sample: CustomSample) => void;
   onDelete: (sample: CustomSample) => void;
 };
@@ -54,7 +55,7 @@ const SampleLibrary: React.FC<Props> = ({ custom, loadedId, onLoad, onRename, on
               description={description}
               snippet={samples[key as SampleKey]}
               active={loadedId === `default:${key}`}
-              onSelect={() => onLoad(samples[key as SampleKey], `default:${key}`)}
+              onSelect={() => onLoad(samples[key as SampleKey], `default:${key}`, DEFAULT_V8_FLAGS)}
             />
           ))}
         </SampleGrid>

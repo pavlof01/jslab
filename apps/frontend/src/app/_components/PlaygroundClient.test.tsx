@@ -92,6 +92,20 @@ describe("PlaygroundClient", () => {
     expect(screen.getByRole("checkbox", { name: /v8/i })).toBeDisabled();
   });
 
+  it("switches on the flags a V8 internals sample needs, and back for a default sample", async () => {
+    renderPlayground();
+    const user = userEvent.setup();
+    const v8Flags = () => useEngineOutputsStore.getState().flags[EngineKey.v8];
+
+    await user.click(screen.getByRole("button", { name: "Browse V8 internals samples" }));
+    await user.click(await screen.findByRole("button", { name: "Select Length → Holey sample" }));
+    expect(v8Flags()).toEqual(["--allow-natives-syntax"]);
+
+    await user.click(screen.getByRole("button", { name: "Browse code samples" }));
+    await user.click(await screen.findByRole("button", { name: "Select Add sample" }));
+    expect(v8Flags()).toEqual(["--print-bytecode", "--allow-natives-syntax"]);
+  });
+
   it("records a successful run in history and a refused one not at all", async () => {
     const fetchMock = jest
       .fn()

@@ -18,6 +18,7 @@ import {
 import {
   useCode,
   useDiffToggle,
+  useEngineFlags,
   useEngineSelection,
   useRunStatus,
   useSetCode,
@@ -35,12 +36,18 @@ const PlaygroundToolbar: React.FC<Props> = ({ onRun }) => {
   const { engines, setEngines } = useEngineSelection();
   const { showDiff, toggleDiff } = useDiffToggle();
   const { status } = useRunStatus();
+  const { setEngineFlags } = useEngineFlags();
   const flaggedEngines = useFlaggedEngines();
 
   const running = status === RunStatus.running;
   // A picker for an engine that is switched off would offer flags nothing will
   // run, so the toolbar shows one per enabled engine that has flags to give.
   const flagPickers = flaggedEngines.filter((engine) => engines[engine]);
+
+  const loadSample = (sampleCode: string, v8Flags?: readonly string[]) => {
+    setCode(sampleCode);
+    if (v8Flags) setEngineFlags(EngineKey.v8, [...v8Flags]);
+  };
 
   const toggleEngine = (engine: EngineKey) => {
     if (engine === EngineKey.v8) return;
@@ -69,7 +76,7 @@ const PlaygroundToolbar: React.FC<Props> = ({ onRun }) => {
       </Box>
 
       <Box css={styles.toolbarActions}>
-        <Samples currentCode={code} onSelectSample={setCode} />
+        <Samples currentCode={code} onSelectSample={loadSample} />
         <RunHistory />
         <ShareButton />
         <Button size="sm" onClick={toggleDiff} active={showDiff}>

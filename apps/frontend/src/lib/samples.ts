@@ -1,11 +1,7 @@
+import { PRINT_BYTECODE_FLAG, TRACE_DEOPT_FLAG } from "./v8Flags";
+import { V8_NATIVES_FLAG } from "./v8Intrinsics";
+
 export const samples = {
-  annotations: `/* @annotation
-match: status: ready
-highlight: ready
-title: Ready
-text: The operation is ready to continue. Click the highlighted word in the output.
-*/
-print("status: ready");`,
   add: `function f(x){ return x + 1 }\nf(41);`,
   closure: `function f(a){ function g(b){ return a + b } return g(1) }\nf(41);`,
   loop: `function f(n){ let s=0; for(let i=0;i<n;i++) s+=i; return s }\nf(10);`,
@@ -20,11 +16,6 @@ export type SampleKey = keyof typeof samples;
 export type SampleDescriptor = { key: SampleKey; label: string; description: string };
 
 export const sampleCatalog: SampleDescriptor[] = [
-  {
-    key: "annotations",
-    label: "Output annotations",
-    description: "Attach a click-to-open explanation to matching output text.",
-  },
   { key: "add", label: "Add", description: "Minimal function call returning 42." },
   {
     key: "closure",
@@ -415,67 +406,84 @@ they generate cleaner bytecode and optimize more reliably.
 };
 
 export type V8SampleKey = keyof typeof v8Samples;
-export type V8SampleDescriptor = { key: V8SampleKey; label: string; description: string };
+export type V8SampleDescriptor = {
+  key: V8SampleKey;
+  label: string;
+  description: string;
+  flags: readonly string[];
+};
 
 export const v8SampleCatalog: V8SampleDescriptor[] = [
   {
     key: "smiVsHeap",
     label: "Smi vs HeapNumber",
     description: "Number boxing: when integers escape to the heap.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "arrayLengthHoley",
     label: "Length → Holey",
     description: "Setting arr.length creates holes: PACKED → HOLEY.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "arrayTypeTransitions",
     label: "Element Kind Cascade",
     description: "One-way ratchet: SMI → DOUBLE → OBJECT elements.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "arrayDeleteVsUndefined",
     label: "delete vs undefined",
     description: "Two ways to clear a slot — only one punches a hole.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "arrayDictionaryMode",
     label: "Dictionary Mode",
     description: "Sparse arrays switch from flat memory to a hash table.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "hiddenClassOrder",
     label: "Hidden Class Order",
     description: "Property insertion order determines object shape (Map).",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "hiddenClassDelete",
     label: "delete → Slow Props",
     description: "Deleting a property invalidates the hidden class chain.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "bytecodeDestructuring",
     label: "Destructuring Bytecode",
     description: "Array destructuring vs index access: bytecode cost.",
+    flags: [PRINT_BYTECODE_FLAG],
   },
   {
     key: "consString",
     label: "ConsString",
     description: "String concatenation defers character copying lazily.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "deoptTypeChange",
     label: "Deoptimization",
     description: "Passing an unexpected type bails out of optimized code.",
+    flags: [V8_NATIVES_FLAG, TRACE_DEOPT_FLAG],
   },
   {
     key: "icMonomorphic",
     label: "Inline Caches",
     description: "Monomorphic → polymorphic → megamorphic IC degradation.",
+    flags: [V8_NATIVES_FLAG],
   },
   {
     key: "argumentsVsRest",
     label: "arguments vs Rest",
     description: "Legacy arguments object vs rest params: bytecode diff.",
+    flags: [PRINT_BYTECODE_FLAG],
   },
 ];

@@ -14,6 +14,7 @@ import {
   flagsFor,
   RunStatus,
 } from "@/lib/types";
+import { DEFAULT_V8_FLAGS } from "@/lib/v8Flags";
 
 let latestRunToken = 0;
 
@@ -78,7 +79,7 @@ const createInitialState = (): EngineOutputsState => ({
   code: samples.add,
   engines: createEngineSelection(),
   activeTab: EngineKey.v8,
-  flags: { [EngineKey.v8]: ["--print-bytecode", "--allow-natives-syntax"] },
+  flags: { [EngineKey.v8]: [...DEFAULT_V8_FLAGS] },
 });
 
 type EngineOutputsStore = EngineOutputsState & EngineOutputsActions;
