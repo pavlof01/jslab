@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { sampleCatalog, v8SampleCatalog, v8Samples } from "./samples";
+import { parseAnnotationSource } from "./annotations";
+import { sampleCatalog, samples, v8SampleCatalog, v8Samples } from "./samples";
 import { PRINT_BYTECODE_FLAG } from "./v8Flags";
 import { V8_NATIVES_FLAG } from "./v8Intrinsics";
 
@@ -22,6 +23,26 @@ describe("v8SampleCatalog", () => {
         .map((sample) => sample.key),
     ).toEqual(["bytecodeDestructuring", "argumentsVsRest"]);
   });
+});
+
+describe("v8Samples", () => {
+  it.each(Object.entries(v8Samples))("%s has well-formed annotations", (_key, code) => {
+    expect(parseAnnotationSource(code).diagnostics).toEqual([]);
+  });
+});
+
+describe.each([
+  ["samples", samples],
+  ["v8Samples", v8Samples],
+])("%s", (_name, catalog) => {
+  it.each(Object.entries(catalog))(
+    "%s prepares every function before forcing its optimization",
+    (_key, code) => {
+      for (const [, fn] of code.matchAll(/%OptimizeFunctionOnNextCall\((\w+)\)/g)) {
+        expect(code).toContain(`%PrepareFunctionForOptimization(${fn})`);
+      }
+    },
+  );
 });
 
 describe("sampleCatalog", () => {
