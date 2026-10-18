@@ -37,6 +37,7 @@ describeOnEngine("samples on a real d8", () => {
       expect(`${result.stdout}\n${result.stderr}`).not.toMatch(CRASH);
 
       const parsed = parseAnnotationSource(source);
+      expect(parsed.diagnostics).toEqual([]);
       const matched = new Set(
         [result.stdout, result.stderr].flatMap((channel) =>
           matchAnnotations(parsed, channel).annotations.map(({ id }) => id.split("-")[1]),
