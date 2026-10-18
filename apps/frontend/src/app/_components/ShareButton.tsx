@@ -8,13 +8,13 @@ import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
 import { enabledEngines, flagsFor } from "@/lib/types";
 import { useShareableState } from "@/store/engineOutputsSelectors";
 
-type CopyTarget = "link" | "embed" | "article" | "medium";
+type CopyTarget = "link" | "embed" | "snapshot" | "interactive";
 
 const COPIED_LABEL: Record<CopyTarget, string> = {
   link: "link copied",
   embed: "embed copied",
-  article: "article link copied",
-  medium: "medium link copied",
+  snapshot: "snapshot link copied",
+  interactive: "interactive link copied",
 };
 
 const IDLE_LABEL = "share";
@@ -52,18 +52,19 @@ const ShareButton: React.FC = () => {
     [copyText, state],
   );
 
-  const copyMediumLink = useCallback(
-    () => copyText(buildShareUrl(window.location.origin, BYTECODE_EMBED_PATH, state), "medium"),
+  const copyInteractiveLink = useCallback(
+    () =>
+      copyText(buildShareUrl(window.location.origin, BYTECODE_EMBED_PATH, state), "interactive"),
     [copyText, state],
   );
 
   const activeOut = out?.[activeTab];
-  const canCopyArticleLink = Boolean(
+  const canCopySnapshotLink = Boolean(
     currentRun?.engines.includes(activeTab) && (activeOut?.stdout || activeOut?.stderr),
   );
 
-  const copyArticleLink = useCallback(async () => {
-    if (!activeOut || !currentRun || !canCopyArticleLink) return;
+  const copySnapshotLink = useCallback(async () => {
+    if (!activeOut || !currentRun || !canCopySnapshotLink) return;
     const url = await buildSnapshotUrl(window.location.origin, {
       code: currentRun.code,
       engine: activeTab,
@@ -73,13 +74,13 @@ const ShareButton: React.FC = () => {
     });
     try {
       await navigator.clipboard.writeText(url);
-      setCopied("article");
+      setCopied("snapshot");
       window.setTimeout(() => setCopied(null), 1500);
     } catch {
       // Clipboard blocked (insecure context / permissions): leave the label
       // unchanged rather than claim a copy that did not happen.
     }
-  }, [activeOut, activeTab, currentRun, canCopyArticleLink]);
+  }, [activeOut, activeTab, currentRun, canCopySnapshotLink]);
 
   const label = copied ? COPIED_LABEL[copied] : IDLE_LABEL;
 
@@ -99,15 +100,15 @@ const ShareButton: React.FC = () => {
             <Menu.Item value="copy-embed" onSelect={copyEmbed}>
               Copy embed code
             </Menu.Item>
-            <Menu.Item value="copy-medium" onSelect={copyMediumLink}>
-              Copy Medium link
+            <Menu.Item value="copy-interactive" onSelect={copyInteractiveLink}>
+              Copy interactive embed link
             </Menu.Item>
             <Menu.Item
-              value="copy-article"
-              onSelect={copyArticleLink}
-              disabled={!canCopyArticleLink}
+              value="copy-snapshot"
+              onSelect={copySnapshotLink}
+              disabled={!canCopySnapshotLink}
             >
-              Copy article link (output only)
+              Copy output snapshot link
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>

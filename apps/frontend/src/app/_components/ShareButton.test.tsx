@@ -48,8 +48,8 @@ describe("ShareButton", () => {
       render(<ShareButton />, { wrapper: Providers });
 
       await user.click(screen.getByRole("button", { name: /share this snippet/i }));
-      await user.click(await screen.findByText(/copy article link/i));
-      expect(await screen.findByText(/article link copied/i)).toBeInTheDocument();
+      await user.click(await screen.findByText(/copy output snapshot link/i));
+      expect(await screen.findByText(/snapshot link copied/i)).toBeInTheDocument();
 
       const copied = new URL(await navigator.clipboard.readText());
       const snapshot = await decodeSnapshot(copied.searchParams.get(SNAPSHOT_PARAM)!);
@@ -69,23 +69,23 @@ describe("ShareButton", () => {
     },
   );
 
-  it("disables article links when output has no run context", async () => {
+  it("disables snapshot links when output has no run context", async () => {
     const user = userEvent.setup();
     const out = createEmptyOut();
     out[EngineKey.v8].stdout = "ready";
     useEngineOutputsStore.setState({ out });
     render(<ShareButton />, { wrapper: Providers });
     await user.click(screen.getByRole("button", { name: /share this snippet/i }));
-    expect(await screen.findByRole("menuitem", { name: /copy article link/i })).toHaveAttribute(
-      "data-disabled",
-    );
+    expect(
+      await screen.findByRole("menuitem", { name: /copy output snapshot link/i }),
+    ).toHaveAttribute("data-disabled");
   });
 
-  it("copies a Medium-compatible interactive link before any code has run", async () => {
+  it("copies an interactive embed link before any code has run", async () => {
     const user = userEvent.setup();
     render(<ShareButton />, { wrapper: Providers });
     await user.click(screen.getByRole("button", { name: /share this snippet/i }));
-    await user.click(await screen.findByRole("menuitem", { name: /copy medium link/i }));
+    await user.click(await screen.findByRole("menuitem", { name: /copy interactive embed link/i }));
 
     const copied = new URL(await navigator.clipboard.readText());
     expect(copied.pathname).toBe("/embed/bytecode");
