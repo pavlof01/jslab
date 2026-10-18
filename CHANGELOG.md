@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.3.0](https://github.com/pavlof01/jslab/compare/v0.2.0...v0.3.0) (2026-10-18)
+
+
+### Features
+
+* embed oembed conformance ([#90](https://github.com/pavlof01/jslab/issues/90)) ([c3120a4](https://github.com/pavlof01/jslab/commit/c3120a4154af6bd528bfad1bd488097b04dd3df2))
+* **embed:** oembed conformance ([#82](https://github.com/pavlof01/jslab/issues/82)) ([5a6fa97](https://github.com/pavlof01/jslab/commit/5a6fa97c5434b12cb7cf7b5a19246ffc29e6c8e6))
+* **frontend:** explain engine output with [@annotation](https://github.com/annotation) directives ([12f8a81](https://github.com/pavlof01/jslab/commit/12f8a81ac037f05debbabe0d4f2301b5b0f81cc2))
+* **frontend:** name the share links by what they embed, not by where they go ([#96](https://github.com/pavlof01/jslab/issues/96)) ([d7d0f56](https://github.com/pavlof01/jslab/commit/d7d0f5651beb908e417d8dab3b3e716decdacaa2))
+* **frontend:** replace the header github link text with the logo icon ([#64](https://github.com/pavlof01/jslab/issues/64)) ([3405e6a](https://github.com/pavlof01/jslab/commit/3405e6aeabedb287fcdbfd9fb5b4baa4d314969e))
+* **frontend:** show the run summary in the output footer next to the engine version ([12f8a81](https://github.com/pavlof01/jslab/commit/12f8a81ac037f05debbabe0d4f2301b5b0f81cc2))
+* **frontend:** switch on the V8 flags each internals sample needs ([12f8a81](https://github.com/pavlof01/jslab/commit/12f8a81ac037f05debbabe0d4f2301b5b0f81cc2))
+* **frontend:** switch site icons to the design-set exports of the he… ([#62](https://github.com/pavlof01/jslab/issues/62)) ([7566493](https://github.com/pavlof01/jslab/commit/7566493f5db112df927abf77aefd07eafbb053b3))
+* **og:** generate the social card instead of pointing at a missing file ([#83](https://github.com/pavlof01/jslab/issues/83)) ([45caa07](https://github.com/pavlof01/jslab/commit/45caa07aa08ecc4a88c2064a2d6b2a0509ef8c65))
+* **openspec:** add openspec and baseline specs for every capability ([#85](https://github.com/pavlof01/jslab/issues/85)) ([c9b2cc8](https://github.com/pavlof01/jslab/commit/c9b2cc8fc0ea5a86f68f4c4973f52264f46cd026))
+* **playground:** show the sandbox prelude output collapsed ([#74](https://github.com/pavlof01/jslab/issues/74)) ([f52f19d](https://github.com/pavlof01/jslab/commit/f52f19d60da8add157dec2144831618528d670b3))
+* **spec-trace:** improve design trace and change ToBoolean/ToString … ([#61](https://github.com/pavlof01/jslab/issues/61)) ([04db68e](https://github.com/pavlof01/jslab/commit/04db68e07c954088896a897e099450151412f5ff))
+
+
+### Bug Fixes
+
+* **compose:** stop bind-mounting the generated next-env.d.ts ([#58](https://github.com/pavlof01/jslab/issues/58)) ([9c32d01](https://github.com/pavlof01/jslab/commit/9c32d01801806cc5b00cb5ee060064c4931fe56f))
+* **embed:** point canonical at the embed itself so crawlers keep the oEmbed scheme match ([f8a110b](https://github.com/pavlof01/jslab/commit/f8a110b4923be14fd23f97966d13063c3810f3c5))
+* **frontend:** build the output snapshot link from the run that produced the output ([12f8a81](https://github.com/pavlof01/jslab/commit/12f8a81ac037f05debbabe0d4f2301b5b0f81cc2))
+* **frontend:** correct the V8 internals and d8 native samples that crashed d8 or contradicted its output ([12f8a81](https://github.com/pavlof01/jslab/commit/12f8a81ac037f05debbabe0d4f2301b5b0f81cc2))
+* **frontend:** render split layouts in their final orientation from the server ([12f8a81](https://github.com/pavlof01/jslab/commit/12f8a81ac037f05debbabe0d4f2301b5b0f81cc2))
+* **og:** clamp the card text where the url is built, not only where it renders ([#84](https://github.com/pavlof01/jslab/issues/84)) ([76b6517](https://github.com/pavlof01/jslab/commit/76b6517b687633605dd747a4ce8cd6f12e4a85c7))
+* **shiki:** disposed highlighter ([#63](https://github.com/pavlof01/jslab/issues/63)) ([1e81eb8](https://github.com/pavlof01/jslab/commit/1e81eb8920df2fb46cb8dde30711680e9d4273a2))
+
+
+### Refactoring
+
+* **frontend:** server-render shells, one component per file, no keystroke re-renders ([#97](https://github.com/pavlof01/jslab/issues/97)) ([4ab360b](https://github.com/pavlof01/jslab/commit/4ab360b299e2f82d48cb2609b269985be685fe0d))
+
+
+### Infrastructure
+
+* **ingress:** serve /embed/oembed over http and redirect the rest to https ([#91](https://github.com/pavlof01/jslab/issues/91)) ([277d4b6](https://github.com/pavlof01/jslab/commit/277d4b6829781852451523ad56d3b1ef256820b1))
+
+
+### Documentation
+
+* **openspec:** archive output-annotations into the main specs ([9c6dce6](https://github.com/pavlof01/jslab/commit/9c6dce688791a1735a6444b082c887e90d317d0c))
+
+
+### Reverts
+
+* serve /embed/oembed over http and redirect the rest to https ([#92](https://github.com/pavlof01/jslab/issues/92)) ([ae25914](https://github.com/pavlof01/jslab/commit/ae25914711fb88fa087fdd97c6684f3d82df4399))
+
 ## [0.2.0](https://github.com/pavlof01/jslab/compare/v0.1.0...v0.2.0) (2026-08-26)
 
 
