@@ -4,6 +4,7 @@ import { Box } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
+import { runSummary } from "@/lib/runMessages";
 import { enabledEngines, type EngineKey, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
@@ -11,6 +12,7 @@ import {
   useEngineFlags,
   useEngineSelection,
   useOutputPane as useOutputPaneState,
+  useRunStatus,
 } from "@/store/engineOutputsSelectors";
 
 import EngineTabs from "./EngineTabs";
@@ -23,6 +25,7 @@ const OutputPane: React.FC = () => {
   const { showDiff } = useDiffToggle();
   const { out, previousSnapshot, status, currentRun } = useOutputPaneState();
   const { flagsFor } = useEngineFlags();
+  const { durationMs, cacheHit } = useRunStatus();
 
   const active = enabledEngines(engines);
   const result = out?.[activeTab];
@@ -73,6 +76,7 @@ const OutputPane: React.FC = () => {
         engine={activeTab}
         durationMs={result?.ms}
         flagCount={flagsFor(activeTab).length}
+        summary={runSummary(durationMs, cacheHit, active.length)}
       />
     </>
   );

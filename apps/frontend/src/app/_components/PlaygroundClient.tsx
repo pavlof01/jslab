@@ -6,7 +6,6 @@ import { useCallback } from "react";
 import EditorPanel from "@/components/EditorPanel";
 import { SplitRow } from "@/components/ui";
 import { pushHistory } from "@/lib/runHistory";
-import { formatRunMeta } from "@/lib/runMessages";
 import { enabledEngines } from "@/lib/types";
 import {
   useCode,
@@ -29,7 +28,7 @@ const PlaygroundClient: React.FC = () => {
   const setCode = useSetCode();
   const { engines } = useEngineSelection();
   const { flags } = useEngineFlags();
-  const { durationMs, cacheHit, error, notice } = useRunStatus();
+  const { error, notice } = useRunStatus();
   const runEngines = useRunEngines();
 
   useSharedStateRestore();
@@ -67,17 +66,8 @@ const PlaygroundClient: React.FC = () => {
           </Box>
         }
       />
-
-      <Box css={styles.footerLine}>
-        {footerText(formatRunMeta(durationMs, cacheHit), active.length)}
-      </Box>
     </Box>
   );
 };
-
-function footerText(runMeta: string, engineCount: number): string {
-  if (runMeta) return runMeta;
-  return `${engineCount} engine${engineCount === 1 ? "" : "s"} · click any opcode for its reference`;
-}
 
 export default PlaygroundClient;

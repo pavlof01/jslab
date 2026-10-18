@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals";
 
 import type { RunResult } from "@/lib/api";
 import { aggregateRunResults } from "@/lib/runAggregate";
-import { describeRunNotice, formatRunMeta } from "@/lib/runMessages";
+import { describeRunNotice, formatRunMeta, runSummary } from "@/lib/runMessages";
 import { EngineKey } from "@/lib/types";
 
 const result = (over: Partial<RunResult> = {}): RunResult => ({
@@ -105,5 +105,16 @@ describe("formatRunMeta", () => {
   it("marks a fully cached run", () => {
     expect(formatRunMeta(7, true)).toBe("Duration: 7 ms · cached");
     expect(formatRunMeta(7, false)).toBe("Duration: 7 ms");
+  });
+});
+
+describe("runSummary", () => {
+  it("counts the engines before the first run", () => {
+    expect(runSummary(0, false, 1)).toBe("1 engine · click any opcode for its reference");
+    expect(runSummary(0, false, 3)).toBe("3 engines · click any opcode for its reference");
+  });
+
+  it("shows the run duration once there is one", () => {
+    expect(runSummary(7, true, 3)).toBe("Duration: 7 ms · cached");
   });
 });
