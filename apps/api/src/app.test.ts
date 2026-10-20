@@ -130,6 +130,11 @@ describe("gateway routes", () => {
     expect(res.statusCode).toBe(429);
     expect(res.headers["retry-after"]).toBeDefined();
     expect(res.json().meta.retryAfter).toBeGreaterThan(0);
+    // The 429 and a successful response draw from the same enforceLimit(), so
+    // their X-RateLimit-* headers describe the same budget the same way.
+    expect(res.headers["x-ratelimit-bucket"]).toBe("general");
+    expect(res.headers["x-ratelimit-limit"]).toBe("0");
+    expect(res.headers["x-ratelimit-remaining"]).toBe("0");
   });
 
   it("answers 401 for a key that is not on file", async () => {
@@ -169,6 +174,10 @@ describe("gateway routes", () => {
     // itself the proof that the cache short-circuited the run.
     expect(res.json().stdout).toBe("cached output");
     expect(res.json().meta.cacheHit).toBe(true);
+    // A cache hit only ever spends the general budget — the heavy one is for
+    // actually spawning an engine — so its headers are the ones on the reply.
+    expect(res.headers["x-ratelimit-bucket"]).toBe("general");
+    expect(res.headers["x-ratelimit-limit"]).toBe(String(config.RATE_LIMIT_PER_MIN));
   });
 
   it("turns an unreachable engine into a 502, not a crash", async () => {
