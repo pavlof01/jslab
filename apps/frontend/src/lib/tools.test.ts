@@ -1,6 +1,14 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { externalLinks, NAV_GROUPS, navEntries, type NavGroup, tools } from "./tools";
+import {
+  externalLinks,
+  isTopLinkActive,
+  NAV_GROUPS,
+  navEntries,
+  type NavGroup,
+  tools,
+  topLinks,
+} from "./tools";
 
 describe("tool catalog", () => {
   it("gives every tool a unique route", () => {
@@ -57,6 +65,28 @@ describe("navEntries", () => {
   it("exposes only the fields the nav renders", () => {
     for (const entry of navEntries("engines")) {
       expect(Object.keys(entry).sort()).toEqual(["description", "href", "label"]);
+    }
+  });
+});
+
+describe("top-level header links", () => {
+  const [articles] = topLinks;
+
+  it("puts Articles in the header as a plain link to /articles", () => {
+    expect(articles).toMatchObject({ href: "/articles", label: "Articles" });
+  });
+
+  it("reads as active on both language trees and nowhere else", () => {
+    for (const path of [
+      "/articles",
+      "/articles/deoptimization",
+      "/ru/articles",
+      "/ru/articles/deoptimization",
+    ]) {
+      expect(isTopLinkActive(path, articles)).toBe(true);
+    }
+    for (const path of ["/", "/playground", "/articlesx", "/ru"]) {
+      expect(isTopLinkActive(path, articles)).toBe(false);
     }
   });
 });

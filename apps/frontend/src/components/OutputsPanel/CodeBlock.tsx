@@ -62,6 +62,7 @@ type Props = {
   fallback?: ReactNode;
   boxProps?: BoxProps;
   source?: string;
+  showSourceAlerts?: boolean;
 };
 
 export const HighlightedCode = memo(function HighlightedCode({
@@ -74,6 +75,7 @@ export const HighlightedCode = memo(function HighlightedCode({
   fallback,
   boxProps,
   source = "",
+  showSourceAlerts = true,
 }: Props) {
   const [tokens, setTokens] = useState<TokensResult>();
   const [highlighter, setHighlighter] = useState<Highlighter>();
@@ -128,7 +130,7 @@ export const HighlightedCode = memo(function HighlightedCode({
   return (
     <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
-      <AnnotationAlerts diagnostics={diagnostics} />
+      <AnnotationAlerts diagnostics={showSourceAlerts ? diagnostics : matchDiagnostics} />
       <CodeDisplay {...tokens} engineKey={engineKey} annotations={annotations} />
     </Box>
   );

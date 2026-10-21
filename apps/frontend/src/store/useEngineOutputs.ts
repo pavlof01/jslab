@@ -17,6 +17,10 @@ import {
 
 let latestRunToken = 0;
 
+export const supersedePendingRuns = (): void => {
+  latestRunToken += 1;
+};
+
 type RunContext = {
   engines: EngineKey[];
   code: string;

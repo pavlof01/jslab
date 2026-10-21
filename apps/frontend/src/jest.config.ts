@@ -15,6 +15,7 @@ const config: Config = {
   modulePathIgnorePatterns: ["<rootDir>/.next/"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
+    "^marked$": "<rootDir>/node_modules/marked/lib/marked.umd.js",
     "^shiki$": "<rootDir>/test/shikiStub.ts",
     "^shiki/bundle/web$": "<rootDir>/test/shikiStub.ts",
   },

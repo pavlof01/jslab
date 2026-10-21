@@ -1,15 +1,19 @@
 "use client";
 
-import { CloseButton, Dialog, HStack, IconButton, Portal, VStack } from "@chakra-ui/react";
+import { Button, CloseButton, Dialog, HStack, IconButton, Portal, VStack } from "@chakra-ui/react";
+import Link from "next/link";
 import { useState } from "react";
 import { LuMenu } from "react-icons/lu";
 
+import { topLinks } from "@/lib/tools";
+
 import MobileNavSection from "./MobileNavSection";
 import { navSections } from "./nav.types";
-import { useSectionActive } from "./useSectionActive";
+import { useSectionActive, useTopLinkActive } from "./useSectionActive";
 
 const MobileNav: React.FC = () => {
   const isSectionActive = useSectionActive();
+  const isTopLinkActive = useTopLinkActive();
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleMobileNavigate = () => {
     setMobileOpen(false);
@@ -56,6 +60,30 @@ const MobileNav: React.FC = () => {
                     isSectionActive={isSectionActive}
                     onNavigate={handleMobileNavigate}
                   />
+                ))}
+                {topLinks.map((link) => (
+                  <Button
+                    key={link.href}
+                    asChild
+                    variant="quiet"
+                    typeface="prose"
+                    justifyContent="flex-start"
+                    width="full"
+                    h="auto"
+                    px={4}
+                    py={4}
+                    borderWidth="1px"
+                    borderColor="rule.structural"
+                    bg="surface.band"
+                    color={isTopLinkActive(link) ? "accent" : "ink.1"}
+                    fontSize="11.5px"
+                    fontWeight="400"
+                    _hover={{ bg: "surface.hover" }}
+                  >
+                    <Link href={link.href} onClick={handleMobileNavigate}>
+                      {link.label}
+                    </Link>
+                  </Button>
                 ))}
               </VStack>
             </Dialog.Body>

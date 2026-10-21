@@ -74,6 +74,22 @@ export const externalLinks: ExternalLink[] = [
   },
 ];
 
+export interface TopLink {
+  href: string;
+  label: string;
+  activePrefixes: string[];
+}
+
+export const topLinks: TopLink[] = [
+  { href: "/articles", label: "Articles", activePrefixes: ["/articles", "/ru/articles"] },
+];
+
+export const isUnderPath = (pathname: string, prefix: string): boolean =>
+  pathname === prefix || pathname.startsWith(`${prefix}/`);
+
+export const isTopLinkActive = (pathname: string, link: TopLink): boolean =>
+  link.activePrefixes.some((prefix) => isUnderPath(pathname, prefix));
+
 export const NAV_GROUPS: Array<{ group: NavGroup; label: string }> = [
   { group: "engines", label: "Engines" },
   { group: "spec", label: "ECMA Spec" },

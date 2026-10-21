@@ -3,9 +3,11 @@
 import { Box, Button, HStack, Menu, Portal, Text } from "@chakra-ui/react";
 import Link from "next/link";
 
+import { topLinks } from "@/lib/tools";
+
 import { navSections } from "./nav.types";
 import NavItemBody from "./NavItemBody";
-import { useSectionActive } from "./useSectionActive";
+import { useSectionActive, useTopLinkActive } from "./useSectionActive";
 
 const menuContentStyles = {
   minW: "300px",
@@ -14,6 +16,7 @@ const menuContentStyles = {
 
 const Nav: React.FC = () => {
   const isSectionActive = useSectionActive();
+  const isTopLinkActive = useTopLinkActive();
 
   return (
     <Box>
@@ -90,6 +93,25 @@ const Nav: React.FC = () => {
             </Menu.Root>
           );
         })}
+        {topLinks.map((link) => (
+          <Button
+            key={link.href}
+            asChild
+            variant="quiet"
+            typeface="prose"
+            h="auto"
+            minW="auto"
+            px={0}
+            fontSize="11.5px"
+            fontWeight="400"
+            color={isTopLinkActive(link) ? "accent" : "ink.label"}
+            _hover={{ color: "accent" }}
+          >
+            <Link href={link.href} aria-current={isTopLinkActive(link) ? "page" : undefined}>
+              {link.label}
+            </Link>
+          </Button>
+        ))}
       </HStack>
     </Box>
   );

@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { loadAllArticles } from "@/lib/articles/load";
+import { articleSitemap } from "@/lib/articles/sitemap";
 import { siteUrl } from "@/lib/site";
 import { tools } from "@/lib/tools";
 
@@ -13,5 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: tool.priority,
     })),
+    ...articleSitemap(loadAllArticles()),
   ];
 }
