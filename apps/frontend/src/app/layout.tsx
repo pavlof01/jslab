@@ -3,7 +3,9 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 import ConditionalHeader from "@/components/ConditionalHeader";
-import { SITE_ORIGIN } from "@/lib/site";
+import Header from "@/components/Header";
+import { AUTHOR_URL } from "@/lib/links";
+import { OG_CARD, ogCardUrl, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/site";
 
 import Providers from "./providers";
 
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
     "interpreter",
     "AST",
   ],
-  authors: { name: "Pavlov Alexey", url: "https://github.com/pavlof01" },
+  authors: { name: "Pavlov Alexey", url: AUTHOR_URL },
   creator: "Pavlov Alexey",
   publisher: "Pavlov Alexey",
   metadataBase: new URL(SITE_ORIGIN),
@@ -47,17 +49,16 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "JSLab — Explore JS Engines",
-    description:
-      "Dive deep into JavaScript engine internals. Visualize bytecode, optimization stages, and performance across V8, SpiderMonkey, JavaScriptCore, and Hermes.",
+    description: SITE_DESCRIPTION,
     url: "/",
-    siteName: "JSLab",
+    siteName: SITE_NAME,
     type: "website",
     locale: "en_US",
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        url: ogCardUrl(SITE_ORIGIN, { title: "Explore JS Engines", subtitle: SITE_DESCRIPTION }),
+        width: OG_CARD.width,
+        height: OG_CARD.height,
         alt: "JSLab — Explore JS Engines",
       },
     ],
@@ -122,7 +123,9 @@ const RootLayout: React.FC<
           the finish review, the verdict, and DESIGN.md
         */}
         <Providers>
-          <ConditionalHeader />
+          <ConditionalHeader>
+            <Header />
+          </ConditionalHeader>
           {children}
         </Providers>
       </body>

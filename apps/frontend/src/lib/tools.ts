@@ -1,3 +1,5 @@
+import { ECMA262_URL } from "./links";
+
 export type NavGroup = "engines" | "spec" | "learn";
 
 export interface Tool {
@@ -59,7 +61,7 @@ export const tools: Tool[] = [
 
 export const externalLinks: ExternalLink[] = [
   {
-    href: "https://tc39.es/ecma262/",
+    href: ECMA262_URL,
     label: "ECMA-262",
     description: "Open the official ECMAScript specification.",
     group: "spec",
@@ -81,7 +83,7 @@ export interface TopLink {
 }
 
 export const topLinks: TopLink[] = [
-  { href: "/articles", label: "Articles", activePrefixes: ["/articles", "/ru/articles"] },
+  { href: "/articles", label: "Articles", activePrefixes: ["/articles"] },
 ];
 
 export const isUnderPath = (pathname: string, prefix: string): boolean =>

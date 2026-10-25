@@ -1,39 +1,50 @@
 /**
  * @jest-environment node
  */
+import { join } from "node:path";
+
 import { describe, expect, it } from "@jest/globals";
 
 import { parseFrontMatter } from "./frontMatter";
 import { isArticleIndexed, isListIndexed } from "./indexing";
-import { findArticle, loadArticles } from "./load";
+import { readArticles } from "./load";
+
+const FIXTURES = join(__dirname, "__fixtures__", "en");
 
 describe("article loader", () => {
-  it("loads the whole series in both languages with shared slugs", () => {
-    const en = loadArticles("en");
-    const ru = loadArticles("ru");
-    expect(en).toHaveLength(31);
-    expect(ru.map((article) => article.slug)).toEqual(en.map((article) => article.slug));
+  it("reads only numbered files", () => {
+    expect(readArticles(FIXTURES)).toHaveLength(3);
   });
 
   it("orders by the file number and strips the number from the slug", () => {
-    const [first, second] = loadArticles("en");
-    expect(first.slug).toBe("why-jslab-exists");
-    expect(first.title).toBe("Why I built JSLab: JavaScript is deeper than the way we explain it");
-    expect(second.number).toBe(2);
+    const articles = readArticles(FIXTURES);
+    expect(articles.map((article) => article.slug)).toEqual([
+      "first-steps",
+      "second-look",
+      "tenth",
+    ]);
+    expect(articles.map((article) => article.number)).toEqual([1, 2, 10]);
+    expect(articles[0].title).toBe("First steps: a fixture");
   });
 
   it("keeps front matter and the title heading out of the body", () => {
-    for (const article of [...loadArticles("en"), ...loadArticles("ru")]) {
-      expect(article.body).not.toMatch(/^status:|^format:/m);
+    for (const article of readArticles(FIXTURES)) {
+      expect(article.body).not.toMatch(/^title:|^status:/m);
       expect(article.body.startsWith("# ")).toBe(false);
+      expect(article.body).toMatch(/^Body/);
     }
   });
 
   it("reads tags and treats a missing status as a draft", () => {
-    const article = findArticle("ru", "deoptimization");
-    expect(article?.tags).toContain("JavaScript");
-    expect(article?.status).toBe("draft");
-    expect(findArticle("en", "no-such-article")).toBeUndefined();
+    const [first, second] = readArticles(FIXTURES);
+    expect(first.tags).toEqual(["javascript", "v8"]);
+    expect(first.status).toBe("published");
+    expect(second.tags).toEqual([]);
+    expect(second.status).toBe("draft");
+  });
+
+  it("treats a missing content directory as an empty series", () => {
+    expect(readArticles(join(FIXTURES, "no-such-dir"))).toEqual([]);
   });
 });
 

@@ -157,21 +157,54 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 ---
 
+## Specs (OpenSpec)
+
+Behaviour contracts live in `openspec/specs/<capability>/spec.md` — requirements with
+WHEN/THEN scenarios, describing what a client or a neighbouring service can observe.
+They are a baseline of what the code did when they were written, warts included, not a
+statement of intent — a behaviour that looks wrong in a spec is a candidate for a change,
+not something to preserve.
+
+| Area          | Capabilities                                                                                                                     |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Engines       | `engine-runtime` (shared `/run` contract), `engine-services` (per-engine invocation)                                             |
+| API gateway   | `run-api`, `rate-limiting`, `api-keys`, `engine-catalog`, `trace-api`, `api-operations`                                          |
+| Trace service | `trace-service`                                                                                                                  |
+| Frontend      | `playground`, `v8-pipeline`, `spec-visualizer`, `output-annotations`, `embed`, `site-metadata`, `frontend-api-proxy`, `articles` |
+
+Infrastructure (ingress, NetworkPolicy, deploys) has no spec; it stays in `infra/README.md`.
+
+A change that alters specified behaviour starts as a proposal in
+`openspec/changes/<name>/` (proposal, spec deltas, tasks) and is archived into the specs
+once it ships. A change that leaves every specified behaviour as it is — dependency
+bumps, refactors, a fix that restores what a spec already says — skips OpenSpec.
+`openspec/config.yaml` holds the context and rules every artifact is written under.
+
+```bash
+npm run specs:check                  # openspec validate --all --strict (not part of `npm run ci` yet)
+npx openspec list --specs            # capabilities and their requirement counts
+npx openspec init --tools claude     # regenerate the /opsx:* commands — .claude/ is gitignored
+```
+
+In Claude Code the cycle is `/opsx:propose` → `/opsx:apply` → `/opsx:archive`.
+
+---
+
 ## Frontend architecture
 
 **Pages** (all under `apps/frontend/src/app/`):
 
-| Route                                     | Client component                                                                                        | Description                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `/`                                       | `(landing)/page.tsx`                                                                                    | Marketing landing page                                                            |
-| `/playground`                             | `_components/PlaygroundClient.tsx`                                                                      | Multi-engine code runner                                                          |
-| `/v8-pipeline`                            | `v8-pipeline/components/PipelineClient.tsx`                                                             | Stage-by-stage V8 visualization                                                   |
-| `/type-conversion`                        | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
-| `/equality`                               | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer`                                         | Equality-operator spec step-through (`initialCategory="equality"`)                |
-| `/embed/playground`                       | `embed/playground/EmbedPlaygroundClient.tsx`                                                            | Embeddable playground widget (`noindex`)                                          |
-| `/embed/bytecode`                         | `embed/bytecode/EmbedBytecodeClient.tsx`                                                                | Embeddable bytecode snapshot widget (`noindex`)                                   |
-| `/articles`, `/ru/articles`               | `articles/page.tsx`, `ru/articles/page.tsx` → `components/Article/ArticleList.tsx`                      | The article series, English and Russian lists                                     |
-| `/articles/[slug]`, `/ru/articles/[slug]` | `components/Article/ArticleView.tsx`                                                                    | One article, generated at build time                                              |
+| Route               | Client component                                                                                        | Description                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `/`                 | `(landing)/page.tsx`                                                                                    | Marketing landing page                                                            |
+| `/playground`       | `_components/PlaygroundShell.tsx` (server shell; toolbar, editor and output are client islands)         | Multi-engine code runner                                                          |
+| `/v8-pipeline`      | `v8-pipeline/components/PipelineShell.tsx`                                                              | Stage-by-stage V8 visualization                                                   |
+| `/type-conversion`  | `type-conversion/page.tsx` → `abstract-functions-visualizer/components/AbstractFunctionsVisualizer.tsx` | ECMAScript type-conversion spec step-through (`initialCategory="typeConversion"`) |
+| `/equality`         | `equality/page.tsx` → same shared `AbstractFunctionsVisualizer`                                         | Equality-operator spec step-through (`initialCategory="equality"`)                |
+| `/embed/playground` | `embed/playground/EmbedPlaygroundShell.tsx`                                                             | Embeddable playground widget (`noindex`)                                          |
+| `/embed/bytecode`   | `embed/bytecode/EmbedBytecodeView.tsx`                                                                  | Embeddable bytecode snapshot widget (`noindex`)                                   |
+| `/articles`         | `articles/page.tsx` → `components/Article/ArticleList.tsx`                                              | The article series                                                                |
+| `/articles/[slug]`  | `components/Article/ArticleView.tsx`                                                                    | One article, generated at build time                                              |
 
 `app/abstract-functions-visualizer/` is a shared implementation directory, **not** a route — only `/type-conversion` and `/equality` mount it. `app/embed/oembed/route.ts` is the oEmbed provider for the two widgets.
 
@@ -187,9 +220,13 @@ kubectl apply -k infra/k8s/base        # deploy to k3s (namespace: jslab)
 
 **Icons**: `public/jslab-logo.svg` is the animated (SMIL) mark the header and footer render. The favicon/touch/manifest files in `public/` (and the static `icon.svg`) are per-size exports of the same flask mark from the JSLab icon set in Claude Design, pixel-hinted per size — replace them with fresh exports rather than editing or regenerating by hand (`favicon.ico` just packs the 16/32/48 PNGs).
 
-**Articles**: the bilingual series lives in `content/articles/` (`en/`, `ru/`, `tools/embeds.mjs`, editorial notes in Russian; each snapshot's raw output sits in a `<!-- capture … -->` comment under its link) and is the same Markdown that goes to Medium. `lib/articles/` loads it at build time (front matter, slug = file name without its number, an EN/RU twin required), `buildBlocks` turns the body into a block tree with Shiki-highlighted `js` blocks, and a lone `https://jslab.su/embed/bytecode?b=…` or `?s=…` line becomes an inline snapshot (`components/Snapshot/`, shared with `/embed/bytecode`) or the exercise editor (`ArticleEditor`, which restores the run store on unmount). Pages are static (`generateStaticParams`, `dynamicParams = false`), so the standalone image never reads `content/`. An article is indexed and enters the sitemap only with `status: published`; drafts get `noindex`. The header's `Articles` link comes from `topLinks` in `lib/tools.ts`.
+**Articles**: the series lives in `content/articles/` (`en/`, `ru/`, `tools/embeds.mjs`, editorial notes in Russian; each snapshot's raw output sits in a `<!-- capture … -->` comment under its link) and is the same Markdown that goes to Medium. The site serves English only: `lib/articles/` loads `en/` at build time (front matter, slug = file name without its number), and `ru/` exists for Medium alone; `buildBlocks` turns the body into a block tree with Shiki-highlighted `js` blocks, and a lone `https://jslab.su/embed/bytecode?b=…` or `?s=…` line becomes an inline snapshot (`components/Snapshot/`, shared with `/embed/bytecode`) or the exercise editor (`ArticleEditor`, which restores the run store on unmount). Pages are static (`generateStaticParams`, `dynamicParams = false`), so the standalone image never reads `content/`. An article is indexed and enters the sitemap only with `status: published`; drafts get `noindex`. The header's `Articles` link comes from `topLinks` in `lib/tools.ts`.
 
-**Samples**: `lib/samples.ts` exports `samples` (basic code snippets), `sampleCatalog`, `v8Samples` (V8-internals examples with inline comments), and `v8SampleCatalog`.
+**Samples**: `lib/samples.ts` exports `samples` (basic code snippets), `sampleCatalog`, `v8Samples` (V8-internals examples with inline comments and `@annotation` directives), and `v8SampleCatalog`, whose entries carry the V8 `flags` each sample needs — loading a sample applies them, a default sample restores `DEFAULT_V8_FLAGS` (`lib/v8Flags.ts`). `lib/samples.test.ts` pins `--allow-natives-syntax` to exactly the samples that call an intrinsic and requires `%PrepareFunctionForOptimization(f)` before any `%OptimizeFunctionOnNextCall(f)` (without it d8 dies with a fatal error); `lib/samples.engine.test.ts` runs every sample on a real d8 and fails when an annotation no longer matches. It is skipped unless `SAMPLES_RUN_URL` names a run endpoint (an engine's `/run` or the gateway's `/api/run`); `nightly-engines` runs it against `engine-v8`.
+
+**Output annotations**: an `@annotation` comment in a snippet frames matching output text and opens an explanation on click (fields `match`, `text`, `highlight`, `title`, `occurrence`; the format is specified in `openspec/specs/output-annotations` and explained on the wiki page Output-Annotations). `lib/annotations.ts` parses directives with acorn's tokenizer and matches them literally per output; acorn is loaded on demand (`loadAnnotationParser()`, `hooks/useAnnotationParser.ts`), only for code that contains `@annotation`. `HighlightedCode` applies them in the playground panes, both embeds and the pipeline's listings, `DeoptView` per deopt event. Rules always come from the code that produced the output (`currentRun.code`, the snapshot's code), never from the editor.
+
+**Split layouts**: the splitters' orientation comes from `useStackedLayout()` (`components/LayoutHint/context.tsx`). Its first value is the device hint the page reads from request headers (`isMobileRequest()` in `lib/server/device.ts`) and passes through `LayoutHintProvider`, so the server renders the orientation the page keeps after loading; a split page without the provider assumes desktop.
 
 **API client**: `lib/api.ts` — `runEngine()` calls `POST /api/run` via Next.js route proxy.
 
@@ -202,7 +239,7 @@ Each engine service (`apps/engine-*/src/server.ts`) is a thin `startEngineServer
 - Zod schema validates `{ sourceText, options: { flags?, timeoutMs? } }`
 - `sanitizeFlags()` filters client-supplied flags against the shared `flagCatalog`; rejected flags are reported back in `meta.droppedFlags`
 - Per-pod concurrency gate returns 429 + `Retry-After` when saturated
-- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order
+- A temp dir gets the snippet plus each prelude script; `invoke()` receives their absolute paths as `preludePaths`, in load order. Whenever any prelude loads, the runtime appends a final `prelude-end.js` that prints a marker line; `stdout` is returned from the line after it and everything before it (the lockdown shim's own bytecode under `--print-bytecode`, for one) comes back as `meta.preludeStdout`, which the playground shows collapsed
 - `child_process.spawn()` runs the binary with timeout; combined stdout+stderr capped at `MAX_OUTPUT_BYTES` (default 2 MB), truncation flagged in `meta.outputTruncated`
 - Returns `{ ok, stdout, stderr, artifacts: [], meta }`
 - `GET /healthz` reports `{ ok, engine, version }`; the version probe runs once at startup (never per request) and stays `null` for a binary with no way to say, such as jsc

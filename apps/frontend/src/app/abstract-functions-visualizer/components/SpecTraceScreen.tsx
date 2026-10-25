@@ -1,7 +1,8 @@
 "use client";
 
-import { Box, useBreakpointValue } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 
+import { useStackedLayout } from "@/components/LayoutHint/context";
 import { SplitRow } from "@/components/ui";
 
 import type { SpecValue, TraceNode } from "../spec-runner";
@@ -63,7 +64,7 @@ const SpecTraceScreen: React.FC<SpecTraceScreenProps> = ({
 
   usePlaybackKeys({ selectedIndex, onSelectIndex, onTogglePlay });
 
-  const stacked = useBreakpointValue({ base: true, md: false }) ?? false;
+  const stacked = useStackedLayout();
 
   const specSide = (
     <Box

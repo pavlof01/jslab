@@ -10,16 +10,15 @@ type Props = { params: Promise<{ slug: string }> };
 
 export const dynamicParams = false;
 
-export const generateStaticParams = () =>
-  loadArticles("en").map((article) => ({ slug: article.slug }));
+export const generateStaticParams = () => loadArticles().map((article) => ({ slug: article.slug }));
 
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
-  const article = findArticle("en", (await params).slug);
+  const article = findArticle((await params).slug);
   return article ? articleMetadata(article) : {};
 };
 
 const ArticlesArticlePage = async ({ params }: Props) => {
-  const article = findArticle("en", (await params).slug);
+  const article = findArticle((await params).slug);
   if (!article) notFound();
   return <ArticleView article={article} blocks={await buildBlocks(article.body)} />;
 };

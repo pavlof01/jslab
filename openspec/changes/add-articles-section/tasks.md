@@ -9,7 +9,7 @@
 ## 2. Article loader
 
 - [x] 2.1 Add `marked` to the frontend's dependencies and verify `npm ci` in `apps/frontend/src` succeeds with the lockfile updated
-- [x] 2.2 Implement the loader (`lib/articles/`): read `en/` and `ru/`, parse front matter, derive slugs and series order, fail on a missing language twin; verify with Jest tests over the real content (22 slugs per language, `why-jslab-exists` first, both languages share slugs, front matter absent from bodies)
+- [x] 2.2 Implement the loader (`lib/articles/`): read `en/`, parse front matter, derive slugs and series order; verify with Jest tests over the real content (31 articles, `why-jslab-exists` first, front matter absent from bodies)
 - [x] 2.3 Implement the indexing rule (draft → not indexed; a list is indexed only with a published article) as one function and verify Jest tests for an all-draft set and a set with one published article
 
 ## 3. Markdown rendering
@@ -25,15 +25,15 @@
 
 ## 5. Pages, header and metadata
 
-- [x] 5.1 Add `/articles` and `/ru/articles` list pages and `/articles/[slug]`, `/ru/articles/[slug]` with `generateStaticParams` and `dynamicParams = false`, the language switch and `lang="ru"` on Russian text; verify Jest tests for list order, the language links and a 404 for an unknown slug
-- [x] 5.2 Add `generateMetadata` for list and article pages (title, description, canonical, `hreflang` alternates, social card, `noindex` per the indexing rule) and verify Jest tests against the `articles` spec scenarios
-- [x] 5.3 Add the top-level `Articles` link to `lib/tools.ts`, `Nav` and `MobileNav` with the active state for `/articles` and `/ru/articles`; verify the header tests cover the link and its active state
+- [x] 5.1 Add the `/articles` list page and `/articles/[slug]` with `generateStaticParams` and `dynamicParams = false`; verify Jest tests for list order, the link back to the list and a 404 for an unknown slug
+- [x] 5.2 Add `generateMetadata` for list and article pages (title, description, canonical, social card, `noindex` per the indexing rule) and verify Jest tests against the `articles` spec scenarios
+- [x] 5.3 Add the top-level `Articles` link to `lib/tools.ts`, `Nav` and `MobileNav` with the active state for `/articles`; verify the header tests cover the link and its active state
 - [x] 5.4 Extend `app/sitemap.ts` with the list pages and published articles and verify the sitemap test for the all-draft case (exactly five URLs) and for one published article
 - [x] 5.5 Update `CLAUDE.md` (frontend pages table, content location, how to publish an article) and the articles' `README.md` (articles are also served on jslab.su; `status: published` makes a page indexable) and verify both describe the paths that now exist
 
 ## 6. Verification
 
 - [x] 6.1 Run `npm run build` in `apps/frontend/src` and verify 44 article pages and 2 list pages are prerendered and the build has no warnings about dynamic routes
-- [x] 6.2 Run the production build locally, open `/articles`, an English and a Russian article, a snapshot's opcode reference and the exercise editor, then `/playground`, and verify the behaviour of every `articles` scenario in a browser
+- [x] 6.2 Run the production build locally, open `/articles`, an article, a snapshot's opcode reference and the exercise editor, then `/playground`, and verify the behaviour of every `articles` scenario in a browser
 - [x] 6.3 Run `npm run ci` at the repo root and `npm run lint` and `npm test` in `apps/frontend/src`, and verify all pass
 - [x] 6.4 Run `npm run specs:check` and verify the change validates

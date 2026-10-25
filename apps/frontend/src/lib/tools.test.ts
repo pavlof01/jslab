@@ -76,16 +76,11 @@ describe("top-level header links", () => {
     expect(articles).toMatchObject({ href: "/articles", label: "Articles" });
   });
 
-  it("reads as active on both language trees and nowhere else", () => {
-    for (const path of [
-      "/articles",
-      "/articles/deoptimization",
-      "/ru/articles",
-      "/ru/articles/deoptimization",
-    ]) {
+  it("reads as active under /articles and nowhere else", () => {
+    for (const path of ["/articles", "/articles/deoptimization"]) {
       expect(isTopLinkActive(path, articles)).toBe(true);
     }
-    for (const path of ["/", "/playground", "/articlesx", "/ru"]) {
+    for (const path of ["/", "/playground", "/articlesx"]) {
       expect(isTopLinkActive(path, articles)).toBe(false);
     }
   });

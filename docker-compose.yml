@@ -221,6 +221,7 @@ services:
     volumes:
       - ./apps/frontend/src/app:/app/frontend/app
       - ./apps/frontend/src/components:/app/frontend/components
+      - ./apps/frontend/src/content:/app/frontend/content
       - ./apps/frontend/src/hooks:/app/frontend/hooks
       - ./apps/frontend/src/lib:/app/frontend/lib
       - ./apps/frontend/src/store:/app/frontend/store

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
-import PipelineClient from "./components/PipelineClient";
+import LayoutHintProvider from "@/components/LayoutHint/context";
+import { isMobileRequest } from "@/lib/server/device";
+
+import PipelineShell from "./components/PipelineShell";
 
 export const metadata: Metadata = {
   title: "V8 Compilation Pipeline",
@@ -11,8 +14,14 @@ export const metadata: Metadata = {
   },
 };
 
-const V8PipelinePage: React.FC = () => {
-  return <PipelineClient />;
+const V8PipelinePage = async () => {
+  const mobile = await isMobileRequest();
+
+  return (
+    <LayoutHintProvider mobile={mobile}>
+      <PipelineShell />
+    </LayoutHintProvider>
+  );
 };
 
 export default V8PipelinePage;

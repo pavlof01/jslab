@@ -16,7 +16,7 @@ The series is 22 EN/RU Markdown pairs in `articles/` at the repo root, each with
 
 - No CMS, no runtime fetching of articles, no comments, search or RSS.
 - No change to the Medium workflow, to `/embed/*`, or to the oEmbed provider.
-- No translation of the site's UI chrome; only the article pages and the Russian list are in Russian.
+- No Russian on the site: the Russian texts in `content/articles/ru/` stay for Medium, the site serves English only.
 
 ## Decisions
 
@@ -28,9 +28,9 @@ The root ESLint ignores `apps/frontend/**`, so `embeds.mjs` becomes the frontend
 
 ### Static generation, no runtime file access
 
-`app/articles/[slug]/page.tsx` and `app/ru/articles/[slug]/page.tsx` export `generateStaticParams` over the loaded articles with `dynamicParams = false`; the list pages and `sitemap.ts` are `force-static`. Everything that reads the Markdown runs at build time, so the standalone image never touches `content/`. Alternative: read files at request time — rejected, the runner image does not contain them.
+`app/articles/[slug]/page.tsx` exports `generateStaticParams` over the loaded articles with `dynamicParams = false`; the list pages and `sitemap.ts` are `force-static`. Everything that reads the Markdown runs at build time, so the standalone image never touches `content/`. Alternative: read files at request time — rejected, the runner image does not contain them.
 
-A loader module (`lib/articles/`) reads both language directories once, parses front matter (a small parser for the flat `key: value` / `- item` YAML the files use, rather than a YAML dependency), derives the slug from the file name, and checks at build time that every EN file has an RU twin with the same slug — a missing twin fails the build instead of producing a dead language link.
+A loader module (`lib/articles/`) reads `content/articles/en/` once, parses front matter (a small parser for the flat `key: value` / `- item` YAML the files use, rather than a YAML dependency) and derives the slug from the file name.
 
 ### Markdown: `marked` lexer, rendered to React by our own components
 
@@ -52,9 +52,8 @@ The embed playground needs no flag catalog (it shows no flag pickers), so articl
 
 ### Routes, header and metadata
 
-- Header: `lib/tools.ts` gains a top-level link entry (`/articles`, label `Articles`) beside `NAV_GROUPS`; `Nav` renders it as a plain link after the menus and `MobileNav` as a single row. Activity uses the same prefix test as the menus, extended to `/ru/articles`.
-- Russian pages wrap the article in an element with `lang="ru"`; the root `<html lang="en">` stays.
-- Metadata per page via `generateMetadata`: title, description, canonical, `alternates.languages` for `en`/`ru`, `ogCardUrl(origin, { title, subtitle: description })`, and `robots: { index: false }` for drafts and for a list page without a published article.
+- Header: `lib/tools.ts` gains a top-level link entry (`/articles`, label `Articles`) beside `NAV_GROUPS`; `Nav` renders it as a plain link after the menus and `MobileNav` as a single row. Activity uses the same prefix test as the menus.
+- Metadata per page via `generateMetadata`: title, description, canonical, `ogCardUrl(origin, { title, subtitle: description })`, and `robots: { index: false }` for drafts and for a list page without a published article.
 - Sitemap: `app/sitemap.ts` appends the list pages and published articles from the same loader, so the indexing rule lives in one function used by both metadata and sitemap.
 
 ## Risks / Trade-offs

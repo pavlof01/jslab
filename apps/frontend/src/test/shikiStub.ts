@@ -14,6 +14,8 @@ export const createHighlighter = async () => ({
       themeName: "ayu-dark",
     };
   },
+  codeToHtml: (code: string) =>
+    `<pre><code>${code.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</code></pre>`,
   loadLanguage: async () => {},
   getTheme: () => ({ bg: "#0C0D0E", fg: "#C9CEC9" }),
   getLoadedLanguages: () => ["v8bc", "jscbc", "smbc", "hermesbc", "javascript"],

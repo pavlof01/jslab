@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import {
   BYTECODE_EMBED_PATH,
+  BYTECODE_EMBED_TITLE,
   decodeSnapshot,
   EMBED_DEFAULT_HEIGHT,
   EMBED_DEFAULT_WIDTH,
@@ -9,10 +10,17 @@ import {
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
 import { clamp, finiteOr } from "@/lib/numbers";
-import { EMBED_PATH } from "@/lib/shareState";
+import {
+  decodeShareState,
+  EMBED_PATH,
+  PLAYGROUND_EMBED_TITLE,
+  PLAYGROUND_PATH,
+  SHARE_PARAM,
+} from "@/lib/shareState";
+import { OG_CARD, ogCardUrl } from "@/lib/site";
 
 /** Only our own embed paths may be turned into an iframe. */
-const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH];
+const EMBEDDABLE_PATHS = [BYTECODE_EMBED_PATH, EMBED_PATH, PLAYGROUND_PATH];
 
 function badRequest(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -40,30 +48,36 @@ export async function GET(req: NextRequest) {
   }
 
   const self = req.nextUrl;
-  const sameHost = target.host === (req.headers.get("x-forwarded-host") ?? self.host);
-  if (!sameHost) return badRequest("url does not belong to this site", 404);
+  const host = req.headers.get("x-forwarded-host") ?? self.host;
+  if (target.host !== host) return badRequest("url does not belong to this site", 404);
 
-  if (!EMBEDDABLE_PATHS.includes(target.pathname)) {
+  const bareEditor = target.pathname === PLAYGROUND_PATH && !target.searchParams.has(SHARE_PARAM);
+  if (bareEditor || !EMBEDDABLE_PATHS.includes(target.pathname)) {
     return badRequest("url is not an embeddable JSLab view", 404);
   }
 
-  const isBytecode = target.pathname === BYTECODE_EMBED_PATH;
-  const snapshotParam = target.searchParams.get(SNAPSHOT_PARAM);
-  // A bytecode embed without a payload renders an error state; refusing here
-  // gives the author a diagnosable failure at paste time instead.
-  if (isBytecode && !snapshotParam) {
-    return badRequest("bytecode embed is missing its snapshot", 404);
+  const snapshotParam =
+    (target.pathname === BYTECODE_EMBED_PATH && target.searchParams.get(SNAPSHOT_PARAM)) || null;
+  const shareParam = target.searchParams.get(SHARE_PARAM);
+  const hasSnapshot = snapshotParam !== null;
+  const needsState = !hasSnapshot && target.pathname !== EMBED_PATH;
+  if (needsState && (!shareParam || !decodeShareState(shareParam))) {
+    return badRequest(
+      target.pathname === PLAYGROUND_PATH
+        ? "playground link is missing readable state"
+        : "bytecode embed is missing its snapshot or playground state",
+      404,
+    );
   }
 
   // Size the frame to the dump. Embedly fixes the height from this response and
   // the frame cannot renegotiate it afterwards, so a default here means every
   // short embed carries a band of empty space and every long one is cropped
   // harder than it needs to be.
-  let naturalHeight = isBytecode ? EMBED_DEFAULT_HEIGHT : 520;
-  if (isBytecode && snapshotParam) {
-    const decoded = await decodeSnapshot(snapshotParam);
-    if (decoded) naturalHeight = estimateEmbedHeight(decoded.output);
-  }
+  const decoded = snapshotParam ? await decodeSnapshot(snapshotParam) : null;
+  const shared = !hasSnapshot && shareParam ? decodeShareState(shareParam) : null;
+  let naturalHeight = hasSnapshot ? EMBED_DEFAULT_HEIGHT : 520;
+  if (decoded) naturalHeight = estimateEmbedHeight(decoded.output);
 
   const width = clampDimension(
     req.nextUrl.searchParams.get("maxwidth"),
@@ -73,8 +87,16 @@ export async function GET(req: NextRequest) {
   );
   const height = clampDimension(req.nextUrl.searchParams.get("maxheight"), naturalHeight, 160, 900);
 
-  const src = target.toString();
-  const title = isBytecode ? "JSLab bytecode" : "JSLab playground";
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  const protocol = local ? self.protocol : "https:";
+  const origin = `${protocol}//${host}`;
+
+  const frame = new URL(target.toString());
+  frame.protocol = protocol;
+  if (target.pathname === PLAYGROUND_PATH) frame.pathname = EMBED_PATH;
+  frame.searchParams.set("referrer", "");
+  const src = frame.toString();
+  const title = hasSnapshot ? BYTECODE_EMBED_TITLE : PLAYGROUND_EMBED_TITLE;
   const html =
     `<iframe src="${src}" width="${width}" height="${height}" ` +
     `style="border:0;border-radius:8px;max-width:100%" title="${title}" ` +
@@ -85,8 +107,16 @@ export async function GET(req: NextRequest) {
       version: "1.0",
       type: "rich",
       provider_name: "JSLab",
-      provider_url: `${self.protocol}//${req.headers.get("x-forwarded-host") ?? self.host}`,
+      provider_url: origin,
       title,
+      thumbnail_url: ogCardUrl(origin, {
+        title,
+        subtitle: decoded?.code ?? shared?.code,
+        engine: decoded?.engine,
+        lines: decoded ? decoded.output.split("\n").length : undefined,
+      }),
+      thumbnail_width: OG_CARD.width,
+      thumbnail_height: OG_CARD.height,
       width,
       height,
       html,
@@ -96,6 +126,7 @@ export async function GET(req: NextRequest) {
         // Consumers (Embedly among them) re-fetch on every article render; the
         // answer only depends on the URL, so let it be cached.
         "Cache-Control": "public, max-age=3600",
+        Vary: "Host, X-Forwarded-Host",
         // oEmbed consumers are third-party by definition.
         "Access-Control-Allow-Origin": "*",
       },

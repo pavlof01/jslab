@@ -1,83 +1,33 @@
 "use client";
 
 import { Button, Menu, Portal } from "@chakra-ui/react";
-import { useCallback, useMemo, useState } from "react";
 
-import { buildSnapshotUrl } from "@/lib/embedState";
-import { buildEmbedSnippet, buildShareUrl } from "@/lib/shareState";
-import { enabledEngines, flagsFor } from "@/lib/types";
-import { useShareableState } from "@/store/engineOutputsSelectors";
-
-type CopyTarget = "link" | "embed" | "article";
+import { type CopyTarget, useShareActions } from "./useShareActions";
 
 const COPIED_LABEL: Record<CopyTarget, string> = {
   link: "link copied",
   embed: "embed copied",
-  article: "article link copied",
+  snapshot: "snapshot link copied",
+  interactive: "interactive link copied",
 };
 
 const IDLE_LABEL = "share";
 
 const ShareButton: React.FC = () => {
-  const { code, engines, flags, out, currentRun, activeTab } = useShareableState();
-  const [copied, setCopied] = useState<CopyTarget | null>(null);
-
-  const state = useMemo(
-    () => ({ code, engines: enabledEngines(engines), flags }),
-    [code, engines, flags],
-  );
-
-  const copyLink = useCallback(async () => {
-    const url = buildShareUrl(window.location.origin, window.location.pathname, state);
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      window.history.replaceState(null, "", url);
-    }
-    setCopied("link");
-    window.setTimeout(() => setCopied(null), 1500);
-  }, [state]);
-
-  const copyEmbed = useCallback(async () => {
-    const snippet = buildEmbedSnippet(window.location.origin, state);
-    try {
-      await navigator.clipboard.writeText(snippet);
-      setCopied("embed");
-      window.setTimeout(() => setCopied(null), 1500);
-    } catch {}
-  }, [state]);
-
-  const activeOut = out?.[activeTab];
-  const canCopyArticleLink = Boolean(
-    currentRun?.engines.includes(activeTab) && (activeOut?.stdout || activeOut?.stderr),
-  );
-
-  const copyArticleLink = useCallback(async () => {
-    if (!activeOut || !currentRun || !canCopyArticleLink) return;
-    const url = await buildSnapshotUrl(window.location.origin, {
-      code: currentRun.code,
-      engine: activeTab,
-      flags: flagsFor(currentRun.flags, activeTab),
-      output: activeOut.stdout ?? "",
-      stderr: activeOut.stderr || undefined,
-    });
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied("article");
-      window.setTimeout(() => setCopied(null), 1500);
-    } catch {
-      // Clipboard blocked (insecure context / permissions): leave the label
-      // unchanged rather than claim a copy that did not happen.
-    }
-  }, [activeOut, activeTab, currentRun, canCopyArticleLink]);
-
-  const label = copied ? COPIED_LABEL[copied] : IDLE_LABEL;
+  const {
+    copied,
+    canCopySnapshotLink,
+    copyLink,
+    copyEmbed,
+    copyInteractiveLink,
+    copySnapshotLink,
+  } = useShareActions();
 
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button size="sm" active={copied !== null} aria-label="Share this snippet">
-          {label}
+          {copied ? COPIED_LABEL[copied] : IDLE_LABEL}
         </Button>
       </Menu.Trigger>
       <Portal>
@@ -89,12 +39,15 @@ const ShareButton: React.FC = () => {
             <Menu.Item value="copy-embed" onSelect={copyEmbed}>
               Copy embed code
             </Menu.Item>
+            <Menu.Item value="copy-interactive" onSelect={copyInteractiveLink}>
+              Copy interactive embed link
+            </Menu.Item>
             <Menu.Item
-              value="copy-article"
-              onSelect={copyArticleLink}
-              disabled={!canCopyArticleLink}
+              value="copy-snapshot"
+              onSelect={copySnapshotLink}
+              disabled={!canCopySnapshotLink}
             >
-              Copy article link (output only)
+              Copy output snapshot link
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>

@@ -145,6 +145,27 @@ describe("runEngine", () => {
     expect(result.droppedFlags).toEqual(["--nope"]);
   });
 
+  it("carries the sandbox prelude output separately and drops it when empty", async () => {
+    mockFetch({
+      ok: true,
+      status: 200,
+      body: {
+        ok: true,
+        stdout: "snippet bytecode",
+        stderr: "",
+        meta: { durationMs: 3, cacheHit: false, preludeStdout: " lockdown bytecode \n" },
+      },
+    });
+    expect((await runEngine(EngineKey.v8, "1")).preludeStdout).toBe("lockdown bytecode");
+
+    mockFetch({
+      ok: true,
+      status: 200,
+      body: { ok: true, stdout: "x", stderr: "", meta: { durationMs: 3, preludeStdout: "" } },
+    });
+    expect((await runEngine(EngineKey.v8, "1")).preludeStdout).toBeUndefined();
+  });
+
   it("keeps engine stderr when the script itself failed (ok:true)", async () => {
     mockFetch({
       ok: true,

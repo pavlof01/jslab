@@ -10,9 +10,10 @@ type Props = {
   engine: EngineKey;
   durationMs?: number;
   flagCount: number;
+  summary: string;
 };
 
-const OutputPaneFooter: React.FC<Props> = ({ engine, durationMs, flagCount }) => {
+const OutputPaneFooter: React.FC<Props> = ({ engine, durationMs, flagCount, summary }) => {
   const version = useEngineVersion(engine);
 
   return (
@@ -28,6 +29,7 @@ const OutputPaneFooter: React.FC<Props> = ({ engine, durationMs, flagCount }) =>
           {flagCount} flag{flagCount === 1 ? "" : "s"}
         </span>
       ) : null}
+      <span>{summary}</span>
     </Box>
   );
 };

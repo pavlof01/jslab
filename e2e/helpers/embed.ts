@@ -1,7 +1,18 @@
 import { gzipSync } from "node:zlib";
 
+/**
+ * A hand-rolled encoder for the `?b=` snapshot, because e2e cannot import from
+ * the frontend workspace. It mirrors `encodeSnapshot` in
+ * `apps/frontend/src/lib/embedState.ts` — the version prefix, the compact key
+ * names and base64url — so the two must change together. The param is a public
+ * contract (Embedly resolves these URLs), so a silent drift here would hide a
+ * real break: the specs only pass while the app can decode what this builds.
+ */
 export const BYTECODE_EMBED_PATH = "/embed/bytecode";
 export const SNAPSHOT_PARAM = "b";
+
+/** `VERSION_GZIP` in embedState.ts. */
+const VERSION_GZIP = "1";
 
 export type EmbedSnapshot = {
   code: string;
@@ -25,5 +36,5 @@ export function bytecodeEmbedUrl(snapshot: EmbedSnapshot): string {
     ...(snapshot.title ? { t: snapshot.title } : {}),
   };
   const payload = toBase64Url(gzipSync(Buffer.from(JSON.stringify(compact), "utf8")));
-  return `${BYTECODE_EMBED_PATH}?${SNAPSHOT_PARAM}=1${payload}`;
+  return `${BYTECODE_EMBED_PATH}?${SNAPSHOT_PARAM}=${VERSION_GZIP}${payload}`;
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { Splitter, type SplitterRootProps, useBreakpointValue } from "@chakra-ui/react";
+import { Splitter, type SplitterRootProps } from "@chakra-ui/react";
 import { useCallback } from "react";
 
+import { useStackedLayout } from "@/components/LayoutHint/context";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { withinOr } from "@/lib/numbers";
 
@@ -29,7 +30,7 @@ const SplitRow: React.FC<SplitRowProps> = ({
   const [stored, setStored] = useLocalStorage<number>(storageKey ?? UNKEYED, defaultPercent);
   const percent = withinOr(stored, { min: 0, max: 100, fallback: defaultPercent });
 
-  const stacked = useBreakpointValue({ base: true, md: false }) ?? false;
+  const stacked = useStackedLayout();
 
   const remember = useCallback(
     (size: number[]) => {

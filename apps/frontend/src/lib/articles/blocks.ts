@@ -127,7 +127,7 @@ async function blocks(tokens: Token[], key: Next): Promise<Block[]> {
         out.push({
           key: key(),
           kind: "paragraph",
-          children: inlines(token.tokens ?? [token], key),
+          children: inlines("tokens" in token && token.tokens ? token.tokens : [token], key),
         });
         break;
       case "list": {

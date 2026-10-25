@@ -15,20 +15,12 @@ const series = (published: string[]) =>
 
 describe("article sitemap entries", () => {
   it("lists nothing while every article is a draft", () => {
-    expect(articleSitemap({ en: series([]), ru: series([]) })).toEqual([]);
+    expect(articleSitemap(series([]))).toEqual([]);
   });
 
-  it("lists both lists and the published pair only", () => {
-    const urls = articleSitemap({
-      en: series(["deoptimization"]),
-      ru: series(["deoptimization"]),
-    }).map((entry) => entry.url);
-    expect(urls).toEqual([
-      "https://jslab.su/articles",
-      "https://jslab.su/articles/deoptimization",
-      "https://jslab.su/ru/articles",
-      "https://jslab.su/ru/articles/deoptimization",
-    ]);
+  it("lists the list and the published article only", () => {
+    const urls = articleSitemap(series(["deoptimization"])).map((entry) => entry.url);
+    expect(urls).toEqual(["https://jslab.su/articles", "https://jslab.su/articles/deoptimization"]);
   });
 });
 

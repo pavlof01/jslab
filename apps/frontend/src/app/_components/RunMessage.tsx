@@ -1,10 +1,14 @@
+"use client";
+
 import { Box } from "@chakra-ui/react";
+
+import { useRunStatus } from "@/store/engineOutputsSelectors";
 
 import { messageLine } from "./playground.styles";
 
-type Props = { error?: string; notice?: string };
+const RunMessage: React.FC = () => {
+  const { error, notice } = useRunStatus();
 
-const RunMessage: React.FC<Props> = ({ error, notice }) => {
   if (error) return <Box css={messageLine("error")}>{error}</Box>;
   if (notice) return <Box css={messageLine("notice")}>{notice}</Box>;
   return null;

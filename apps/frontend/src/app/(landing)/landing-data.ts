@@ -194,7 +194,7 @@ export const STUDIES: Study[] = [
     key: "arrayLengthHoley",
     group: "arrays",
     title: "length → HOLEY",
-    desc: "Raising arr.length punches holes into the backing store, and HOLEY is permanent.",
+    desc: "Raising arr.length punches holes into the backing store, and the array turns HOLEY.",
   },
   {
     key: "arrayTypeTransitions",

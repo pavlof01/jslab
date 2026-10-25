@@ -6,8 +6,8 @@ import { listMetadata } from "@/lib/articles/metadata";
 
 export const dynamic = "force-static";
 
-export const metadata: Metadata = listMetadata("en");
+export const metadata: Metadata = listMetadata();
 
-const ArticlesPage = () => <ArticleList language="en" articles={loadArticles("en")} />;
+const ArticlesPage = () => <ArticleList articles={loadArticles()} />;
 
 export default ArticlesPage;

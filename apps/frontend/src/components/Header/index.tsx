@@ -1,7 +1,7 @@
 import { Box, Container, HStack, Link } from "@chakra-ui/react";
 import { IoLogoGithub } from "react-icons/io";
 
-import { REPO_URL } from "@/lib/site";
+import { REPO_URL } from "@/lib/links";
 
 import Logo from "../Logo";
 import MobileNav from "./MobileNav";

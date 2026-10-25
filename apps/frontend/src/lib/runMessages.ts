@@ -31,3 +31,9 @@ export function formatRunMeta(durationMs: number, cacheHit: boolean): string {
   if (!durationMs) return "";
   return `Duration: ${durationMs} ms${cacheHit ? " · cached" : ""}`;
 }
+
+export function runSummary(durationMs: number, cacheHit: boolean, engineCount: number): string {
+  const meta = formatRunMeta(durationMs, cacheHit);
+  if (meta) return meta;
+  return `${engineCount} engine${engineCount === 1 ? "" : "s"} · click any opcode for its reference`;
+}

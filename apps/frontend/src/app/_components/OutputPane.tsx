@@ -3,6 +3,7 @@
 import { Box } from "@chakra-ui/react";
 
 import { HighlightedCode } from "@/components/OutputsPanel/CodeBlock";
+import { runSummary } from "@/lib/runMessages";
 import { enabledEngines, RunStatus } from "@/lib/types";
 import {
   useActiveTab,
@@ -10,11 +11,13 @@ import {
   useEngineFlags,
   useEngineSelection,
   useOutputPane as useOutputPaneState,
+  useRunStatus,
 } from "@/store/engineOutputsSelectors";
 
 import EngineTabs from "./EngineTabs";
 import OutputPaneFooter from "./OutputPaneFooter";
 import * as styles from "./playground.styles";
+import PreludeSection from "./PreludeSection";
 
 const OutputPane: React.FC = () => {
   const { engines } = useEngineSelection();
@@ -22,6 +25,7 @@ const OutputPane: React.FC = () => {
   const { showDiff } = useDiffToggle();
   const { out, previousSnapshot, status, currentRun } = useOutputPaneState();
   const { flagsFor } = useEngineFlags();
+  const { durationMs, cacheHit } = useRunStatus();
 
   const active = enabledEngines(engines);
   const result = out?.[activeTab];
@@ -38,6 +42,15 @@ const OutputPane: React.FC = () => {
       />
 
       <Box css={styles.outputScroller}>
+        {status === RunStatus.running ? null : (
+          <PreludeSection
+            key={activeTab}
+            engine={activeTab}
+            prelude={result?.preludeStdout}
+            previousPrelude={previous?.preludeStdout}
+            showDiff={showDiff}
+          />
+        )}
         <HighlightedCode
           engineKey={activeTab}
           out={result?.stdout}
@@ -53,6 +66,7 @@ const OutputPane: React.FC = () => {
             prev={previous?.stderr}
             showDiff={showDiff}
             source={currentRun?.code}
+            showSourceAlerts={!result.stdout}
             emptyState={null}
           />
         ) : null}
@@ -62,6 +76,7 @@ const OutputPane: React.FC = () => {
         engine={activeTab}
         durationMs={result?.ms}
         flagCount={flagsFor(activeTab).length}
+        summary={runSummary(durationMs, cacheHit, active.length)}
       />
     </>
   );

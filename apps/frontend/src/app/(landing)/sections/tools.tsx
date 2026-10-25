@@ -1,7 +1,8 @@
 import { Box, Container, Grid } from "@chakra-ui/react";
 
 import { TOOL_ROWS } from "../landing-data";
-import SectionHead, { IndexRow } from "./SectionHead";
+import IndexRow from "./IndexRow";
+import SectionHead from "./SectionHead";
 
 const ToolsSection: React.FC = () => {
   return (

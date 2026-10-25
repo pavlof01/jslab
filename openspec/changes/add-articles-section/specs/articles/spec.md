@@ -2,13 +2,13 @@
 
 ## Purpose
 
-The JSLab article series on the site itself, as seen by a reader and a search engine: where the articles are linked from, the list and article pages in English and Russian, how an article's Markdown, output snapshots and runnable exercise are shown, and which pages are indexed.
+The JSLab article series on the site itself, as seen by a reader and a search engine: where the articles are linked from, the list and article pages, how an article's Markdown, output snapshots and runnable exercise are shown, and which pages are indexed.
 
 ## ADDED Requirements
 
 ### Requirement: Header link
 
-The site header SHALL show an `Articles` link to `/articles`, in the desktop navigation and in the mobile navigation dialog. It is a plain link, not a section menu. It MUST read as active on `/articles`, `/ru/articles` and every page below them.
+The site header SHALL show an `Articles` link to `/articles`, in the desktop navigation and in the mobile navigation dialog. It is a plain link, not a section menu. It MUST read as active on `/articles` and every page below it.
 
 #### Scenario: Desktop header
 
@@ -16,19 +16,24 @@ The site header SHALL show an `Articles` link to `/articles`, in the desktop nav
 - **THEN** the header shows `Articles` next to the section menus
 - **AND** activating it opens `/articles`
 
-#### Scenario: Active on a Russian article
+#### Scenario: Active on an article
 
-- **WHEN** `/ru/articles/why-jslab-exists` is loaded
+- **WHEN** `/articles/why-jslab-exists` is loaded
 - **THEN** the `Articles` link reads as active
 
 ### Requirement: Article routes
 
-Each article SHALL be served in English at `/articles/<slug>` and in Russian at `/ru/articles/<slug>`. The slug is the article's file name without its leading number and `.md`, so `01-why-jslab-exists.md` is `why-jslab-exists`, the same in both languages. A slug that names no article MUST be answered by the site's not-found page.
+Each article SHALL be served in English at `/articles/<slug>`. The site has no other language version. The slug is the article's file name without its leading number and `.md`, so `01-why-jslab-exists.md` is `why-jslab-exists`. A slug that names no article MUST be answered by the site's not-found page.
 
-#### Scenario: English and Russian pages
+#### Scenario: Article page
 
-- **WHEN** `/articles/why-jslab-exists` and `/ru/articles/why-jslab-exists` are requested
-- **THEN** both answer 200, the first with the English text and the second with the Russian text
+- **WHEN** `/articles/why-jslab-exists` is requested
+- **THEN** it answers 200 with the English text
+
+#### Scenario: No Russian pages
+
+- **WHEN** `/ru/articles` or `/ru/articles/why-jslab-exists` is requested
+- **THEN** the response is 404 with the site's not-found page
 
 #### Scenario: Unknown slug
 
@@ -37,19 +42,13 @@ Each article SHALL be served in English at `/articles/<slug>` and in Russian at 
 
 ### Requirement: Article list pages
 
-`/articles` SHALL list every English article and `/ru/articles` every Russian one, in series order (by the file's leading number). Each entry shows the article's title, linked to its page in the same language, and its description. Each list page links to the list in the other language.
+`/articles` SHALL list every article in series order (by the file's leading number). Each entry shows the article's title, linked to its page, and its description.
 
 #### Scenario: Series order
 
 - **WHEN** `/articles` is loaded
 - **THEN** the first entry is `Why I built JSLab: From JavaScript explanations to evidence`, linked to `/articles/why-jslab-exists`
 - **AND** the entries follow the numbers 01, 02, 03 and onwards
-
-#### Scenario: Russian list
-
-- **WHEN** `/ru/articles` is loaded
-- **THEN** every entry links under `/ru/articles/`
-- **AND** the page links to `/articles`
 
 ### Requirement: Article page content
 
@@ -66,14 +65,14 @@ An article page SHALL show the article's front-matter title as its heading, its 
 - **WHEN** any article page is loaded
 - **THEN** no line of the page reads `status: draft` or `format:`
 
-### Requirement: Language switch
+### Requirement: Link back to the list
 
-Every article page SHALL link to the same article in the other language, labelled `Русский` on the English page and `English` on the Russian page. The Russian page's text MUST be marked as Russian (`lang="ru"`).
+Every article page SHALL link to `/articles` with the label `Articles` above its heading.
 
-#### Scenario: From English to Russian
+#### Scenario: Back to the list
 
 - **WHEN** `/articles/one-program-many-engines` is loaded
-- **THEN** it links to `/ru/articles/one-program-many-engines` with the label `Русский`
+- **THEN** it links to `/articles` with the label `Articles`
 
 ### Requirement: Snapshots in articles
 
@@ -106,22 +105,22 @@ A paragraph that consists only of a playground-state embed URL (`https://jslab.s
 
 ### Requirement: Article page metadata
 
-An article page SHALL have the title `<article title> | JSLab`, its front-matter description as the `description` and the social-card description, a canonical link to its own path on `SITE_ORIGIN`, `hreflang` alternates for `en` (`/articles/<slug>`) and `ru` (`/ru/articles/<slug>`), and a social card showing the title and description.
+An article page SHALL have the title `<article title> | JSLab`, its front-matter description as the `description` and the social-card description, a canonical link to its own path on `SITE_ORIGIN`, no `hreflang` alternates, and a social card showing the title and description.
 
 #### Scenario: English article
 
 - **WHEN** `/articles/deoptimization` is loaded with `SITE_ORIGIN` at its default
 - **THEN** its canonical link is `https://jslab.su/articles/deoptimization`
-- **AND** it carries `hreflang` alternates for `https://jslab.su/articles/deoptimization` and `https://jslab.su/ru/articles/deoptimization`
+- **AND** it carries no `hreflang` alternates
 
 ### Requirement: List page metadata
 
-`/articles` SHALL have the title `Articles | JSLab` and `/ru/articles` the title `Статьи | JSLab`. Each carries a description of the series in its language, a canonical link to its own path on `SITE_ORIGIN` and `hreflang` alternates for both lists.
+`/articles` SHALL have the title `Articles | JSLab`, a description of the series and a canonical link to its own path on `SITE_ORIGIN`.
 
-#### Scenario: Russian list
+#### Scenario: List page
 
-- **WHEN** `/ru/articles` is loaded with `SITE_ORIGIN` at its default
-- **THEN** its title is `Статьи | JSLab` and its canonical link is `https://jslab.su/ru/articles`
+- **WHEN** `/articles` is loaded with `SITE_ORIGIN` at its default
+- **THEN** its title is `Articles | JSLab` and its canonical link is `https://jslab.su/articles`
 
 ### Requirement: Draft articles are not indexed
 
@@ -134,5 +133,5 @@ An article whose front matter has `status: draft` SHALL be served normally but c
 
 #### Scenario: List with only drafts
 
-- **WHEN** every English article is a draft and `/articles` is loaded
+- **WHEN** every article is a draft and `/articles` is loaded
 - **THEN** its `robots` meta tag is `noindex`

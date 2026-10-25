@@ -4,24 +4,13 @@ import { OG_CARD, ogCardUrl, SITE_ORIGIN } from "@/lib/site";
 
 import { isArticleIndexed, isListIndexed } from "./indexing";
 import { loadArticles } from "./load";
-import { type Article, type ArticleLanguage, articlePath, listPath } from "./types";
+import { type Article, articlePath, LIST_PATH } from "./types";
 
-export const LIST_COPY: Record<
-  ArticleLanguage,
-  { title: string; description: string; name: string }
-> = {
-  en: {
-    title: "Articles",
-    description:
-      "How JavaScript engines work inside: the ECMAScript contract first, then what V8, JavaScriptCore, Hermes and SpiderMonkey show, with live output from JSLab.",
-    name: "English",
-  },
-  ru: {
-    title: "Статьи",
-    description:
-      "Как устроены движки JavaScript изнутри: сначала контракт ECMAScript, затем то, что показывают V8, JavaScriptCore, Hermes и SpiderMonkey, с живым выводом JSLab.",
-    name: "Русский",
-  },
+export const LIST_COPY = {
+  title: "Articles",
+  description:
+    "How JavaScript engines work inside: the ECMAScript contract first, then what V8, JavaScriptCore, Hermes and SpiderMonkey show, with live output from JSLab.",
+  empty: "The first articles are on their way.",
 };
 
 const card = (title: string, description: string) => [
@@ -33,35 +22,29 @@ const card = (title: string, description: string) => [
   },
 ];
 
-export function listMetadata(language: ArticleLanguage): Metadata {
-  const { title, description } = LIST_COPY[language];
+export function listMetadata(): Metadata {
+  const { title, description } = LIST_COPY;
   return {
     title,
     description,
-    alternates: {
-      canonical: listPath(language),
-      languages: { en: listPath("en"), ru: listPath("ru") },
-    },
-    openGraph: { title, description, url: listPath(language), images: card(title, description) },
-    ...(isListIndexed(loadArticles(language)) ? {} : { robots: { index: false } }),
+    alternates: { canonical: LIST_PATH },
+    openGraph: { title, description, url: LIST_PATH, images: card(title, description) },
+    ...(isListIndexed(loadArticles()) ? {} : { robots: { index: false } }),
   };
 }
 
 export function articleMetadata(article: Article): Metadata {
-  const { title, description, slug, language } = article;
+  const { title, description, slug } = article;
   return {
     title,
     description,
-    alternates: {
-      canonical: articlePath(language, slug),
-      languages: { en: articlePath("en", slug), ru: articlePath("ru", slug) },
-    },
+    alternates: { canonical: articlePath(slug) },
     openGraph: {
       type: "article",
       title,
       description,
-      url: articlePath(language, slug),
-      locale: language === "en" ? "en_US" : "ru_RU",
+      url: articlePath(slug),
+      locale: "en_US",
       images: card(title, description),
     },
     ...(isArticleIndexed(article) ? {} : { robots: { index: false } }),

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import AbstractFunctionsVisualizer from "@/app/abstract-functions-visualizer/components/AbstractFunctionsVisualizer";
 import { getVisualizerInitialData } from "@/app/abstract-functions-visualizer/server-data";
+import LayoutHintProvider from "@/components/LayoutHint/context";
+import { isMobileRequest } from "@/lib/server/device";
 
 export const metadata: Metadata = {
   title: "Type Conversion Visualizer",
@@ -15,9 +17,16 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const TypeConversionPage = async () => {
-  const initialData = await getVisualizerInitialData("typeConversion");
+  const [initialData, mobile] = await Promise.all([
+    getVisualizerInitialData("typeConversion"),
+    isMobileRequest(),
+  ]);
 
-  return <AbstractFunctionsVisualizer initialCategory="typeConversion" initialData={initialData} />;
+  return (
+    <LayoutHintProvider mobile={mobile}>
+      <AbstractFunctionsVisualizer initialCategory="typeConversion" initialData={initialData} />
+    </LayoutHintProvider>
+  );
 };
 
 export default TypeConversionPage;

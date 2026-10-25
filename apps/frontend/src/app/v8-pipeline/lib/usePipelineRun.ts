@@ -31,6 +31,7 @@ export function usePipelineRun(code: string) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [tokens, setTokens] = useState<Token[]>([]);
+  const [runCode, setRunCode] = useState("");
   const [outputs, setOutputs] = useState<Record<ApiStageId, StageOutput>>(emptyOutputs);
 
   const visibleTokens = useMemo(
@@ -47,6 +48,7 @@ export function usePipelineRun(code: string) {
     setHasRun(true);
     setError("");
     setTokens(tokenize(code));
+    setRunCode(code);
 
     for (const stage of API_STAGES) patch(stage.id, { loading: true, stdout: "", stderr: "" });
 
@@ -94,5 +96,5 @@ export function usePipelineRun(code: string) {
     [hasRun, outputs, tokens.length],
   );
 
-  return { hasRun, running, error, outputs, visibleTokens, analyze, statusOf };
+  return { hasRun, running, error, outputs, visibleTokens, runCode, analyze, statusOf };
 }
