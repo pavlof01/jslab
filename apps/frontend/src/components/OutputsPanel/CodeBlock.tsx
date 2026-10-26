@@ -103,7 +103,12 @@ export const HighlightedCode = memo(function HighlightedCode({
     <Box flex={1} {...boxProps} bgColor={highlighter?.getTheme(THEME).bg}>
       <CopyButton out={out} />
       <AnnotationAlerts diagnostics={showSourceAlerts ? diagnostics : outputDiagnostics} />
-      <CodeDisplay {...tokens} engineKey={engineKey} annotations={annotations} />
+      {/* Opcode explanations are for engine bytecode, not machine code or source. */}
+      <CodeDisplay
+        {...tokens}
+        engineKey={language ? undefined : engineKey}
+        annotations={annotations}
+      />
     </Box>
   );
 });

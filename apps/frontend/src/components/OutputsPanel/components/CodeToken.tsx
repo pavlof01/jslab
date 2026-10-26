@@ -10,12 +10,14 @@ import TokenText from "./TokenText";
 type Props = {
   token: ThemedToken;
   nextToken?: ThemedToken;
-  engineKey: EngineKey;
+  /** Whose opcodes to explain; none for output that is not engine bytecode. */
+  engineKey?: EngineKey;
   slice?: ThemedToken;
 };
 
 const TokenSpan: React.FC<Props> = ({ token, nextToken, engineKey, slice }) => {
-  const description = describeEngineToken(engineKey, token.content, nextToken?.content ?? null);
+  const description =
+    engineKey && describeEngineToken(engineKey, token.content, nextToken?.content ?? null);
   const content = <TokenText token={slice ?? token} />;
   if (!description) return content;
 

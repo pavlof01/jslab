@@ -4,9 +4,9 @@ import SnapshotHeader from "@/components/Snapshot/SnapshotHeader";
 import SnapshotOutput from "@/components/Snapshot/SnapshotOutput";
 import type { EmbedSnapshot } from "@/lib/embedState";
 
-type EmbedBytecodeViewProps = { snapshot: EmbedSnapshot | null };
+type Props = { snapshot: EmbedSnapshot | null };
 
-const EmbedBytecodeView: React.FC<EmbedBytecodeViewProps> = ({ snapshot }) => {
+const EmbedBytecodeView: React.FC<Props> = ({ snapshot }) => {
   if (!snapshot) {
     return (
       <Flex height="100dvh" align="center" justify="center" bg="surface.band" px={4}>

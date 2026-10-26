@@ -13,7 +13,7 @@ type Props = {
   tokens: ThemedToken[];
   lineNumber: number;
   span: LineSpan;
-  engineKey: EngineKey;
+  engineKey?: EngineKey;
   annotations?: OutputAnnotation[];
 };
 

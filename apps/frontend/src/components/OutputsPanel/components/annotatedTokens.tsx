@@ -10,7 +10,7 @@ import type { LineSpan } from "./codeRows";
 import TokenSpan from "./CodeToken";
 import TokenText from "./TokenText";
 
-type TokenRow = { tokens: ThemedToken[]; span: LineSpan; engineKey: EngineKey };
+type TokenRow = { tokens: ThemedToken[]; span: LineSpan; engineKey?: EngineKey };
 
 export const renderAnnotatedTokens = (
   { tokens, span, engineKey }: TokenRow,

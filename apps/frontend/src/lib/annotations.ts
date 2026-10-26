@@ -74,11 +74,14 @@ function annotationBlocks(source: string): Block[] {
   const tokens = tokenizer(source, {
     ecmaVersion: "latest",
     locations: true,
-    onComment(block, comment, _start, _end, location) {
+    onComment(block, comment, start, _end, location) {
       if (!location) return;
       if (!block) {
         const text = comment.replace(/^ /, "");
-        if (lineGroup && location.line === lineGroup.last + 1 && !DIRECTIVE.test(text)) {
+        // Only a comment alone on the very next line continues a directive; a
+        // trailing comment on a code line belongs to that code.
+        const alone = !source.slice(start - location.column, start).trim();
+        if (lineGroup && alone && location.line === lineGroup.last + 1 && !DIRECTIVE.test(text)) {
           lineGroup.lines.push(text);
           lineGroup.last = location.line;
           return;

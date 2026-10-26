@@ -228,6 +228,18 @@ describe("compileAnnotations", () => {
     ]);
   });
 
+  it("ends line-comment directives at a trailing comment on the next code line", () => {
+    const result = compileAnnotations({
+      source:
+        "// @annotation\n// match: status: ready\n// text: Ready.\nprint('status: ready'); // warm up",
+      output: "status: ready",
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations).toEqual([
+      expect.objectContaining({ start: 0, end: 13, text: "Ready." }),
+    ]);
+  });
+
   it("caps the number of highlights and says so", () => {
     const output = "x ".repeat(MAX_ANNOTATIONS + 50);
     const result = compileAnnotations({ source: source("match: x\ntext: X."), output });

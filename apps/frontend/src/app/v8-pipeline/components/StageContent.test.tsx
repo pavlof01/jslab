@@ -41,6 +41,23 @@ describe("StageContent", () => {
     expect(await screen.findByRole("button", { name: "movq" })).toBeVisible();
   });
 
+  it("does not explain machine-code addresses as bytecode", async () => {
+    const machineCode = STAGES.find((stage) => stage.view === "machineCode")!;
+    render(
+      <StageContent
+        stage={machineCode}
+        output={{ loading: false, stdout: "0x1a2b\n  push rbp", stderr: "" }}
+        tokens={[]}
+        hasRun
+        source=""
+      />,
+      { wrapper: Providers },
+    );
+
+    expect(await screen.findByText(/push/)).toBeVisible();
+    expect(screen.queryAllByRole("button", { name: "0x1a2b" })).toEqual([]);
+  });
+
   it("explains deopt events whose trace line matches a directive", async () => {
     const deopt = STAGES.find((stage) => stage.view === "deoptEvents")!;
     const user = userEvent.setup();

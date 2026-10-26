@@ -91,7 +91,7 @@ A paragraph that consists only of a bytecode-embed snapshot URL (`https://jslab.
 
 ### Requirement: Editors in articles
 
-A paragraph that consists only of a playground-state embed URL (`https://jslab.su/embed/bytecode?s=<state>`) SHALL be shown in place as a runnable editor with the state's source, engines and flags: an editable editor, a `Run` control and one output tab per engine, behaving as the playground embed's controls do (see `embed`). Running it MUST NOT change what `/playground` shows when the reader opens it afterwards.
+A paragraph that consists only of a playground-state embed URL (`https://jslab.su/embed/bytecode?s=<state>`) SHALL be shown in place as a runnable editor with the state's source, engines and flags: an editable editor, a `Run` control and one output tab per engine, behaving as the playground embed's controls do (see `embed`). Running it MUST NOT change what `/playground` shows when the reader opens it afterwards. An article SHALL show at most one editor: every editor shares the playground's run state, so a later playground-state URL stays a plain link.
 
 #### Scenario: Closing exercise
 
@@ -102,6 +102,16 @@ A paragraph that consists only of a playground-state embed URL (`https://jslab.s
 
 - **WHEN** the reader runs the article's editor and then follows the header to `/playground`
 - **THEN** the playground shows the state it would show without the article visit
+
+#### Scenario: Run in flight when the article opens
+
+- **WHEN** the reader starts a run on `/playground` and opens an article with an editor before it finishes
+- **THEN** the run's output does not appear in the article's editor, and back on `/playground` the `Run` control is enabled
+
+#### Scenario: Second editor URL
+
+- **WHEN** an article body holds two paragraphs that are each a playground-state embed URL
+- **THEN** the first is shown as an editor and the second as a link
 
 ### Requirement: Article page metadata
 

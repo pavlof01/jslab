@@ -47,21 +47,37 @@ const HIGHLIGHTED = new Set(["js", "javascript"]);
 
 type Next = () => string;
 
+/** Whether the article already has its editor: every editor drives the one run store. */
+type Seen = { editor: boolean };
+
+// The lexer hands text and code spans back HTML-escaped; the tree is rendered
+// by React, which escapes on its own.
+const ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+};
+
+const unescape = (text: string): string =>
+  text.replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => ENTITIES[entity]);
+
 function inlines(tokens: Token[] = [], key: Next): Inline[] {
   return tokens.flatMap((token): Inline[] => {
     switch (token.type) {
       case "text":
         return "tokens" in token && token.tokens?.length
           ? inlines(token.tokens, key)
-          : [{ key: key(), kind: "text", text: token.text }];
+          : [{ key: key(), kind: "text", text: unescape(token.text) }];
       case "escape":
-        return [{ key: key(), kind: "text", text: token.text }];
+        return [{ key: key(), kind: "text", text: unescape(token.text) }];
       case "strong":
       case "em":
       case "del":
         return [{ key: key(), kind: token.type, children: inlines(token.tokens, key) }];
       case "codespan":
-        return [{ key: key(), kind: "code", text: token.text }];
+        return [{ key: key(), kind: "code", text: unescape(token.text) }];
       case "link":
         return [
           { key: key(), kind: "link", href: token.href, children: inlines(token.tokens, key) },
@@ -69,7 +85,9 @@ function inlines(tokens: Token[] = [], key: Next): Inline[] {
       case "br":
         return [{ key: key(), kind: "break" }];
       default:
-        return "text" in token ? [{ key: key(), kind: "text", text: String(token.text) }] : [];
+        return "text" in token
+          ? [{ key: key(), kind: "text", text: unescape(String(token.text)) }]
+          : [];
     }
   });
 }
@@ -87,20 +105,24 @@ async function highlight(lang: string, text: string, key: Next): Promise<CodeLin
   }));
 }
 
-async function embed(paragraph: Tokens.Paragraph, key: Next): Promise<Block | null> {
-  const [only] = paragraph.tokens;
-  if (paragraph.tokens.length !== 1 || only.type !== "link") return null;
-  const match = only.href.match(EMBED);
-  if (!match || only.text !== only.href) return null;
+// Matched on the paragraph's source, not its tokens, so GFM's autolink rules
+// (which trim trailing punctuation such as `_`) never decide what the URL is.
+async function embed(paragraph: Tokens.Paragraph, key: Next, seen: Seen): Promise<Block | null> {
+  const url = paragraph.text.trim();
+  const match = url.match(EMBED);
+  if (!match) return null;
   if (match[1] === "b") {
     const snapshot = await decodeSnapshot(match[2]);
-    return snapshot ? { key: key(), kind: "snapshot", url: only.href, snapshot } : null;
+    return snapshot ? { key: key(), kind: "snapshot", url, snapshot } : null;
   }
+  if (seen.editor) return null;
   const state = decodeShareState(match[2]);
-  return state ? { key: key(), kind: "editor", url: only.href, state } : null;
+  if (!state) return null;
+  seen.editor = true;
+  return { key: key(), kind: "editor", url, state };
 }
 
-async function blocks(tokens: Token[], key: Next): Promise<Block[]> {
+async function blocks(tokens: Token[], key: Next, seen: Seen): Promise<Block[]> {
   const out: Block[] = [];
   for (const token of tokens) {
     switch (token.type) {
@@ -115,7 +137,7 @@ async function blocks(tokens: Token[], key: Next): Promise<Block[]> {
       case "paragraph": {
         const paragraph = token as Tokens.Paragraph;
         out.push(
-          (await embed(paragraph, key)) ?? {
+          (await embed(paragraph, key, seen)) ?? {
             key: key(),
             kind: "paragraph",
             children: inlines(paragraph.tokens, key),
@@ -140,6 +162,7 @@ async function blocks(tokens: Token[], key: Next): Promise<Block[]> {
             blocks: await blocks(
               item.tokens.filter((child) => child.type !== "checkbox"),
               key,
+              seen,
             ),
           });
         }
@@ -168,7 +191,11 @@ async function blocks(tokens: Token[], key: Next): Promise<Block[]> {
         break;
       }
       case "blockquote":
-        out.push({ key: key(), kind: "quote", blocks: await blocks(token.tokens ?? [], key) });
+        out.push({
+          key: key(),
+          kind: "quote",
+          blocks: await blocks(token.tokens ?? [], key, seen),
+        });
         break;
       case "code": {
         const lang = (token.lang ?? "").trim();
@@ -194,5 +221,5 @@ async function blocks(tokens: Token[], key: Next): Promise<Block[]> {
 export async function buildBlocks(markdown: string): Promise<Block[]> {
   let counter = 0;
   const key = () => `n${(counter += 1)}`;
-  return blocks(new Lexer({ gfm: true }).lex(markdown), key);
+  return blocks(new Lexer({ gfm: true }).lex(markdown), key, { editor: false });
 }

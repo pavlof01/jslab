@@ -55,6 +55,31 @@ describe("buildBlocks", () => {
     expect(blocks[1]).toMatchObject({ state: { code: "f()" } });
   });
 
+  it("hands text and code spans over unescaped", async () => {
+    const [heading, paragraph] = await buildBlocks(
+      '# A & B\n\nit\'s "q" \\& `a < b && c` **x > y**',
+    );
+    expect(heading).toMatchObject({ children: [{ kind: "text", text: "A & B" }] });
+    expect(paragraph).toMatchObject({
+      children: [
+        { kind: "text", text: 'it\'s "q" ' },
+        { kind: "text", text: "&" },
+        { kind: "text", text: " " },
+        { kind: "code", text: "a < b && c" },
+        { kind: "text", text: " " },
+        { kind: "strong", children: [{ kind: "text", text: "x > y" }] },
+      ],
+    });
+  });
+
+  it("makes only the first editor URL an editor", async () => {
+    const url = (code: string) =>
+      `https://jslab.su/embed/bytecode?s=${encodeShareState({ code, engines: [EngineKey.v8], flags: {} })}`;
+    const blocks = await buildBlocks(`${url("a()")}\n\n${url("b()")}`);
+    expect(kinds(blocks)).toEqual(["editor", "paragraph"]);
+    expect(blocks[0]).toMatchObject({ state: { code: "a()" } });
+  });
+
   it("keeps a corrupt embed URL as a plain link", async () => {
     const [block] = await buildBlocks("https://jslab.su/embed/bytecode?b=1notgzip");
     expect(block).toMatchObject({ kind: "paragraph" });

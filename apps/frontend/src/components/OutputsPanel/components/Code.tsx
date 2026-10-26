@@ -7,7 +7,7 @@ import type { EngineKey } from "@/lib/types";
 import PlainCodeRow from "./CodeRow";
 import { annotationsPerRow, lineKey, lineSpans } from "./codeRows";
 
-type Props = TokensResult & { engineKey: EngineKey; annotations?: OutputAnnotation[] };
+type Props = TokensResult & { engineKey?: EngineKey; annotations?: OutputAnnotation[] };
 
 const CodeDisplay: React.FC<Props> = ({ tokens, fg, bg, engineKey, annotations }) => {
   const spans = lineSpans(tokens);

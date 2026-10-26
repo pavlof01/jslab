@@ -1,4 +1,3 @@
-import { Text } from "@chakra-ui/react";
 import type { ThemedToken } from "shiki";
 
 const ITALIC = 1;
@@ -7,20 +6,23 @@ const UNDERLINE = 4;
 
 type Props = { token: ThemedToken };
 
+// A plain span, as shiki itself emits: a listing runs to tens of thousands of
+// tokens, and a styled component per token costs seconds to mount.
 const TokenText: React.FC<Props> = ({ token }) => {
   const fontStyle = token.fontStyle ?? 0;
   return (
-    <Text
-      as="span"
-      fontSize={14}
-      whiteSpace="pre"
-      color={token.color ?? "inherit"}
-      fontStyle={fontStyle & ITALIC ? "italic" : undefined}
-      fontWeight={fontStyle & BOLD ? "bold" : undefined}
-      textDecoration={fontStyle & UNDERLINE ? "underline" : undefined}
+    <span
+      style={{
+        fontSize: 14,
+        whiteSpace: "pre",
+        color: token.color ?? "inherit",
+        fontStyle: fontStyle & ITALIC ? "italic" : undefined,
+        fontWeight: fontStyle & BOLD ? "bold" : undefined,
+        textDecoration: fontStyle & UNDERLINE ? "underline" : undefined,
+      }}
     >
       {token.content}
-    </Text>
+    </span>
   );
 };
 

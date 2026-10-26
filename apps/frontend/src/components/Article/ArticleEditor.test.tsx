@@ -1,10 +1,10 @@
 import "@testing-library/jest-dom/jest-globals";
 
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 
 import Providers from "@/app/providers";
-import { createEngineSelection, EngineKey } from "@/lib/types";
+import { createEngineSelection, EngineKey, RunStatus } from "@/lib/types";
 import { useEngineOutputsStore } from "@/store/useEngineOutputs";
 
 import ArticleEditor from "./ArticleEditor";
@@ -22,9 +22,15 @@ const state = {
   flags: { [EngineKey.v8]: ["--allow-natives-syntax"] },
 };
 
+const originalFetch = globalThis.fetch;
+
 beforeEach(() => {
   useEngineOutputsStore.getState().reset();
   useEngineOutputsStore.setState({ code: "playground code" });
+});
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
 });
 
 describe("ArticleEditor", () => {
@@ -45,5 +51,31 @@ describe("ArticleEditor", () => {
     expect(after.code).toBe("playground code");
     expect(after.engines).toEqual(before.engines);
     expect(after.flags).toEqual(before.flags);
+  });
+
+  it("cuts off a playground run that is still in flight", async () => {
+    let answer: (value: unknown) => void = () => {};
+    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(
+      () => new Promise((resolve) => (answer = resolve)),
+    );
+    const pending = useEngineOutputsStore.getState().runEngines({ engines: [EngineKey.v8] });
+    expect(useEngineOutputsStore.getState().status).toBe(RunStatus.running);
+
+    const { unmount } = render(<ArticleEditor state={state} />, { wrapper: Providers });
+    answer({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => ({ ok: true, stdout: "from the playground", stderr: "", artifacts: [] }),
+    });
+    expect(await pending).toBe("superseded");
+    expect(useEngineOutputsStore.getState().out[EngineKey.v8].stdout).not.toBe(
+      "from the playground",
+    );
+
+    unmount();
+    const after = useEngineOutputsStore.getState();
+    expect(after.code).toBe("playground code");
+    expect(after.status).toBe(RunStatus.idle);
   });
 });

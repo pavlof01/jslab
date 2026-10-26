@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
-import FlagCatalogProvider from "@/components/FlagSelector/context";
 import { buildEmbedOpenGraph, firstParam, type SearchParams } from "@/lib/embedMeta";
 import {
   BYTECODE_EMBED_PATH,
@@ -11,7 +10,6 @@ import {
   OEMBED_PATH,
   SNAPSHOT_PARAM,
 } from "@/lib/embedState";
-import { fetchFlagCatalog } from "@/lib/server/flags";
 import { decodeShareState, PLAYGROUND_EMBED_TITLE, SHARE_PARAM } from "@/lib/shareState";
 
 import EmbedPlaygroundShell from "../playground/EmbedPlaygroundShell";
@@ -83,7 +81,6 @@ const EmbedBytecodePage = async ({ searchParams }: Props) => {
 
   const origin = await requestOrigin();
   const selfUrl = embedUrl(origin, params);
-  const catalog = playground ? await fetchFlagCatalog() : null;
   const discoveryHref = `${origin}${OEMBED_PATH}?format=json&url=${encodeURIComponent(selfUrl)}`;
 
   return (
@@ -94,13 +91,7 @@ const EmbedBytecodePage = async ({ searchParams }: Props) => {
         href={discoveryHref}
         title={playground ? PLAYGROUND_EMBED_TITLE : BYTECODE_EMBED_TITLE}
       />
-      {catalog ? (
-        <FlagCatalogProvider catalog={catalog}>
-          <EmbedPlaygroundShell />
-        </FlagCatalogProvider>
-      ) : (
-        <EmbedBytecodeView snapshot={snapshot} />
-      )}
+      {playground ? <EmbedPlaygroundShell /> : <EmbedBytecodeView snapshot={snapshot} />}
     </>
   );
 };

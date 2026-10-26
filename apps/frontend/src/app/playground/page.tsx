@@ -35,10 +35,13 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
   return {
     title: TITLE,
     description: DESCRIPTION,
+    // A share link unfurls as its own card, but search should only ever see
+    // the one playground page, not one per shared snippet.
     alternates: {
-      canonical: self,
+      canonical: PLAYGROUND_PATH,
       types: { "application/json+oembed": discovery },
     },
+    robots: { index: false },
     openGraph: buildEmbedOpenGraph(SITE_ORIGIN, PLAYGROUND_EMBED_TITLE, self, {
       subtitle: shared.code,
     }),

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 
-import FlagCatalogProvider from "@/components/FlagSelector/context";
 import { buildEmbedOpenGraph, firstParam, type SearchParams } from "@/lib/embedMeta";
-import { fetchFlagCatalog } from "@/lib/server/flags";
 import {
   decodeShareState,
   EMBED_PATH,
@@ -35,14 +33,6 @@ export const generateMetadata = async ({ searchParams }: Props): Promise<Metadat
 
 export const dynamic = "force-dynamic";
 
-const EmbedPlaygroundPage = async () => {
-  const catalog = await fetchFlagCatalog();
-
-  return (
-    <FlagCatalogProvider catalog={catalog}>
-      <EmbedPlaygroundShell />
-    </FlagCatalogProvider>
-  );
-};
+const EmbedPlaygroundPage = () => <EmbedPlaygroundShell />;
 
 export default EmbedPlaygroundPage;
